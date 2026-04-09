@@ -1,0 +1,347 @@
+/* src/components/GaleriaImagenes.css */
+
+.gi-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Loading / Error / Empty ─────────────────────────────── */
+.gi-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--dvna-muted);
+  padding: 12px 0;
+}
+.gi-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--dvna-border);
+  border-top-color: var(--dvna-circle);
+  border-radius: 50%;
+  animation: gi-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes gi-spin { to { transform: rotate(360deg); } }
+
+.gi-error {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--danger);
+  background: rgba(184,50,50,0.06);
+  border-radius: var(--r);
+  padding: 8px 12px;
+}
+
+.gi-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 16px;
+  color: var(--dvna-muted);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-style: italic;
+  border: 1px dashed var(--dvna-border);
+  border-radius: var(--r-md);
+}
+
+/* ── Zona de subida ──────────────────────────────────────── */
+.gi-upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Fila de selector de color antes de subir */
+.gi-upload-color-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.gi-upload-color-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dvna-muted);
+  white-space: nowrap;
+}
+.gi-color-select {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r);
+  padding: 5px 10px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s;
+  flex: 1;
+  min-width: 160px;
+}
+.gi-color-select:focus { border-color: var(--dvna-circle); }
+
+.gi-color-preview-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,0,0,0.12);
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* Dropzone */
+.gi-dropzone {
+  border: 2px dashed var(--dvna-border);
+  border-radius: var(--r-md);
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--dvna-pale);
+}
+.gi-dropzone:hover:not(.uploading) {
+  border-color: var(--dvna-circle);
+  background: rgba(180,151,128,0.05);
+}
+.gi-dropzone.uploading { cursor: not-allowed; opacity: 0.7; }
+
+.gi-upload-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--dvna-muted);
+}
+.gi-upload-hint svg { color: var(--dvna-circle); }
+.gi-upload-sub {
+  font-size: 10px;
+  color: var(--dvna-border);
+}
+.gi-upload-color-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+.gi-upload-uploading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--dvna-muted);
+  padding: 8px 0;
+}
+
+/* ── Grid de imágenes ────────────────────────────────────── */
+.gi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+}
+
+.gi-card {
+  border-radius: var(--r-md);
+  overflow: visible;
+  position: relative;
+}
+.gi-card.local {
+  opacity: 0.85;
+}
+.gi-card.local:hover {
+  opacity: 1;
+}
+.gi-card.principal .gi-img-wrap {
+  outline: 2px solid var(--dvna-circle);
+  outline-offset: 2px;
+}
+
+.gi-img-wrap {
+  position: relative;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  background: var(--dvna-pale);
+}
+.gi-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.2s;
+}
+.gi-card:hover .gi-img { transform: scale(1.04); }
+
+/* Badge color en esquina inferior izquierda */
+.gi-card-color-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0,0,0,0.55);
+  border-radius: 10px;
+  padding: 2px 6px;
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Badge principal */
+.gi-badge-principal {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--dvna-circle);
+  border-radius: 10px;
+  padding: 2px 6px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Punto de color */
+.gi-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.4);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* ── Overlay de acciones ─────────────────────────────────── */
+.gi-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.18s;
+  border-radius: var(--r-md);
+  z-index: 3;
+}
+.gi-card:hover .gi-overlay { opacity: 1; }
+
+.gi-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+  flex-shrink: 0;
+}
+.gi-btn:active { transform: scale(0.92); }
+
+.gi-btn-star  { background: rgba(255,255,255,0.2); color: #fbbf24; }
+.gi-btn-star:hover  { background: rgba(251,191,36,0.3); }
+
+.gi-btn-palette { background: rgba(255,255,255,0.2); color: #fff; }
+.gi-btn-palette:hover { background: rgba(180,151,128,0.5); }
+
+.gi-btn-trash { background: rgba(255,255,255,0.2); color: #fca5a5; }
+.gi-btn-trash:hover { background: rgba(239,68,68,0.35); }
+
+/* ── Dropdown de color para imagen existente ─────────────── */
+.gi-color-picker-wrap {
+  position: static;
+  pointer-events: auto;
+}
+.gi-color-picker-dropdown {
+  position: fixed;
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r-md);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+  min-width: 130px;
+  z-index: 99999;
+  overflow: visible;
+  pointer-events: auto;
+}
+.gi-cp-opt {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 7px 12px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--dvna-charcoal);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+.gi-cp-opt:hover  { background: var(--dvna-pale); }
+.gi-cp-opt.active { background: var(--dvna-pale); font-weight: 600; }
+.gi-cp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1);
+  flex-shrink: 0;
+}
+/* Agregar al final de GaleriaImagenes.css */
+
+/* Dropdown inline para imágenes locales (se posiciona relativo al wrap, no fixed) */
+.gi-color-picker-dropdown--inline {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  min-width: 130px;
+}
+
+/* Checkmark dentro de opciones del dropdown */
+.gi-cp-check {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  color: var(--dvna-accent, #b49780);
+}
+
+/* Asegura que el wrap tenga position relative para el dropdown inline */
+.gi-color-picker-wrap {
+  position: relative;
+}

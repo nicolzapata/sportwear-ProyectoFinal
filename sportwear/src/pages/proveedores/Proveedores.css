@@ -1,0 +1,688 @@
+/* src/pages/proveedores/Proveedores.css */
+
+.proveedores-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: var(--font-body);
+}
+
+/* Header */
+.proveedores-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.proveedores-header-left {
+  flex: 1;
+}
+
+.proveedores-title {
+  font-size: 2rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+
+.proveedores-subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+  font-weight: 300;
+  text-transform: none;
+}
+
+.proveedores-date {
+  font-size: 0.85rem;
+  color: #666;
+  background: #f5f5f5;
+  padding: 0.5rem 1.2rem;
+  border-radius: 40px;
+  border: 1px solid #eaeaea;
+  text-transform: capitalize;
+}
+
+/* Stats Cards */
+.proveedores-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.proveedores-stat-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  border: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.proveedores-stat-card:hover {
+  border-color: #ddd;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px);
+}
+
+.proveedores-stat-icon {
+  width: 56px;
+  height: 56px;
+  background: #f8f8f8;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: #333;
+}
+
+.proveedores-stat-content {
+  flex: 1;
+}
+
+.proveedores-stat-label {
+  font-size: 0.7rem;
+  color: #888;
+  margin-bottom: 0.2rem;
+  display: block;
+  
+  letter-spacing: 0.3px;
+}
+
+.proveedores-stat-value {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+/* Actions Bar */
+.proveedores-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.proveedores-search-wrapper {
+  position: relative;
+  width: 320px;
+}
+
+.proveedores-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  color: #999;
+}
+
+.proveedores-search-input {
+  width: 100%;
+  padding: 0.8rem 1rem 0.8rem 2.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 40px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.proveedores-search-input:focus {
+  outline: none;
+  border-color: #1a1a1a;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
+}
+
+.proveedores-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.proveedores-search-clear:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Buttons */
+.proveedores-btn-primary {
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 40px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #1a1a1a;
+}
+
+.proveedores-btn-primary:hover {
+  background: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.proveedores-btn-secondary {
+  background: white;
+  color: #333;
+  border: 1px solid #e0e0e0;
+  padding: 0.8rem 2rem;
+  border-radius: 40px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.proveedores-btn-secondary:hover {
+  border-color: #1a1a1a;
+  background: #fafafa;
+}
+
+/* Results */
+.proveedores-results-count {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 1rem;
+  padding-left: 0.5rem;
+}
+
+/* Table */
+.proveedores-table-container {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid #f0f0f0;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.proveedores-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.proveedores-table-header {
+  background: #fafafa;
+}
+
+.proveedores-table-th {
+  text-align: left;
+  padding: 1.2rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #555;
+  border-bottom: 1px solid #f0f0f0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.proveedores-table-body {
+  background: white;
+}
+
+.proveedores-table-row {
+  transition: background 0.2s ease;
+}
+
+.proveedores-table-row:hover {
+  background: #fafafa;
+}
+
+.proveedores-table-td {
+  padding: 1.2rem 1rem;
+  border-bottom: 1px solid #f5f5f5;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.proveedores-id-cell {
+  color: #888;
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+/* Empresa cell */
+.proveedores-empresa-cell {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.proveedores-empresa-avatar {
+  width: 44px;
+  height: 44px;
+  background: #f5f5f5;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  color: #555;
+  border: 1px solid #eaeaea;
+}
+
+.proveedores-empresa-name {
+  font-weight: 500;
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+/* NIT code */
+.proveedores-nit-code {
+  background: #f5f5f5;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: #555;
+  font-family: monospace;
+  border: 1px solid #eaeaea;
+}
+
+/* Contacto */
+.proveedores-contacto-cell {
+  color: #555;
+  font-weight: 500;
+}
+
+/* Teléfono */
+.proveedores-telefono-cell {
+  color: #666;
+}
+
+/* Ciudad badge */
+.proveedores-ciudad-badge {
+  display: inline-block;
+  padding: 0.3rem 1rem;
+  background: #f0f0f0;
+  border-radius: 40px;
+  font-size: 0.8rem;
+  color: #444;
+  border: 1px solid #e0e0e0;
+}
+
+/* Status badge */
+.proveedores-status-badge {
+  display: inline-block;
+  padding: 0.3rem 1rem;
+  border-radius: 40px;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.proveedores-status-badge.active {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.proveedores-status-badge.inactive {
+  background: #f5f5f5;
+  color: #757575;
+  border: 1px solid #e0e0e0;
+}
+
+/* Action buttons */
+.proveedores-action-cell {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.proveedores-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #eaeaea;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #555;
+}
+
+.proveedores-action-btn:hover {
+  border-color: #1a1a1a;
+  background: #fafafa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.proveedores-view-btn:hover {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+.proveedores-edit-btn:hover {
+  border-color: #2e7d32;
+  color: #2e7d32;
+}
+
+.proveedores-deactivate-btn:hover {
+  border-color: #d32f2f;
+  color: #d32f2f;
+}
+
+.proveedores-activate-btn:hover {
+  border-color: #2e7d32;
+  color: #2e7d32;
+}
+
+/* Modal */
+.proveedores-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.proveedores-modal {
+  background: white;
+  border-radius: 32px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+  border: 1px solid #f0f0f0;
+}
+
+.proveedores-modal-sm {
+  max-width: 450px;
+}
+
+.proveedores-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.proveedores-modal-title {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0;
+  text-transform: none;
+}
+
+.proveedores-modal-close {
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 40px;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #666;
+}
+
+.proveedores-modal-close:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.proveedores-modal-body {
+  padding: 1.5rem;
+}
+
+.proveedores-modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  background: #fafafa;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+/* Form */
+.proveedores-form-group {
+  margin-bottom: 1rem;
+}
+
+.proveedores-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.proveedores-form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 0.3rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.proveedores-form-input,
+.proveedores-form-select {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.proveedores-form-input:focus,
+.proveedores-form-select:focus {
+  outline: none;
+  border-color: #1a1a1a;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
+}
+
+/* Detail */
+.proveedores-detail-avatar {
+  width: 70px;
+  height: 70px;
+  background: #f5f5f5;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto 1.5rem;
+  border: 1px solid #eaeaea;
+}
+
+.proveedores-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.proveedores-detail-item:last-child {
+  border-bottom: none;
+}
+
+.proveedores-detail-label {
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: none;
+}
+
+.proveedores-detail-value {
+  font-weight: 500;
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+/* Loading */
+.proveedores-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.proveedores-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #1a1a1a;
+  border-radius: 50%;
+  animation: proveedores-spin 1s linear infinite;
+}
+
+.proveedores-loading-text {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+@keyframes proveedores-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .proveedores-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .proveedores-container {
+    padding: 1rem;
+  }
+
+  .proveedores-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .proveedores-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .proveedores-actions-bar {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .proveedores-search-wrapper {
+    width: 100%;
+  }
+
+  .proveedores-btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .proveedores-table-th,
+  .proveedores-table-td {
+    padding: 1rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .proveedores-empresa-cell {
+    gap: 0.8rem;
+  }
+
+  .proveedores-empresa-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
+  .proveedores-empresa-name {
+    font-size: 0.9rem;
+  }
+
+  .proveedores-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .proveedores-title {
+    font-size: 1.6rem;
+  }
+
+  .proveedores-stat-value {
+    font-size: 1.5rem;
+  }
+
+  .proveedores-table-th,
+  .proveedores-table-td {
+    padding: 0.8rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .proveedores-empresa-avatar {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+
+  .proveedores-empresa-name {
+    font-size: 0.85rem;
+  }
+
+  .proveedores-nit-code {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .proveedores-action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+}

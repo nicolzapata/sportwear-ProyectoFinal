@@ -1,0 +1,474 @@
+/* src/components/OrderDetailModal.css - Estilos equivalentes a PaymentModal */
+
+.od-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  animation: pm-fade-in 0.18s ease;
+}
+
+@keyframes pm-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.od-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+  animation: pm-slide-up 0.22s ease;
+  font-family: 'Jost', sans-serif;
+}
+
+@keyframes pm-slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.od-accent {
+  height: 4px;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(90deg, #1a1a1a, #b49780);
+}
+
+.od-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #f0ede8;
+}
+
+.od-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.od-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 3px;
+}
+
+.od-subtitle {
+  font-size: 11px;
+  color: #888;
+  margin: 0;
+}
+
+.od-close {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1px solid #e5e5e5;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #888;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.od-close:hover { background: #f5f5f5; color: #1a1a1a; }
+
+.od-progress-section {
+  padding: 14px 20px 10px;
+  border-bottom: 1px solid #f0ede8;
+}
+
+.od-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.od-progress-track {
+  height: 7px;
+  background: #f0ede8;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.od-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #b49780, #1a1a1a);
+  border-radius: 99px;
+  transition: width 0.6s ease;
+}
+
+.od-progress-fill.complete {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.od-progress-amounts {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #aaa;
+  margin-top: 5px;
+}
+
+.od-body {
+  padding: 4px 20px 12px;
+}
+
+.od-section {
+  padding: 14px 0 4px;
+  border-bottom: 1px solid #f7f5f2;
+}
+
+.od-section:last-child {
+  border-bottom: none;
+}
+
+.od-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 12px;
+}
+
+.od-section-title svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+.od-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.od-info-item {
+  background: #f9f7f5;
+  border-radius: 9px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.od-info-item--full {
+  grid-column: 1 / -1;
+}
+
+.od-info-label {
+  font-size: 10px;
+  color: #888;
+  font-weight: 500;
+}
+
+.od-info-value {
+  font-size: 13px;
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.od-value-main  { color: #1a1a1a; }
+.od-value-paid  { color: #16a34a; }
+.od-value-debt  { color: #b49780; }
+
+.od-products {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.od-product-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: #f9f7f5;
+  border-radius: 9px;
+  gap: 12px;
+}
+
+.od-product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.od-product-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.3;
+}
+
+.od-product-meta {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.od-tag {
+  font-size: 10px;
+  color: #888;
+  background: #efe9e3;
+  padding: 2px 7px;
+  border-radius: 99px;
+}
+
+.od-product-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a1a;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.od-empty {
+  font-size: 12px;
+  color: #aaa;
+  font-style: italic;
+}
+
+.od-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-left: 14px;
+}
+
+.od-timeline-item {
+  display: flex;
+  gap: 14px;
+  padding-bottom: 14px;
+  position: relative;
+}
+
+.od-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 16px;
+  bottom: 0;
+  width: 2px;
+  background: #f0ede8;
+}
+.od-timeline-item:last-child::before { display: none; }
+
+.od-timeline-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-left: -7px;
+  margin-top: 2px;
+  border: 2px solid #e5e5e5;
+  background: #fff;
+}
+.od-timeline-dot--done {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+
+.od-timeline-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.od-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.od-timeline-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.od-timeline-amount {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.od-timeline-date {
+  font-size: 10px;
+  color: #aaa;
+  margin-top: 2px;
+  display: block;
+}
+
+.od-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.od-cuota-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 9px;
+  background: #f9f7f5;
+  border: 1.5px solid transparent;
+  transition: all 0.15s;
+}
+
+.od-cuota-row--next {
+  background: #fffbf5;
+  border-color: #b49780;
+}
+
+.od-cuota-row--vencida {
+  background: #fff5f5;
+  border-color: #fca5a5;
+}
+
+.od-cuota-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e8e0d8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a1a1a;
+  flex-shrink: 0;
+}
+
+.od-cuota-row--next .od-cuota-number {
+  background: #b49780;
+  color: #fff;
+}
+
+.od-cuota-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.od-cuota-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.od-cuota-date {
+  font-size: 10px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.od-overdue-tag {
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+.od-cuota-monto {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a1a;
+  white-space: nowrap;
+}
+
+.od-cuota-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  font-size: 13px;
+  border-top: 1px dashed #e0dbd4;
+  margin-top: 4px;
+  color: #555;
+}
+
+.od-cuota-total strong {
+  color: #1a1a1a;
+  font-weight: 700;
+}
+
+.od-paid-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #f0fdf4;
+  color: #16a34a;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 10px;
+  margin-top: 12px;
+}
+
+.od-paid-badge svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.od-footer {
+  padding: 12px 20px 20px;
+  border-top: 1px solid #f0ede8;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.od-btn-close {
+  padding: 9px 24px;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 9px;
+  background: #fff;
+  font-family: 'Jost', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.od-btn-close:hover { background: #f5f5f5; color: #1a1a1a; }
+
+@media (max-width: 560px) {
+  .od-modal {
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    max-height: 95vh;
+  }
+  .od-info-grid {
+    grid-template-columns: 1fr;
+  }
+}

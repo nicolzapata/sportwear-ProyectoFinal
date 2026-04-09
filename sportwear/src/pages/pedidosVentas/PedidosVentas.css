@@ -1,0 +1,812 @@
+/* src/pages/pedidos/PedidosVentas.css */
+
+.pedidosventas-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: var(--font-body);
+}
+
+/* Header */
+.pedidosventas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.pedidosventas-header-left {
+  flex: 1;
+}
+
+.pedidosventas-title {
+  font-size: 2rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+
+.pedidosventas-subtitle {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+  font-weight: 300;
+  text-transform: none;
+}
+
+.pedidosventas-date {
+  font-size: 0.85rem;
+  color: #666;
+  background: #f5f5f5;
+  padding: 0.5rem 1.2rem;
+  border-radius: 40px;
+  border: 1px solid #eaeaea;
+  text-transform: capitalize;
+}
+
+/* Stats Cards */
+.pedidosventas-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.pedidosventas-stat-card {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  border: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.pedidosventas-stat-card:hover {
+  border-color: #ddd;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+  transform: translateY(-2px);
+}
+
+.pedidosventas-stat-icon {
+  width: 56px;
+  height: 56px;
+  background: #f8f8f8;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  color: #333;
+}
+
+.pedidosventas-stat-content {
+  flex: 1;
+}
+
+.pedidosventas-stat-label {
+  font-size: 0.7rem;
+  color: #888;
+  margin-bottom: 0.2rem;
+  display: block;
+  
+  letter-spacing: 0.3px;
+}
+
+.pedidosventas-stat-value {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.2;
+}
+
+.pedidosventas-stat-value-currency {
+  font-size: 1.2rem;
+}
+
+/* Actions Bar */
+.pedidosventas-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.pedidosventas-search-wrapper {
+  position: relative;
+  width: 320px;
+}
+
+.pedidosventas-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  color: #999;
+}
+
+.pedidosventas-search-input {
+  width: 100%;
+  padding: 0.8rem 1rem 0.8rem 2.5rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 40px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.pedidosventas-search-input:focus {
+  outline: none;
+  border-color: #1a1a1a;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
+}
+
+.pedidosventas-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.pedidosventas-search-clear:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+/* Buttons */
+.pedidosventas-btn-primary {
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  padding: 0.8rem 2rem;
+  border-radius: 40px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #1a1a1a;
+}
+
+.pedidosventas-btn-primary:hover {
+  background: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pedidosventas-btn-secondary {
+  background: white;
+  color: #333;
+  border: 1px solid #e0e0e0;
+  padding: 0.8rem 2rem;
+  border-radius: 40px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pedidosventas-btn-secondary:hover {
+  border-color: #1a1a1a;
+  background: #fafafa;
+}
+
+/* Results */
+.pedidosventas-results-count {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 1rem;
+  padding-left: 0.5rem;
+}
+
+/* Table */
+.pedidosventas-table-container {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid #f0f0f0;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.pedidosventas-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pedidosventas-table-header {
+  background: #fafafa;
+}
+
+.pedidosventas-table-th {
+  text-align: left;
+  padding: 1.2rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #555;
+  border-bottom: 1px solid #f0f0f0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.pedidosventas-table-body {
+  background: white;
+}
+
+.pedidosventas-table-row {
+  transition: background 0.2s ease;
+}
+
+.pedidosventas-table-row:hover {
+  background: #fafafa;
+}
+
+.pedidosventas-table-td {
+  padding: 1.2rem 1rem;
+  border-bottom: 1px solid #f5f5f5;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.pedidosventas-id-cell {
+  color: #1a1a1a;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+/* Cliente cell */
+.pedidosventas-cliente-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.pedidosventas-cliente-avatar {
+  width: 36px;
+  height: 36px;
+  background: #1a1a1a;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  
+}
+
+.pedidosventas-cliente-name {
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.pedidosventas-producto-cell {
+  color: #666;
+}
+
+.pedidosventas-cantidad-cell {
+  text-align: center;
+  font-weight: 500;
+}
+
+.pedidosventas-total-cell {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.pedidosventas-fecha-cell {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+/* Badges */
+.pedidosventas-badge {
+  display: inline-block;
+  padding: 0.3rem 1rem;
+  border-radius: 40px;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.pedidosventas-badge-active {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.pedidosventas-badge-pending {
+  background: #fff3e6;
+  color: #ff8c42;
+  border: 1px solid #ffe0cc;
+}
+
+.pedidosventas-badge-inactive {
+  background: #f5f5f5;
+  color: #757575;
+  border: 1px solid #e0e0e0;
+}
+
+.pedidosventas-badge-info {
+  background: #e6f3ff;
+  color: #1976d2;
+  border: 1px solid #cce0ff;
+}
+
+/* Action buttons */
+.pedidosventas-action-cell {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.pedidosventas-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #eaeaea;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #555;
+}
+
+.pedidosventas-action-btn:hover {
+  border-color: #1a1a1a;
+  background: #fafafa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.pedidosventas-view-btn:hover {
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+.pedidosventas-pay-btn:hover {
+  border-color: #2e7d32;
+  color: #2e7d32;
+}
+
+.pedidosventas-cancel-btn:hover {
+  border-color: #d32f2f;
+  color: #d32f2f;
+}
+
+.pedidosventas-pay-full-btn {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.pedidosventas-pay-full-btn:hover {
+  border-color: #2e7d32;
+  color: #2e7d32;
+}
+
+.pedidosventas-abonos-btn {
+  background: #e3f2fd;
+  border: none;
+  color: #1976d2;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pedidosventas-abonos-btn:hover {
+  background: #bbdefb;
+}
+
+.pedidosventas-saldo {
+  color: #f57c00;
+  font-weight: 500;
+}
+
+.pedidosventas-saldo-zero {
+  color: #2e7d32;
+}
+
+.pedidosventas-abonos-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.pedidosventas-abonos-summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.pedidosventas-abonos-summary-label {
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.pedidosventas-abonos-summary-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.pedidosventas-abonos-summary-saldo {
+  color: #f57c00;
+}
+
+.pedidosventas-abonos-list {
+  margin-bottom: 1.5rem;
+}
+
+.pedidosventas-abonos-list-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 0.75rem;
+}
+
+.pedidosventas-abono-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  background: white;
+}
+
+.pedidosventas-abono-item-info {
+  display: flex;
+  gap: 1rem;
+}
+
+.pedidosventas-abono-item-monto {
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+.pedidosventas-abono-item-fecha {
+  color: #888;
+  font-size: 0.85rem;
+}
+
+.pedidosventas-form-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.pedidosventas-form-section-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
+}
+
+/* Modal */
+.pedidosventas-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.pedidosventas-modal {
+  background: white;
+  border-radius: 32px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+  border: 1px solid #f0f0f0;
+}
+
+.pedidosventas-modal-sm {
+  max-width: 450px;
+}
+
+.pedidosventas-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.pedidosventas-modal-title {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0;
+  text-transform: none;
+}
+
+.pedidosventas-modal-close {
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 40px;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #666;
+}
+
+.pedidosventas-modal-close:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.pedidosventas-modal-body {
+  padding: 1.5rem;
+}
+
+.pedidosventas-modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  background: #fafafa;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+/* Form */
+.pedidosventas-form-group {
+  margin-bottom: 1rem;
+}
+
+.pedidosventas-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.pedidosventas-form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 0.3rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.pedidosventas-form-input,
+.pedidosventas-form-select {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.pedidosventas-form-input:focus,
+.pedidosventas-form-select:focus {
+  outline: none;
+  border-color: #1a1a1a;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
+}
+
+/* Detail */
+.pedidosventas-detail-avatar {
+  width: 70px;
+  height: 70px;
+  background: #f5f5f5;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto 1.5rem;
+  border: 1px solid #eaeaea;
+}
+
+.pedidosventas-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.pedidosventas-detail-item:last-child {
+  border-bottom: none;
+}
+
+.pedidosventas-detail-label {
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: none;
+}
+
+.pedidosventas-detail-value {
+  font-weight: 500;
+  color: #1a1a1a;
+  font-size: 0.95rem;
+}
+
+.pedidosventas-detail-currency {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Loading */
+.pedidosventas-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.pedidosventas-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #1a1a1a;
+  border-radius: 50%;
+  animation: pedidosventas-spin 1s linear infinite;
+}
+
+.pedidosventas-loading-text {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+@keyframes pedidosventas-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .pedidosventas-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .pedidosventas-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .pedidosventas-container {
+    padding: 1rem;
+  }
+
+  .pedidosventas-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .pedidosventas-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .pedidosventas-actions-bar {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .pedidosventas-search-wrapper {
+    width: 100%;
+  }
+
+  .pedidosventas-btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pedidosventas-table-th,
+  .pedidosventas-table-td {
+    padding: 1rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .pedidosventas-cliente-cell {
+    gap: 0.6rem;
+  }
+
+  .pedidosventas-cliente-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+
+  .pedidosventas-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .pedidosventas-action-cell {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .pedidosventas-title {
+    font-size: 1.6rem;
+  }
+
+  .pedidosventas-stat-value {
+    font-size: 1.5rem;
+  }
+
+  .pedidosventas-stat-value-currency {
+    font-size: 1rem;
+  }
+
+  .pedidosventas-table-th,
+  .pedidosventas-table-td {
+    padding: 0.8rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .pedidosventas-cliente-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+
+  .pedidosventas-total-cell {
+    font-size: 0.85rem;
+  }
+
+  .pedidosventas-action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+}

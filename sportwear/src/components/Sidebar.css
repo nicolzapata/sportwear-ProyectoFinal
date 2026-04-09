@@ -1,0 +1,265 @@
+/* ── Sidebar.css ── Instagram-style hover expand ── */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 78px;
+  background: var(--dark-brown);
+  display: flex;
+  flex-direction: column;
+  z-index: 200;
+  overflow: hidden;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+}
+
+.sidebar:hover {
+  width: 240px;
+  box-shadow: 4px 0 24px rgba(44, 34, 24, 0.25);
+}
+
+/* ── Logo ── */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  min-height: 88px;
+  overflow: hidden;
+}
+
+.logo-img {
+  width: 66px;
+  height: 66px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: brightness(0) invert(1);
+  border-radius: 50%;
+}
+
+.logo-name {
+  font-family: var(--font-body);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  
+  color: #fff;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: opacity 0.2s 0.06s, transform 0.2s 0.06s;
+  pointer-events: none;
+}
+.logo-name span { color: var(--taupe); }
+
+.sidebar:hover .logo-name {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ── Role badge ── */
+.role-badge {
+  padding: 8px 18px;
+  overflow: hidden;
+  height: 36px;
+}
+.role-tag {
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  
+  color: #161616;
+  background: rgba(255, 255, 255, 0.363);
+  padding: 3px 10px;
+  border-radius: 2px;
+  display: inline-block;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.2s 0.05s;
+}
+.sidebar:hover .role-tag { opacity: 1; }
+
+/* ── Nav ── */
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 0;
+  scrollbar-width: none;
+}
+.sidebar-nav::-webkit-scrollbar { display: none; }
+
+.nav-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.07);
+  margin: 6px 14px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 18px;
+  text-decoration: none;
+  color: rgba(255,255,255,0.55);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.2s, background 0.2s;
+}
+
+.nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleY(0);
+  width: 3px;
+  height: 60%;
+  background: var(--taupe);
+  border-radius: 0 2px 2px 0;
+  transition: transform 0.2s;
+}
+.nav-item:hover {
+  color: var(--warm-white);
+  background: rgba(255,255,255,0.06);
+}
+.nav-item.active {
+  color: var(--warm-white);
+  background: rgba(255,255,255,0.1);
+}
+.nav-item.active::before { transform: translateY(-50%) scaleY(1); }
+
+/* ── Nav icon ── */
+.nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  color: inherit;
+}
+.nav-icon svg { width: 18px; height: 18px; }
+
+/* ── Nav label ── */
+.nav-label {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.2s 0.05s, transform 0.2s 0.05s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.sidebar:hover .nav-label {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ── Footer ── */
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 17px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  min-height: 64px;
+  overflow: visible;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  border-radius: 50%;
+  background: #9a7d66;
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 500;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 10;
+}
+
+.user-text {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.2s 0.05s, transform 0.2s 0.05s;
+  overflow: hidden;
+  min-width: 0;
+  pointer-events: none;
+}
+.sidebar:hover .user-text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.user-name {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--warm-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+}
+.user-role {
+  font-family: var(--font-body);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.4);
+  
+}
+
+.logout-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--r);
+  color: rgba(255,255,255,0.5) !important;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s, opacity 0.2s 0.05s;
+  flex-shrink: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.sidebar:hover .logout-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+.logout-btn:hover { background: rgba(255,255,255,0.1); color: var(--warm-white); }
+.logout-btn svg {
+  stroke: #ffffff;
+  fill: none;
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.sidebar:hover .role-badge { height: auto; }

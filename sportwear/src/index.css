@@ -1,0 +1,282 @@
+/* src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ══════════════════════════════════════════════════════
+   fonts.css — Paleta DVNA Colección
+   Pegar al INICIO de src/index.css
+   ══════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Paleta DVNA ── */
+--dvna-circle:   #b49780;   /* café — botones, activos, acentos */
+--dvna-mid:      #c8ab96;   /* café medio — hover borders */
+--dvna-light:    #e8e0d8;   /* gris cálido claro */
+--dvna-pale:     #f4f4f4;   /* gris muy claro — fondos de sección */
+--dvna-cream:    #f9f9f9;   /* casi blanco — fondo principal */
+--dvna-white:    #ffffff;   /* blanco puro — cards, navbar */
+--dvna-dark:     #111111;   /* negro — sidebar */
+--dvna-charcoal: #1a1a1a;   /* negro — texto principal */
+--dvna-muted:    #888888;   /* gris — texto secundario */
+--dvna-border:   #e5e5e5;   /* gris claro — bordes */
+
+  /* Semánticos — mapean a DVNA */
+  --cream:       var(--dvna-pale);
+  --warm-white:  var(--dvna-white);
+  --sand:        var(--dvna-light);
+  --taupe:       var(--dvna-mid);
+  --brown:       var(--dvna-circle);
+  --dark-brown:  #b49780;
+  --charcoal:    var(--dvna-charcoal);
+  --muted:       var(--dvna-muted);
+  --border:      var(--dvna-border);
+  --accent:      #9a7d66;
+
+  --danger:      #b83232;
+  --danger-bg:   #fdf2f0;
+  --success:     #3a6648;
+  --warning:     #7a5500;
+
+  /* Tipografía */
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body:    'Jost', sans-serif;
+
+  /* Radios y sombras */
+  --r:    4px;
+  --r-md: 8px;
+  --shadow-sm: 0 1px 4px rgba(50,35,20,0.07);
+  --shadow:    0 4px 20px rgba(50,35,20,0.12);
+}
+
+/* ── Reset tipográfico global ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-body);
+  color: var(--dvna-charcoal);
+  background: var(--dvna-cream);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Fix global: todos los SVG heredan color del padre ── */
+svg { display: block; }
+
+/* Botones de acción en tablas — color base visible */
+[class*="-action-btn"] {
+  color: var(--dvna-muted) !important;
+}
+[class*="-action-btn"]:hover {
+  color: var(--dvna-circle) !important;
+}
+[class*="-deactivate-btn"]:hover {
+  color: #c0392b !important;
+}
+[class*="-activate-btn"]:hover {
+  color: var(--success) !important;
+}
+[class*="-modal-close"] {
+  color: var(--dvna-muted) !important;
+}
+[class*="-modal-close"]:hover {
+  color: var(--dvna-charcoal) !important;
+}
+[class*="-search-clear"] {
+  color: var(--dvna-mid) !important;
+}
+[class*="-search-clear"]:hover {
+  color: var(--dvna-charcoal) !important;
+}
+[class*="-search-icon"] {
+  color: var(--dvna-mid) !important;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  display: block;  /* Cambiamos de 'flex' a 'block' */
+  place-items: unset;  /* Eliminamos el centrado */
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+  text-transform: none;
+}
+
+a:hover {
+  color: #000000;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-body);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:focus,
+button:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TABLAS GLOBALES — estilo card
+   ═══════════════════════════════════════════════════════════ */
+
+.tbl-container {
+  background: var(--dvna-pale);
+  border: none;
+  border-radius: 14px;
+  overflow: visible;
+  padding: 8px;
+}
+
+.tbl {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+  font-family: var(--font-body);
+}
+
+.tbl-header tr {
+  background: transparent;
+}
+
+.tbl-th {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  
+  color: var(--dvna-muted);
+  padding: 8px 20px 4px;
+  text-align: left;
+  border: none;
+  background: transparent;
+  white-space: nowrap;
+}
+
+.tbl-row {
+  background: #fff;
+  border: none;
+  box-shadow: 0 1px 3px rgba(50, 35, 20, 0.06), 0 1px 2px rgba(50, 35, 20, 0.04);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.tbl-row:hover {
+  box-shadow: 0 4px 14px rgba(50, 35, 20, 0.10);
+  transform: translateY(-1px);
+}
+
+.tbl-row td:first-child {
+  border-radius: 8px 0 0 8px;
+}
+.tbl-row td:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.tbl-td {
+  padding: 14px 20px;
+  font-size: 13px;
+  color: var(--dvna-charcoal);
+  vertical-align: middle;
+  border: none;
+  background: transparent;
+}
+
+/* ── Fix: iconos de botones de acción en tablas ── */
+[class*="-action-btn"] svg,
+[class*="-action-cell"] svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
+
+[class*="-action-btn"] {
+  color: #888888;
+}
+[class*="-edit-btn"]:hover,
+[class*="-view-btn"]:hover { color: #b49780; }
+[class*="-deactivate-btn"]:hover { color: #b83232; }
+[class*="-activate-btn"]:hover   { color: #3a6648; }
+[class*="-cancel-btn"]:hover     { color: #b83232; }
+[class*="-receive-btn"]:hover    { color: #3a6648; }
+[class*="-pay-btn"]:hover        { color: #3a6648; }
+
+/* ── Fix: iconos del sidebar en blanco ── */
+.nav-icon svg,
+.logout-btn svg {
+  display: block;
+  stroke: currentColor;
+}
+
+.nav-item { color: rgba(255,255,255,0.45); }
+.nav-item:hover { color: #ffffff; }
+.nav-item.active { color: #ffffff; }
+
+/* ── Fix: todos los SVG heredan color ── */
+svg {
+  display: block;
+  overflow: visible;
+}
+
+/* ── Fix: thead del dashboard ── */
+thead tr {
+  background: transparent !important;
+}
+
+thead th {
+  background: transparent !important;
+  color: var(--dvna-muted) !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.2em !important;
+  text-transform: none !important;
+  border: none !important;
+  padding: 8px 20px 4px !important;
+  font-family: var(--font-body) !important;
+}
+
+tbody tr {
+  background: #ffffff;
+}
+
+
+/* ── Fix: h1-h6 usan fuente display DVNA, nunca en mayúsculas ── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  color: var(--dvna-charcoal);
+  text-transform: none;
+}

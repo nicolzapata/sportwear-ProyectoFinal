@@ -1,0 +1,21 @@
+/* ── PublicLayout.css ── */
+
+.public-layout {
+  min-height: 100vh;
+  background: var(--warm-white);
+  font-family: var(--font-body);
+}
+
+.public-layout-main {
+  padding-top: 0;
+}
+
+.public-layout-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+
+@media (max-width: 768px) {
+  .public-layout-container { padding: 0 20px; }
+}

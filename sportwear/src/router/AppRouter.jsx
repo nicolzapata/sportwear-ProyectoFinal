@@ -1,0 +1,82 @@
+// src/router/AppRouter.jsx
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider }  from "../context/AuthContext";
+import { CartProvider }  from "../context/CartContext";
+import Layout            from "../components/Layout";
+import PublicLayout      from "../components/PublicLayout";
+import ProtectedRoute    from "../components/ProtectedRoute";
+
+// Páginas públicas
+import Login               from "../pages/accesos/Login";
+import Registro            from "../pages/accesos/Registro";
+import RecuperarContrasena from "../pages/accesos/RecuperarContrasena";
+import Catalogo            from "../pages/catalogo/Catalogo";
+import DetalleProducto from "../pages/catalogo/DetalleProducto";
+import Carrito             from "../pages/carrito/Carrito";
+import Checkout            from "../pages/checkout/Checkout";
+import Novedades           from "../pages/novedades/Novedades";
+import SobreNosotros       from "../pages/sobre-nosotros/SobreNosotros";
+
+// Páginas protegidas
+import Dashboard     from "../pages/dashboard/Dashboard";
+import Roles         from "../pages/roles/Roles";
+import Usuarios      from "../pages/usuarios/Usuarios";
+import Clientes      from "../pages/clientes/Clientes";
+import CatProductos  from "../pages/categorias/CatProductos";
+import GestProductos from "../pages/gestProductos/GestProductos";
+import Colores       from "../pages/colores/Colores";
+import Proveedores   from "../pages/proveedores/Proveedores";
+import Compras       from "../pages/compras/Compras";
+import PedidosVentas from "../pages/pedidosVentas/PedidosVentas";
+import Promociones   from "../pages/promociones/Promociones";
+import PagosAbonos   from "../pages/pagosAbonos/PagosAbonos";
+
+const P = ({ k, children }) => (
+  <ProtectedRoute requiredKey={k}>{children}</ProtectedRoute>
+);
+
+export default function AppRouter() {
+  return (
+    <AuthProvider>
+      <CartProvider>
+        <BrowserRouter>
+          <Routes>
+
+            {/* Sin navbar */}
+            <Route path="/login"     element={<Login />} />
+            <Route path="/registro"  element={<Registro />} />
+            <Route path="/recuperar" element={<RecuperarContrasena />} />
+
+            {/* Públicas CON navbar del cliente */}
+            <Route element={<PublicLayout />}>
+              <Route path="/"                element={<Catalogo />} />
+              <Route path="/catalogo"        element={<Catalogo />} />
+              <Route path="/catalogo/:id" element={<DetalleProducto />} />
+              <Route path="/carrito"         element={<Carrito />} />
+              <Route path="/checkout"        element={<Checkout />} />
+              <Route path="/novedades"       element={<Novedades />} />
+              <Route path="/sobre-nosotros"  element={<SobreNosotros />} />
+            </Route>
+
+            {/* Protegidas — admin/empleados */}
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route path="/dashboard"   element={<P k="dashboard">  <Dashboard />     </P>} />
+              <Route path="/roles"       element={<P k="roles">       <Roles />         </P>} />
+              <Route path="/usuarios"    element={<P k="usuarios">    <Usuarios />      </P>} />
+              <Route path="/clientes"    element={<P k="clientes">    <Clientes />      </P>} />
+              <Route path="/categorias"  element={<P k="categorias">  <CatProductos />  </P>} />
+              <Route path="/productos"   element={<P k="productos">   <GestProductos /> </P>} />
+              <Route path="/colores"     element={<P k="colores">     <Colores />       </P>} />
+              <Route path="/proveedores" element={<P k="proveedores"> <Proveedores />   </P>} />
+              <Route path="/compras"     element={<P k="compras">     <Compras />       </P>} />
+              <Route path="/pedidos"     element={<P k="pedidos">     <PedidosVentas /> </P>} />
+              <Route path="/promociones" element={<P k="promociones"> <Promociones />   </P>} />
+              <Route path="/pagos"       element={<P k="pagos">       <PagosAbonos />   </P>} />
+            </Route>
+
+          </Routes>
+        </BrowserRouter>
+      </CartProvider>
+    </AuthProvider>
+  );
+}

@@ -1,0 +1,403 @@
+/* src/components/ModalDetalle.css */
+
+/* ── Overlay ── */
+.md-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 24px;
+  animation: md-overlay-in 0.2s ease;
+}
+@keyframes md-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Modal ── */
+.md-modal {
+  background: var(--dvna-white, #fff);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 32px 80px rgba(10,10,10,0.22);
+  animation: md-slide-in 0.25s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+@keyframes md-slide-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Header (igual que ModalSteps) ── */
+.md-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 22px 28px 16px;
+  border-bottom: 1px solid var(--dvna-border, #e8e0d8);
+  background: var(--dvna-pale, #faf7f4);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.md-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--dvna-border, #e8e0d8);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dvna-muted, #999);
+  transition: background 0.15s;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.md-close:hover { background: var(--dvna-white, #fff); }
+
+.md-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.md-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  padding-left: 12px;
+}
+
+.md-nombre {
+  font-family: var(--font-body, inherit);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--dvna-charcoal, #1a1a1a);
+  margin: 0 0 3px;
+  line-height: 1.2;
+}
+
+.md-titulo-label {
+  font-family: var(--font-body, inherit);
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--dvna-muted, #999);
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+
+.md-badge-wrap {
+  margin-top: 4px;
+}
+
+/* ── Stepper (igual que ModalSteps) ── */
+.md-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 14px 28px 12px;
+  background: var(--dvna-pale, #faf7f4);
+  border-bottom: 1px solid var(--dvna-border, #e8e0d8);
+  position: relative;
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.md-stepper::-webkit-scrollbar { display: none; }
+
+.md-progress-track {
+  position: absolute;
+  bottom: 24px;
+  left: 28px;
+  right: 28px;
+  height: 2px;
+  background: var(--dvna-border, #e8e0d8);
+  border-radius: 2px;
+  z-index: 0;
+  pointer-events: none;
+}
+.md-progress-fill {
+  height: 100%;
+  background: var(--dvna-circle, #b49780);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.md-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 60px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px 2px;
+  position: relative;
+  z-index: 1;
+}
+.md-step-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--dvna-border, #e8e0d8);
+  background: var(--dvna-white, #fff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body, inherit);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--dvna-muted, #999);
+  transition: all 0.2s;
+}
+.md-step.done .md-step-dot {
+  background: var(--dvna-circle, #b49780);
+  border-color: var(--dvna-circle, #b49780);
+  color: #fff;
+}
+.md-step.active .md-step-dot {
+  background: var(--dvna-charcoal, #1a1a1a);
+  border-color: var(--dvna-charcoal, #1a1a1a);
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(26,26,26,0.1);
+}
+.md-step-label {
+  font-family: var(--font-body, inherit);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  
+  color: var(--dvna-muted, #999);
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.md-step.active .md-step-label { color: var(--dvna-charcoal, #1a1a1a); }
+.md-step.done  .md-step-label  { color: var(--dvna-circle, #b49780); }
+
+/* ── Body ── */
+.md-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── Grid de items ── */
+.md-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.md-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  background: var(--dvna-pale, #faf7f4);
+  border-radius: 10px;
+  border: 1px solid var(--dvna-border, #e8e0d8);
+}
+.md-item-full {
+  grid-column: 1 / -1;
+}
+
+.md-item-label {
+  font-family: var(--font-body, inherit);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  
+  color: var(--dvna-muted, #999);
+}
+.md-item-value {
+  font-family: var(--font-body, inherit);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--dvna-charcoal, #1a1a1a);
+  line-height: 1.4;
+  word-break: break-word;
+}
+.md-item-empty {
+  color: var(--dvna-muted, #999);
+  font-style: italic;
+  font-size: 12px;
+}
+
+/* ── Sección ── */
+.md-seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.md-seccion-titulo {
+  font-family: var(--font-body, inherit);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  
+  color: var(--dvna-circle, #b49780);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--dvna-border, #e8e0d8);
+  margin-bottom: 2px;
+}
+
+/* ── Footer navegación (igual que ModalSteps) ── */
+.md-footer {
+  padding: 14px 28px;
+  border-top: 1px solid var(--dvna-border, #e8e0d8);
+  background: var(--dvna-pale, #faf7f4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+.md-footer-center {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.md-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: none;
+  background: var(--dvna-border, #e8e0d8);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+}
+.md-dot.active {
+  background: var(--dvna-charcoal, #1a1a1a);
+  width: 18px;
+  border-radius: 3px;
+}
+
+.md-btn-nav {
+  background: transparent;
+  border: 1px solid var(--dvna-border, #e8e0d8);
+  border-radius: 40px;
+  padding: 9px 18px;
+  font-family: var(--font-body, inherit);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--dvna-charcoal, #1a1a1a);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.md-btn-nav:hover:not(:disabled) {
+  border-color: var(--dvna-mid, #c8ab96);
+  background: var(--dvna-pale, #faf7f4);
+}
+.md-btn-nav:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── Barra de acciones (igual que ModalSteps footer) ── */
+.md-actions {
+  padding: 14px 28px;
+  border-top: 1px solid var(--dvna-border, #e8e0d8);
+  background: var(--dvna-pale, #faf7f4);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.md-btn-cerrar {
+  background: transparent;
+  color: var(--dvna-charcoal, #1a1a1a);
+  border: 1px solid var(--dvna-border, #e8e0d8);
+  padding: 9px 18px;
+  border-radius: 40px;
+  font-family: var(--font-body, inherit);
+  font-size: 12px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.md-btn-cerrar:hover {
+  border-color: var(--dvna-mid, #c8ab96);
+  background: var(--dvna-white, #fff);
+}
+
+.md-btn-desactivar {
+  background: transparent;
+  color: var(--danger, #b83232);
+  border: 1px solid var(--danger, #b83232);
+  padding: 9px 18px;
+  border-radius: 40px;
+  font-family: var(--font-body, inherit);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.md-btn-desactivar:hover {
+  background: rgba(184,50,50,0.06);
+}
+
+.md-btn-editar {
+  background: var(--dvna-charcoal, #1a1a1a);
+  color: #fff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 40px;
+  font-family: var(--font-body, inherit);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+}
+.md-btn-editar:hover {
+  background: var(--dvna-circle, #b49780);
+  transform: translateY(-1px);
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .md-modal { max-width: 100%; border-radius: 16px 16px 0 0; margin-top: auto; }
+  .md-overlay { align-items: flex-end; padding: 0; }
+  .md-grid { grid-template-columns: 1fr; }
+  .md-step-label { display: none; }
+  .md-hero { padding: 20px 20px 18px; }
+  .md-body { padding: 16px 20px; }
+  .md-footer, .md-actions { padding: 10px 20px; }
+}

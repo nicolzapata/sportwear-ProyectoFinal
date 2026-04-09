@@ -1,0 +1,88 @@
+/* ═══════════════════════════════════════════════════
+   Registro.css — DVNA SportWear
+   Extiende Login.css para el formulario de registro
+   ═══════════════════════════════════════════════════ */
+
+/* Card más ancha para el registro */
+.registro-card {
+  max-width: 500px;
+  padding: 40px 44px;
+}
+
+/* Scroll vertical en pantallas pequeñas */
+.login-page.registro-page {
+  align-items: flex-start;
+  padding: 40px 16px;
+}
+
+/* Filas de 2 columnas */
+.registro-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Link a login */
+.registro-login-link {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--dvna-muted);
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.registro-login-link a {
+  color: var(--dvna-circle);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.registro-login-link a:hover { color: var(--dvna-mid); }
+
+/* Estado de éxito */
+.registro-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  gap: 14px;
+  animation: fadeSlideUp 0.5s ease both;
+}
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.registro-success-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(180,151,128,0.08);
+  color: var(--dvna-circle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 600;
+  border: 1.5px solid rgba(180,151,128,0.25);
+}
+.registro-success-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+  letter-spacing: -0.01em;
+}
+.registro-success-sub {
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--dvna-muted);
+}
+
+@media (max-width: 600px) {
+  .registro-row { grid-template-columns: 1fr; }
+  .registro-card { max-width: 100%; padding: 36px 24px; }
+}
