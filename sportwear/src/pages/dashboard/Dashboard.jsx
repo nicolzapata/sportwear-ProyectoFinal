@@ -648,7 +648,7 @@ function DashboardCliente() {
         ) : (
           <div className="tbl-container">
             <table className="tbl">
-              <thead>
+              <thead className="tbl-header">
                 <tr>
                   <th className="tbl-th">#</th>
                   <th className="tbl-th">Productos</th>
@@ -693,7 +693,7 @@ function DashboardCliente() {
                             <IconCreditCard /> Pagar
                           </button>
                         ) : (
-                          <span className="tbl-action-disabled">
+                          <span className="tbl-disabled">
                             {pedido.estado === "Cancelado" ? "Cancelado" : "Al día"}
                           </span>
                         )}
@@ -702,7 +702,7 @@ function DashboardCliente() {
                       {/* ── COLUMNA VER DETALLE ── */}
                       <td className="tbl-td">
                         <button
-                          className="tbl-action-btn tbl-action-btn--detail"
+                          className="tbl-action-btn tbl-action-btn--view"
                           onClick={() => cargarDetallePedido(pedido)}
                         >
                           Ver detalle

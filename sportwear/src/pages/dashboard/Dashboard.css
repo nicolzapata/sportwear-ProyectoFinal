@@ -537,6 +537,44 @@
   letter-spacing: 0.06em !important;
   text-transform: none !important;
   color: var(--dvna-muted) !important;
+  background: var(--dvna-pale) !important;
+  border-bottom: 1px solid var(--dvna-border) !important;
+  white-space: nowrap;
+}
+
+.tbl-container {
+  overflow-x: auto;
+  margin: 0 -22px;
+  padding: 0 22px;
+}
+
+.tbl {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+}
+
+.tbl-row:hover {
+  background: var(--dvna-pale);
+}
+
+.tbl-td {
+  font-size: 12px;
+  padding: 12px 8px;
+  vertical-align: middle;
+  border-bottom: 0.5px solid var(--dvna-border);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tbl-td:first-child {
+  padding-left: 0;
+}
+
+.tbl-td:last-child {
+  padding-right: 0;
 }
 
 /* ── Loading ── */
