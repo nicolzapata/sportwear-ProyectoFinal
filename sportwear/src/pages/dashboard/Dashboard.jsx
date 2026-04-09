@@ -7,7 +7,7 @@ import PaymentModal from "../../components/PaymentModal";
 import OrderDetailModal from "../../components/OrderDetailModal";
 import {
   IconAlertTriangle, IconBox, IconBolt, IconCart, IconCheck,
-  IconClock, IconDollar, IconShoppingCart, IconTag, IconX,
+  IconClock, IconCreditCard, IconDollar, IconShoppingCart, IconTag, IconX,
 } from "../../components/Icons";
 import "./Dashboard.css";
 import "../roles/Roles.css";
@@ -690,11 +690,11 @@ function DashboardCliente() {
                             className="tbl-action-btn tbl-action-btn--pay"
                             onClick={() => setPagoModal(pedido)}
                           >
-                            💳 Pagar
+                            <IconCreditCard /> Pagar
                           </button>
                         ) : (
                           <span className="tbl-action-disabled">
-                            {pedido.estado === "Cancelado" ? "Cancelado" : "Al día ✓"}
+                            {pedido.estado === "Cancelado" ? "Cancelado" : "Al día"}
                           </span>
                         )}
                       </td>

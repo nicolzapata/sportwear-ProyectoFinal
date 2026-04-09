@@ -22,6 +22,14 @@ const IconCard = () => (
     <path d="M2 10h20" />
   </svg>
 );
+const IconCalendar = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <rect x="3" y="4" width="18" height="18" rx="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
 const IconAlert = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <circle cx="12" cy="12" r="10" />
@@ -305,7 +313,7 @@ function PaymentFormView({ pedido, onClose, onPagoConfirmado, setPagoRealizado }
                 className={`pm-tipo-btn${tipoPago === "total" ? " active" : ""}`}
                 onClick={() => setTipoPago("total")}
               >
-                <span className="pm-tipo-icon">💳</span>
+                <span className="pm-tipo-icon"><IconCard /></span>
                 <span className="pm-tipo-title">Total completo</span>
                 <span className="pm-tipo-amount">{fmt(restante)}</span>
                 <span className="pm-tipo-desc">Salda toda la deuda</span>
@@ -316,14 +324,14 @@ function PaymentFormView({ pedido, onClose, onPagoConfirmado, setPagoRealizado }
                   className={`pm-tipo-btn${tipoPago === "cuota" ? " active" : ""}`}
                   onClick={() => setTipoPago("cuota")}
                 >
-                  <span className="pm-tipo-icon">📅</span>
+                  <span className="pm-tipo-icon"><IconCalendar /></span>
                   <span className="pm-tipo-title">Cuota {proximaCuota.num_cuota}</span>
                   <span className="pm-tipo-amount">{fmt(proximaCuota.monto)}</span>
                   <span className="pm-tipo-desc">Siguiente cuota pendiente</span>
                 </button>
               ) : (
                 <div className="pm-tipo-btn pm-tipo-btn--disabled">
-                  <span className="pm-tipo-icon">📅</span>
+                  <span className="pm-tipo-icon"><IconCalendar /></span>
                   <span className="pm-tipo-title">Pago por cuota</span>
                   <span className="pm-tipo-desc">No hay cuotas pendientes</span>
                 </div>

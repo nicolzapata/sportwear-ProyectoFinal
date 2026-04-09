@@ -14,15 +14,20 @@ const IconX = () => (
     <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
+const IconBolt = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+  </svg>
+);
 const IconPackage = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dvna-muted)" strokeWidth="1.8">
     <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
     <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
     <line x1="12" y1="22.08" x2="12" y2="12" />
   </svg>
 );
 const IconCalendar = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dvna-muted)" strokeWidth="1.8">
     <rect x="3" y="4" width="18" height="18" rx="2" />
     <line x1="16" y1="2" x2="16" y2="6" />
     <line x1="8" y1="2" x2="8" y2="6" />
@@ -30,14 +35,14 @@ const IconCalendar = () => (
   </svg>
 );
 const IconHistory = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dvna-muted)" strokeWidth="1.8">
     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
     <path d="M3 3v5h5" />
     <path d="M12 7v5l4 2" />
   </svg>
 );
 const IconInfo = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dvna-muted)" strokeWidth="1.8">
     <circle cx="12" cy="12" r="10" />
     <line x1="12" y1="8" x2="12" y2="8.01" />
     <path d="M12 11v5" />
@@ -205,7 +210,7 @@ export default function OrderDetailModal({ pedido, onClose }) {
                       </div>
                       <div className="od-cuota-info">
                         <span className="od-cuota-label">
-                          {esProxima ? "⚡ Próxima a pagar" : `Cuota ${abono.num_cuota}`}
+                          {esProxima ? <><IconBolt /> Próxima a pagar</> : `Cuota ${abono.num_cuota}`}
                         </span>
                         <span className="od-cuota-date">
                           Vence: {formatFecha(abono.fecha_vencimiento)}
