@@ -1,3 +1,4 @@
+//sportwear-backend 
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
@@ -6,7 +7,10 @@ require('dotenv').config();
 const app = express();
 
 // ── Middlewares globales ──────────────────────────────────────
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -34,7 +38,7 @@ app.use('/api/promociones',    require('./routes/promociones'));
 app.use('/api/pagos',          require('./routes/pagos'));
 app.use('/api/dashboard',      require('./routes/dashboard'));
 app.use('/api/imagenes',       require('./routes/imagenes'));
-app.use('/api/variantes',      require('./routes/variantes'))
+app.use('/api/variantes',      require('./routes/variantes'));
 // ── Manejador de errores global ───────────────────────────────
 app.use(require('./middlewares/errorHandler'));
 
@@ -46,6 +50,6 @@ pool.query('SELECT NOW()')
   .catch(err => console.error('❌ Error de conexión:', err));
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
 });
