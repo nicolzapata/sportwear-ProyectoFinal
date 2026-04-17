@@ -1,6 +1,7 @@
 // src/components/PaymentModal.jsx
 import { useState } from "react";
 import { createPortal } from "react-dom";
+import api from "../services/api";
 import "./PaymentModal.css";
 
 /* ── Helpers ── */
@@ -208,17 +209,21 @@ function ReceiptView({ pedido, cliente, pago, onClose }) {
 /* ══════════════════════════════════════════════
    VISTA: FORMULARIO DE PAGO
 ══════════════════════════════════════════════ */
-function PaymentFormView({ pedido, onClose, onPagoConfirmado, setPagoRealizado }) {
+function PaymentFormView({ pedido, cliente, onClose, onPagoConfirmado, setPagoRealizado }) {
   const [tipoPago, setTipoPago]     = useState("total");
+  const [metodo, setMetodo]         = useState("Transferencia");
   const [card, setCard]             = useState({ numero: "", nombre: "", expiry: "", cvv: "" });
   const [errores, setErrores]       = useState({});
   const [procesando, setProcesando] = useState(false);
 
-  const cuotasPendientes = pedido.abonos?.filter((a) => a.estado === "Pendiente") || [];
-  const proximaCuota     = cuotasPendientes[0] || null;
-  const totalPagado      = Number(pedido.total_pagado || 0);
+  const abonosConfirmados = pedido.abonos?.filter((a) => a.estado === "Confirmado") || [];
+  const totalPagado      = Number(pedido.total_pagado || abonosConfirmados.reduce((acc, a) => acc + Number(a.monto), 0));
   const totalPedido      = Number(pedido.total || 0);
   const restante         = totalPedido - totalPagado;
+  const estaPagado       = restante <= 0;
+
+  const cuotasPendientes = pedido.abonos?.filter((a) => a.estado === "Pendiente") || [];
+  const proximaCuota    = cuotasPendientes[0] || null;
 
   const montoPagar = tipoPago === "total" ? restante : Number(proximaCuota?.monto || 0);
 
@@ -237,36 +242,53 @@ function PaymentFormView({ pedido, onClose, onPagoConfirmado, setPagoRealizado }
     if (!validar()) return;
     setProcesando(true);
 
-    await new Promise((r) => setTimeout(r, 1800));
+    try {
+      let response;
+      if (tipoPago === "cuota" && proximaCuota) {
+        response = await api.post(`/pagos/cuota/${proximaCuota.id_pago}`, {
+          metodo: metodo,
+          referencia_pago: "PAY-" + Date.now().toString(36).toUpperCase()
+        });
+      } else {
+        response = await api.post(`/pagos/venta/${pedido.id_venta}/total`, {
+          metodo: metodo,
+          referencia_pago: "PAY-" + Date.now().toString(36).toUpperCase()
+        });
+      }
 
-    const nuevoPagado   = totalPagado + montoPagar;
-    const estaCompleto  = nuevoPagado >= totalPedido;
+      const nuevoPagado = tipoPago === "cuota" 
+        ? totalPagado + Number(proximaCuota.monto)
+        : totalPedido;
+      const estaCompleto = nuevoPagado >= totalPedido;
 
-    const resultado = {
-      montoPagado:      montoPagar,
-      nuevoTotalPagado: nuevoPagado,
-      restante:         Math.max(0, totalPedido - nuevoPagado),
-      estaCompleto,
-      tipoPago,
-      cuotaPagada:      tipoPago === "cuota" ? proximaCuota : null,
-      timestamp:        new Date(),
-      referencia:       "PAY-" + Date.now().toString(36).toUpperCase(),
-    };
-
-    setProcesando(false);
-
-    if (onPagoConfirmado) {
-      onPagoConfirmado({
-        id_venta:         pedido.id_venta,
+      const resultado = {
         montoPagado:      montoPagar,
-        cuotaId:          tipoPago === "cuota" ? proximaCuota?.id_pago : null,
-        estaCompleto,
         nuevoTotalPagado: nuevoPagado,
-      });
-    }
+        restante:         Math.max(0, totalPedido - nuevoPagado),
+        estaCompleto,
+        tipoPago,
+        cuotaPagada:      tipoPago === "cuota" ? proximaCuota : null,
+        timestamp:        new Date(),
+        referencia:       response.data.referencia_pago || "PAY-" + Date.now().toString(36).toUpperCase(),
+      };
 
-    // Transición al recibo — se hace DESPUÉS de todo lo anterior
-    setPagoRealizado(resultado);
+      if (onPagoConfirmado) {
+        onPagoConfirmado({
+          id_venta:         pedido.id_venta,
+          montoPagado:      montoPagar,
+          cuotaId:          tipoPago === "cuota" ? proximaCuota?.id_pago : null,
+          estaCompleto,
+          nuevoTotalPagado: nuevoPagado,
+        });
+      }
+
+      setPagoRealizado(resultado);
+    } catch (err) {
+      console.error("Error al procesar pago:", err);
+      setErrores({ monto: err.response?.data?.message || "Error al procesar el pago" });
+    } finally {
+      setProcesando(false);
+    }
   };
 
   return (
@@ -319,22 +341,24 @@ function PaymentFormView({ pedido, onClose, onPagoConfirmado, setPagoRealizado }
                 <span className="pm-tipo-desc">Salda toda la deuda</span>
               </button>
 
-              {proximaCuota ? (
-                <button
-                  className={`pm-tipo-btn${tipoPago === "cuota" ? " active" : ""}`}
-                  onClick={() => setTipoPago("cuota")}
-                >
-                  <span className="pm-tipo-icon"><IconCalendar /></span>
-                  <span className="pm-tipo-title">Cuota {proximaCuota.num_cuota}</span>
-                  <span className="pm-tipo-amount">{fmt(proximaCuota.monto)}</span>
-                  <span className="pm-tipo-desc">Siguiente cuota pendiente</span>
-                </button>
-              ) : (
-                <div className="pm-tipo-btn pm-tipo-btn--disabled">
-                  <span className="pm-tipo-icon"><IconCalendar /></span>
-                  <span className="pm-tipo-title">Pago por cuota</span>
-                  <span className="pm-tipo-desc">No hay cuotas pendientes</span>
-                </div>
+              {cliente?.permiso_cuotas !== false && (
+                proximaCuota ? (
+                  <button
+                    className={`pm-tipo-btn${tipoPago === "cuota" ? " active" : ""}`}
+                    onClick={() => setTipoPago("cuota")}
+                  >
+                    <span className="pm-tipo-icon"><IconCalendar /></span>
+                    <span className="pm-tipo-title">Cuota {proximaCuota.num_cuota}</span>
+                    <span className="pm-tipo-amount">{fmt(proximaCuota.monto)}</span>
+                    <span className="pm-tipo-desc">Siguiente cuota pendiente</span>
+                  </button>
+                ) : (
+                  <div className="pm-tipo-btn pm-tipo-btn--disabled">
+                    <span className="pm-tipo-icon"><IconCalendar /></span>
+                    <span className="pm-tipo-title">Pago por cuota</span>
+                    <span className="pm-tipo-desc">No hay cuotas pendientes</span>
+                  </div>
+                )
               )}
             </div>
             {errores.monto && <p className="pm-error"><IconAlert /> {errores.monto}</p>}
@@ -464,6 +488,7 @@ export default function PaymentModal({ pedido, cliente, onClose, onPagoConfirmad
         ) : (
           <PaymentFormView
             pedido={pedido}
+            cliente={cliente}
             onClose={onClose}
             onPagoConfirmado={onPagoConfirmado}
             setPagoRealizado={setPagoRealizado}

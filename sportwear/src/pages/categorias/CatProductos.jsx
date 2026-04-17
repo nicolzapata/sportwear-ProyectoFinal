@@ -125,16 +125,6 @@ export default function CatProductos() {
           onChange={e => setForm({ ...form, nombre: e.target.value })}
         />
       </div>
-      <div className="ms-form-group">
-        <label className="ms-form-label">Descripción</label>
-        <input
-          type="text"
-          className="ms-form-input"
-          placeholder="Ej: Todo tipo de ropa para deporte"
-          value={form.descripcion}
-          onChange={e => setForm({ ...form, descripcion: e.target.value })}
-        />
-      </div>
     </div>
   );
 

@@ -202,7 +202,6 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
         )}
 
         {agotado && <span className="catalog-card-badge badge badge-inactive">Agotado</span>}
-        {!agotado && stock < 5 && <span className="catalog-card-badge badge badge-pending">Pocas unidades</span>}
         {esAdmin && p.estado !== "Activo" && (
           <span className="catalog-card-badge badge badge-inactive" style={{ top: 36 }}>Inactivo</span>
         )}

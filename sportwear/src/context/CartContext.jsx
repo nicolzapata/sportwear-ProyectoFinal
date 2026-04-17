@@ -158,34 +158,9 @@ export const CartProvider = ({ children }) => {
     guardarEnStorage(state.items, idUsuario);
   }, [state.items, idUsuario]);
 
-  // ── Guardar carrito abandonado en backend ──────────────────────────────
-  const guardarCarritoAbandonado = useCallback(async (usuario) => {
-    const items = itemsRef.current;
-    if (!usuario || items.length === 0) return;
-
-    // ✅ Obtener id_cliente del objeto usuario
-    const id_cliente = usuario?.id_cliente || usuario?.id;
-
-    // ✅ Si no hay id_cliente, no intentar guardar en BD (carrito anónimo)
-    if (!id_cliente) return;
-
-    const total = items.reduce((acc, i) => acc + i.precio * i.cantidad, 0);
-
-    try {
-      await api.post("/ventas/abandonado", {
-        id_cliente, // ✅ incluir en el body
-        total,
-        items: items.map((i) => ({
-          id_producto: i.id,
-          id_variante: i.id_variante ?? null,
-          cantidad:    i.cantidad,
-          precio:      i.precio,
-        })),
-      });
-    } catch (err) {
-      console.warn("No se pudo guardar el carrito abandonado:", err);
-    }
-  }, []);
+  // ── El carrito ya se guarda automáticamente en localStorage ───────────────
+  // Cuando el usuario cierra sesión, el useEffect arriba guarda en localStorage.
+  // No se guarda en la base de datos (tabla Ventas) hasta que el pedido esté confirmado.
 
   // ── Acciones ───────────────────────────────────────────────────────────
   const agregarItem        = (producto)     => dispatch({ type: "ADD_ITEM",        payload: producto });
@@ -209,7 +184,6 @@ export const CartProvider = ({ children }) => {
         actualizarCantidad,
         vaciarCarrito,
         cargarItems,
-        guardarCarritoAbandonado,
       }}
     >
       {children}

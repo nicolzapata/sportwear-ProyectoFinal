@@ -41,31 +41,6 @@ const LIGHT    = "#e8e0d8";
 const MUTED    = "#888888";
 const BORDER   = "#e5e5e5";
 
-/* ── Datos demo Admin ── */
-const DEMO_STATS = {
-  ingresos_hoy: 735000, ventas_hoy: 4, bajo_stock: 3,
-  ingresos_totales: 5_835_000, total_productos: 24,
-};
-const DEMO_VENTAS_MENSUALES = {
-  labels:   ["Oct", "Nov", "Dic", "Ene", "Feb", "Mar"],
-  current:  [1_200_000, 1_850_000, 2_400_000, 980_000, 1_560_000, 1_940_000],
-  previous: [  900_000, 1_100_000, 1_800_000, 750_000, 1_200_000, 1_500_000],
-};
-const DEMO_TOP_PRODUCTOS = [
-  { nombre: "Enterizo Largo - Manga Corta (Rojo)",     total_vendido: 18 },
-  { nombre: "Enterizo Largo - Manga Corta (Negro)",    total_vendido: 14 },
-  { nombre: "Enterizo Largo - Manga Larga - Cierre",   total_vendido: 11 },
-  { nombre: "Enterizo Largo - Manga Corta (Azul)",     total_vendido:  8 },
-  { nombre: "Enterizo Largo - Manga Larga - Elástico", total_vendido:  6 },
-];
-const DEMO_VENTAS_RECIENTES = [
-  { id_venta: 1, cliente: "Valentina Gómez",      producto: "Enterizo Largo - Manga Corta (Rojo)",  total: 280000, estado: "Pagado"    },
-  { id_venta: 2, cliente: "Carlos Martínez",       producto: "Enterizo Largo - Manga Corta (Negro)", total: 120000, estado: "Pagado"    },
-  { id_venta: 3, cliente: "Sofía Restrepo",        producto: "Pantalón Tiro Alto",                  total: 195000, estado: "Pagado"    },
-  { id_venta: 4, cliente: "Andrés Zapata",         producto: "Enterizo Largo - Manga Corta (Azul)", total:  85000, estado: "Cancelado" },
-  { id_venta: 5, cliente: "Luisa Fernanda Torres", producto: "Falda Midi Flores",                   total: 155000, estado: "Pagado"    },
-];
-
 /* ── Charts ── */
 function SalesBarChart({ data }) {
   const canvasRef = useRef(null);
@@ -146,10 +121,28 @@ function DonutChart({ pagado, pendiente, cancelado }) {
    DASHBOARD ADMIN
 ════════════════════════════════════════════ */
 function DashboardAdmin() {
-  const stats           = DEMO_STATS;
-  const topProductos    = DEMO_TOP_PRODUCTOS;
-  const ventasRecientes = DEMO_VENTAS_RECIENTES;
-  const barData         = DEMO_VENTAS_MENSUALES;
+  const [stats, setStats] = useState({
+    ingresos_hoy: 0, ventas_hoy: 0, bajo_stock: 0,
+    clientes_activos: 0, pedidos_pendientes: 0,
+    ingresos_totales: 0, total_productos: 0
+  });
+  const [topProductos, setTopProductos] = useState([]);
+  const [ventasRecientes, setVentasRecientes] = useState([]);
+  const [ventasMensuales, setVentasMensuales] = useState(null);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      api.get("/dashboard"),
+      api.get("/dashboard/ventas-mensuales"),
+    ]).then(([resumenRes, mensualRes]) => {
+      setStats(resumenRes.data?.stats || {});
+      setTopProductos(resumenRes.data?.topProductos || []);
+      setVentasRecientes(resumenRes.data?.ventasRecientes || []);
+      setVentasMensuales(mensualRes.data || { labels: [], current: [], previous: [] });
+      setCargando(false);
+    }).catch(() => setCargando(false));
+  }, []);
 
   const getBadgeClass = (estado) => {
     switch (estado) {
@@ -159,6 +152,7 @@ function DashboardAdmin() {
     }
   };
 
+  const barData = ventasMensuales || { labels: [], current: [], previous: [] };
   const pagado    = ventasRecientes.filter((v) => v.estado === "Pagado").length;
   const pendiente = ventasRecientes.filter((v) => v.estado === "Pendiente").length;
   const cancelado = ventasRecientes.filter((v) => v.estado !== "Pagado" && v.estado !== "Pendiente").length;
@@ -166,6 +160,8 @@ function DashboardAdmin() {
   const today = new Date().toLocaleDateString("es-CO", {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
+
+  if (cargando) return <div style={{padding:48, color:"var(--muted)"}}>Cargando dashboard...</div>;
 
   return (
     <div className="dashboard">
@@ -267,7 +263,7 @@ function DashboardAdmin() {
           </div>
           <div className="tbl-container">
             <table className="tbl">
-              <thead>
+              <thead className="tbl-header">
                 <tr>
                   <th className="tbl-th">Cliente</th>
                   <th className="tbl-th">Producto</th>

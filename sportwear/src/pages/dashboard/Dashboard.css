@@ -683,78 +683,19 @@
   font-style: italic;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   AGREGAR AL FINAL DE Dashboard.css
-   (Estilos para toast, botones de acción en tabla y columnas nuevas)
-══════════════════════════════════════════════════════════════ */
-
-/* ── Toast de notificación ── */
-.dvna-toast {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 99999;
-  background: #1a1a1a;
-  color: #fff;
-  padding: 12px 20px;
-  border-radius: 10px;
-  font-family: 'Jost', sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
-  animation: toast-in 0.25s ease, toast-out 0.25s ease 3.2s forwards;
-  max-width: 340px;
-}
-
-@keyframes toast-in {
-  from { transform: translateY(-16px) scale(0.95); opacity: 0; }
-  to   { transform: translateY(0) scale(1);        opacity: 1; }
-}
-@keyframes toast-out {
-  from { transform: translateY(0) scale(1);        opacity: 1; }
-  to   { transform: translateY(-16px) scale(0.95); opacity: 0; }
-}
-
-/* ── Botones de acción en la tabla ── */
-.tbl-action-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 11px;
-  border-radius: 7px;
-  font-family: 'Jost', sans-serif;
+.tbl-disabled {
   font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-  border: 1.5px solid transparent;
+  color: #aaa;
+  font-style: italic;
 }
 
-.tbl-action-btn--pay {
-  background: #1a1a1a;
-  color: #fff;
-  border-color: #1a1a1a;
-}
-.tbl-action-btn--pay:hover {
-  background: #2d2d2d;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
-.tbl-action-btn--detail {
+.tbl-action-btn--view {
   background: #fff;
   color: #1a1a1a;
   border-color: #e5e5e5;
 }
-.tbl-action-btn--detail:hover {
+.tbl-action-btn--view:hover {
   background: #f9f7f5;
   border-color: #b49780;
   color: #b49780;
-}
-
-.tbl-action-disabled {
-  font-size: 11px;
-  color: #aaa;
-  font-style: italic;
 }

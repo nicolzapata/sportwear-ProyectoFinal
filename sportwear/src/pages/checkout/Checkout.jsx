@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import api from "../../services/api";
 import ModalSteps from "../../components/ModalSteps";
+import PaymentModal from "../../components/PaymentModal";
 import "./Checkout.css";
 
 const fmt = (n) =>
@@ -81,17 +82,25 @@ export default function Checkout() {
   const { items, total, vaciarCarrito, eliminarItem }  = useCart();
   const navigate                                       = useNavigate();
 
-  const [direccion,     setDireccion]     = useState("");
+  const [direccion,     setDireccion]     = useState(() => {
+    const s = sessionStorage.getItem("direccion");
+    return s ?? "";
+  });
   const [metodo,        setMetodo]        = useState("Transferencia");
   const [enviando,      setEnviando]      = useState(false);
   const [exito,         setExito]         = useState(false);
   const [error,         setError]         = useState("");
   const [permisoCuotas, setPermisoCuotas] = useState(true);
-  const [tipoPago,      setTipoPago]      = useState("completo");
-  const [numCuotas,     setNumCuotas]     = useState(2);
-  const [stepModal,     setStepModal]     = useState(true);
-
-  useEffect(() => { setStepModal(true); }, []);
+  const [tipoPago,      setTipoPago]      = useState(() => {
+    const s = sessionStorage.getItem("tipoPago");
+    return s && s !== "cuotas" ? s : "completo";
+  });
+  const [numCuotas,     setNumCuotas]     = useState(() => {
+    const s = sessionStorage.getItem("numCuotas");
+    return s ? Number(s) : 2;
+  });
+const [stepModal,     setStepModal]     = useState(() => true);
+const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
 
   useEffect(() => {
     if (!usuario) return;
@@ -106,14 +115,9 @@ export default function Checkout() {
     return () => { cancelado = true; };
   }, [usuario]);
 
-  useEffect(() => {
-    const tipo   = sessionStorage.getItem("tipoPago");
-    const cuotas = sessionStorage.getItem("numCuotas");
-    if (tipo)   setTipoPago(tipo);
-    if (cuotas) setNumCuotas(Number(cuotas));
-  }, []);
+  const tipoPagoActivo = (!permisoCuotas && tipoPago === "cuotas") ? "completo" : tipoPago;
 
-  const fechasCuotas = tipoPago === "cuotas" ? getFechasCuotas(numCuotas) : [];
+  const fechasCuotas = tipoPagoActivo === "cuotas" ? getFechasCuotas(numCuotas) : [];
   const valorCuota   = Math.ceil(total / numCuotas);
 
   // ── Paso 1: Productos ─────────────────────────────────────────────────────
@@ -163,8 +167,8 @@ export default function Checkout() {
       <div className="checkout-campo">
         <label className="checkout-label">Método de pago</label>
         <select className="form-control" value={metodo} onChange={(e) => setMetodo(e.target.value)}>
-          <option value="Transferencia">Transferencia bancaria</option>
-          <option value="Tarjeta">Tarjeta débito / crédito</option>
+          <option value="Transferencia">Tarjeta débito</option>
+          <option value="Tarjeta">Tarjeta crédito</option>
         </select>
       </div>
 
@@ -181,7 +185,7 @@ export default function Checkout() {
             <span className="tipo-pago-custom" />
             Pagar en cuotas
           </label>
-          {tipoPago === "cuotas" && (
+          {tipoPagoActivo === "cuotas" && (
             <div style={{ marginTop: 10, paddingLeft: 26 }}>
               <label className="checkout-label">Número de cuotas</label>
               <select value={numCuotas} onChange={(e) => setNumCuotas(Number(e.target.value))} className="form-control" style={{ marginTop: 4 }}>
@@ -199,7 +203,7 @@ export default function Checkout() {
   const PasoResumen = (
     <div className="checkout-campos-modal">
       {/* Total */}
-      {tipoPago === "cuotas" ? (
+      {tipoPagoActivo === "cuotas" ? (
         <>
           <div className="checkout-total">
             <span>Total cuota (1/{numCuotas})</span>
@@ -228,8 +232,13 @@ export default function Checkout() {
   );
 
   const confirmarDesdeModal = async () => {
-    await handleConfirmar();
-    setStepModal(false);
+    console.log("Confirmando pedido...", { usuario, items, direccion, metodo });
+    try {
+      await handleConfirmar();
+      setStepModal(false);
+    } catch (err) {
+      console.error("Error en confirmarDesdeModal:", err);
+    }
   };
 
   // ── Carrito vacío ────────────────────────────────────────────────────────
@@ -258,23 +267,23 @@ export default function Checkout() {
     setEnviando(true);
     setError("");
 
+    const tipoPagoFinal = (!permisoCuotas && tipoPago === "cuotas") ? "completo" : tipoPago;
+
     if (tipoPago === "cuotas" && !permisoCuotas) {
-      setError("No tienes permiso para pagar por cuotas. Contacta al administrador.");
-      setEnviando(false);
-      return;
+      setError("No tienes permiso para pagar por cuotas. Se cambiará a pago completo.");
     }
 
     const hoy = new Date().toISOString().split("T")[0];
 
     try {
-      await api.post("/ventas/mi-pedido", {
+      const { data: pedido } = await api.post("/ventas/mi-pedido", {
         total,
         estado:            "Confirmado",
         fecha:             hoy,
         direccion_entrega: direccion,
         metodo_pago:       metodo,
-        tipo_pago:         tipoPago,
-        num_cuotas:        tipoPago === "cuotas" ? numCuotas : null,
+        tipo_pago:         tipoPagoFinal,
+        num_cuotas:        tipoPagoFinal === "cuotas" ? numCuotas : null,
         items: items.map((i) => ({
           id_producto: i.id,
           id_variante: i.id_variante,
@@ -282,14 +291,20 @@ export default function Checkout() {
           precio:      i.precio,
         })),
       });
-      vaciarCarrito();
-      setExito(true);
+      
+      setStepModal(false);
+      setPedidoConfirmado(pedido);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message ?? "Hubo un error al procesar tu pedido. Intenta de nuevo.");
-    } finally {
       setEnviando(false);
     }
+  };
+
+  const handlePagoConfirmado = () => {
+    vaciarCarrito();
+    setPedidoConfirmado(null);
+    setExito(true);
   };
 
   // ── Éxito ─────────────────────────────────────────────────────────────────
@@ -384,7 +399,7 @@ export default function Checkout() {
                 <input type="radio" name="tipoPago2" value="cuotas" checked={tipoPago === "cuotas"} onChange={() => setTipoPago("cuotas")} />
                 Pagar en cuotas
               </label>
-              {tipoPago === "cuotas" && (
+              {tipoPagoActivo === "cuotas" && (
                 <div style={{ marginTop: 10, paddingLeft: 24 }}>
                   <label className="checkout-label">Número de cuotas</label>
                   <select value={numCuotas} onChange={(e) => setNumCuotas(Number(e.target.value))} className="form-control" style={{ marginTop: 4 }}>
@@ -410,11 +425,11 @@ export default function Checkout() {
           <div className="checkout-divider" />
 
           <div className="checkout-total">
-            <span>{tipoPago === "cuotas" ? `Total cuota (1/${numCuotas})` : "Total a pagar"}</span>
-            <span>{fmt(tipoPago === "cuotas" ? valorCuota : total)}</span>
+            <span>{tipoPagoActivo === "cuotas" ? `Total cuota (1/${numCuotas})` : "Total a pagar"}</span>
+            <span>{fmt(tipoPagoActivo === "cuotas" ? valorCuota : total)}</span>
           </div>
 
-          {tipoPago === "cuotas" && (
+          {tipoPagoActivo === "cuotas" && (
             <>
               <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 16 }}>
                 Total del pedido: {fmt(total)} en {numCuotas} cuotas de {fmt(valorCuota)}
@@ -451,6 +466,16 @@ export default function Checkout() {
           {PasoPago}
           {PasoResumen}
         </ModalSteps>
+      )}
+
+      {/* ── Modal de Pago (después de confirmar pedido) ── */}
+      {pedidoConfirmado && (
+        <PaymentModal
+          pedido={pedidoConfirmado}
+          cliente={{ ...usuario, permiso_cuotas: permisoCuotas }}
+          onClose={() => setPedidoConfirmado(null)}
+          onPagoConfirmado={handlePagoConfirmado}
+        />
       )}
     </div>
   );

@@ -130,6 +130,7 @@ export default function GestProductos() {
         setPendingImagenes([]);
         mostrarToast("exito", "Producto actualizado.");
         setModal(false);
+        window.scrollTo(0, 0);
         cargar();
       } else {
         const { data } = await api.post("/productos", payload);
@@ -170,8 +171,29 @@ export default function GestProductos() {
     }
   };
 
-  const cambiarEstado   = async (id) => { try { await api.patch(`/productos/${id}/estado`); cargar(); mostrarToast("exito", "Estado actualizado."); } catch { mostrarToast("error", "No se pudo cambiar."); } };
-  const togglePublicado = async (id) => { try { await api.patch(`/productos/${id}/publicar`); cargar(); } catch (err) { console.error(err); } };
+  const cambiarEstado   = async (id) => { 
+    try { 
+      const producto = datos.find(p => p.id_producto === id);
+      const nuevoEstado = producto.estado === "Activo" ? "Inactivo" : "Activo";
+      await api.patch(`/productos/${id}/estado`);
+      if (nuevoEstado === "Inactivo") {
+        await api.put(`/productos/${id}`, { publicado: false });
+      }
+      cargar(); 
+      mostrarToast("exito", "Estado actualizado."); 
+    } catch { mostrarToast("error", "No se pudo cambiar."); } 
+  };
+  const togglePublicado = async (id) => { 
+    try { 
+      const producto = datos.find(p => p.id_producto === id);
+      if (producto.estado === "Inactivo") {
+        mostrarToast("error", "No se puede publicar un producto inactivo.");
+        return;
+      }
+      await api.patch(`/productos/${id}/publicar`); 
+      cargar(); 
+    } catch (err) { console.error(err); } 
+  };
   const cerrarModal     = () => { if (guardando) return; setModal(false); setErrores(ERRORES_INICIALES); setProductoId(null); setPendingVariantes([]); setPendingImagenes([]); cargar(); };
 
   const stockBadge = (stock) => {
@@ -207,19 +229,10 @@ export default function GestProductos() {
         {errores.nombre && <p className="ms-form-error"><IconAlertTriangle /> {errores.nombre}</p>}
       </div>
 
-      <div className="ms-form-group">
-        <label className="ms-form-label">Descripción</label>
-        <textarea
-          className="ms-form-input" rows={3} placeholder="Descripción..."
-          value={form.descripcion}
-          onChange={e => setForm({ ...form, descripcion: e.target.value })}
-          style={{ resize: "vertical", minHeight: 70 }}
-        />
-      </div>
 
-      {/* Variantes: modo local para permitir registrar todo junto */}
+      {/* Variantes: modo local para permitir registrar todo junto, modo conectado al editar */}
       <div style={{ marginTop: 8 }}>
-        <GestVariantes onPendingChange={setPendingVariantes} />
+        <GestVariantes idProducto={editar || productoId} onPendingChange={setPendingVariantes} />
       </div>
     </div>
   );
@@ -256,16 +269,30 @@ export default function GestProductos() {
   // ── Paso 3: Publicación ────────────────────────────────────────────────────
   const PasoEstado = (
     <div>
+      {editar && (
+        <div className="ms-form-group">
+          <label className="ms-form-label">Estado</label>
+          <select
+            className="ms-form-select"
+            value={form.estado}
+            onChange={e => setForm({ ...form, estado: e.target.value, publicado: e.target.value === "Inactivo" ? false : form.publicado })}
+          >
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+      )}
       <div className="ms-form-group">
         <label className="ms-form-label">Publicar en catálogo</label>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
           <input
             type="checkbox" id="publicado" checked={!!form.publicado}
+            disabled={form.estado === "Inactivo"}
             onChange={e => setForm({ ...form, publicado: e.target.checked })}
-            style={{ width: 18, height: 18, cursor: "pointer" }}
+            style={{ width: 18, height: 18, cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer" }}
           />
-          <label htmlFor="publicado" style={{ cursor: "pointer", fontSize: 13 }}>
-            {form.publicado ? "Visible en catálogo" : "No publicado"}
+          <label htmlFor="publicado" style={{ cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer", fontSize: 13, color: form.estado === "Inactivo" ? "#999" : "inherit" }}>
+            {form.estado === "Inactivo" ? "No puede publicarse si está inactivo" : (form.publicado ? "Visible en catálogo" : "No publicado")}
           </label>
         </div>
       </div>
@@ -297,7 +324,6 @@ export default function GestProductos() {
         <DetalleItem label="ID"          value={`#${String(p.id_producto).padStart(3, "0")}`} />
         <DetalleItem label="Nombre"      value={p.nombre} />
         <DetalleItem label="Stock total" value={`${p.stock ?? 0} unidades`} />
-        <DetalleItem label="Descripción" value={p.descripcion} full />
       </DetalleGrid>
       {/* Variantes en detalle */}
       {p.variantes?.length > 0 && (
@@ -428,6 +454,7 @@ export default function GestProductos() {
                 </td>
                 <td className="tbl-td">
                   <button className={`gestproductos-toggle-publicado ${p.publicado ? "publicado" : "no-publicado"}`}
+                    disabled={p.estado === "Inactivo"}
                     onClick={() => togglePublicado(p.id_producto)}>
                     {p.publicado ? "Sí" : "No"}
                   </button>

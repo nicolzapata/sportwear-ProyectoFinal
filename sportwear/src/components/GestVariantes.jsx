@@ -73,7 +73,8 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
         api.get('/colores'),
       ]);
       setVariantes(vars.data);
-      setColores(cols.data.filter(c => c.estado === 'Activo'));
+      const sinDuplicados = [...new Map(cols.data.map(c => [c.codigo_hex.toLowerCase(), c])).values()];
+      setColores(sinDuplicados.filter(c => c.estado === 'Activo'));
     } catch {
       setError("No se pudieron cargar las variantes.");
     } finally {
@@ -84,7 +85,8 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
   const cargarColores = async () => {
     try {
       const { data } = await api.get('/colores');
-      setColores(data.filter(c => c.estado === 'Activo'));
+      const sinDuplicados = [...new Map(data.map(c => [c.codigo_hex.toLowerCase(), c])).values()];
+      setColores(sinDuplicados.filter(c => c.estado === 'Activo'));
     } catch {
       setError("No se pudieron cargar los colores.");
     } finally {
@@ -161,6 +163,13 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
     const resultados = await Promise.all(promesas);
     const omitidas = resultados.filter(r => r?.skipped).length;
     if (omitidas) setError(`${omitidas} combinación(es) ya existían y fueron omitidas.`);
+    
+    const { data: todasVariantes } = await api.get(`/variantes?id_producto=${idProducto}`);
+    const stockTotal = todasVariantes.reduce((acc, v) => acc + (v.stock || 0), 0);
+    if (stockTotal === 0) {
+      await api.patch(`/productos/${idProducto}/estado`);
+    }
+    
     setColoresSel([]); setTallasSel([]); setMatriz({});
     setModoAgregar(false);
     setGuardando(false);
@@ -225,6 +234,15 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
         talla:    editando.talla,
         stock:    Number(editando.stock),
       });
+      
+      if (Number(editando.stock) === 0 && idProducto) {
+        const { data: todasVariantes } = await api.get(`/variantes?id_producto=${idProducto}`);
+        const stockTotal = todasVariantes.reduce((acc, v) => acc + (v.stock || 0), 0);
+        if (stockTotal === 0) {
+          await api.patch(`/productos/${idProducto}/estado`);
+        }
+      }
+      
       setEditando(null);
       cargar();
     } catch (err) {

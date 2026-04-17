@@ -30,7 +30,7 @@ export default function PedidosVentas() {
         api.get("/pagos")
       ]);
       
-      const ventas = ventasRes.data.filter(v => v.estado !== "Pendiente").map(v => {
+      const ventas = ventasRes.data.map(v => {
         const abonos = pagosRes.data.filter(p => p.id_venta === v.id_venta);
         const totalPagado = abonos.reduce((sum, p) => sum + (p.estado === "Confirmado" ? Number(p.monto) : 0), 0);
         
@@ -44,8 +44,11 @@ export default function PedidosVentas() {
           estado = totalPagado >= v.total ? "Pagado" : "Pendiente";
         }
         
+        // Solo mostrar pedidos confirmados o pagados (no carritos pendientes)
+        if (estado === "Pendiente" && v.estado === "Pendiente") return null;
+        
         return { ...v, total_pagado: totalPagado, abonos, estado };
-      });
+      }).filter(Boolean);
       
       setDatos(ventas);
     } catch (err) {
@@ -57,8 +60,7 @@ export default function PedidosVentas() {
   };
 
   const filtrados = datos.filter(v =>
-    v.cliente?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    String(v.id_venta).includes(busqueda)
+    v.cliente?.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   const cambiarEstado = async (id, estado) => {
@@ -133,7 +135,6 @@ export default function PedidosVentas() {
         <table className="tbl">
           <thead className="tbl-header">
             <tr>
-              <th className="tbl-th">ID</th>
               <th className="tbl-th">Cliente</th>
               <th className="tbl-th">Producto</th>
               <th className="tbl-th">Cant.</th>
@@ -149,15 +150,18 @@ export default function PedidosVentas() {
           <tbody className="tbl-body">
             {filtrados.map((v) => (
               <tr key={v.id_venta} className="tbl-row">
-                <td className="tbl-td">V-{String(v.id_venta).padStart(3, "0")}</td>
                 <td className="tbl-td">
                   <div className="pedidosventas-cliente-cell">
                     <div className="pedidosventas-cliente-avatar">{v.cliente?.[0]?.toUpperCase() || 'C'}</div>
                     <span className="pedidosventas-cliente-name">{v.cliente}</span>
                   </div>
                 </td>
-                <td className="tbl-td pedidosventas-producto-cell">{v.producto}</td>
-                <td className="tbl-td pedidosventas-cantidad-cell">{v.cantidad}</td>
+                <td className="tbl-td pedidosventas-producto-cell">
+                  {v.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
+                </td>
+                <td className="tbl-td pedidosventas-cantidad-cell">
+                  {v.items?.reduce((sum, i) => sum + i.cantidad, 0) || '-'}
+                </td>
                 <td className="tbl-td pedidosventas-total-cell">{fmt(v.total)}</td>
                 <td className="tbl-td">
                   {v.tipo_pago === 'cuotas' ? (
@@ -202,7 +206,7 @@ export default function PedidosVentas() {
             ))}
             {filtrados.length === 0 && (
               <tr>
-                <td colSpan={10} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
+                <td colSpan={9} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
                   No hay ventas registradas
                 </td>
               </tr>
@@ -224,10 +228,19 @@ export default function PedidosVentas() {
             <DetalleGrid>
               <DetalleItem label="ID" value={`V-${String(verDetalle.id_venta).padStart(3, "0")}`} />
               <DetalleItem label="Cliente" value={verDetalle.cliente} />
-              <DetalleItem label="Producto" value={verDetalle.producto} />
-              <DetalleItem label="Cantidad" value={verDetalle.cantidad} />
               <DetalleItem label="Fecha" value={verDetalle.fecha?.toString().split("T")[0]} />
               <DetalleItem label="Tipo pago" value={verDetalle.tipo_pago === 'cuotas' ? `Cuotas (${verDetalle.num_cuotas})` : 'Completo'} />
+            </DetalleGrid>
+          </DetalleSeccion>
+          <DetalleSeccion titulo="Productos">
+            <DetalleGrid>
+              {verDetalle.items?.map((item, idx) => (
+                <DetalleItem 
+                  key={idx} 
+                  label={`${item.producto} (Talla: ${item.talla || '-'})`} 
+                  value={`Cant: ${item.cantidad} - ${fmt(item.subtotal)}`} 
+                />
+              ))}
             </DetalleGrid>
           </DetalleSeccion>
           <DetalleSeccion titulo="Pago">

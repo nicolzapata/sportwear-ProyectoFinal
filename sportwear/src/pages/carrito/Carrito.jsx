@@ -12,9 +12,10 @@ const fmt = (n) =>
   });
 
 export default function Carrito() {
-  const { items, total, totalItems, actualizarCantidad, eliminarItem, vaciarCarrito, guardarCarritoAbandonado } = useCart();
+  const { items, total, totalItems, actualizarCantidad, eliminarItem, vaciarCarrito } = useCart();
   const { usuario } = useAuth();
   const navigate    = useNavigate();
+  const yendoACheckout = useRef(false);
   const [permisoCuotas, setPermisoCuotas] = useState(true);
   const [tipoPago, setTipoPago] = useState("completo");
   const [numCuotas, setNumCuotas] = useState(2);
@@ -29,30 +30,6 @@ export default function Carrito() {
 
   // Calcular valor de cada cuota
   const valorCuota = tipoPago === "cuotas" ? Math.ceil(total / numCuotas) : null;
-
-  // Ref para saber si la navegación fue hacia /checkout (compra completada)
-  // En ese caso NO guardamos como abandonado
-  const yendoACheckout = useRef(false);
-
-  // ── Guardar automáticamente al salir de la página ──────────────────────
-  useEffect(() => {
-    // Cierre de pestaña / recarga
-    const handleBeforeUnload = () => {
-      if (items.length > 0 && usuario) {
-        guardarCarritoAbandonado(usuario);
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      // Navegación interna (el usuario sale del carrito sin confirmar)
-      if (!yendoACheckout.current && items.length > 0 && usuario) {
-        guardarCarritoAbandonado(usuario);
-      }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, usuario]);
 
   // ── Pantalla: no autenticado ───────────────────────────────────────────
   if (!usuario) {
