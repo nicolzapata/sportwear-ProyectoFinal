@@ -18,7 +18,7 @@ const getClientesConVentas = async () => {
            COALESCE(SUM(v.total::numeric), 0) AS total_gastado
     FROM "Clientes" cl
     LEFT JOIN "Barrios" b ON cl.id_barrio = b.id_barrio
-    LEFT JOIN "Ventas" v ON cl.id_cliente = v.id_cliente
+    LEFT JOIN "Ventas" v ON cl.id_cliente = v.id_cliente AND v.estado NOT IN ('Abandonado', 'Pendiente')
     GROUP BY cl.id_cliente, b.nombre, b.comuna, b.zona
     HAVING COUNT(v.id_venta) > 0
     ORDER BY total_gastado DESC
@@ -62,22 +62,27 @@ const crearCliente = async (datos) => {
 };
 
 const actualizarCliente = async (id, datos) => {
+  console.log('actualizarCliente service called, id:', id, 'datos:', datos);
   const { nombre, tipo_doc, documento, telefono, email, id_barrio, direccion, tipo_cliente, permiso_pagos, permiso_cuotas, estado } = datos;
-  const result = await pool.query(`
-    UPDATE "Clientes" SET
-      nombre         = COALESCE($1,  nombre),
-      tipo_doc       = COALESCE($2,  tipo_doc),
-      documento      = COALESCE($3,  documento),
-      telefono       = COALESCE($4,  telefono),
-      email          = COALESCE($5,  email),
-      id_barrio      = COALESCE($6,  id_barrio),
-      direccion      = COALESCE($7,  direccion),
-      tipo_cliente   = COALESCE($8,  tipo_cliente),
-      permiso_pagos  = COALESCE($9,  permiso_pagos),
-      permiso_cuotas = COALESCE($10, permiso_cuotas),
-      estado         = COALESCE($11, estado)
-    WHERE id_cliente = $12 RETURNING *
-  `, [nombre, tipo_doc, documento, telefono, email, id_barrio, direccion, tipo_cliente, permiso_pagos, permiso_cuotas, estado, id]);
+  const campos = [];
+  const valores = [];
+  let idx = 1;
+  if (nombre !== undefined) { campos.push(`nombre = $${idx++}`); valores.push(nombre); }
+  if (tipo_doc !== undefined) { campos.push(`tipo_doc = $${idx++}`); valores.push(tipo_doc); }
+  if (documento !== undefined) { campos.push(`documento = $${idx++}`); valores.push(documento); }
+  if (telefono !== undefined) { campos.push(`telefono = $${idx++}`); valores.push(telefono); }
+  if (email !== undefined) { campos.push(`email = $${idx++}`); valores.push(email); }
+  if (id_barrio !== undefined) { campos.push(`id_barrio = $${idx++}`); valores.push(id_barrio); }
+  if (direccion !== undefined) { campos.push(`direccion = $${idx++}`); valores.push(direccion); }
+  if (tipo_cliente !== undefined) { campos.push(`tipo_cliente = $${idx++}`); valores.push(tipo_cliente); }
+  if (permiso_pagos !== undefined) { campos.push(`permiso_pagos = $${idx++}`); valores.push(permiso_pagos); }
+  if (permiso_cuotas !== undefined) { campos.push(`permiso_cuotas = $${idx++}`); valores.push(permiso_cuotas); }
+  if (estado !== undefined) { campos.push(`estado = $${idx++}`); valores.push(estado); }
+  if (campos.length === 0) return { id_cliente: id };
+  valores.push(id);
+  const query = `UPDATE "Clientes" SET ${campos.join(', ')} WHERE id_cliente = $${idx} RETURNING *`;
+  console.log('Query:', query, 'Values:', valores);
+  const result = await pool.query(query, valores);
   if (!result.rows.length) throw { status: 404, message: 'Cliente no encontrado' };
   return result.rows[0];
 };

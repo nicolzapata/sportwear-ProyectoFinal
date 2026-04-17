@@ -2,7 +2,7 @@
 const router = require('express').Router();
 const pool   = require('../config/db');
 const {
-  getPagos, getPagoById, crearPago, cambiarEstado, pagarCuota
+  getPagos, getPagoById, crearPago, cambiarEstado, pagarCuota, pagarTotal
 } = require('../controllers/pagos.controller');
 const {
   verificarToken, soloAdmin, soloCliente
@@ -37,5 +37,8 @@ router.get('/mis-pagos', verificarToken, soloCliente, async (req, res) => {
 
 // Pagar una cuota específica
 router.post('/cuota/:id', verificarToken, soloCliente, pagarCuota);
+
+// Pagar total del pedido (todas las cuotas pendientes)
+router.post('/venta/:id/total', verificarToken, soloCliente, pagarTotal);
 
 module.exports = router;

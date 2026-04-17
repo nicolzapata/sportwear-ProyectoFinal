@@ -35,7 +35,7 @@ class PagoModel extends BaseModel {
     const result = await pool.query(
       `SELECT COALESCE(SUM(monto),0) AS total_pagado
        FROM "PagosAbonos"
-       WHERE id_venta = $1 AND estado = 'Aprobado'`,
+       WHERE id_venta = $1 AND estado = 'Confirmado'`,
       [id_venta]
     );
     return parseFloat(result.rows[0].total_pagado);

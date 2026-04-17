@@ -68,4 +68,12 @@ const pagarCuota = async (id_pago, { metodo, referencia_pago }) => {
   return result.rows[0];
 };
 
-module.exports = { getPagos, getPagoById, crearPago, cambiarEstado, pagarCuota };
+const pagarTotal = async (id_venta, { metodo, referencia_pago }) => {
+  const result = await pool.query(
+    `UPDATE "PagosAbonos" SET estado='Confirmado', metodo=$1, referencia_pago=$2, fecha=NOW() WHERE id_venta=$3 AND estado='Pendiente' RETURNING *`,
+    [metodo || 'Efectivo', referencia_pago || null, id_venta]
+  );
+  return result.rows;
+};
+
+module.exports = { getPagos, getPagoById, crearPago, cambiarEstado, pagarCuota, pagarTotal };

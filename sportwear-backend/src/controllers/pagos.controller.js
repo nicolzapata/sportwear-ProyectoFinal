@@ -46,4 +46,13 @@ const pagarCuota = async (req, res) => {
   }
 };
 
-module.exports = { getPagos, getPagoById, crearPago, cambiarEstado, pagarCuota };
+const pagarTotal = async (req, res) => {
+  try {
+    const data = await pagosService.pagarTotal(req.params.id, req.body);
+    res.json(data);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+module.exports = { getPagos, getPagoById, crearPago, cambiarEstado, pagarCuota, pagarTotal };

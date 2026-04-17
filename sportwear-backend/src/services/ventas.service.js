@@ -6,6 +6,7 @@ const getVentas = async () => {
     SELECT v.*, c.nombre AS cliente, c.tipo_cliente, c.permiso_pagos, c.email AS cliente_email
     FROM "Ventas" v
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
+    WHERE v.estado NOT IN ('Abandonado', 'Pendiente')
     ORDER BY v.id_venta DESC
   `);
   const ids = cab.rows.map(v => v.id_venta);
@@ -195,12 +196,18 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
     } else {
       await client.query(`
         INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha)
-        VALUES ($1,$2,'Abono',$3,'Confirmado',$4)
+        VALUES ($1,$2,'Abono',$3,'Pendiente',$4)
       `, [id_venta, total, metodo_pago || 'Efectivo', new Date()]);
     }
 
     await client.query('COMMIT');
-    return { ...ventaRow, items };
+    
+    const abonosRes = await client.query(
+      `SELECT * FROM "PagosAbonos" WHERE id_venta = $1 ORDER BY num_cuota ASC`,
+      [id_venta]
+    );
+    
+    return { ...ventaRow, items, abonos: abonosRes.rows, total_pagado: 0 };
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -262,7 +269,7 @@ const getMisPedidos = async (id_cliente) => {
       COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) AS total_pagado
     FROM "Ventas" v
     LEFT JOIN "PagosAbonos" pa ON v.id_venta=pa.id_venta AND pa.estado='Confirmado'
-    WHERE v.id_cliente=$1
+    WHERE v.id_cliente=$1 AND v.estado != 'Abandonado'
     GROUP BY v.id_venta
     ORDER BY v.fecha DESC
   `, [id_cliente]);
