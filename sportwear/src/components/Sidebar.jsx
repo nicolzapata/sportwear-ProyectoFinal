@@ -2,7 +2,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { MENU_ITEMS, PERMISOS } from "../config/permisos";
-import logo from "../assets/logo.png";
+import logo from "../assets/LOGO.png";
 import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,
   IconShoppingBag, IconPalette, IconBox, IconTruck, IconCart,
