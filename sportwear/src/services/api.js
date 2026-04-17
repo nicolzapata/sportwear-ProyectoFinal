@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:4000/api",
+  baseURL: "https://surprising-ambition-production-dd12.up.railway.app/api",
   headers: { "Content-Type": "application/json" },
 });
 
