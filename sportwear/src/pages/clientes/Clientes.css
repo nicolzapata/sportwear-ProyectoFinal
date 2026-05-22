@@ -268,28 +268,6 @@
   font-size: 0.85rem;
 }
 
-/* User cell */
-.clientes-user-cell {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.clientes-user-avatar {
-  width: 44px;
-  height: 44px;
-  background: #1a1a1a;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 500;
-  font-size: 1.1rem;
-  
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-}
-
 .clientes-user-info {
   display: flex;
   flex-direction: column;
@@ -616,20 +594,6 @@
 }
 
 /* Detail */
-.clientes-detail-avatar {
-  width: 70px;
-  height: 70px;
-  background: #1a1a1a;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 2rem;
-  font-weight: 500;
-  margin: 0 auto 1.5rem;
-}
-
 .clientes-detail-item {
   display: flex;
   justify-content: space-between;
@@ -696,9 +660,17 @@
 }
 
 @media (max-width: 768px) {
-  .clientes-container {
-    padding: 1rem;
-  }
+   .clientes-container { padding: 1rem; }
+   .clientes-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+   .clientes-stats-grid { grid-template-columns: 1fr; gap: 1rem; }
+   .clientes-actions-bar { flex-direction: column; gap: 1rem; }
+   .clientes-search-wrapper { width: 100%; }
+   .clientes-btn-primary { width: 100%; justify-content: center; }
+   .clientes-table-th, .clientes-table-td { padding: 1rem 0.8rem; font-size: 0.85rem; }
+   .clientes-user-name { font-size: 0.9rem; }
+   .clientes-form-row { grid-template-columns: 1fr; gap: 0; }
+   .clientes-action-cell { flex-wrap: wrap; }
+ }
 
   .clientes-header {
     flex-direction: column;
@@ -756,9 +728,15 @@
 }
 
 @media (max-width: 480px) {
-  .clientes-title {
-    font-size: 1.6rem;
-  }
+   .clientes-title { font-size: 1.6rem; }
+   .clientes-stat-value { font-size: 1.5rem; }
+   .clientes-table-th, .clientes-table-td { padding: 0.8rem 0.5rem; font-size: 0.8rem; }
+   .clientes-user-name { font-size: 0.85rem; }
+   .clientes-doc-badge { font-size: 0.7rem; padding: 0.2rem 0.5rem; }
+   .clientes-action-btn { width: 32px; height: 32px; font-size: 0.9rem; }
+   .clientes-modal { width: 95%; padding: 0; }
+   .clientes-modal-body { padding: 1rem; }
+ }
 
   .clientes-stat-value {
     font-size: 1.5rem;

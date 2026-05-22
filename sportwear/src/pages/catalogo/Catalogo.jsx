@@ -361,31 +361,32 @@ export default function Catalogo() {
     </div>
   );
 
-  return (
-    <div className="Catalogo-enter">
-      <div className="catalogo-filters">
-        {categorias.map((cat) => (
-          <button
-            key={cat}
-            className={`filter-chip ${filtroCategoria === cat ? "active" : ""}`}
-            onClick={() => setFiltroCategoria(cat)}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      <div className="search-input-wrap" style={{ marginBottom: 24, maxWidth: 320 }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-        </svg>
-        <input
-          className="search-input"
-          placeholder="Buscar producto..."
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-        />
-      </div>
+   return (
+     <div className="Catalogo-enter">
+       <div className="search-filters-container">
+         <div className="search-input-wrap">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+           </svg>
+           <input
+             className="search-input"
+             placeholder="Buscar producto..."
+             value={busqueda}
+             onChange={(e) => setBusqueda(e.target.value)}
+           />
+         </div>
+         <div className="catalogo-filters">
+           {categorias.map((cat) => (
+             <button
+               key={cat}
+               className={`filter-chip ${filtroCategoria === cat ? "active" : ""}`}
+               onClick={() => setFiltroCategoria(cat)}
+             >
+               {cat}
+             </button>
+           ))}
+         </div>
+       </div>
 
       {filtrados.length === 0 && (
         <div style={{ padding: 48, textAlign: "center", color: "var(--muted)" }}>

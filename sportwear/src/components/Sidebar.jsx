@@ -75,9 +75,6 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="sidebar-footer">
         <div className="user-info">
-          <div className="user-avatar">
-            {usuario?.nombre?.[0]?.toUpperCase() ?? "U"}
-          </div>
           <div className="user-text">
             <div className="user-name">{usuario?.nombre ?? "Usuario"}</div>
             <div className="user-role">{usuario?.rol ?? "—"}</div>

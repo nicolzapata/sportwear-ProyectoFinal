@@ -151,10 +151,7 @@ export default function PedidosVentas() {
             {filtrados.map((v) => (
               <tr key={v.id_venta} className="tbl-row">
                 <td className="tbl-td">
-                  <div className="pedidosventas-cliente-cell">
-                    <div className="pedidosventas-cliente-avatar">{v.cliente?.[0]?.toUpperCase() || 'C'}</div>
-                    <span className="pedidosventas-cliente-name">{v.cliente}</span>
-                  </div>
+                  <span className="pedidosventas-cliente-name">{v.cliente}</span>
                 </td>
                 <td className="tbl-td pedidosventas-producto-cell">
                   {v.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
@@ -219,7 +216,6 @@ export default function PedidosVentas() {
         <ModalDetalle
           titulo="Detalle de venta"
           subtitulo={`V-${String(verDetalle.id_venta).padStart(3, "0")}`}
-          avatar={<IconDollar />}
           badge={<span className={`pedidosventas-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>}
           pasos={["Información", "Pago"]}
           onClose={() => setVerDetalle(null)}

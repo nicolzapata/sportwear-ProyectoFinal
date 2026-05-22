@@ -150,7 +150,7 @@ export default function Clientes() {
               <tr><td colSpan="9" className="tbl-td tbl-empty">No hay clientes con compras registradas</td></tr>
             ) : filtrados.map((c) => (
               <tr key={c.id_cliente} className="tbl-row">
-                <td className="tbl-td"><div className="clientes-user-cell"><div className="clientes-user-avatar">{c.nombre[0].toUpperCase()}</div><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></div></td>
+                <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
                 <td className="tbl-td"><span className="clientes-doc-badge">{c.tipo_doc} {c.documento}</span></td>
                 <td className="tbl-td clientes-phone-cell">{c.telefono || '—'}</td>
                 <td className="tbl-td">{c.barrio_nombre ? <div><div className="clientes-barrio-name">{c.barrio_nombre}</div><div className="clientes-comuna-name">{c.comuna}</div></div> : <span className="clientes-empty">—</span>}</td>
@@ -177,7 +177,6 @@ export default function Clientes() {
         <ModalDetalle
           titulo="Detalle del cliente"
           subtitulo={verDetalle.nombre}
-          avatar={verDetalle.nombre[0].toUpperCase()}
           badge={<span className={`clientes-status-badge ${verDetalle.estado === "Activo" ? 'active' : 'inactive'}`}>{verDetalle.estado}</span>}
           pasos={["Datos personales", "Ubicación", "Clasificación"]}
           onClose={() => setVerDetalle(null)}

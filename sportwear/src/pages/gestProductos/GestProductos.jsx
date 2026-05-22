@@ -6,7 +6,7 @@ import GestVariantes from "../../components/GestVariantes";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import "./GestProductos.css";
-import { IconAlertTriangle, IconBan, IconCheck, IconEdit, IconEye, IconSearch, IconShoppingBag, IconX } from "../../components/Icons";
+import { IconAlertTriangle, IconBan, IconCheck, IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const ERRORES_INICIALES = { nombre: "", id_categoria: "", precio: "", general: "" };
@@ -418,17 +418,8 @@ export default function GestProductos() {
             ) : filtrados.map((p) => (
               <tr key={p.id_producto} className="tbl-row">
                 <td className="tbl-td gestproductos-id-cell">#{String(p.id_producto).padStart(3, "0")}</td>
-                <td className="tbl-td">
-                  <div className="gestproductos-product-cell">
-                    <div className="gestproductos-product-avatar">
-                      {p.imagen_principal
-                        ? <img src={p.imagen_principal} alt={p.nombre} />
-                        : <IconShoppingBag />}
-                    </div>
-                    <div>
-                      <div className="gestproductos-product-name">{p.nombre}</div>
-                    </div>
-                  </div>
+<td className="tbl-td">
+                  <div className="gestproductos-product-name">{p.nombre}</div>
                 </td>
                 <td className="tbl-td"><span className="gestproductos-categoria-badge">{p.categoria}</span></td>
                 <td className="tbl-td gestproductos-precio-cell">{fmt(p.precio)}</td>
@@ -499,8 +490,6 @@ export default function GestProductos() {
         <ModalDetalle
           titulo="Detalle del producto"
           subtitulo={verDetalle.nombre}
-          avatar={<IconShoppingBag />}
-          avatarColor="var(--dvna-circle, #b49780)"
           badge={<span className={`gestproductos-status-badge ${verDetalle.estado === "Activo" ? "active" : "inactive"}`}>{verDetalle.estado}</span>}
           pasos={["Info y variantes", "Categoría y precio", "Estado e imágenes"]}
           onClose={() => setVerDetalle(null)}

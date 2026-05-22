@@ -164,14 +164,7 @@ export default function Usuarios() {
           <tbody className="tbl-body">
             {filtrados.map((u) => (
               <tr key={u.id_usuario} className="tbl-row">
-                <td className="tbl-td">
-                  <div className="usuarios-user-cell">
-                    <div className="usuarios-user-avatar">{u.nombre[0].toUpperCase()}</div>
-                    <div className="usuarios-user-info">
-                      <div className="usuarios-user-name">{u.nombre}</div>
-                    </div>
-                  </div>
-                </td>
+<td className="tbl-td"><div className="usuarios-user-info"><div className="usuarios-user-name">{u.nombre}</div></div></td>
                 <td className="tbl-td usuarios-email-cell">{u.email}</td>
                 <td className="tbl-td"><span className="usuarios-role-badge">{u.rol || getRoleName(u.id_rol)}</span></td>
                 <td className="tbl-td"><span className={`usuarios-status-badge ${u.permiso_cuotas !== false ? "active" : "inactive"}`} onClick={() => togglePermisoCuotas(u.id_usuario)} style={{ cursor: 'pointer' }} title="Click para cambiar">{u.permiso_cuotas !== false ? "Sí" : "No"}</span></td>
@@ -195,7 +188,6 @@ export default function Usuarios() {
         <ModalDetalle
           titulo="Perfil del usuario"
           subtitulo={detalle.nombre}
-          avatar={detalle.nombre?.[0]?.toUpperCase()}
           badge={<span className={`usuarios-status-badge ${detalle.estado === "Activo" ? "active" : "inactive"}`}>{detalle.estado}</span>}
           pasos={["Cuenta", "Datos personales", "Ubicación"]}
           onClose={() => setDetalle(null)}
