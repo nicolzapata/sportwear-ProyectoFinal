@@ -21,8 +21,6 @@ import SobreNosotros       from "../pages/sobre-nosotros/SobreNosotros";
 import Dashboard     from "../pages/dashboard/Dashboard";
 import Roles         from "../pages/roles/Roles";
 import Usuarios      from "../pages/usuarios/Usuarios";
-import Clientes      from "../pages/clientes/Clientes";
-import CatProductos  from "../pages/categorias/CatProductos";
 import GestProductos from "../pages/gestProductos/GestProductos";
 import Colores       from "../pages/colores/Colores";
 import Proveedores   from "../pages/proveedores/Proveedores";
@@ -63,8 +61,6 @@ export default function AppRouter() {
               <Route path="/dashboard"   element={<P k="dashboard">  <Dashboard />     </P>} />
               <Route path="/roles"       element={<P k="roles">       <Roles />         </P>} />
               <Route path="/usuarios"    element={<P k="usuarios">    <Usuarios />      </P>} />
-              <Route path="/clientes"    element={<P k="clientes">    <Clientes />      </P>} />
-              <Route path="/categorias"  element={<P k="categorias">  <CatProductos />  </P>} />
               <Route path="/productos"   element={<P k="productos">   <GestProductos /> </P>} />
               <Route path="/colores"     element={<P k="colores">     <Colores />       </P>} />
               <Route path="/proveedores" element={<P k="proveedores"> <Proveedores />   </P>} />

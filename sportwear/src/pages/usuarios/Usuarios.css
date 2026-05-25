@@ -13,6 +13,49 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.usuarios-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Filter toggle - matching colores tabs style */
+.usuarios-filter-toggle {
+  display: flex;
+  gap: 0;
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 40px;
+  padding: 4px;
+  width: fit-content;
+}
+
+.usuarios-filter-btn {
+   padding: 0.55rem 1.4rem;
+   border-radius: 40px;
+   border: none;
+   background: transparent;
+   font-size: 0.85rem;
+   font-weight: 500;
+   color: var(--dvna-muted);
+   cursor: pointer;
+   transition: all 0.2s ease;
+   display: flex;
+   align-items: center;
+   gap: 6px;
+}
+
+.usuarios-filter-btn.active {
+   background: var(--dvna-charcoal);
+   color: #fff;
+}
+
+.usuarios-filter-btn:not(.active):hover {
+   color: var(--dvna-charcoal);
+   background: var(--dvna-pale);
 }
 
 .usuarios-search-wrapper {
@@ -107,24 +150,23 @@
 .usuarios-email-cell { font-size: 13px; color: var(--dvna-muted); }
 
 /* Badges */
-.usuarios-role-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  background: var(--dvna-pale);
-  border-radius: 40px;
+/* Role text - plain with outline */
+.tabla-rol {
   font-family: var(--font-body);
   font-size: 11px;
+  font-weight: 500;
   color: var(--dvna-charcoal);
-  border: 1px solid var(--dvna-border);
+  text-shadow: 0 0 0 1px var(--dvna-charcoal);
 }
-.usuarios-status-badge {
-  display: inline-flex; align-items: center; gap: 5px;
+
+/* Status text - plain with outline */
+.tabla-status {
   font-family: var(--font-body);
-  font-size: 11px; font-weight: 400;
-  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px;
+  font-weight: 400;
 }
-.usuarios-status-badge.active   { background: rgba(58,102,72,0.1);  color: var(--success); }
-.usuarios-status-badge.inactive { background: rgba(184,50,50,0.08); color: var(--danger); }
+.tabla-status.activo { color: var(--success); text-shadow: 0 0 0 1px var(--success); }
+.tabla-status.inactivo { color: var(--danger); text-shadow: 0 0 0 1px var(--danger); }
 
 /* Action buttons */
 .usuarios-action-cell { display: flex; gap: 4px; }
@@ -285,7 +327,9 @@
 
 @media (max-width: 768px) {
   .usuarios-actions-bar { flex-direction: column; gap: 12px; }
+  .usuarios-actions-left { width: 100%; }
   .usuarios-search-wrapper { width: 100%; }
+  .usuarios-filter-toggle { width: 100%; justify-content: center; }
   .usuarios-btn-primary { width: 100%; justify-content: center; }
   .usuarios-form-row { grid-template-columns: 1fr; gap: 0; }
   .usuarios-detail-grid { grid-template-columns: 1fr; }

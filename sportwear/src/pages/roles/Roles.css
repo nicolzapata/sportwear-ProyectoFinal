@@ -51,8 +51,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  padding-bottom: 22px;
+  justify-content: center;
+  padding: 0;
 }
 .role-front-bg {
   position: absolute;
@@ -65,6 +65,7 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  padding-top: 60px;
 }
 .role-front-icon {
   width: 88px;
@@ -182,7 +183,7 @@
   font-size: 12px;
 }
 
-/* Badge estado */
+/* Badge estado - texto plano con outline */
 .role-status {
   display: inline-flex;
   align-items: center;
@@ -190,21 +191,9 @@
   font-family: var(--font-body);
   font-size: 10px;
   font-weight: 500;
-  padding: 3px 10px;
-  border-radius: 20px;
-  align-self: flex-start;
 }
-.role-status::before {
-  content: '';
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.status-active   { background: rgba(58,102,72,0.1);  color: var(--success); }
-.status-active::before   { background: var(--success); }
-.status-inactive { background: rgba(184,50,50,0.08); color: var(--danger); }
-.status-inactive::before { background: var(--danger); }
+.status-active   { color: var(--success); text-shadow: 0 0 0 1px var(--success); }
+.status-inactive { color: var(--danger); text-shadow: 0 0 0 1px var(--danger); }
 
 /* Botones reverso */
 .role-back-actions {
@@ -249,6 +238,7 @@
   gap: 8px;
   transition: border-color 0.2s, background 0.2s;
   cursor: pointer;
+  padding-top: 60px;
 }
 .role-add-card:hover {
   border-color: var(--dvna-circle);

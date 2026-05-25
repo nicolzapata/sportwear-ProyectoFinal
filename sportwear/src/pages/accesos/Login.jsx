@@ -22,6 +22,18 @@ const IconLock = () => (
     <path d="M5 7V5a3 3 0 016 0v2" stroke="#b49780" strokeWidth="1.4" strokeLinecap="round"/>
   </svg>
 );
+const IconEyeOpen = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16">
+    <ellipse cx="8" cy="8" rx="6" ry="4" stroke="#b49780" strokeWidth="1.4" fill="none"/>
+    <circle cx="8" cy="8" r="2" fill="#b49780"/>
+  </svg>
+);
+const IconEyeClosed = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16">
+    <ellipse cx="8" cy="8" rx="6" ry="4" stroke="#b49780" strokeWidth="1.4" fill="none"/>
+    <line x1="5" y1="8" x2="11" y2="8" stroke="#b49780" strokeWidth="1.4"/>
+  </svg>
+);
 
 export default function Login() {
   const navigate  = useNavigate();
@@ -30,30 +42,72 @@ export default function Login() {
   const [form, setForm]       = useState({ email: "", contrasena: "" });
   const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setError("");
-  };
+const handleChange = (e) => {
+  const { name, value } = e.target;
+  setForm({ ...form, [name]: value });
+  setError("");
+  
+  // Clear individual field errors when user types
+  if (name === "email") {
+    setEmailError("");
+  } else if (name === "contrasena") {
+    setPasswordError("");
+  }
+};
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.email || !form.contrasena) {
-      setError("Completa todos los campos.");
-      return;
-    }
-    setLoading(true);
-    try {
-      const { data } = await api.post("/auth/login", form);
-      login(data.usuario, data.token);
-      const esCliente = data.usuario?.rol === "Cliente";
-      navigate(esCliente ? "/catalogo" : "/dashboard");
-    } catch (err) {
-      setError(err.response?.data?.message || "Credenciales incorrectas");
-    } finally {
-      setLoading(false);
-    }
-  };
+const validateEmail = (email) => {
+  if (!email) return "El correo electrónico es requerido";
+  if (!email.includes("@")) return "El correo debe contener @";
+  if (!email.includes(".")) return "El correo debe contener un punto (.)";
+  
+  // Validación más robusta del formato de email
+  const [local, domain] = email.split("@");
+  if (!local || !domain) return "Formato de correo inválido";
+  if (!domain.includes(".")) return "El dominio debe contener un punto";
+  const [domainName, tld] = domain.split(".");
+  if (!domainName || !tld) return "Formato de dominio inválido";
+  if (tld.length < 2) return "El dominio debe tener al menos 2 caracteres";
+  
+  return "";
+};
+
+const validatePassword = (password) => {
+  if (!password) return "La contraseña es requerida";
+  // Durante el inicio de sesión, no validamos complejidad de contraseñas existentes
+  // Solo verificamos que no esté vacía
+  return "";
+};
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  // Validate fields
+  const emailErrorMsg = validateEmail(form.email);
+  const passwordErrorMsg = validatePassword(form.contrasena);
+  
+  setEmailError(emailErrorMsg);
+  setPasswordError(passwordErrorMsg);
+  
+  if (emailErrorMsg || passwordErrorMsg) {
+    return;
+  }
+  
+  setLoading(true);
+  try {
+    const { data } = await api.post("/auth/login", form);
+    login(data.usuario, data.token);
+    const esCliente = data.usuario?.rol === "Cliente";
+    navigate(esCliente ? "/catalogo" : "/dashboard");
+  } catch (err) {
+    setError(err.response?.data?.message || "Credenciales incorrectas");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const onFocus = (e) => {
     const bar = e.target.parentElement.querySelector(".input-bar");
@@ -84,43 +138,50 @@ export default function Login() {
 
         {/* Header */}
         <div className="form-header">
-          <div className="greeting">Bienvenido</div>
           <h2>Iniciar sesión</h2>
           <p>Accede a tu panel de gestión</p>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit}>
+         {/* Formulario */}
+         <form onSubmit={handleSubmit} noValidate>
 
-          <div className="form-group">
-            <label><IconMail /> Correo electrónico</label>
-            <div className="input-wrapper">
-              <span className="input-icon"><IconMail /></span>
-              <input
-                type="email" name="email"
-                placeholder="correo@gmail.com"
-                value={form.email}
-                onChange={handleChange}
-                onFocus={onFocus} onBlur={onBlur}
-              />
-              <div className="input-bar" />
+            <div className="form-group">
+              <label><IconMail /> Correo electrónico</label>
+              <div className="input-wrapper">
+                <span className="input-icon"><IconMail /></span>
+                    <input
+                      type="email" name="email"
+                      placeholder="correo@gmail.com"
+                      value={form.email}
+                      onChange={handleChange}
+                      onFocus={onFocus} onBlur={onBlur}
+                      aria-describedby="email-error"
+                    />
+                <div className="input-bar" />
+              </div>
+              {emailError && <div id="email-error" className="field-error">{emailError}</div>}
             </div>
-          </div>
 
-          <div className="form-group">
-            <label><IconLock /> Contraseña</label>
-            <div className="input-wrapper">
-              <span className="input-icon"><IconLock /></span>
-              <input
-                type="password" name="contrasena"
-                placeholder="••••••••"
-                value={form.contrasena}
-                onChange={handleChange}
-                onFocus={onFocus} onBlur={onBlur}
-              />
-              <div className="input-bar" />
+            <div className="form-group">
+              <label><IconLock /> Contraseña</label>
+              <div className="input-wrapper">
+                <span className="input-icon"><IconLock /></span>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="contrasena"
+                      placeholder="••••••••"
+                      value={form.contrasena}
+                      onChange={handleChange}
+                      onFocus={onFocus} onBlur={onBlur}
+                      aria-describedby="password-error"
+                    />
+                <div className="input-bar" />
+                <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <IconEyeOpen /> : <IconEyeClosed />}
+                </span>
+              </div>
+              {passwordError && <div id="password-error" className="field-error">{passwordError}</div>}
             </div>
-          </div>
 
           {error && <div className="error-message">{error}</div>}
 

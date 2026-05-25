@@ -121,10 +121,10 @@ export default function PagosAbonos() {
 
   const getEstadoBadge = (estado) => {
     switch (estado) {
-      case "Confirmado": return "pagosabonos-badge-active";
-      case "Pendiente":  return "pagosabonos-badge-pending";
-      case "Anulado":    return "pagosabonos-badge-inactive";
-      default:           return "pagosabonos-badge-info";
+      case "Confirmado": return "exito";
+      case "Pendiente":  return "pendiente";
+      case "Anulado":    return "error";
+      default:           return "info";
     }
   };
 
@@ -175,10 +175,7 @@ export default function PagosAbonos() {
         </button>
       </div>
 
-      {/* Contador */}
-      <div className="pagosabonos-results-count">
-        {filtrados.length} pago{filtrados.length !== 1 ? "s" : ""} encontrado{filtrados.length !== 1 ? "s" : ""}
-      </div>
+      
 
       {/* Tabla */}
       <div className="tbl-container">
@@ -204,12 +201,7 @@ export default function PagosAbonos() {
                   </span>
                 </td>
                 <td className="tbl-td">
-                  <div className="pagosabonos-cliente-cell">
-                    <div className="pagosabonos-cliente-avatar">
-                      {p.cliente?.[0]?.toUpperCase() || "C"}
-                    </div>
-                    <span className="pagosabonos-cliente-name">{p.cliente}</span>
-                  </div>
+                  <span className="pagosabonos-cliente-name">{p.cliente}</span>
                 </td>
                 <td className="tbl-td pagosabonos-monto-cell">{fmt(p.monto)}</td>
                 <td className="tbl-td pagosabonos-tipo-cell">{p.tipo}</td>
@@ -223,7 +215,7 @@ export default function PagosAbonos() {
                   {p.fecha?.toString().split("T")[0]}
                 </td>
                 <td className="tbl-td">
-                  <span className={`pagosabonos-badge ${getEstadoBadge(p.estado)}`}>
+                  <span className={`tabla-badge ${getEstadoBadge(p.estado)}`}>
                     {p.estado}
                   </span>
                 </td>
@@ -380,12 +372,11 @@ export default function PagosAbonos() {
         <ModalDetalle
           titulo="Detalle del pago"
           subtitulo={`P-${String(verDetalle.id_pago).padStart(3, "0")}`}
-          avatar={<IconCreditCard />}
-          badge={
-            <span className={`pagosabonos-badge ${getEstadoBadge(verDetalle.estado)}`}>
-              {verDetalle.estado}
-            </span>
-          }
+badge={
+             <span className={`tabla-badge ${getEstadoBadge(verDetalle.estado)}`}>
+               {verDetalle.estado}
+             </span>
+           }
           pasos={["Información", "Pago"]}
           onClose={() => setVerDetalle(null)}
         >

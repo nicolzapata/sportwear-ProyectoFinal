@@ -67,7 +67,6 @@ export default function Proveedores() {
         </div>
         <button className="proveedores-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo proveedor</button>
       </div>
-      <div className="proveedores-results-count">{filtrados.length} proveedor{filtrados.length!==1?'es':''} encontrado{filtrados.length!==1?'s':''}</div>
 
       <div className="tbl-container">
         <table className="tbl">
@@ -75,12 +74,12 @@ export default function Proveedores() {
           <tbody className="tbl-body">
             {filtrados.map((p) => (
               <tr key={p.id_proveedor} className="tbl-row">
-                <td className="tbl-td"><div className="proveedores-empresa-cell"><div className="proveedores-empresa-avatar"><IconHome /></div><span className="proveedores-empresa-name">{p.nombre}</span></div></td>
+                <td className="tbl-td"><span className="proveedores-empresa-name">{p.nombre}</span></td>
                 <td className="tbl-td"><code className="proveedores-nit-code">{p.nit}</code></td>
                 <td className="tbl-td proveedores-contacto-cell">{p.contacto}</td>
                 <td className="tbl-td proveedores-telefono-cell">{p.telefono}</td>
-                <td className="tbl-td"><span className="proveedores-ciudad-badge">{p.ciudad}</span></td>
-                <td className="tbl-td"><span className={`proveedores-status-badge${p.estado==="Activo"?' active':' inactive'}`}>{p.estado}</span></td>
+                <td className="tbl-td"><span className="tabla-ciudad">{p.ciudad}</span></td>
+                <td className="tbl-td"><span className={`tabla-status${p.estado==="Activo"?' activo':' inactivo'}`}>{p.estado}</span></td>
                 <td className="tbl-td">
                   <div className="proveedores-action-cell">
                     <button className="proveedores-action-btn proveedores-view-btn" onClick={() => setVerDetalle(p)} title="Ver detalles"><IconEye /></button>
@@ -100,9 +99,7 @@ export default function Proveedores() {
         <ModalDetalle
           titulo="Detalle del proveedor"
           subtitulo={verDetalle.nombre}
-          avatar={<IconHome />}
-          avatarColor="var(--dvna-charcoal, #1a1a1a)"
-          badge={<span className={`proveedores-status-badge${verDetalle.estado==="Activo"?' active':' inactive'}`}>{verDetalle.estado}</span>}
+          badge={<span className={`tabla-status${verDetalle.estado==="Activo"?' activo':' inactivo'}`}>{verDetalle.estado}</span>}
           pasos={["Datos empresa", "Contacto"]}
           onClose={() => setVerDetalle(null)}
           onEditar={() => { setVerDetalle(null); abrirEditar(verDetalle); }}

@@ -1,13 +1,15 @@
 // src/components/Navbar.jsx  —  Admin · Estilo ETHKL
+import { useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,
   IconShoppingBag, IconPalette, IconBox, IconTruck,
   IconDollar, IconHeart, IconCreditCard, IconSettings,
-  IconBolt, IconBell
+  IconBolt, IconBell, IconLogOut, IconX
 } from "./Icons";
 import './Navbar.css';
+import { createPortal } from "react-dom";
 
 const titulos = {
   "/dashboard":     { label: "Dashboard",        icon: <IconDashboard /> },
@@ -33,8 +35,14 @@ const fecha = new Date().toLocaleDateString("es-CO", {
 export default function Navbar() {
   const location    = useLocation();
   const { usuario } = useAuth();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const current     = titulos[location.pathname] || { label: "Admin", icon: <IconBolt /> };
   const inicial     = usuario?.nombre?.[0]?.toUpperCase() ?? "U";
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  };
 
   return (
     <header className="navbar">
@@ -65,9 +73,33 @@ export default function Navbar() {
 
         <div className="navbar-divider" />
 
-        
+        <button className="navbar-btn" title="Cerrar sesión" onClick={() => setShowLogoutConfirm(true)}>
+          <IconLogOut />
+        </button>
 
       </div>
+
+      {showLogoutConfirm && createPortal(
+        <div className="navbar-modal-overlay" onClick={() => setShowLogoutConfirm(false)}>
+          <div className="navbar-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="navbar-modal-accent" style={{ background: '#b83232' }} />
+            <div className="navbar-modal-header">
+              <h2 className="navbar-modal-title">Cerrar sesión</h2>
+            </div>
+            <div className="navbar-modal-body">
+              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--dvna-charcoal)', fontSize: '14px', margin: 0 }}>
+                ¿Estás seguro de que deseas cerrar sesión?
+              </p>
+            </div>
+            <div className="navbar-modal-footer">
+              <button className="navbar-btn-secondary" onClick={() => setShowLogoutConfirm(false)}>Cancelar</button>
+              <button className="navbar-btn-danger" onClick={handleLogout}>Sí, cerrar sesión</button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
     </header>
   );
 }

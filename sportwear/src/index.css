@@ -152,70 +152,70 @@ button:focus-visible {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   TABLAS GLOBALES — estilo card
+   TABLAS GLOBALES — estilo tabla formal
    ═══════════════════════════════════════════════════════════ */
 
 .tbl-container {
-  background: var(--dvna-pale);
-  border: none;
-  border-radius: 14px;
-  overflow: visible;
-  padding: 8px;
+  background: var(--dvna-white);
+  border: 1px solid #aab6c6;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  width: 100%;
 }
 
 .tbl {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 6px;
+  border-collapse: collapse;
   font-family: var(--font-body);
 }
 
-.tbl-header tr {
-  background: transparent;
+.tbl-header tr,
+.tbl-th {
+  background: #f4f6f9;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1a2a3a;
+  padding: 0.35rem 0.625rem;
+  text-align: left;
+  border-bottom: 2px solid #aab6c6;
 }
 
 .tbl-th {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  
-  color: var(--dvna-muted);
-  padding: 8px 20px 4px;
-  text-align: left;
-  border: none;
-  background: transparent;
   white-space: nowrap;
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.tbl-body {
+  background: var(--dvna-white);
 }
 
 .tbl-row {
-  background: #fff;
-  border: none;
-  box-shadow: 0 1px 3px rgba(50, 35, 20, 0.06), 0 1px 2px rgba(50, 35, 20, 0.04);
-  transition: box-shadow 0.2s, transform 0.15s;
+  background: var(--dvna-white);
+  transition: background 0.12s;
 }
 
 .tbl-row:hover {
-  box-shadow: 0 4px 14px rgba(50, 35, 20, 0.10);
-  transform: translateY(-1px);
-}
-
-.tbl-row td:first-child {
-  border-radius: 8px 0 0 8px;
-}
-.tbl-row td:last-child {
-  border-radius: 0 8px 8px 0;
+  background: #eef2f7;
 }
 
 .tbl-td {
-  padding: 14px 20px;
-  font-size: 13px;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.85rem;
   color: var(--dvna-charcoal);
   vertical-align: middle;
-  border: none;
-  background: transparent;
+  border-bottom: 1px solid #c8d0dc;
+  font-family: var(--font-body);
+}
+
+
+.tbl-row:last-child .tbl-td {
+  border-bottom: 2px solid var(--dvna-border);
+  padding-bottom: 0.35rem;
 }
 
 /* ── Fix: iconos de botones de acción en tablas ── */
+
 [class*="-action-btn"] svg,
 [class*="-action-cell"] svg {
   display: block;
@@ -253,11 +253,11 @@ svg {
 }
 
 /* ── Fix: thead del dashboard ── */
-thead tr {
+.dashboard-table thead tr {
   background: transparent !important;
 }
 
-thead th {
+.dashboard-table thead th {
   background: transparent !important;
   color: var(--dvna-muted) !important;
   font-size: 9px !important;
@@ -269,7 +269,7 @@ thead th {
   font-family: var(--font-body) !important;
 }
 
-tbody tr {
+.dashboard-table tbody tr {
   background: #ffffff;
 }
 

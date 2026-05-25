@@ -285,16 +285,32 @@
   color: #888;
 }
 
-/* Document badge */
-.clientes-doc-badge {
-  display: inline-block;
-  padding: 0.2rem 0.8rem;
-  background: #f5f5f5;
-  border-radius: 40px;
-  font-size: 0.8rem;
-  color: #555;
+/* Status text - plain with outline */
+.tabla-status {
   font-family: var(--font-body);
-  border: 1px solid #eaeaea;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+.tabla-status.activo { color: var(--success); text-shadow: 0 0 0 1px var(--success); }
+.tabla-status.inactivo { color: var(--dvna-muted); text-shadow: 0 0 0 1px var(--dvna-muted); }
+
+/* Tipo text - plain with outline */
+.tabla-tipo {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+.tabla-tipo.vip { color: #b8860b; text-shadow: 0 0 0 1px #b8860b; }
+.tabla-tipo.mayorista { color: #0066cc; text-shadow: 0 0 0 1px #0066cc; }
+.tabla-tipo.corporativo { color: #ff8c42; text-shadow: 0 0 0 1px #ff8c42; }
+
+/* Document text - plain with outline */
+.tabla-doc {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  text-shadow: 0 0 0 1px var(--dvna-charcoal);
 }
 
 /* Phone */
@@ -321,82 +337,27 @@
   font-size: 0.85rem;
 }
 
-/* Tipo badge */
-.clientes-tipo-badge {
-  display: inline-block;
-  padding: 0.3rem 1rem;
-  border-radius: 40px;
-  font-size: 0.8rem;
-  font-weight: 400;
-  border: 1px solid transparent;
-}
-
-.clientes-tipo-badge.clientes-badge-gold {
-  background: #fff9e6;
-  color: #b8860b;
-  border-color: #ffd966;
-}
-
-.clientes-tipo-badge.clientes-badge-info {
-  background: #e6f3ff;
-  color: #0066cc;
-  border-color: #cce0ff;
-}
-
-.clientes-tipo-badge.clientes-badge-pending {
-  background: #fff3e6;
-  color: #ff8c42;
-  border-color: #ffe0cc;
-}
-
 /* Pagos badge */
 .clientes-pagos-badge {
-  display: inline-block;
-  padding: 0.3rem 1rem;
-  border-radius: 40px;
+  font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 400;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: 1px solid transparent;
 }
 
 .clientes-pagos-badge.permitido {
-  background: #e8f5e9;
   color: #2e7d32;
-  border-color: #c8e6c9;
+  text-shadow: 0 0 0 1px #2e7d32;
 }
 
 .clientes-pagos-badge.bloqueado {
-  background: #ffebee;
   color: #c62828;
-  border-color: #ffcdd2;
+  text-shadow: 0 0 0 1px #c62828;
 }
 
 .clientes-pagos-badge:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-}
-
-/* Status badge */
-.clientes-status-badge {
-  display: inline-block;
-  padding: 0.3rem 1rem;
-  border-radius: 40px;
-  font-size: 0.8rem;
-  font-weight: 400;
-}
-
-.clientes-status-badge.active {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #c8e6c9;
-}
-
-.clientes-status-badge.inactive {
-  background: #f5f5f5;
-  color: #757575;
-  border: 1px solid #e0e0e0;
+  opacity: 0.8;
 }
 
 /* Action buttons */
@@ -670,64 +631,9 @@
    .clientes-user-name { font-size: 0.9rem; }
    .clientes-form-row { grid-template-columns: 1fr; gap: 0; }
    .clientes-action-cell { flex-wrap: wrap; }
- }
-
-  .clientes-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
   }
 
-  .clientes-stats-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .clientes-actions-bar {
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .clientes-search-wrapper {
-    width: 100%;
-  }
-
-  .clientes-btn-primary {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .clientes-table-th,
-  .clientes-table-td {
-    padding: 1rem 0.8rem;
-    font-size: 0.85rem;
-  }
-
-  .clientes-user-cell {
-    gap: 0.8rem;
-  }
-
-  .clientes-user-avatar {
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
-  }
-
-  .clientes-user-name {
-    font-size: 0.9rem;
-  }
-
-  .clientes-form-row {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-
-  .clientes-action-cell {
-    flex-wrap: wrap;
-  }
-}
-
-@media (max-width: 480px) {
+  @media (max-width: 480px) {
    .clientes-title { font-size: 1.6rem; }
    .clientes-stat-value { font-size: 1.5rem; }
    .clientes-table-th, .clientes-table-td { padding: 0.8rem 0.5rem; font-size: 0.8rem; }
@@ -736,51 +642,15 @@
    .clientes-action-btn { width: 32px; height: 32px; font-size: 0.9rem; }
    .clientes-modal { width: 95%; padding: 0; }
    .clientes-modal-body { padding: 1rem; }
- }
-
-  .clientes-stat-value {
-    font-size: 1.5rem;
-  }
-
-  .clientes-table-th,
-  .clientes-table-td {
-    padding: 0.8rem 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .clientes-user-avatar {
-    width: 36px;
-    height: 36px;
-    font-size: 0.9rem;
-  }
-
-  .clientes-user-name {
-    font-size: 0.85rem;
-  }
-
-  .clientes-doc-badge {
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
-  }
-
-  .clientes-action-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 0.9rem;
-  }
-
-  .clientes-modal {
-    width: 95%;
-    padding: 0;
-  }
-
-  .clientes-modal-body {
-    padding: 1rem;
-  }
-
-  .clientes-detail-avatar {
-    width: 60px;
-    height: 60px;
-    font-size: 1.5rem;
+   .clientes-user-avatar {
+     width: 36px;
+     height: 36px;
+     font-size: 0.9rem;
+   }
+   .clientes-detail-avatar {
+     width: 60px;
+     height: 60px;
+     font-size: 1.5rem;
+   }
   }
 }

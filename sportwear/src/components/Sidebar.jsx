@@ -1,5 +1,5 @@
 // src/components/Sidebar.jsx
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useState } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { MENU_ITEMS, PERMISOS } from "../config/permisos";
 import logo from "../assets/LOGO.png";
@@ -14,8 +14,6 @@ const NAV_ICONS = {
   "/dashboard":    <IconDashboard />,
   "/roles":        <IconShield />,
   "/usuarios":     <IconUsers />,
-  "/clientes":     <IconUser />,
-  "/categorias":   <IconTag />,
   "/productos":    <IconShoppingBag />,
   "/colores":      <IconPalette />,
   "/catalogo":     <IconBox />,

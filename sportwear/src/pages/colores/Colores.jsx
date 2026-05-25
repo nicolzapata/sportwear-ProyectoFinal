@@ -80,22 +80,23 @@ export default function Colores() {
     </div>
   );
 
-  return (
+return (
     <div className="colores-container">
       <div className="colores-actions-bar">
-        <div className="colores-search-wrapper">
-          <span className="colores-search-icon"><IconSearch /></span>
-          <input type="text" className="colores-search-input" placeholder="Buscar color..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-          {busqueda && <button className="colores-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
+        <div className="colores-actions-left">
+          <div className="colores-search-wrapper">
+            <span className="colores-search-icon"><IconSearch /></span>
+            <input type="text" className="colores-search-input" placeholder="Buscar color..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+            {busqueda && <button className="colores-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
+          </div>
+          <div className="colores-tabs-bar">
+            <button className={`colores-tab-btn${tab==='muestra'?' active':''}`} onClick={() => setTab('muestra')}><IconPalette /> Muestra</button>
+            <button className={`colores-tab-btn${tab==='lista'?' active':''}`} onClick={() => setTab('lista')}>Lista</button>
+          </div>
         </div>
         <button className="colores-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo color</button>
       </div>
-      <div className="colores-results-count">{filtrados.length} color{filtrados.length!==1?'es':''} encontrado{filtrados.length!==1?'s':''}</div>
 
-      <div className="colores-tabs-bar">
-        <button className={`colores-tab-btn${tab==='muestra'?' active':''}`} onClick={() => setTab('muestra')}><IconPalette /> Muestra</button>
-        <button className={`colores-tab-btn${tab==='lista'?' active':''}`} onClick={() => setTab('lista')}>Lista</button>
-      </div>
 
       {tab === 'muestra' && (
         <div className="colores-grid">
@@ -120,7 +121,7 @@ export default function Colores() {
                   <td className="tbl-td"><div className="colores-sample" style={{ backgroundColor: c.codigo_hex }} /></td>
                   <td className="tbl-td"><div className="colores-name-cell"><span className="colores-name-text">{c.nombre}</span></div></td>
                   <td className="tbl-td"><code className="colores-hex-code">{c.codigo_hex}</code></td>
-                  <td className="tbl-td"><span className={`colores-status-badge${c.estado==="Activo"?' active':' inactive'}`}>{c.estado}</span></td>
+                  <td className="tbl-td"><span className={`tabla-status${c.estado==="Activo"?' activo':' inactivo'}`}>{c.estado}</span></td>
                   <td className="tbl-td">
                     <div className="colores-action-cell">
                       <button className="colores-action-btn colores-edit-btn" onClick={() => abrirEditar(c)} title="Editar"><IconEdit /></button>

@@ -296,38 +296,19 @@
   font-size: 0.85rem;
 }
 
-/* Badges */
+/* Badges - texto plano con outline */
 .pedidosventas-badge {
-  display: inline-block;
-  padding: 0.3rem 1rem;
-  border-radius: 40px;
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 400;
 }
 
-.pedidosventas-badge-active {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #c8e6c9;
-}
-
-.pedidosventas-badge-pending {
-  background: #fff3e6;
-  color: #ff8c42;
-  border: 1px solid #ffe0cc;
-}
-
-.pedidosventas-badge-inactive {
-  background: #f5f5f5;
-  color: #757575;
-  border: 1px solid #e0e0e0;
-}
-
-.pedidosventas-badge-info {
-  background: #e6f3ff;
-  color: #1976d2;
-  border: 1px solid #cce0ff;
-}
+.pedidosventas-badge-active { color: #2e7d32; text-shadow: 0 0 0 1px #2e7d32; }
+.pedidosventas-badge-pending { color: #ff8c42; text-shadow: 0 0 0 1px #ff8c42; }
+.pedidosventas-badge-inactive { color: #757575; text-shadow: 0 0 0 1px #757575; }
+.pedidosventas-badge-info { color: #1976d2; text-shadow: 0 0 0 1px #1976d2; }
 
 /* Action buttons */
 .pedidosventas-action-cell {
@@ -383,18 +364,15 @@
 }
 
 .pedidosventas-abonos-btn {
-  background: #e3f2fd;
-  border: none;
   color: #1976d2;
-  padding: 0.3rem 0.8rem;
-  border-radius: 20px;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-shadow: 0 0 0 1px #1976d2;
 }
 
 .pedidosventas-abonos-btn:hover {
-  background: #bbdefb;
+  opacity: 0.7;
 }
 
 .pedidosventas-saldo {
@@ -686,9 +664,25 @@
 }
 
 @media (max-width: 768px) {
-  .pedidosventas-container {
-    padding: 1rem;
-  }
+   .pedidosventas-container { padding: 1rem; }
+   .pedidosventas-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+   .pedidosventas-stats-grid { grid-template-columns: 1fr; gap: 1rem; }
+   .pedidosventas-actions-bar { flex-direction: column; gap: 1rem; }
+   .pedidosventas-search-wrapper { width: 100%; }
+   .pedidosventas-btn-primary { width: 100%; justify-content: center; }
+   .pedidosventas-table-th, .pedidosventas-table-td { padding: 1rem 0.8rem; font-size: 0.85rem; }
+   .pedidosventas-form-row { grid-template-columns: 1fr; gap: 0; }
+   .pedidosventas-action-cell { flex-wrap: wrap; }
+ }
+
+@media (max-width: 480px) {
+   .pedidosventas-title { font-size: 1.6rem; }
+   .pedidosventas-stat-value { font-size: 1.5rem; }
+   .pedidosventas-stat-value-currency { font-size: 1rem; }
+   .pedidosventas-table-th, .pedidosventas-table-td { padding: 0.8rem 0.5rem; font-size: 0.8rem; }
+   .pedidosventas-total-cell { font-size: 0.85rem; }
+   .pedidosventas-action-btn { width: 32px; height: 32px; font-size: 0.9rem; }
+ }
 
   .pedidosventas-header {
     flex-direction: column;

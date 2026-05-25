@@ -91,7 +91,23 @@
   padding: 10px 0;
   scrollbar-width: none;
 }
-.sidebar-nav::-webkit-scrollbar { display: none; }
+.sidebar-nav::-webkit-scrollbar {
+  width: 0;
+  transition: width 0.25s;
+}
+.sidebar:hover .sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--taupe);
+  border-radius: 3px;
+}
+.sidebar:hover .sidebar-nav {
+  scrollbar-width: thin;
+}
 
 .nav-divider {
   height: 1px;

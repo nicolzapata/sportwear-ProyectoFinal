@@ -41,6 +41,18 @@ const IconLock = () => (
     <path d="M5 7V5a3 3 0 016 0v2" stroke="#b49780" strokeWidth="1.4" strokeLinecap="round"/>
   </svg>
 );
+const IconEyeOpen = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16">
+    <ellipse cx="8" cy="8" rx="6" ry="4" stroke="#b49780" strokeWidth="1.4" fill="none"/>
+    <circle cx="8" cy="8" r="2" fill="#b49780"/>
+  </svg>
+);
+const IconEyeClosed = () => (
+  <svg width="16" height="16" viewBox="0 0 16 16">
+    <ellipse cx="8" cy="8" rx="6" ry="4" stroke="#b49780" strokeWidth="1.4" fill="none"/>
+    <line x1="5" y1="8" x2="11" y2="8" stroke="#b49780" strokeWidth="1.4"/>
+  </svg>
+);
 
 export default function Registro() {
   const navigate = useNavigate();
@@ -54,6 +66,8 @@ export default function Registro() {
   const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     api.get("/barrios")
@@ -75,17 +89,20 @@ export default function Registro() {
     if (bar) bar.style.transform = "scaleX(0)";
   };
 
-  const validar = () => {
-    if (!form.nombre || !form.documento || !form.email || !form.contrasena)
-      return "Nombre, documento, email y contraseña son obligatorios.";
-    if (form.contrasena !== form.confirmar)
-      return "Las contraseñas no coinciden.";
-    if (form.contrasena.length < 6)
-      return "La contraseña debe tener al menos 6 caracteres.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      return "El correo electrónico no es válido.";
-    return null;
-  };
+   const validar = () => {
+     if (!form.nombre || !form.documento || !form.email || !form.contrasena)
+       return "Nombre, documento, email y contraseña son obligatorios.";
+     if (form.contrasena !== form.confirmar)
+       return "Las contraseñas no coinciden.";
+     if (form.contrasena.length < 6)
+       return "La contraseña debe tener al menos 6 caracteres.";
+     // Validar al menos un carácter especial (símbolo)
+     if (!/[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]+/.test(form.contrasena))
+       return "La contraseña debe contener al menos un signo (símbolo).";
+     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+       return "El correo electrónico no es válido.";
+     return null;
+   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -212,20 +229,36 @@ export default function Registro() {
                 <label><IconLock /> Contraseña <span className="req">*</span></label>
                 <div className="input-wrapper">
                   <span className="input-icon"><IconLock /></span>
-                  <input type="password" name="contrasena" placeholder="Mín. 6 caracteres"
-                    value={form.contrasena} onChange={handleChange}
-                    onFocus={onFocus} onBlur={onBlur}/>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="contrasena"
+                    placeholder="Mín. 6 caracteres"
+                    value={form.contrasena}
+                    onChange={handleChange}
+                    onFocus={onFocus} onBlur={onBlur}
+                  />
                   <div className="input-bar" />
+                  <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? <IconEyeOpen /> : <IconEyeClosed />}
+                  </span>
                 </div>
               </div>
               <div className="form-group">
                 <label><IconLock /> Confirmar <span className="req">*</span></label>
                 <div className="input-wrapper">
                   <span className="input-icon"><IconLock /></span>
-                  <input type="password" name="confirmar" placeholder="Repite tu contraseña"
-                    value={form.confirmar} onChange={handleChange}
-                    onFocus={onFocus} onBlur={onBlur}/>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmar"
+                    placeholder="Repite tu contraseña"
+                    value={form.confirmar}
+                    onChange={handleChange}
+                    onFocus={onFocus} onBlur={onBlur}
+                  />
                   <div className="input-bar" />
+                  <span className="input-icon" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                    {showConfirmPassword ? <IconEyeOpen /> : <IconEyeClosed />}
+                  </span>
                 </div>
               </div>
             </div>

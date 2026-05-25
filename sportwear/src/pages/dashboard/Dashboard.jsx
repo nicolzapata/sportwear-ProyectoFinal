@@ -146,9 +146,9 @@ function DashboardAdmin() {
 
   const getBadgeClass = (estado) => {
     switch (estado) {
-      case "Pagado":    return "badge-success";
-      case "Pendiente": return "badge-warning";
-      default:          return "badge-danger";
+      case "Pagado":    return "exito";
+      case "Pendiente": return "pendiente";
+      default:          return "error";
     }
   };
 
@@ -175,7 +175,6 @@ function DashboardAdmin() {
 
       <div className="stats-grid">
         <div className="stat-card-wrapper">
-          <div className="stat-icon stat-icon-primary"><IconDollar /></div>
           <div className="stat-card">
             <div className="stat-card-accent" />
             <div className="stat-content">
@@ -185,7 +184,6 @@ function DashboardAdmin() {
           </div>
         </div>
         <div className="stat-card-wrapper">
-          <div className="stat-icon stat-icon-success"><IconCart /></div>
           <div className="stat-card">
             <div className="stat-card-accent success" />
             <div className="stat-content">
@@ -195,7 +193,6 @@ function DashboardAdmin() {
           </div>
         </div>
         <div className="stat-card-wrapper">
-          <div className="stat-icon stat-icon-danger"><IconAlertTriangle /></div>
           <div className="stat-card">
             <div className="stat-card-accent danger" />
             <div className="stat-content">
@@ -205,7 +202,6 @@ function DashboardAdmin() {
           </div>
         </div>
         <div className="stat-card-wrapper">
-          <div className="stat-icon stat-icon-warning"><IconBolt /></div>
           <div className="stat-card">
             <div className="stat-card-accent warning" />
             <div className="stat-content">
@@ -256,7 +252,7 @@ function DashboardAdmin() {
         </div>
       </div>
 
-      <div className="charts-grid-2">
+<div className="charts-grid-2">
         <div className="chart-card">
           <div className="chart-header">
             <div><h3 className="chart-title">Últimas ventas</h3></div>
@@ -278,7 +274,7 @@ function DashboardAdmin() {
                     <td className="tbl-td">{venta.producto}</td>
                     <td className="tbl-td">{formatCurrency(venta.total)}</td>
                     <td className="tbl-td">
-                      <span className={`badge ${getBadgeClass(venta.estado)}`}>{venta.estado}</span>
+                      <span className={`tabla-badge ${getBadgeClass(venta.estado)}`}>{venta.estado}</span>
                     </td>
                   </tr>
                 ))}
@@ -287,30 +283,31 @@ function DashboardAdmin() {
           </div>
         </div>
 
-        <div className="chart-card" style={{ display: "flex", flexDirection: "column" }}>
+        <div className="chart-card">
           <div className="chart-header">
             <div>
               <h3 className="chart-title">Balance</h3>
               <p className="chart-subtitle">Distribución de ventas</p>
             </div>
           </div>
-          <DonutChart pagado={pagado} pendiente={pendiente} cancelado={cancelado} />
-        </div>
-      </div>
-
-      <div className="bottom-stats">
-        <div className="stat-mini-card">
-          <span className="stat-mini-icon"><IconDollar /></span>
-          <div>
-            <span className="stat-mini-label">Ingresos totales</span>
-            <span className="stat-mini-value">{formatCurrency(stats.ingresos_totales)}</span>
-          </div>
-        </div>
-        <div className="stat-mini-card">
-          <span className="stat-mini-icon"><IconTag /></span>
-          <div>
-            <span className="stat-mini-label">Productos totales</span>
-            <span className="stat-mini-value">{stats.total_productos}</span>
+          <div className="balance-summary">
+            <DonutChart pagado={pagado} pendiente={pendiente} cancelado={cancelado} />
+            <div className="balance-stats">
+              <div className="balance-stat">
+                <span className="stat-mini-icon"><IconDollar /></span>
+                <div>
+                  <span className="stat-mini-label">Ingresos totales</span>
+                  <span className="stat-mini-value">{formatCurrency(stats.ingresos_totales)}</span>
+                </div>
+              </div>
+              <div className="balance-stat">
+                <span className="stat-mini-icon"><IconTag /></span>
+                <div>
+                  <span className="stat-mini-label">Productos totales</span>
+                  <span className="stat-mini-value">{stats.total_productos}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -434,10 +431,10 @@ function DashboardCliente() {
   /* ── Helpers UI ── */
   const getBadgeClass = (estado) => {
     switch (estado) {
-      case "Pagado": case "Confirmado": case "Abonado": return "badge-success";
-      case "Pendiente":  return "badge-warning";
-      case "Cancelado":  return "badge-danger";
-      default:           return "badge-secondary";
+      case "Pagado": case "Confirmado": case "Abonado": return "exito";
+      case "Pendiente":  return "pendiente";
+      case "Cancelado":  return "error";
+      default:           return "info";
     }
   };
 

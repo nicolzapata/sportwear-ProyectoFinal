@@ -105,18 +105,10 @@
 }
 
 /* ── Header del formulario ── */
-.greeting {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.24em;
-  
-  color: var(--dvna-circle);
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-body);
+.form-header {
+   text-align: center;
 }
+
 .greeting::after {
   content: '';
   flex: 1;
@@ -174,16 +166,32 @@
 /* Input wrapper con icono */
 .input-wrapper { position: relative; }
 
-.input-icon {
+/* Iconos de campo (mail, lock, phone, etc.) ocultos */
+.input-wrapper .input-icon:not(:last-child) {
+  display: none;
+}
+
+/* Icono de ver contraseña (último .input-icon) permanece visible */
+.input-wrapper .input-icon:last-child {
   position: absolute;
-  left: 14px;
+  right: 14px;
   top: 50%;
   transform: translateY(-50%);
-  pointer-events: none;
+  pointer-events: all;
+  cursor: pointer;
   opacity: 0.4;
   display: flex;
   align-items: center;
   transition: opacity 0.25s;
+}
+
+.input-wrapper .input-icon:last-child:hover {
+  opacity: 0.7;
+}
+
+.input-wrapper .input-icon:last-child svg {
+  width: 18px;
+  height: 18px;
 }
 
 .form-group input,
@@ -207,7 +215,7 @@
   -webkit-text-fill-color: var(--dvna-charcoal);
 }
 .input-wrapper input {
-  padding-left: 42px;
+  padding-left: 14px;
   box-shadow: 0 0 0 1000px var(--dvna-pale) inset;
 }
 .form-group input::placeholder { color: #ccc; font-weight: 300; }
@@ -219,7 +227,6 @@
   box-shadow: 0 0 0 3px rgba(180,151,128,0.1);
   -webkit-box-shadow: 0 0 0 3px rgba(180,151,128,0.1), 0 0 0 1000px var(--dvna-white) inset;
 }
-.form-group input:focus ~ .input-icon { opacity: 0.75; }
 
 /* Línea animada al foco */
 .input-bar {
@@ -290,6 +297,19 @@
   background: var(--dvna-light);
   color: var(--dvna-muted);
   cursor: not-allowed;
+}
+
+/* ── Error de campo ── */
+.field-error {
+   font-size: 11px;
+   font-weight: 400;
+   color: #b94a3a;
+   background: rgba(185,74,58,0.05);
+   border: 1px solid rgba(185,74,58,0.15);
+   border-radius: var(--r);
+   padding: 6px 10px;
+   margin-top: 4px;
+   font-family: var(--font-body);
 }
 
 /* ── Error ── */

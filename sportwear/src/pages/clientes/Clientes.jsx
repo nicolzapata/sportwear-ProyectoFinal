@@ -69,7 +69,7 @@ export default function Clientes() {
     }
   };
 
-  const tipoBadge = (t) => { if (t === "VIP") return "clientes-badge-gold"; if (t === "Mayorista") return "clientes-badge-info"; if (t === "Corporativo") return "clientes-badge-pending"; return ""; };
+  const tipoBadge = (t) => { if (t === "VIP") return "vip"; if (t === "Mayorista") return "mayorista"; if (t === "Corporativo") return "corporativo"; return ""; };
 
   // ── Pasos formulario ───────────────────────────────────────────────────────
   const PasoDatos = (<div>
@@ -136,28 +136,25 @@ export default function Clientes() {
         </div>
         <button className="clientes-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo cliente</button>
       </div>
-      <div className="clientes-results-count">{filtrados.length} cliente{filtrados.length !== 1 ? 's' : ''} encontrado{filtrados.length !== 1 ? 's' : ''}</div>
 
       <div className="tbl-container">
-        <table className="table">
-          <thead className="tbl-header">
-            <tr><th className="tbl-th">Cliente</th><th className="tbl-th">Documento</th><th className="tbl-th">Teléfono</th><th className="tbl-th">Barrio</th><th className="tbl-th">Tipo</th><th className="tbl-th">Compras</th><th className="tbl-th">Total</th><th className="tbl-th">Estado</th><th className="tbl-th">Acciones</th></tr>
-          </thead>
+        <table className="tbl">
+          <thead className="tbl-header"><tr><th className="tbl-th">Cliente</th><th className="tbl-th">Documento</th><th className="tbl-th">Teléfono</th><th className="tbl-th">Barrio</th><th className="tbl-th">Tipo</th><th className="tbl-th">Compras</th><th className="tbl-th">Total</th><th className="tbl-th">Estado</th><th className="tbl-th">Acciones</th></tr></thead>
           <tbody className="tbl-body">
             {loading ? (
-              <tr><td colSpan="9" className="tbl-td tbl-loading">Cargando clientes...</td></tr>
+              <tr><td colSpan="9" className="tbl-td">Cargando clientes...</td></tr>
             ) : filtrados.length === 0 ? (
-              <tr><td colSpan="9" className="tbl-td tbl-empty">No hay clientes con compras registradas</td></tr>
+              <tr><td colSpan="9" className="tbl-td">No hay clientes con compras registradas</td></tr>
             ) : filtrados.map((c) => (
               <tr key={c.id_cliente} className="tbl-row">
                 <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
-                <td className="tbl-td"><span className="clientes-doc-badge">{c.tipo_doc} {c.documento}</span></td>
+                <td className="tbl-td"><span className="tabla-doc">{c.tipo_doc} {c.documento}</span></td>
                 <td className="tbl-td clientes-phone-cell">{c.telefono || '—'}</td>
                 <td className="tbl-td">{c.barrio_nombre ? <div><div className="clientes-barrio-name">{c.barrio_nombre}</div><div className="clientes-comuna-name">{c.comuna}</div></div> : <span className="clientes-empty">—</span>}</td>
-                <td className="tbl-td"><span className={`clientes-tipo-badge ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
+                <td className="tbl-td"><span className={`tabla-tipo ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
                 <td className="tbl-td">{c.total_compras || 0}</td>
                 <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
-                <td className="tbl-td"><span className={`clientes-status-badge ${c.estado === "Activo" ? 'active' : 'inactive'}`}>{c.estado}</span></td>
+                <td className="tbl-td"><span className={`tabla-status ${c.estado === "Activo" ? 'activo' : 'inactivo'}`}>{c.estado}</span></td>
                 <td className="tbl-td">
                   <div className="clientes-action-cell">
                     <button className="clientes-action-btn clientes-view-btn" onClick={() => setVerDetalle(c)} title="Ver detalles"><IconEye /></button>
@@ -177,7 +174,7 @@ export default function Clientes() {
         <ModalDetalle
           titulo="Detalle del cliente"
           subtitulo={verDetalle.nombre}
-          badge={<span className={`clientes-status-badge ${verDetalle.estado === "Activo" ? 'active' : 'inactive'}`}>{verDetalle.estado}</span>}
+          badge={<span className={`tabla-status ${verDetalle.estado === "Activo" ? 'activo' : 'inactivo'}`}>{verDetalle.estado}</span>}
           pasos={["Datos personales", "Ubicación", "Clasificación"]}
           onClose={() => setVerDetalle(null)}
           onEditar={() => { setVerDetalle(null); abrirEditar(verDetalle); }}
