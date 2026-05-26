@@ -86,7 +86,6 @@ export default function Compras() {
               <tr key={c.id_compra} className="tbl-row">
                 <td className="tbl-td">
                   <div className="compras-proveedor-cell">
-                    <div className="compras-proveedor-avatar"><IconHome /></div>
                     <span className="compras-proveedor-name">{c.proveedor}</span>
                   </div>
                 </td>

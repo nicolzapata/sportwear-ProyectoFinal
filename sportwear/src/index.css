@@ -1,31 +1,24 @@
 /* src/index.css */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* ══════════════════════════════════════════════════════
-   fonts.css — Paleta DVNA Colección
-   Pegar al INICIO de src/index.css
-   ══════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════
+   Variables y paleta DVNA Colección
+   ════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Paleta DVNA ── */
---dvna-circle:   #b49780;   /* café — botones, activos, acentos */
---dvna-mid:      #c8ab96;   /* café medio — hover borders */
---dvna-light:    #e8e0d8;   /* gris cálido claro */
---dvna-pale:     #f4f4f4;   /* gris muy claro — fondos de sección */
---dvna-cream:    #f9f9f9;   /* casi blanco — fondo principal */
---dvna-white:    #ffffff;   /* blanco puro — cards, navbar */
---dvna-dark:     #111111;   /* negro — sidebar */
---dvna-charcoal: #1a1a1a;   /* negro — texto principal */
---dvna-muted:    #888888;   /* gris — texto secundario */
---dvna-border:   #e5e5e5;   /* gris claro — bordes */
+  /* Paleta DVNA */
+  --dvna-circle:   #b49780;
+  --dvna-mid:      #c8ab96;
+  --dvna-light:    #e8e0d8;
+  --dvna-pale:     #f4f4f4;
+  --dvna-cream:    #f9f9f9;
+  --dvna-white:    #ffffff;
+  --dvna-dark:     #111111;
+  --dvna-charcoal: #1a1a1a;
+  --dvna-muted:    #888888;
+  --dvna-border:   #e5e5e5;
 
-  /* Semánticos — mapean a DVNA */
+  /* Semánticos */
   --cream:       var(--dvna-pale);
   --warm-white:  var(--dvna-white);
   --sand:        var(--dvna-light);
@@ -53,8 +46,15 @@
   --shadow:    0 4px 20px rgba(50,35,20,0.12);
 }
 
-/* ── Reset tipográfico global ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ════════════════════════════════════════════════════════
+   Reset global
+   ════════════════════════════════════════════════════════ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 body {
   font-family: var(--font-body);
@@ -62,49 +62,8 @@ body {
   background: var(--dvna-cream);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* ── Fix global: todos los SVG heredan color del padre ── */
-svg { display: block; }
-
-/* Botones de acción en tablas — color base visible */
-[class*="-action-btn"] {
-  color: var(--dvna-muted) !important;
-}
-[class*="-action-btn"]:hover {
-  color: var(--dvna-circle) !important;
-}
-[class*="-deactivate-btn"]:hover {
-  color: #c0392b !important;
-}
-[class*="-activate-btn"]:hover {
-  color: var(--success) !important;
-}
-[class*="-modal-close"] {
-  color: var(--dvna-muted) !important;
-}
-[class*="-modal-close"]:hover {
-  color: var(--dvna-charcoal) !important;
-}
-[class*="-search-clear"] {
-  color: var(--dvna-mid) !important;
-}
-[class*="-search-clear"]:hover {
-  color: var(--dvna-charcoal) !important;
-}
-[class*="-search-icon"] {
-  color: var(--dvna-mid) !important;
-}
-
-body {
-  margin: 0;
-  padding: 0;
   width: 100%;
   min-height: 100vh;
-  background-color: var(--bg-main);
-  color: var(--text-primary);
-  display: block;  /* Cambiamos de 'flex' a 'block' */
-  place-items: unset;  /* Eliminamos el centrado */
 }
 
 #root {
@@ -116,21 +75,17 @@ body {
 
 a {
   font-weight: 500;
-  color: var(--text-primary);
+  color: var(--dvna-charcoal);
   text-decoration: none;
   transition: color 0.2s ease;
   text-transform: none;
 }
-
-a:hover {
-  color: #000000;
-}
+a:hover { color: #000000; }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-body);
-  font-weight: 500;
-  line-height: 1.2;
-  color: var(--text-primary);
+  font-family: var(--font-display);
+  color: var(--dvna-charcoal);
+  text-transform: none;
 }
 
 button {
@@ -144,78 +99,47 @@ button {
   cursor: pointer;
   transition: all 0.2s ease;
 }
-
 button:focus,
 button:focus-visible {
-  outline: 2px solid var(--text-primary);
+  outline: 2px solid var(--dvna-charcoal);
   outline-offset: 2px;
 }
 
-/* ═══════════════════════════════════════════════════════════
-   TABLAS GLOBALES — estilo tabla formal
-   ═══════════════════════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════
+   SVG — REGLA CRÍTICA:
+   NO usar fill: currentColor de forma global.
+   Los SVGs que deben ser outline ya tienen fill="none"
+   en el markup. Solo aseguramos que no se rompan.
+   ════════════════════════════════════════════════════════ */
 
-.tbl-container {
-  background: var(--dvna-white);
-  border: 1px solid #aab6c6;
-  border-radius: var(--r-md);
-  overflow: hidden;
-  width: 100%;
+svg {
+  display: block;
+  overflow: visible;
+  transition: stroke 0.2s;
+  /* SIN fill: currentColor — eso es lo que causaba los iconos rellenos */
 }
 
-.tbl {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: var(--font-body);
+/* ════════════════════════════════════════════════════════
+   Sidebar — nav items
+   ════════════════════════════════════════════════════════ */
+
+.nav-item { color: rgba(255, 255, 255, 0.938); }
+.nav-item:hover { color: #ffffff; }
+.nav-item.active { color: #ffffff; }
+
+.nav-icon svg,
+.logout-btn svg {
+  display: block;
+  stroke: currentColor;
 }
 
-.tbl-header tr,
-.tbl-th {
-  background: #f4f6f9;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #1a2a3a;
-  padding: 0.35rem 0.625rem;
-  text-align: left;
-  border-bottom: 2px solid #aab6c6;
+/* ════════════════════════════════════════════════════════
+   Botones de acción en tablas
+   ════════════════════════════════════════════════════════ */
+
+[class*="-action-btn"] {
+  color: #888888 !important;
 }
-
-.tbl-th {
-  white-space: nowrap;
-  padding-top: 0.35rem;
-  padding-bottom: 0.35rem;
-}
-
-.tbl-body {
-  background: var(--dvna-white);
-}
-
-.tbl-row {
-  background: var(--dvna-white);
-  transition: background 0.12s;
-}
-
-.tbl-row:hover {
-  background: #eef2f7;
-}
-
-.tbl-td {
-  padding: 0.5rem 0.875rem;
-  font-size: 0.85rem;
-  color: var(--dvna-charcoal);
-  vertical-align: middle;
-  border-bottom: 1px solid #c8d0dc;
-  font-family: var(--font-body);
-}
-
-
-.tbl-row:last-child .tbl-td {
-  border-bottom: 2px solid var(--dvna-border);
-  padding-bottom: 0.35rem;
-}
-
-/* ── Fix: iconos de botones de acción en tablas ── */
-
 [class*="-action-btn"] svg,
 [class*="-action-cell"] svg {
   display: block;
@@ -224,59 +148,41 @@ button:focus-visible {
   stroke: currentColor;
 }
 
-[class*="-action-btn"] {
-  color: #888888;
-}
 [class*="-edit-btn"]:hover,
-[class*="-view-btn"]:hover { color: #b49780; }
-[class*="-deactivate-btn"]:hover { color: #b83232; }
-[class*="-activate-btn"]:hover   { color: #3a6648; }
-[class*="-cancel-btn"]:hover     { color: #b83232; }
-[class*="-receive-btn"]:hover    { color: #3a6648; }
-[class*="-pay-btn"]:hover        { color: #3a6648; }
+[class*="-view-btn"]:hover   { color: #b49780 !important; }
+[class*="-deactivate-btn"]:hover { color: #b83232 !important; }
+[class*="-activate-btn"]:hover   { color: #3a6648 !important; }
+[class*="-cancel-btn"]:hover     { color: #b83232 !important; }
+[class*="-receive-btn"]:hover    { color: #3a6648 !important; }
+[class*="-pay-btn"]:hover        { color: #3a6648 !important; }
 
-/* ── Fix: iconos del sidebar en blanco ── */
-.nav-icon svg,
-.logout-btn svg {
-  display: block;
-  stroke: currentColor;
+.action-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s;
 }
 
-.nav-item { color: rgba(255,255,255,0.45); }
-.nav-item:hover { color: #ffffff; }
-.nav-item.active { color: #ffffff; }
+/* ════════════════════════════════════════════════════════
+   Modales
+   ════════════════════════════════════════════════════════ */
 
-/* ── Fix: todos los SVG heredan color ── */
-svg {
-  display: block;
-  overflow: visible;
-}
-
-/* ── Fix: thead del dashboard ── */
-.dashboard-table thead tr {
-  background: transparent !important;
-}
-
-.dashboard-table thead th {
-  background: transparent !important;
+[class*="-modal-close"] {
   color: var(--dvna-muted) !important;
-  font-size: 9px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.2em !important;
-  text-transform: none !important;
-  border: none !important;
-  padding: 8px 20px 4px !important;
-  font-family: var(--font-body) !important;
+}
+[class*="-modal-close"]:hover {
+  color: var(--dvna-charcoal) !important;
 }
 
-.dashboard-table tbody tr {
-  background: #ffffff;
+/* ════════════════════════════════════════════════════════
+   Buscadores
+   ════════════════════════════════════════════════════════ */
+
+[class*="-search-icon"] {
+  color: var(--dvna-mid) !important;
 }
-
-
-/* ── Fix: h1-h6 usan fuente display DVNA, nunca en mayúsculas ── */
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-display);
-  color: var(--dvna-charcoal);
-  text-transform: none;
+[class*="-search-clear"] {
+  color: var(--dvna-mid) !important;
+}
+[class*="-search-clear"]:hover {
+  color: var(--dvna-charcoal) !important;
 }

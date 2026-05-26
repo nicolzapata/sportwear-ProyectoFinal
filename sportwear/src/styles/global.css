@@ -87,15 +87,7 @@ body { font-family:var(--font-body); background:var(--off-white); color:var(--te
 .stat-value { font-family:var(--font-display); font-size:32px; font-weight:400; letter-spacing:1px; line-height:1; color:var(--black); }
 .stat-label { font-size:11px; font-weight:500; color:var(--muted); margin-top:4px; }
 
-/* ── Table ── */
-.table-wrapper { overflow-x:auto; border-radius:var(--r-lg); border:1px solid var(--border); box-shadow:var(--sh-xs); }
-table { width:100%; border-collapse:collapse; font-size:13.5px; }
-thead tr { background:var(--black); }
-thead th { padding:13px 18px; text-align:left; font-family:var(--font-display); font-size:13px; font-weight:400; letter-spacing:2px; color:var(--primary); white-space:nowrap; }
-tbody tr { border-bottom:1px solid var(--border); transition:background 0.15s; }
-tbody tr:last-child { border-bottom:none; }
-tbody tr:hover { background:var(--primary-bg); }
-tbody td { padding:13px 18px; color:var(--text); vertical-align:middle; }
+
 
 /* ── Badges ── */
 .badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:var(--r); font-size:11px; font-weight:600; letter-spacing:0.3px; }

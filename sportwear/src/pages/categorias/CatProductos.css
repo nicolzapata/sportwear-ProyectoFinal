@@ -168,7 +168,7 @@
 
 /* Buttons */
 .catproductos-btn-primary {
-  background: #1a1a1a;
+  background: #b49780;
   color: white;
   border: none;
   padding: 0.8rem 2rem;
@@ -214,162 +214,7 @@
   padding-left: 0.5rem;
 }
 
-/* Table */
-.catproductos-table-container {
-  background: white;
-  border-radius: 24px;
-  border: 1px solid #f0f0f0;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-}
 
-.catproductos-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.catproductos-table-header {
-  background: #fafafa;
-}
-
-.catproductos-table-th {
-  text-align: left;
-  padding: 1.2rem 1.5rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #555;
-  border-bottom: 1px solid #f0f0f0;
-  text-transform: none;
-  letter-spacing: normal;
-}
-
-.catproductos-table-body {
-  background: white;
-}
-
-.catproductos-table-row {
-  transition: background 0.2s ease;
-}
-
-.catproductos-table-row:hover {
-  background: #fafafa;
-}
-
-.table-td {
-  padding: 1.2rem 1.5rem;
-  border-bottom: 1px solid #f5f5f5;
-  color: #333;
-  font-size: 0.95rem;
-}
-
-.catproductos-id-cell {
-  color: #888;
-  font-weight: 500;
-  font-size: 0.85rem;
-}
-
-/* Categoría cell */
-.catproductos-categoria-cell {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.catproductos-categoria-avatar {
-  width: 44px;
-  height: 44px;
-  background: #f5f5f5;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #555;
-  border: 1px solid #eaeaea;
-  flex-shrink: 0;
-}
-
-.catproductos-categoria-avatar svg {
-  width: 22px;
-  height: 22px;
-}
-
-.catproductos-categoria-name {
-  font-weight: 500;
-  color: #1a1a1a;
-  font-size: 1rem;
-}
-
-.catproductos-desc-cell {
-  color: #666;
-  max-width: 300px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Status badge */
-.catproductos-status-badge {
-  display: inline-block;
-  padding: 0.3rem 1rem;
-  border-radius: 40px;
-  font-size: 0.8rem;
-  font-weight: 400;
-}
-
-.catproductos-status-badge.active {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #c8e6c9;
-}
-
-.catproductos-status-badge.inactive {
-  background: #f5f5f5;
-  color: #757575;
-  border: 1px solid #e0e0e0;
-}
-
-/* Action buttons */
-.catproductos-action-cell {
-  display: flex;
-  gap: 0.4rem;
-}
-
-.catproductos-action-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  border: 1px solid #eaeaea;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  color: #555;
-}
-
-.catproductos-action-btn:hover {
-  border-color: #1a1a1a;
-  background: #fafafa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-}
-
-.catproductos-edit-btn:hover {
-  border-color: #1976d2;
-  color: #1976d2;
-}
-
-.catproductos-deactivate-btn:hover {
-  border-color: #d32f2f;
-  color: #d32f2f;
-}
-
-.catproductos-activate-btn:hover {
-  border-color: #2e7d32;
-  color: #2e7d32;
-}
 
 /* Modal */
 .catproductos-modal-overlay {
@@ -614,6 +459,32 @@
   .catproductos-container {
     padding: 1.5rem;
   }
+
+  .catproductos-categoria-cell {
+    gap: 0.8rem;
+  }
+
+  .catproductos-categoria-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .catproductos-categoria-avatar svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .catproductos-categoria-name {
+    font-size: 0.9rem;
+  }
+
+  .catproductos-desc-cell {
+    max-width: 150px;
+  }
+
+  .catproductos-icon-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
@@ -644,11 +515,6 @@
   .catproductos-btn-primary {
     width: 100%;
     justify-content: center;
-  }
-
-  .catproductos-table-th,
-  .table-td {
-    padding: 1rem;
   }
 
   .catproductos-categoria-cell {
@@ -687,11 +553,7 @@
     font-size: 1.5rem;
   }
 
-  .catproductos-table-th,
-  .table-td {
-    padding: 0.8rem;
-    font-size: 0.85rem;
-  }
+
 
   .catproductos-categoria-avatar {
     width: 36px;

@@ -84,12 +84,21 @@
 .sidebar:hover .role-tag { opacity: 1; }
 
 /* ── Nav ── */
-.sidebar-nav {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 10px 0;
-  scrollbar-width: none;
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 18px;
+    text-decoration: none;
+    color: #ffffff;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    white-space: nowrap;
+    position: relative;
+    transition: color 0.2s, background 0.2s;
 }
 .sidebar-nav::-webkit-scrollbar {
   width: 0;
@@ -102,7 +111,7 @@
   background: transparent;
 }
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: var(--taupe);
+  background: #161616;
   border-radius: 3px;
 }
 .sidebar:hover .sidebar-nav {
@@ -116,21 +125,21 @@
 }
 
 .nav-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 11px 18px;
-  text-decoration: none;
-  color: rgba(255,255,255,0.55);
-  font-family: var(--font-body);
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  text-transform: none;
-  white-space: nowrap;
-  position: relative;
-  transition: color 0.2s, background 0.2s;
-}
+   display: flex;
+   align-items: center;
+   gap: 14px;
+   padding: 11px 18px;
+   text-decoration: none;
+   color: #ffffff;
+   font-family: var(--font-body);
+   font-size: 14px;
+   font-weight: 500;
+   letter-spacing: 0.02em;
+   text-transform: none;
+   white-space: nowrap;
+   position: relative;
+   transition: color 0.2s, background 0.2s;
+  }
 
 .nav-item::before {
   content: '';
@@ -169,14 +178,16 @@
 /* ── Nav label ── */
 .nav-label {
   opacity: 0;
-  transform: translateX(-6px);
-  transition: opacity 0.2s 0.05s, transform 0.2s 0.05s;
+  max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  transform: translateX(-6px);
+  transition: max-width 0.2s 0.05s, opacity 0.2s 0.05s, transform 0.2s 0.05s;
   pointer-events: none;
 }
 .sidebar:hover .nav-label {
   opacity: 1;
+  max-width: 200px;
   transform: translateX(0);
 }
 
@@ -252,11 +263,11 @@
 }
 .logout-btn:hover { background: rgba(255,255,255,0.1); color: var(--warm-white); }
 .logout-btn svg {
-  stroke: #ffffff;
-  fill: none;
-  width: 16px;
-  height: 16px;
-  display: block;
-}
+   stroke: #ffffff;
+   fill: none;
+   width: 16px;
+   height: 16px;
+   display: block;
+ }
 
 .sidebar:hover .role-badge { height: auto; }

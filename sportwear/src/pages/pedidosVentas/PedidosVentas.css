@@ -218,83 +218,7 @@
   padding-left: 0.5rem;
 }
 
-/* Table */
-.pedidosventas-table-container {
-  background: white;
-  border-radius: 24px;
-  border: 1px solid #f0f0f0;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-}
 
-.pedidosventas-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.pedidosventas-table-header {
-  background: #fafafa;
-}
-
-.pedidosventas-table-th {
-  text-align: left;
-  padding: 1.2rem 1rem;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #555;
-  border-bottom: 1px solid #f0f0f0;
-  text-transform: none;
-  letter-spacing: normal;
-}
-
-.pedidosventas-table-body {
-  background: white;
-}
-
-.pedidosventas-table-row {
-  transition: background 0.2s ease;
-}
-
-.pedidosventas-table-row:hover {
-  background: #fafafa;
-}
-
-.pedidosventas-table-td {
-  padding: 1.2rem 1rem;
-  border-bottom: 1px solid #f5f5f5;
-  color: #333;
-  font-size: 0.95rem;
-}
-
-.pedidosventas-id-cell {
-  color: #1a1a1a;
-  font-weight: 600;
-  font-size: 0.85rem;
-}
-
-.pedidosventas-cliente-name {
-  font-weight: 500;
-  color: #1a1a1a;
-}
-
-.pedidosventas-producto-cell {
-  color: #666;
-}
-
-.pedidosventas-cantidad-cell {
-  text-align: center;
-  font-weight: 500;
-}
-
-.pedidosventas-total-cell {
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-.pedidosventas-fecha-cell {
-  color: #888;
-  font-size: 0.85rem;
-}
 
 /* Badges - texto plano con outline */
 .pedidosventas-badge {
@@ -663,17 +587,7 @@
   }
 }
 
-@media (max-width: 768px) {
-   .pedidosventas-container { padding: 1rem; }
-   .pedidosventas-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
-   .pedidosventas-stats-grid { grid-template-columns: 1fr; gap: 1rem; }
-   .pedidosventas-actions-bar { flex-direction: column; gap: 1rem; }
-   .pedidosventas-search-wrapper { width: 100%; }
-   .pedidosventas-btn-primary { width: 100%; justify-content: center; }
-   .pedidosventas-table-th, .pedidosventas-table-td { padding: 1rem 0.8rem; font-size: 0.85rem; }
-   .pedidosventas-form-row { grid-template-columns: 1fr; gap: 0; }
-   .pedidosventas-action-cell { flex-wrap: wrap; }
- }
+
 
 @media (max-width: 480px) {
    .pedidosventas-title { font-size: 1.6rem; }
