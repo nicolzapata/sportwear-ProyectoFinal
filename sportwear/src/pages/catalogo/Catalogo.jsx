@@ -1,6 +1,6 @@
 // src/pages/catalogo/Catalogo.jsx
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import api from "../../services/api";
@@ -46,7 +46,6 @@ const IconCart = () => (
     <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
   </svg>
 );
-
 const IconChevronLeft = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M15 18l-6-6 6-6"/>
@@ -75,7 +74,6 @@ const tallasDeColor = (vars, id_color) =>
       .filter(Boolean)
   )];
 
-// Recibe array de objetos { url, id_color } → devuelve array de URLs filtradas
 const filtrarImagenes = (imgs, id_color) => {
   if (!imgs?.length) return [];
   if (!id_color) return imgs.map(i => i.url ?? i);
@@ -91,7 +89,6 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
   const { agregarAlCarrito } = useCart();
   const { usuario } = useAuth();
 
-  // imgsData: objetos completos [{ url, id_color, ... }]
   const [imgsData,  setImgsData]  = useState(null);
   const [variantes, setVariantes] = useState(null);
   const [cargando,  setCargando]  = useState(false);
@@ -113,7 +110,6 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
         api.get(`/variantes?id_producto=${p.id_producto}`),
       ]);
 
-      // ← guardar objetos completos, NO solo .url
       const imgs = imgRes.data.length > 0
         ? imgRes.data
         : p.imagen_principal
@@ -138,7 +134,6 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
     }
   };
 
-  // Imágenes filtradas por color activo
   const rawImgs = imgsData ?? (p.imagen_principal ? [{ url: p.imagen_principal, id_color: null }] : []);
   const imgs    = filtrarImagenes(rawImgs, colorSel?.id_color ?? null);
   const total   = imgs.length;
@@ -168,7 +163,6 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
 
   return (
     <div className="catalog-card" onMouseEnter={cargarDatos}>
-
       <div
         className="catalog-card-img"
         onClick={() => navigate(`/catalogo/${p.id_producto}`)}
@@ -262,8 +256,8 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
               </button>
               <button
                 className={`btn btn-sm btn-primary ${agregado ? "btn-success" : ""}`}
-                onClick={(e) => { 
-                  e.stopPropagation(); 
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (!usuario) { navigate("/login"); return; }
                   if (!colorSel || !tallaSel) {
                     alert("Por favor selecciona color y talla");
@@ -307,12 +301,11 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
 export default function Catalogo() {
   const { usuario } = useAuth();
   const esAdmin     = usuario?.rol === "Administrador" || usuario?.rol === "Admin";
+  const { busqueda, filtroCategoria, setCategorias } = useOutletContext();
 
-  const [datos,           setDatos]           = useState([]);
-  const [loading,         setLoading]         = useState(true);
-  const [error,           setError]           = useState("");
-  const [busqueda,        setBusqueda]        = useState("");
-  const [filtroCategoria, setFiltroCategoria] = useState("Todos");
+  const [datos,   setDatos]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState("");
 
   const cargar = async () => {
     try {
@@ -329,8 +322,10 @@ export default function Catalogo() {
   };
 
   useEffect(() => { cargar(); }, [esAdmin]);
-
-  const categorias = ["Todos", ...new Set(datos.map(p => p.categoria).filter(Boolean))];
+  useEffect(() => {
+    const categorias = ["Todos", ...new Set(datos.map(p => p.categoria).filter(Boolean))];
+    setCategorias(categorias);
+  }, [datos, setCategorias]);
 
   const filtrados = datos.filter((p) => {
     const matchBusqueda  = p.nombre?.toLowerCase().includes(busqueda.toLowerCase());
@@ -361,72 +356,79 @@ export default function Catalogo() {
     </div>
   );
 
-   return (
-     <div className="Catalogo-enter">
-       <div className="search-filters-container">
-         <div className="search-input-wrap">
-           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-           </svg>
-           <input
-             className="search-input"
-             placeholder="Buscar producto..."
-             value={busqueda}
-             onChange={(e) => setBusqueda(e.target.value)}
-           />
-         </div>
-         <div className="catalogo-filters">
-           {categorias.map((cat) => (
-             <button
-               key={cat}
-               className={`filter-chip ${filtroCategoria === cat ? "active" : ""}`}
-               onClick={() => setFiltroCategoria(cat)}
-             >
-               {cat}
-             </button>
-           ))}
-         </div>
-       </div>
+  // 30 spans — la animación va a -50% del track total, loop perfecto
+  const tapeTexts = Array(30).fill("DVNA · NUEVA COLECCIÓN · SPORTWEAR · ");
 
-      {filtrados.length === 0 && (
-        <div style={{ padding: 48, textAlign: "center", color: "var(--muted)" }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><IconSearch /></div>
-          <p>No hay productos que coincidan con tu búsqueda.</p>
+  return (
+    <>
+      {/* ── Hero ── */}
+      <section className="nov-hero">
+        <div className="nov-hero-tape" aria-hidden="true">
+          <div className="nov-hero-tape-track">
+            {tapeTexts.map((t, i) => <span key={i}>{t}</span>)}
+          </div>
         </div>
-      )}
+        <div className="nov-hero-content">
+          <span className="nov-eyebrow">DVNA 2026</span>
+          <h1 className="nov-hero-title">
+            Lo nuevo de<br /><em>DVNA</em>
+          </h1>
+          <p className="nov-hero-sub">
+            Ropa deportiva femenina diseñada para tu estilo y comodidad.<br />
+            Calidad, tendencia y confianza en cada prenda.
+          </p>
+        </div>
+        <div className="nov-hero-strip">
+          <div className="nov-strip-item"><span>⚡</span> Control de inventario en tiempo real</div>
+          <div className="nov-strip-sep" />
+          <div className="nov-strip-item"><span>💳</span> Compra a crédito y paga a cuotas</div>
+          <div className="nov-strip-sep" />
+          <div className="nov-strip-item"><span>✦</span> Marca colombiana DVNA</div>
+        </div>
+      </section>
 
-      <div className="catalog-grid">
-        {filtrados.map((p) => (
-          <ProductCard
-            key={p.id_producto}
-            p={p}
-            esAdmin={esAdmin}
-            onTogglePublicado={handleTogglePublicado}
-          />
-        ))}
+      {/* ── Catálogo ── */}
+      <div className="Catalogo-enter">
+        {filtrados.length === 0 && (
+          <div style={{ padding: 48, textAlign: "center", color: "var(--muted)" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><IconSearch /></div>
+            <p>No hay productos que coincidan con tu búsqueda.</p>
+          </div>
+        )}
+
+        <div className="catalog-grid">
+          {filtrados.map((p) => (
+            <ProductCard
+              key={p.id_producto}
+              p={p}
+              esAdmin={esAdmin}
+              onTogglePublicado={handleTogglePublicado}
+            />
+          ))}
+        </div>
+
+        <footer className="catalog-footer">
+          <div className="catalog-footer-content">
+            <div className="catalog-footer-brand">
+              <span className="catalog-footer-logo">SPORTWEAR</span>
+              <p className="catalog-footer-desc">Moda deportiva para mujer. Confianza y estilo en cada detalle.</p>
+            </div>
+            <div className="catalog-footer-links">
+              <a href="https://wa.link/ts1wmb" target="_blank" rel="noopener noreferrer" className="catalog-footer-link whatsapp">
+                <IconWhatsApp />
+                <span>WhatsApp</span>
+              </a>
+              <a href="https://www.instagram.com/dvna.co/?hl=es" target="_blank" rel="noopener noreferrer" className="catalog-footer-link instagram">
+                <IconInstagram />
+                <span>Instagram</span>
+              </a>
+            </div>
+          </div>
+          <div className="catalog-footer-copy">
+            &copy; {new Date().getFullYear()} Sportwear. Todos los derechos reservados.
+          </div>
+        </footer>
       </div>
-
-      <footer className="catalog-footer">
-        <div className="catalog-footer-content">
-          <div className="catalog-footer-brand">
-            <span className="catalog-footer-logo">SPORTWEAR</span>
-            <p className="catalog-footer-desc">Moda deportiva para mujer. Confianza y estilo en cada detalle.</p>
-          </div>
-          <div className="catalog-footer-links">
-            <a href="https://wa.link/ts1wmb" target="_blank" rel="noopener noreferrer" className="catalog-footer-link whatsapp">
-              <IconWhatsApp />
-              <span>WhatsApp</span>
-            </a>
-            <a href="https://www.instagram.com/dvna.co/?hl=es" target="_blank" rel="noopener noreferrer" className="catalog-footer-link instagram">
-              <IconInstagram />
-              <span>Instagram</span>
-            </a>
-          </div>
-        </div>
-        <div className="catalog-footer-copy">
-          &copy; {new Date().getFullYear()} Sportwear. Todos los derechos reservados.
-        </div>
-      </footer>
-    </div>
+    </>
   );
 }

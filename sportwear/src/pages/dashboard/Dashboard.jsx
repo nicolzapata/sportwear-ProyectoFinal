@@ -45,40 +45,74 @@ const BORDER   = "#e5e5e5";
 function SalesBarChart({ data }) {
   const canvasRef = useRef(null);
   const chartRef  = useRef(null);
+
   useEffect(() => {
     let destroyed = false;
     loadChartJs().then((Chart) => {
       if (destroyed || !canvasRef.current) return;
       if (chartRef.current) chartRef.current.destroy();
+
       chartRef.current = new Chart(canvasRef.current, {
         type: "bar",
         data: {
-          labels: data.labels,
+          labels: data.labels,   // ['Ene','Feb','Mar',...] desde el backend
           datasets: [
-            { label: "Este año",   data: data.current,  backgroundColor: CHARCOAL, borderRadius: 4, borderSkipped: false, barPercentage: 0.45, categoryPercentage: 0.65 },
-            { label: "Año pasado", data: data.previous, backgroundColor: BROWN,    borderRadius: 4, borderSkipped: false, barPercentage: 0.45, categoryPercentage: 0.65 },
+            {
+              label: "Este año",
+              data: data.current, // corregido: antes era data.current
+              backgroundColor: CHARCOAL,
+              borderRadius: 4,
+              borderSkipped: false,
+              barPercentage: 0.55,
+              categoryPercentage: 0.7,
+            },
           ],
         },
         options: {
-          responsive: true, maintainAspectRatio: false,
+          responsive: true,
+          maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: "#fff", borderColor: BORDER, borderWidth: 1,
-              titleColor: CHARCOAL, bodyColor: MUTED, cornerRadius: 8, padding: 10,
-              callbacks: { label: (ctx) => `  ${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y)}` },
+              backgroundColor: "#fff",
+              borderColor: BORDER,
+              borderWidth: 1,
+              titleColor: CHARCOAL,
+              bodyColor: MUTED,
+              cornerRadius: 8,
+              padding: 10,
+              callbacks: {
+                label: (ctx) => `  ${formatCurrency(ctx.parsed.y)}`,
+              },
             },
           },
           scales: {
-            x: { grid: { display: false }, border: { display: false }, ticks: { color: MUTED, font: { family: "'Jost', sans-serif", size: 10 } } },
-            y: { grid: { color: "#f0ede8" }, border: { display: false, dash: [3,3] }, ticks: { color: MUTED, font: { family: "'Jost', sans-serif", size: 10 }, maxTicksLimit: 5, callback: (v) => formatCurrency(v) } },
+            x: {
+              grid: { display: false },
+              border: { display: false },
+              ticks: {
+                color: MUTED,
+                font: { family: "'Jost', sans-serif", size: 10 },
+              },
+            },
+            y: {
+              grid: { color: "#f0ede8" },
+              border: { display: false, dash: [3, 3] },
+              ticks: {
+                color: MUTED,
+                font: { family: "'Jost', sans-serif", size: 10 },
+                maxTicksLimit: 5,
+                callback: (v) => formatCurrency(v),
+              },
+            },
           },
         },
       });
     });
     return () => { destroyed = true; chartRef.current?.destroy(); };
   }, [data]);
-  return <div style={{ position: "relative", height: 160 }}><canvas ref={canvasRef} /></div>;
+
+  return <div style={{ position: "relative", flex: 1, minHeight: 160 }}><canvas ref={canvasRef} /></div>;
 }
 
 function DonutChart({ pagado, pendiente, cancelado }) {
@@ -86,6 +120,7 @@ function DonutChart({ pagado, pendiente, cancelado }) {
   const chartRef  = useRef(null);
   const total = pagado + pendiente + cancelado || 1;
   const pct   = Math.round((pagado / total) * 100);
+
   useEffect(() => {
     let destroyed = false;
     loadChartJs().then((Chart) => {
@@ -93,12 +128,25 @@ function DonutChart({ pagado, pendiente, cancelado }) {
       if (chartRef.current) chartRef.current.destroy();
       chartRef.current = new Chart(canvasRef.current, {
         type: "doughnut",
-        data: { datasets: [{ data: [pagado, pendiente, cancelado], backgroundColor: [CHARCOAL, BROWN, LIGHT], borderWidth: 0, hoverOffset: 4 }] },
-        options: { responsive: true, maintainAspectRatio: true, cutout: "72%", plugins: { legend: { display: false }, tooltip: { enabled: false } } },
+        data: {
+          datasets: [{
+            data: [pagado, pendiente, cancelado],
+            backgroundColor: [CHARCOAL, BROWN, LIGHT],
+            borderWidth: 0,
+            hoverOffset: 4,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          cutout: "72%",
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        },
       });
     });
     return () => { destroyed = true; chartRef.current?.destroy(); };
   }, [pagado, pendiente, cancelado]);
+
   return (
     <div className="donut-wrap">
       <div className="donut-container">
@@ -124,12 +172,12 @@ function DashboardAdmin() {
   const [stats, setStats] = useState({
     ingresos_hoy: 0, ventas_hoy: 0, bajo_stock: 0,
     clientes_activos: 0, pedidos_pendientes: 0,
-    ingresos_totales: 0, total_productos: 0
+    ingresos_totales: 0, total_productos: 0,
   });
-  const [topProductos, setTopProductos] = useState([]);
+  const [topProductos, setTopProductos]     = useState([]);
   const [ventasRecientes, setVentasRecientes] = useState([]);
   const [ventasMensuales, setVentasMensuales] = useState(null);
-  const [cargando, setCargando] = useState(true);
+  const [cargando, setCargando]             = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -139,7 +187,7 @@ function DashboardAdmin() {
       setStats(resumenRes.data?.stats || {});
       setTopProductos(resumenRes.data?.topProductos || []);
       setVentasRecientes(resumenRes.data?.ventasRecientes || []);
-      setVentasMensuales(mensualRes.data || { labels: [], current: [], previous: [] });
+      setVentasMensuales(mensualRes.data || { labels: [], values: [] });
       setCargando(false);
     }).catch(() => setCargando(false));
   }, []);
@@ -152,7 +200,8 @@ function DashboardAdmin() {
     }
   };
 
-  const barData = ventasMensuales || { labels: [], current: [], previous: [] };
+  // corregido: values en lugar de current/previous
+  const barData   = ventasMensuales || { labels: [], current: [], previous: [] };
   const pagado    = ventasRecientes.filter((v) => v.estado === "Pagado").length;
   const pendiente = ventasRecientes.filter((v) => v.estado === "Pendiente").length;
   const cancelado = ventasRecientes.filter((v) => v.estado !== "Pagado" && v.estado !== "Pendiente").length;
@@ -161,7 +210,7 @@ function DashboardAdmin() {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
 
-  if (cargando) return <div style={{padding:48, color:"var(--muted)"}}>Cargando dashboard...</div>;
+  if (cargando) return <div style={{ padding: 48, color: "var(--muted)" }}>Cargando dashboard...</div>;
 
   return (
     <div className="dashboard">
@@ -173,6 +222,7 @@ function DashboardAdmin() {
         <span className="dashboard-date">{today}</span>
       </div>
 
+      {/* Stats */}
       <div className="stats-grid">
         <div className="stat-card-wrapper">
           <div className="stat-card">
@@ -212,20 +262,23 @@ function DashboardAdmin() {
         </div>
       </div>
 
+      {/* Fila 1: Ventas mensuales + Top productos */}
       <div className="charts-grid">
         <div className="chart-card">
           <div className="chart-header">
             <div>
               <h3 className="chart-title">Ventas mensuales</h3>
-              <p className="chart-subtitle">Comparativo año anterior</p>
+              <p className="chart-subtitle">Acumulado por mes — año actual</p>
             </div>
             <button className="period-badge">Mensual</button>
           </div>
           <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 10, color: MUTED, fontFamily: "'Jost', sans-serif" }}>
-            <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: CHARCOAL, marginRight: 5, verticalAlign: "middle" }} />Este año</span>
-            <span><span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: BROWN,    marginRight: 5, verticalAlign: "middle" }} />Año pasado</span>
+            <span>
+              <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: CHARCOAL, marginRight: 5, verticalAlign: "middle" }} />
+              Este año
+            </span>
           </div>
-          <SalesBarChart data={barData} />
+          <SalesBarChart key={barData.labels.join()} data={barData} />
         </div>
 
         <div className="chart-card">
@@ -244,7 +297,10 @@ function DashboardAdmin() {
                   <span className="top-product-count">{producto.total_vendido} uds</span>
                 </div>
                 <div className="progress-bar">
-                  <div className="progress-bar-fill" style={{ width: `${(producto.total_vendido / topProductos[0].total_vendido) * 100}%` }} />
+                  <div
+                    className="progress-bar-fill"
+                    style={{ width: `${(producto.total_vendido / topProductos[0].total_vendido) * 100}%` }}
+                  />
                 </div>
               </div>
             ))}
@@ -252,7 +308,8 @@ function DashboardAdmin() {
         </div>
       </div>
 
-<div className="charts-grid-2">
+      {/* Fila 2: Últimas ventas + Balance */}
+      <div className="charts-grid-2">
         <div className="chart-card">
           <div className="chart-header">
             <div><h3 className="chart-title">Últimas ventas</h3></div>
@@ -269,7 +326,7 @@ function DashboardAdmin() {
               </thead>
               <tbody>
                 {ventasRecientes.map((venta) => (
-                  <tr key={venta.id_venta} className="tbl-row">
+                  <tr key={`${venta.id_venta}-${venta.producto}`} className="tbl-row">
                     <td className="tbl-td">{venta.cliente}</td>
                     <td className="tbl-td">{venta.producto}</td>
                     <td className="tbl-td">{formatCurrency(venta.total)}</td>
@@ -321,23 +378,20 @@ function DashboardAdmin() {
 function DashboardCliente() {
   const { usuario, actualizarUsuario } = useAuth();
 
-  const [pedidos, setPedidos]             = useState([]);
-  const [perfil, setPerfil]               = useState(null);
+  const [pedidos, setPedidos]               = useState([]);
+  const [perfil, setPerfil]                 = useState(null);
   const [showModalSteps, setShowModalSteps] = useState(false);
-  const [form, setForm]                   = useState({});
-  const [guardando, setGuardando]         = useState(false);
+  const [form, setForm]                     = useState({});
+  const [guardando, setGuardando]           = useState(false);
   const [cargandoPerfil, setCargandoPerfil] = useState(true);
-  const [barrios, setBarrios]             = useState([]);
-  const [zonas, setZonas]                 = useState([]);
-  const [barFiltrados, setBarFiltrados]   = useState([]);
+  const [barrios, setBarrios]               = useState([]);
+  const [zonas, setZonas]                   = useState([]);
+  const [barFiltrados, setBarFiltrados]     = useState([]);
   const [detallesPedidos, setDetallesPedidos] = useState({});
+  const [pagoModal, setPagoModal]           = useState(null);
+  const [detalleModal, setDetalleModal]     = useState(null);
+  const [toastMsg, setToastMsg]             = useState(null);
 
-  /* ── Nuevos estados ── */
-  const [pagoModal, setPagoModal]         = useState(null); // pedido abierto en modal de pago
-  const [detalleModal, setDetalleModal]   = useState(null); // pedido abierto en modal de detalle
-  const [toastMsg, setToastMsg]           = useState(null);
-
-  /* ── Carga inicial ── */
   useEffect(() => {
     if (!usuario) return;
     setCargandoPerfil(true);
@@ -393,8 +447,7 @@ function DashboardCliente() {
     }
   };
 
-  /* ── Callback: pago confirmado → actualizar estado local en tiempo real ── */
-  const handlePagoConfirmado = ({ id_venta, montoPagado, cuotaId, estaCompleto, nuevoTotalPagado }) => {
+  const handlePagoConfirmado = ({ id_venta, cuotaId, estaCompleto, nuevoTotalPagado }) => {
     const actualizarPedido = (p) => {
       if (p.id_venta !== id_venta) return p;
       const abonosActualizados = p.abonos?.map((a) => {
@@ -403,12 +456,8 @@ function DashboardCliente() {
       });
       return { ...p, total_pagado: nuevoTotalPagado, estado: estaCompleto ? "Pagado" : "Abonado", abonos: abonosActualizados };
     };
-
     setPedidos((prev) => prev.map(actualizarPedido));
-
-    // Sincronizar detalle si está abierto
     setDetalleModal((prev) => prev ? actualizarPedido(prev) : null);
-
     showToast(estaCompleto ? "✅ ¡Pedido pagado completamente!" : "✅ Abono registrado con éxito");
   };
 
@@ -428,13 +477,12 @@ function DashboardCliente() {
     }
   };
 
-  /* ── Helpers UI ── */
   const getBadgeClass = (estado) => {
     switch (estado) {
       case "Pagado": case "Confirmado": case "Abonado": return "exito";
-      case "Pendiente":  return "pendiente";
-      case "Cancelado":  return "error";
-      default:           return "info";
+      case "Pendiente": return "pendiente";
+      case "Cancelado": return "error";
+      default:          return "info";
     }
   };
 
@@ -454,16 +502,14 @@ function DashboardCliente() {
     return b ? `${b.nombre} (${b.comuna})` : null;
   };
 
-  /* ── Stats de perfil ── */
   const totalCompras = pedidos.reduce((s, p) => s + Number(p.total || 0), 0);
   const totalPagado  = pedidos.reduce((s, p) => s + Number(p.total_pagado || 0), 0);
-  const countPagados = pedidos.filter((p) => ["Pagado","Confirmado","Abonado"].includes(p.estado)).length;
+  const countPagados = pedidos.filter((p) => ["Pagado", "Confirmado", "Abonado"].includes(p.estado)).length;
 
   const today = new Date().toLocaleDateString("es-CO", {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
 
-  /* ── Campos perfil (solo lectura) ── */
   const camposPerfil = [
     { label: "Nombre",    key: "nombre"    },
     { label: "Tipo doc.", key: "tipo_doc"  },
@@ -475,7 +521,6 @@ function DashboardCliente() {
     { label: "Dirección", key: "direccion" },
   ];
 
-  /* ── Pasos editar perfil ── */
   const PasoDatos = (
     <div>
       <div className="ms-form-group">
@@ -486,7 +531,7 @@ function DashboardCliente() {
         <div className="ms-form-group">
           <label className="ms-form-label">Tipo documento</label>
           <select className="ms-form-select" value={form.tipo_doc} onChange={(e) => setForm({ ...form, tipo_doc: e.target.value })}>
-            {["CC","CE","TI","NIT","Pasaporte"].map((t) => <option key={t}>{t}</option>)}
+            {["CC", "CE", "TI", "NIT", "Pasaporte"].map((t) => <option key={t}>{t}</option>)}
           </select>
         </div>
         <div className="ms-form-group">
@@ -536,14 +581,10 @@ function DashboardCliente() {
     </div>
   );
 
-  /* ════════════════════ RENDER ════════════════════ */
   return (
     <div className="dashboard">
-
-      {/* Toast */}
       {toastMsg && <div className="dvna-toast">{toastMsg}</div>}
 
-      {/* Header */}
       <div className="dashboard-header">
         <div>
           <h1 className="dashboard-title">
@@ -553,7 +594,7 @@ function DashboardCliente() {
         <span className="dashboard-date">{today}</span>
       </div>
 
-      {/* ── Perfil ── */}
+      {/* Perfil */}
       <div className="chart-card" style={{ marginBottom: 16 }}>
         {cargandoPerfil ? (
           <p style={{ color: "var(--dvna-muted)", fontSize: 13 }}>Cargando...</p>
@@ -607,7 +648,6 @@ function DashboardCliente() {
         )}
       </div>
 
-      {/* Modal editar perfil */}
       {showModalSteps && (
         <ModalSteps
           titulo="Editar perfil"
@@ -622,7 +662,7 @@ function DashboardCliente() {
         </ModalSteps>
       )}
 
-      {/* ── TABLA DE PEDIDOS ── */}
+      {/* Tabla de pedidos */}
       <div className="chart-card">
         <div className="chart-header">
           <div>
@@ -657,10 +697,10 @@ function DashboardCliente() {
               <tbody>
                 {pedidos.map((pedido, idx) => {
                   const abonosConfirmados = pedido.abonos?.filter((a) => a.estado === "Confirmado").length || 0;
-                  const esCuotas          = pedido.tipo_pago === "cuotas";
-                  const restante          = Number(pedido.total || 0) - Number(pedido.total_pagado || 0);
-                  const puedePagar        = restante > 0 && pedido.estado !== "Cancelado";
-                  const textoTipo         = esCuotas ? `${abonosConfirmados}/${pedido.num_cuotas}` : "Completo";
+                  const esCuotas  = pedido.tipo_pago === "cuotas";
+                  const restante  = Number(pedido.total || 0) - Number(pedido.total_pagado || 0);
+                  const puedePagar = restante > 0 && pedido.estado !== "Cancelado";
+                  const textoTipo = esCuotas ? `${abonosConfirmados}/${pedido.num_cuotas}` : "Completo";
 
                   return (
                     <tr key={pedido.id_venta} className="tbl-row">
@@ -675,14 +715,9 @@ function DashboardCliente() {
                       <td className="tbl-td">
                         <span className={`badge ${getBadgeClass(pedido.estado)}`}>{formatEstado(pedido.estado)}</span>
                       </td>
-
-                      {/* ── COLUMNA PAGAR ── */}
                       <td className="tbl-td">
                         {puedePagar ? (
-                          <button
-                            className="tbl-action-btn tbl-action-btn--pay"
-                            onClick={() => setPagoModal(pedido)}
-                          >
+                          <button className="tbl-action-btn tbl-action-btn--pay" onClick={() => setPagoModal(pedido)}>
                             <IconCreditCard /> Pagar
                           </button>
                         ) : (
@@ -691,13 +726,8 @@ function DashboardCliente() {
                           </span>
                         )}
                       </td>
-
-                      {/* ── COLUMNA VER DETALLE ── */}
                       <td className="tbl-td">
-                        <button
-                          className="tbl-action-btn tbl-action-btn--view"
-                          onClick={() => cargarDetallePedido(pedido)}
-                        >
+                        <button className="tbl-action-btn tbl-action-btn--view" onClick={() => cargarDetallePedido(pedido)}>
                           Ver detalle
                         </button>
                       </td>
@@ -710,7 +740,6 @@ function DashboardCliente() {
         )}
       </div>
 
-      {/* ── Modal de PAGO ── */}
       {pagoModal && (
         <PaymentModal
           pedido={pagoModal}
@@ -720,7 +749,6 @@ function DashboardCliente() {
         />
       )}
 
-      {/* ── Modal de DETALLE ── */}
       {detalleModal && (
         <OrderDetailModal
           pedido={detallesPedidos[detalleModal.id_venta] || detalleModal}

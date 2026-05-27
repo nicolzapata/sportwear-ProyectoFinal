@@ -21,6 +21,80 @@
   min-width: 160px;
 }
 
+/* Links al lado del logo */
+.navbar-left-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-left: 24px;
+}
+
+/* Navbar nav - links y filtros juntos */
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Filtros inline con links */
+.navbar-nav button.navbar-link {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--dvna-charcoal);
+  text-decoration: none;
+  padding: 4px 0;
+  position: relative;
+  transition: color 0.2s;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+.navbar-nav button.navbar-link:focus {
+  outline: none;
+}
+.navbar-nav button.navbar-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--dvna-circle);
+  transition: width 0.25s ease;
+}
+.navbar-nav button.navbar-link:hover {
+  color: var(--dvna-circle);
+}
+.navbar-nav button.navbar-link:hover::after {
+  width: 100%;
+}
+.navbar-nav button.navbar-link.active {
+  color: var(--dvna-circle);
+}
+.navbar-nav button.navbar-link.active::after {
+  width: 100%;
+}
+
+/* Buscador en navbar */
+.navbar-search {
+  max-width: 280px;
+  margin-left: 24px;
+}
+
+.navbar-search .search-input-wrap svg {
+  left: 12px;
+  width: 14px;
+  height: 14px;
+}
+
+.navbar-search .search-input {
+  font-size: 12px;
+  padding: 8px 16px 8px 36px;
+}
+
 .navbar-brand {
   font-family: var(--font-body);
   font-size: 15px;
@@ -247,6 +321,7 @@
   .navbar-user-role,
   .navbar-page-date { display: none; }
   .navbar-brand-icon { display: none; }
+  .navbar-nav { display: none; }
 }
 
 /* ── Modal logout ── */

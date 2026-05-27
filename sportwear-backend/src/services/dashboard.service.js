@@ -23,14 +23,16 @@ const getResumen = async () => {
   `);
 
   const ventasResult = await pool.query(`
-    SELECT v.id_venta, c.nombre AS cliente, p.nombre AS producto,
+    SELECT DISTINCT ON (v.id_venta)
+           v.id_venta, c.nombre AS cliente, p.nombre AS producto,
            v.total, v.estado, v.fecha
     FROM "Ventas" v
     INNER JOIN "Clientes"     c  ON v.id_cliente  = c.id_cliente
     LEFT  JOIN "DetalleVenta" dv ON dv.id_venta   = v.id_venta
     LEFT  JOIN "Productos"    p  ON dv.id_producto = p.id_producto
     WHERE v.estado NOT IN ('Abandonado', 'Pendiente')
-    ORDER BY v.fecha DESC LIMIT 5
+    ORDER BY v.id_venta, v.fecha DESC
+    LIMIT 5
   `);
 
   return {
@@ -41,31 +43,46 @@ const getResumen = async () => {
 };
 
 const getVentasMensuales = async () => {
-  const result = await pool.query(`
+  const mesesNombres = [
+    'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+    'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+  ];
+
+  // Año actual
+  const currentResult = await pool.query(`
     SELECT
-      TO_CHAR(fecha, 'Mon') AS mes,
       EXTRACT(MONTH FROM fecha)::int AS mes_num,
-      EXTRACT(YEAR  FROM fecha)::int AS anio,
       COALESCE(SUM(total), 0)        AS total
     FROM "Ventas"
     WHERE
-      fecha >= NOW() - INTERVAL '13 months'
+      EXTRACT(YEAR FROM fecha) = EXTRACT(YEAR FROM CURRENT_DATE)
       AND estado NOT IN ('Anulado', 'Abandonado', 'Pendiente')
-    GROUP BY anio, mes_num, mes
-    ORDER BY anio ASC, mes_num ASC
+    GROUP BY mes_num
   `);
 
-  const anioActual   = new Date().getFullYear();
-  const anioAnterior = anioActual - 1;
+  // Año anterior
+  const previousResult = await pool.query(`
+    SELECT
+      EXTRACT(MONTH FROM fecha)::int AS mes_num,
+      COALESCE(SUM(total), 0)        AS total
+    FROM "Ventas"
+    WHERE
+      EXTRACT(YEAR FROM fecha) = EXTRACT(YEAR FROM CURRENT_DATE) - 1
+      AND estado NOT IN ('Anulado', 'Abandonado', 'Pendiente')
+    GROUP BY mes_num
+  `);
 
-  const mesesActual   = result.rows.filter((r) => r.anio === anioActual).slice(-6);
-  const mesesAnterior = result.rows.filter((r) => r.anio === anioAnterior).slice(-6);
+  // Mapear a objeto { mes_num: total }
+  const currentPorMes  = {};
+  const previousPorMes = {};
 
-  const labels   = mesesActual.map((r) => r.mes);
-  const current  = mesesActual.map((r) => Number(r.total));
-  const previous = labels.map((_, i) =>
-    mesesAnterior[i] ? Number(mesesAnterior[i].total) : 0
-  );
+  currentResult.rows.forEach(r  => { currentPorMes[r.mes_num]  = Number(r.total); });
+  previousResult.rows.forEach(r => { previousPorMes[r.mes_num] = Number(r.total); });
+
+  // Siempre los 12 meses, con 0 donde no hay ventas
+  const labels   = mesesNombres;
+  const current  = mesesNombres.map((_, i) => currentPorMes[i + 1]  || 0);
+  const previous = mesesNombres.map((_, i) => previousPorMes[i + 1] || 0);
 
   return { labels, current, previous };
 };

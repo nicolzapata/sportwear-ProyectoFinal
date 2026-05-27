@@ -2,18 +2,11 @@
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
-import { IconCart, IconUser, IconLogOut } from "./Icons";
+import { IconCart, IconUser, IconLogOut, IconSearch } from "./Icons";
 import logo from "../assets/LOGO.png";
 import "./Navbar.css";
 
-const LINKS = [
-  { to: "/catalogo",       label: "Catálogo"       },
-  { to: "/novedades",      label: "Novedades"      },
-  { to: "/ofertas",        label: "Ofertas"        },
-  { to: "/sobre-nosotros", label: "Sobre nosotros" },
-];
-
-export default function PublicNavbar() {
+export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, setFiltroCategoria, categorias }) {
   const { usuario, logout } = useAuth();
   const { totalItems, oculto } = useCart();
   const navigate = useNavigate();
@@ -34,18 +27,46 @@ export default function PublicNavbar() {
         </Link>
       </div>
 
-      {/* ── Centro: Navegación ── */}
-      <nav className="navbar-center">
-        {LINKS.map(({ to, label }) => (
+      {/* ── Centro: Links + Filtros ── */}
+      <div className="navbar-center">
+        <nav className="navbar-nav">
           <NavLink
-            key={to}
-            to={to}
+            to="/catalogo"
             className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}
           >
-            {label}
+            Catálogo
           </NavLink>
-        ))}
-      </nav>
+          <NavLink
+            to="/sobre-nosotros"
+            className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}
+          >
+            Sobre nosotros
+          </NavLink>
+          {categorias && categorias.filter(cat => cat !== "Todos").map((cat) => (
+            <button
+              key={cat}
+              className={`navbar-link${filtroCategoria === cat ? " active" : ""}`}
+              onClick={() => setFiltroCategoria(cat)}
+              style={{ background: "none", border: "none", cursor: "pointer" }}
+            >
+              {cat}
+            </button>
+          ))}
+        </nav>
+        {busqueda !== undefined && (
+          <div className="search-input-wrap navbar-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              className="search-input"
+              placeholder="Buscar producto..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
 
       {/* ── Derecha: Acciones ── */}
       <div className="navbar-right">

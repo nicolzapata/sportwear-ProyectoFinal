@@ -37,13 +37,14 @@
 .nov-hero {
   position: relative;
   background: var(--nov-black);
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
   overflow: hidden;
   box-sizing: border-box;
+  margin-left: calc(-50vw + 50%);
 }
 
 /* Ticker tape superior */
