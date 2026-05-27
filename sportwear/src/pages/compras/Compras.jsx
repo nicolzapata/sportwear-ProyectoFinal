@@ -1,7 +1,7 @@
 // src/pages/compras/Compras.jsx
 import { useState } from "react";
 import './Compras.css';
-import { IconCart, IconCheck, IconEye, IconHome, IconSearch, IconX } from "../../components/Icons";
+import { IconCart, IconCheck, IconEye, IconHome, IconPrint, IconSearch, IconX } from "../../components/Icons";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 
 const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
@@ -68,50 +68,55 @@ export default function Compras() {
         {filtrados.length} compra{filtrados.length !== 1 ? 's' : ''} encontrada{filtrados.length !== 1 ? 's' : ''}
       </div>
 
-      <div className="tbl-container">
-        <table className="tbl">
-          <thead className="tbl-header">
-            <tr>
-              <th className="tbl-th">Proveedor</th>
-              <th className="tbl-th">Producto</th>
-              <th className="tbl-th">Cant.</th>
-              <th className="tbl-th">Total</th>
-              <th className="tbl-th">Fecha</th>
-              <th className="tbl-th">Estado</th>
-              <th className="tbl-th">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="tbl-body">
-            {filtrados.map((c) => (
-              <tr key={c.id_compra} className="tbl-row">
-                <td className="tbl-td">
-                  <div className="compras-proveedor-cell">
-                    <span className="compras-proveedor-name">{c.proveedor}</span>
-                  </div>
-                </td>
-                <td className="tbl-td compras-producto-cell">{c.producto}</td>
-                <td className="tbl-td compras-cantidad-cell">{c.cantidad}</td>
-                <td className="tbl-td compras-total-cell">{fmt(c.total)}</td>
-                <td className="tbl-td compras-fecha-cell">{c.fecha?.toString().split("T")[0]}</td>
-                <td className="tbl-td">
-                  <span className={`compras-badge ${getEstadoBadge(c.estado)}`}>{c.estado}</span>
-                </td>
-                <td className="tbl-td">
-                  <div className="compras-action-cell">
-                    <button className="compras-action-btn compras-view-btn" onClick={() => setVerDetalle(c)} title="Ver detalles"><IconEye /></button>
-                    {c.estado === "Pendiente" && (
-                      <>
-                        <button className="compras-action-btn compras-receive-btn" onClick={() => cambiarEstado(c.id_compra, "Recibido")} title="Marcar como recibido"><IconCheck /></button>
-                        <button className="compras-action-btn compras-cancel-btn" onClick={() => cambiarEstado(c.id_compra, "Anulado")} title="Anular compra"><IconX /></button>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+       <div className="tbl-container">
+         <table className="tbl">
+           <thead className="tbl-header">
+             <tr>
+               <th className="tbl-th">Proveedor</th>
+               <th className="tbl-th">Producto</th>
+               <th className="tbl-th">Cant.</th>
+               <th className="tbl-th">Total</th>
+               <th className="tbl-th">Fecha</th>
+               <th className="tbl-th">Estado</th>
+               <th className="tbl-th">Acciones</th>
+             </tr>
+           </thead>
+           <tbody className="tbl-body">
+             {filtrados.map((c) => (
+               <tr key={c.id_compra} className="tbl-row">
+                 <td className="tbl-td">
+                   <div className="compras-proveedor-cell">
+                     <span className="compras-proveedor-name">{c.proveedor}</span>
+                   </div>
+                 </td>
+                 <td className="tbl-td compras-producto-cell">{c.producto}</td>
+                 <td className="tbl-td compras-cantidad-cell">{c.cantidad}</td>
+                 <td className="tbl-td compras-total-cell">{fmt(c.total)}</td>
+                 <td className="tbl-td compras-fecha-cell">{c.fecha?.toString().split("T")[0]}</td>
+                 <td className="tbl-td">
+                   <span className={`compras-badge ${getEstadoBadge(c.estado)}`}>{c.estado}</span>
+                 </td>
+                 <td className="tbl-td">
+                   <div className="compras-action-cell">
+                     <button className="compras-action-btn compras-view-btn" onClick={() => setVerDetalle(c)} title="Ver detalles"><IconEye /></button>
+                     {c.estado === "Pendiente" && (
+                       <>
+                         <button className="compras-action-btn compras-receive-btn" onClick={() => cambiarEstado(c.id_compra, "Recibido")} title="Marcar como recibido"><IconCheck /></button>
+                         <button className="compras-action-btn compras-cancel-btn" onClick={() => cambiarEstado(c.id_compra, "Anulado")} title="Anular compra"><IconX /></button>
+                       </>
+                     )}
+                   </div>
+                 </td>
+               </tr>
+             ))}
+           </tbody>
+         </table>
+         <div className="print-button-container">
+           <button className="btn-print" onClick={() => window.print()}>
+             <IconPrint />
+           </button>
+         </div>
+       </div>
 
       {modal && (
         <div className="compras-modal-overlay" onClick={() => setModal(false)}>

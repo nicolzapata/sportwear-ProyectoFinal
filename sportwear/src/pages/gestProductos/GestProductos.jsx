@@ -5,7 +5,7 @@ import GaleriaImagenes from "../../components/GaleriaImagenes";
 import GestVariantes from "../../components/GestVariantes";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
-import { IconAlertTriangle, IconBan, IconCheck, IconEdit, IconEye, IconSearch, IconX, IconPalette, IconBox, IconTag } from "../../components/Icons";
+import { IconAlertTriangle, IconBan, IconCheck, IconEdit, IconEye, IconPrint, IconSearch, IconX, IconPalette, IconBox, IconTag } from "../../components/Icons";
 import "./GestProductos.css";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
@@ -28,7 +28,7 @@ export default function GestProductos() {
   const [pendingVariantes, setPendingVariantes] = useState([]);
   const [pendingImagenes, setPendingImagenes] = useState([]);
   const [tab, setTab] = useState("productos");
-  
+
   // Estados para categorías
   const [formCategoria, setFormCategoria] = useState({ nombre: "", icono: "tag" });
   const [editarCategoria, setEditarCategoria] = useState(null);
@@ -461,7 +461,6 @@ export default function GestProductos() {
               value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
             {busqueda && <button className="gestproductos-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
           </div>
-          {/* Tabs de filtro */}
           <div className="gestproductos-tabs-bar">
             <button className={`gestproductos-tab-btn${tab === 'productos' ? ' active' : ''}`} onClick={() => setTab('productos')}><IconBox /> Productos</button>
             <button className={`gestproductos-tab-btn${tab === 'categorias' ? ' active' : ''}`} onClick={() => setTab('categorias')}><IconTag /> Categorías</button>
@@ -471,7 +470,6 @@ export default function GestProductos() {
           <span>+</span> Nuevo {tab === 'productos' ? 'producto' : 'categoría'}
         </button>
       </div>
-
 
       {tab === 'productos' ? (
         <div className="gestproductos-table-container">
@@ -529,9 +527,11 @@ export default function GestProductos() {
                     )}
                   </td>
                   <td className="tbl-td">
-                    <button className={`gestproductos-toggle-publicado ${p.publicado ? "publicado" : "no-publicado"}`}
+                    <button
+                      className={`gestproductos-toggle-publicado ${p.publicado ? "publicado" : "no-publicado"}`}
                       disabled={p.estado === "Inactivo"}
-                      onClick={() => togglePublicado(p.id_producto)}>
+                      onClick={() => togglePublicado(p.id_producto)}
+                    >
                       {p.publicado ? "Sí" : "No"}
                     </button>
                   </td>
@@ -553,6 +553,11 @@ export default function GestProductos() {
               ))}
             </tbody>
           </table>
+          <div className="print-button-container">
+            <button className="btn-print" onClick={() => window.print()}>
+              <IconPrint />
+            </button>
+          </div>
         </div>
       ) : (
         <div className="gestproductos-table-container">
@@ -598,6 +603,11 @@ export default function GestProductos() {
               ))}
             </tbody>
           </table>
+          <div className="print-button-container">
+            <button className="btn-print" onClick={() => window.print()}>
+              <IconPrint />
+            </button>
+          </div>
         </div>
       )}
 

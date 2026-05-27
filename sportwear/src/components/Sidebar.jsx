@@ -20,7 +20,6 @@ const NAV_ICONS = {
   "/proveedores":  <IconTruck />,
   "/compras":      <IconCart />,
   "/pedidos":      <IconDollar />,
-  "/promociones":  <IconHeart />,
   "/pagos":        <IconCreditCard />,
   "/configuracion":<IconSettings />,
 };
@@ -73,11 +72,17 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="sidebar-footer">
         <div className="user-info">
+          {/* Avatar con inicial — visible solo cuando está colapsado */}
+          <div className="user-avatar">
+            {(usuario?.nombre ?? "U").charAt(0).toUpperCase()}
+          </div>
+
           <div className="user-text">
             <div className="user-name">{usuario?.nombre ?? "Usuario"}</div>
             <div className="user-role">{usuario?.rol ?? "—"}</div>
           </div>
         </div>
+
         <button className="logout-btn" onClick={handleLogout} title="Cerrar sesión">
           <IconLogOut />
         </button>

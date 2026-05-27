@@ -80,7 +80,6 @@
   flex-direction: column;
   align-items: center;
 }
-
 .stat-card {
   background: var(--dvna-white);
   border: 0.5px solid var(--dvna-border);
@@ -146,10 +145,10 @@
   letter-spacing: -0.01em;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   LAYOUT SIMÉTRICO — las dos grillas usan la misma lógica:
-   dos columnas iguales, cards que se estiran para igualar altura
-   ══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+    LAYOUT SIMÉTRICO — las dos grillas usan la misma lógica:
+    dos columnas iguales, cards que se estiran para igualar altura
+    ═══════════════════════════════════════════════════════════════ */
 
 .charts-grid,
 .charts-grid-2 {
@@ -220,20 +219,6 @@
   margin: 0;
 }
 
-.period-badge {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: none;
-  padding: 4px 10px;
-  border-radius: 20px;
-  background: rgba(180,151,128,0.12);
-  color: var(--dvna-circle);
-  border: none;
-  cursor: pointer;
-}
-
 /* ── Top products ── */
 .top-products { display: flex; flex-direction: column; gap: 14px; }
 .top-product { display: flex; flex-direction: column; gap: 6px; }
@@ -299,9 +284,9 @@
 .stat-mini-label { font-family: 'DM Sans', system-ui, sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0.04em; text-transform: none; color: var(--dvna-muted); display: block; margin-bottom: 3px; }
 .stat-mini-value { font-family: 'DM Sans', system-ui, sans-serif; font-size: 20px; font-weight: 300; color: var(--dvna-charcoal); display: block; line-height: 1; text-transform: none; }
 
-/* ══════════════════════════════════════════════════════════════════
-   PERFIL CLIENTE
-   ══════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+    PERFIL CLIENTE
+    ══════════════════════════════════════════════════════════════ */
 
 .profile-top-row {
   display: flex;
@@ -333,7 +318,7 @@
   display: flex; align-items: center; gap: 0;
   margin-bottom: 16px; flex-wrap: wrap; row-gap: 10px;
 }
-.profile-stats-group { display: flex; align-items: center; }
+.profile-stat-group { display: flex; align-items: center; }
 .profile-stat-item {
   display: flex; flex-direction: column; align-items: center; padding: 0 18px;
 }
@@ -374,9 +359,10 @@
 }
 .profile-field-input:focus { border-color: var(--dvna-circle); }
 
-/* ══════════════════════════════════════════════════════════════════
-   MODAL
-   ══════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════
+    MODAL
+    ═════════════════════════════════════════════════════════════ */
+
 .modal-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.45); display: flex;
@@ -466,9 +452,9 @@
   color: var(--dvna-muted); font-family: 'DM Sans', system-ui, sans-serif; font-size: 13px;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   TOAST Y BOTONES DE ACCIÓN
-══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+    TOAST Y BOTONES DE ACCIÓN
+═══════════════════════════════════════════════════════════════ */
 
 .dvna-toast {
   position: fixed; top: 20px; right: 20px; z-index: 99999;
@@ -499,9 +485,9 @@
 .tbl-action-btn--view   { background: #fff; color: #1a1a1a; border-color: #e5e5e5; }
 .tbl-disabled           { font-size: 11px; color: #aaa; font-style: italic; }
 
-/* ══════════════════════════════════════════════════════════════
-   RESPONSIVE
-══════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════
+    RESPONSIVE
+═══════════════════════════════════════════════════════════════ */
 
 @media (max-width: 1100px) {
   .stats-grid    { grid-template-columns: repeat(2, 1fr); }
@@ -524,4 +510,27 @@
   .profile-fields-grid { grid-template-columns: 1fr; }
   .profile-stat-item { padding: 0 10px; }
   .modal-box         { width: 96%; }
+}
+
+/* Print button */
+.print-button-container {
+  margin-top: 1rem;
+  text-align: right;
+}
+.btn-print {
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+.btn-print:hover {
+  background: #333;
+  transform: translateY(-2px);
 }

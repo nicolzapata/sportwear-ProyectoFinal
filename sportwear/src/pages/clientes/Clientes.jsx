@@ -4,7 +4,7 @@ import api from "../../services/api";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import "./Clientes.css";
-import { IconBan, IconCheck, IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
+import { IconBan, IconCheck, IconEdit, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
 
 

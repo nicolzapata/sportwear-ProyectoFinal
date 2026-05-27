@@ -14,7 +14,6 @@ import Catalogo            from "../pages/catalogo/Catalogo";
 import DetalleProducto from "../pages/catalogo/DetalleProducto";
 import Carrito             from "../pages/carrito/Carrito";
 import Checkout            from "../pages/checkout/Checkout";
-import Novedades           from "../pages/novedades/Novedades";
 import SobreNosotros       from "../pages/sobre-nosotros/SobreNosotros";
 
 // Páginas protegidas
@@ -26,7 +25,6 @@ import Colores       from "../pages/colores/Colores";
 import Proveedores   from "../pages/proveedores/Proveedores";
 import Compras       from "../pages/compras/Compras";
 import PedidosVentas from "../pages/pedidosVentas/PedidosVentas";
-import Promociones   from "../pages/promociones/Promociones";
 import PagosAbonos   from "../pages/pagosAbonos/PagosAbonos";
 
 const P = ({ k, children }) => (
@@ -52,7 +50,6 @@ export default function AppRouter() {
               <Route path="/catalogo/:id" element={<DetalleProducto />} />
               <Route path="/carrito"         element={<Carrito />} />
               <Route path="/checkout"        element={<Checkout />} />
-              <Route path="/novedades"       element={<Novedades />} />
               <Route path="/sobre-nosotros"  element={<SobreNosotros />} />
             </Route>
 
@@ -66,7 +63,6 @@ export default function AppRouter() {
               <Route path="/proveedores" element={<P k="proveedores"> <Proveedores />   </P>} />
               <Route path="/compras"     element={<P k="compras">     <Compras />       </P>} />
               <Route path="/pedidos"     element={<P k="pedidos">     <PedidosVentas /> </P>} />
-              <Route path="/promociones" element={<P k="promociones"> <Promociones />   </P>} />
               <Route path="/pagos"       element={<P k="pagos">       <PagosAbonos />   </P>} />
             </Route>
 

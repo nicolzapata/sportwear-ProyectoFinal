@@ -1,4 +1,11 @@
 /* ── Catalogo.css ── Wix Template 2517 Style ── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --sn-black:   #0e0e0e;
+  --sn-white:   #fafaf8;
+  --sn-accent:  #c8a882;
+}
 
 /* ── Global resets for responsiveness ── */
 *,
@@ -695,105 +702,141 @@ html, body {
    que es igual a las primeras 15 repeticiones,
    idénticas a las últimas 15 → loop perfecto.
    ════════════════════════════════════════ */
-.nov-hero-tape {
-  overflow: hidden;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--dvna-border);
-}
 
-.nov-hero-tape-track {
-  display: flex;
-  width: max-content;
-  animation: tape-scroll 50s linear infinite;
-}
-
-@keyframes tape-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-100%); }
-}
-
-.nov-hero-tape span {
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  color: var(--dvna-charcoal);
-  padding: 0 20px;
-  white-space: nowrap;
-}
 
 /* ── Hero Section ── */
-.nov-hero-content {
+.nov-hero-wrapper {
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  margin-left:  calc(-1 * var(--layout-padding, 0px));
+  margin-right: calc(-1 * var(--layout-padding, 0px));
+  width: 100vw;
+  max-width: 100vw;
   position: relative;
-  z-index: 1;
-  padding: 80px 6vw 32px;
-  animation: nov-up 0.8s ease both;
-  flex: 1;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.nov-hero {
+  position: relative;
+  width: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  padding: 0 6vw;
+  overflow: hidden;
+  background: var(--sn-black);
+  box-sizing: border-box;
 }
 
-@keyframes nov-up {
-  from { opacity: 0; transform: translateY(20px); }
+.nov-hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.nov-hero-circle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.12;
+}
+.nov-hero-circle.c1 {
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, var(--sn-accent), transparent 70%);
+  top: -150px; right: -100px;
+  animation: sn-float 8s ease-in-out infinite;
+}
+.nov-hero-circle.c2 {
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, #fff, transparent 70%);
+  bottom: 80px; left: 10%;
+  animation: sn-float 11s ease-in-out infinite reverse;
+}
+.nov-hero-circle.c3 {
+  width: 180px; height: 180px;
+  background: var(--sn-accent);
+  top: 40%; left: 50%;
+  animation: sn-float 6s ease-in-out infinite;
+}
+@keyframes sn-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%       { transform: translateY(-24px) scale(1.04); }
+}
+
+.nov-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 680px;
+  animation: sn-fadein 0.9s ease both;
+}
+@keyframes sn-fadein {
+  from { opacity: 0; transform: translateY(28px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .nov-eyebrow {
-  display: block;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.3em;
-  color: var(--dvna-accent);
-  margin-bottom: 16px;
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.25em;
+  color: var(--sn-accent);
+  margin-bottom: 12px;
 }
 
 .nov-hero-title {
-  font-family: var(--font-display);
-  font-size: 48px;
-  font-weight: 300;
-  color: var(--dvna-charcoal);
-  line-height: 1.2;
-  margin: 0 0 20px;
-  letter-spacing: -0.02em;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(52px, 8vw, 96px);
+  font-weight: 700;
+  line-height: 1.0;
+  color: #fff;
+  margin: 0 0 28px;
 }
 .nov-hero-title em {
-  font-style: normal;
-  color: var(--dvna-accent);
+  font-style: italic;
+  color: var(--sn-accent);
 }
 
 .nov-hero-sub {
-  font-family: var(--font-body);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 300;
-  color: var(--dvna-charcoal);
-  line-height: 1.6;
+  line-height: 1.7;
+  color: #ffffffb0;
+  max-width: 500px;
   margin: 0;
-  letter-spacing: 0.02em;
 }
 
 .nov-hero-strip {
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 20px 0;
-  border-top: 1px solid var(--dvna-border);
-  font-family: var(--font-body);
-  font-size: 13px;
-  color: var(--dvna-charcoal);
+  gap: 32px;
+  padding: 28px 6vw;
+  border-top: 1px solid #ffffff12;
+  animation: sn-fadein 1.1s 0.2s ease both;
 }
 .nov-strip-item {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 24px;
+  flex-direction: column;
+  gap: 4px;
 }
-.nov-strip-item span { font-size: 18px; }
+.nov-strip-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  color: #fff;
+  font-weight: 700;
+}
+.nov-stat-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: #ffffff70;
+}
 .nov-strip-sep {
   width: 1px;
-  height: 24px;
-  background: var(--dvna-border);
+  height: 40px;
+  background: #ffffff12;
 }
 
 /* ── Responsive ── */
@@ -810,11 +853,10 @@ html, body {
   .catalog-footer-brand { flex-direction: column; text-align: center; }
   .catalog-footer-divider { display: none; }
   .catalog-footer-links { justify-content: center; }
-  .nov-hero-content { padding: 48px 20px 32px; }
+  .nov-hero { padding: 0 24px; }
+  .nov-hero-strip { gap: 16px; flex-wrap: wrap; padding: 20px 24px; }
   .nov-hero-title { font-size: 36px; }
-  .nov-hero-strip { flex-direction: column; gap: 12px; padding: 24px 0; }
   .nov-strip-sep { display: none; }
-  .nov-strip-item { padding: 0; }
 }
 
 /* ── Fix overflow horizontal ── */

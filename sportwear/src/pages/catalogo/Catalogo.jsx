@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import api from "../../services/api";
 import "./Catalogo.css";
-import { IconBox, IconSearch, IconBolt, IconCreditCard, IconStar } from "../../components/Icons";
+import { IconBox, IconSearch } from "../../components/Icons";
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("es-CO", {
@@ -368,25 +368,43 @@ export default function Catalogo() {
     <>
       {/* ── Hero ── */}
       {!hayFiltroActivo && (
-        <section className="nov-hero">
-          <div className="nov-hero-content">
-            <span className="nov-eyebrow">DVNA 2026</span>
-            <h1 className="nov-hero-title">
-              Lo nuevo de<br /><em>DVNA</em>
-            </h1>
-            <p className="nov-hero-sub">
-              Ropa deportiva femenina diseñada para tu estilo y comodidad.<br />
-              Calidad, tendencia y confianza en cada prenda.
-            </p>
-          </div>
-          <div className="nov-hero-strip">
-            <div className="nov-strip-item"><IconBolt /> Control de inventario en tiempo real</div>
-            <div className="nov-strip-sep" />
-            <div className="nov-strip-item"><IconCreditCard /> Compra a crédito y paga a cuotas</div>
-            <div className="nov-strip-sep" />
-            <div className="nov-strip-item"><IconStar /> Marca colombiana DVNA</div>
-          </div>
-        </section>
+        <div className="nov-hero-wrapper">
+          <section className="nov-hero">
+            <div className="nov-hero-bg" aria-hidden="true">
+              <div className="nov-hero-circle c1" />
+              <div className="nov-hero-circle c2" />
+              <div className="nov-hero-circle c3" />
+            </div>
+
+            <div className="nov-hero-content">
+              <span className="sn-eyebrow">DVNA 2026</span>
+              <h1 className="nov-hero-title">
+                Lo nuevo de<br /><em>DVNA</em>
+              </h1>
+              <p className="nov-hero-sub">
+                Ropa deportiva femenina diseñada para tu estilo y comodidad.<br />
+                Calidad, tendencia y confianza en cada prenda.
+              </p>
+            </div>
+
+            <div className="nov-hero-strip">
+              <div className="nov-strip-item">
+                <span className="nov-strip-num">2026</span>
+                <span className="nov-stat-label">Control</span>
+              </div>
+              <div className="nov-strip-sep" />
+              <div className="nov-strip-item">
+                <span className="nov-strip-num">+500</span>
+                <span className="nov-stat-label">Productos</span>
+              </div>
+              <div className="nov-strip-sep" />
+              <div className="nov-strip-item">
+                <span className="nov-strip-num">100%</span>
+                <span className="nov-stat-label">Calidad</span>
+              </div>
+            </div>
+          </section>
+        </div>
       )}
 
       {/* ── Catálogo ── */}

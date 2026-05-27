@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import './PagosAbonos.css';
 import api from "../../services/api";
-import { IconCheck, IconCreditCard, IconEye, IconSearch, IconX } from "../../components/Icons";
+import { IconCheck, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", {
@@ -96,20 +96,36 @@ export default function PagosAbonos() {
     }
   };
 
-  // ── Confirmar pago ─────────────────────────────────────────────────────────
-  const confirmar = async (id) => {
-    try {
-      await api.patch(`/pagos/${id}/estado`, { estado: "Confirmado" });
-      setDatos(prev =>
-        prev.map(p => p.id_pago === id ? { ...p, estado: "Confirmado" } : p)
-      );
-    } catch (err) {
-      console.error("Error confirmando pago:", err);
-      alert(err.response?.data?.message ?? "Error al confirmar el pago.");
-    }
-  };
+// ── Abrir detalle ───────────────────────────────────────────────────────────
+   const abrirDetalle = (pago) => setVerDetalle(pago);
 
-  // ── Helpers de UI ──────────────────────────────────────────────────────────
+   // ── Registrar pago ─────────────────────────────────────────────────────────
+   const registrarPago = async (id) => {
+     try {
+       await api.patch(`/pagos/${id}/estado`, { estado: "Confirmado" });
+       setDatos(prev =>
+         prev.map(p => p.id_pago === id ? { ...p, estado: "Confirmado" } : p)
+       );
+     } catch (err) {
+       console.error("Error registrando pago:", err);
+       alert(err.response?.data?.message ?? "Error al registrar el pago.");
+     }
+   };
+
+   // ── Cancelar pago ───────────────────────────────────────────────────────────
+   const cancelarPago = async (id) => {
+     try {
+       await api.patch(`/pagos/${id}/estado`, { estado: "Anulado" });
+       setDatos(prev =>
+         prev.map(p => p.id_pago === id ? { ...p, estado: "Anulado" } : p)
+       );
+     } catch (err) {
+       console.error("Error cancelando pago:", err);
+       alert(err.response?.data?.message ?? "Error al cancelar el pago.");
+     }
+   };
+
+   // ── Helpers de UI ──────────────────────────────────────────────────────────
   const getMetodoIcon = (metodo) => {
     switch (metodo) {
       case "Efectivo":      return "Ef.";
@@ -177,83 +193,79 @@ export default function PagosAbonos() {
 
       
 
-      {/* Tabla */}
-      <div className="tbl-container">
-        <table className="tbl">
-          <thead className="tbl-header">
-            <tr>
-              <th className="tbl-th">Venta</th>
-              <th className="tbl-th">Cliente</th>
-              <th className="tbl-th">Monto</th>
-              <th className="tbl-th">Tipo</th>
-              <th className="tbl-th">Método</th>
-              <th className="tbl-th">Fecha</th>
-              <th className="tbl-th">Estado</th>
-              <th className="tbl-th">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="tbl-body">
-            {filtrados.map((p) => (
-              <tr key={p.id_pago} className="tbl-row">
-                <td className="tbl-td">
-                  <span className="pagosabonos-venta-badge">
-                    V-{String(p.id_venta).padStart(3, "0")}
-                  </span>
-                </td>
-                <td className="tbl-td">
-                  <span className="pagosabonos-cliente-name">{p.cliente}</span>
-                </td>
-                <td className="tbl-td pagosabonos-monto-cell">{fmt(p.monto)}</td>
-                <td className="tbl-td pagosabonos-tipo-cell">{p.tipo}</td>
-                <td className="tbl-td">
-                  <span className="pagosabonos-metodo">
-                    <span className="pagosabonos-metodo-icon">{getMetodoIcon(p.metodo)}</span>
-                    {p.metodo}
-                  </span>
-                </td>
-                <td className="tbl-td pagosabonos-fecha-cell">
-                  {p.fecha?.toString().split("T")[0]}
-                </td>
-                <td className="tbl-td">
-                  <span className={`tabla-badge ${getEstadoBadge(p.estado)}`}>
-                    {p.estado}
-                  </span>
-                </td>
-                <td className="tbl-td">
-                  <div className="pagosabonos-action-cell">
-                    <button
-                      className="pagosabonos-action-btn pagosabonos-view-btn"
-                      onClick={() => setVerDetalle(p)}
-                      title="Ver detalles"
-                    >
-                      <IconEye />
-                    </button>
-                    {p.estado === "Pendiente" && (
-                      <button
-                        className="pagosabonos-action-btn pagosabonos-confirm-btn"
-                        onClick={() => confirmar(p.id_pago)}
-                        title="Confirmar pago"
-                      >
-                        <IconCheck />
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+       {/* Tabla */}
+       <div className="tbl-container">
+         <table className="tbl">
+           <thead className="tbl-header">
+             <tr>
+               <th className="tbl-th">Venta</th>
+               <th className="tbl-th">Cliente</th>
+               <th className="tbl-th">Monto</th>
+               <th className="tbl-th">Tipo</th>
+               <th className="tbl-th">Método</th>
+               <th className="tbl-th">Fecha</th>
+               <th className="tbl-th">Estado</th>
+               <th className="tbl-th">Acciones</th>
+             </tr>
+           </thead>
+           <tbody className="tbl-body">
+              {filtrados.map((p) => (
+                <tr key={p.id_pago} className="tbl-row">
+                  <td className="tbl-td">
+                    <span className="pagosabonos-venta-badge">
+                      V-{String(p.id_venta).padStart(3, "0")}
+                    </span>
+                  </td>
+                  <td className="tbl-td">
+                    <span className="pagosabonos-cliente-name">{p.cliente}</span>
+                  </td>
+                  <td className="tbl-td pagosabonos-monto-cell">{fmt(p.monto)}</td>
+                  <td className="tbl-td pagosabonos-tipo-cell">{p.tipo}</td>
+                  <td className="tbl-td">
+                    <span className="pagosabonos-metodo">
+                      <span className="pagosabonos-metodo-icon">{getMetodoIcon(p.metodo)}</span>
+                      {p.metodo}
+                    </span>
+                  </td>
+                  <td className="tbl-td pagosabonos-fecha-cell">
+                    {p.fecha?.toString().split("T")[0]}
+                  </td>
+                  <td className="tbl-td">
+                    <span className={`tabla-badge ${getEstadoBadge(p.estado)}`}>
+                      {p.estado}
+                    </span>
+                  </td>
+                  <td className="tbl-td">
+                    <div className="pagosabonos-action-cell">
+                      <button className="pagosabonos-action-btn pagosabonos-view-btn" onClick={() => abrirDetalle(p)} title="Ver detalles"><IconEye /></button>
+                      {p.estado === "Pendiente" && (
+                        <>
+                          <button className="pagosabonos-action-btn pagosabonos-register-btn" onClick={() => registrarPago(p.id_pago)} title="Registrar pago"><IconCheck /></button>
+                          <button className="pagosabonos-action-btn pagosabonos-cancel-btn" onClick={() => cancelarPago(p.id_pago)} title="Cancelar"><IconX /></button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
 
-            {filtrados.length === 0 && (
-              <tr>
-                <td colSpan={8} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
-                  No hay pagos que coincidan con la búsqueda.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+              {filtrados.length === 0 && (
+                <tr>
+                  <td colSpan={8} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
+                    No hay pagos que coincidan con la búsqueda.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          <div className="print-button-container">
+            <button className="btn-print" onClick={() => window.print()}>
+              <IconPrint />
+            </button>
+          </div>
+        </div>
 
-      {/* Modal registro */}
+        {/* Modal registro */}
       {modal && (
         <div className="pagosabonos-modal-overlay" onClick={() => setModal(false)}>
           <div className="pagosabonos-modal" onClick={(e) => e.stopPropagation()}>
@@ -367,16 +379,16 @@ export default function PagosAbonos() {
         </div>
       )}
 
-      {/* Modal detalle */}
+/* Modal detalle */
       {verDetalle && (
         <ModalDetalle
           titulo="Detalle del pago"
           subtitulo={`P-${String(verDetalle.id_pago).padStart(3, "0")}`}
-badge={
-             <span className={`tabla-badge ${getEstadoBadge(verDetalle.estado)}`}>
-               {verDetalle.estado}
-             </span>
-           }
+          badge={
+            <span className={`tabla-badge ${getEstadoBadge(verDetalle.estado)}`}>
+              {verDetalle.estado}
+            </span>
+          }
           pasos={["Información", "Pago"]}
           onClose={() => setVerDetalle(null)}
         >

@@ -15,7 +15,7 @@ const ROLE_ICONS = {
 };
 const DEFAULT_ICON = (<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-7 7-7s7 3 7 7"/></svg>);
 const PALETAS = ['#f5ede6','#f0ebe4','#e8f0e8','#ede8f5','#f5f0e0','#e8f0f5'];
-const MODULOS = ["Dashboard","Usuarios","Roles","Clientes","Productos","Catálogo","Proveedores","Compras","Pedidos","Pagos","Promociones","Configuración"];
+const MODULOS = ["Dashboard","Usuarios","Roles","Clientes","Productos","Catálogo","Proveedores","Compras","Pedidos","Pagos","Configuración"];
 
 // ── Protección del rol Administrador ──────────────────────────────────────
 const esRolProtegido = (nombre = "") => {

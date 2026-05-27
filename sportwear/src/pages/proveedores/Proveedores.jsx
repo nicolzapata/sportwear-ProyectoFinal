@@ -3,7 +3,7 @@ import { useState } from "react";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import './Proveedores.css';
-import { IconBan, IconCheck, IconEdit, IconEye, IconHome, IconSearch, IconX } from "../../components/Icons";
+import { IconBan, IconCheck, IconEdit, IconEye, IconHome, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
 const PROVEEDORES_DEMO = [
   { id_proveedor: 1, nombre: "Distribuidora Textil S.A.", nit: "900.123.456-7", contacto: "María Londoño", telefono: "3001234567", ciudad: "Medellín", estado: "Activo" },
@@ -68,30 +68,35 @@ export default function Proveedores() {
         <button className="proveedores-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo proveedor</button>
       </div>
 
-      <div className="tbl-container">
-        <table className="tbl">
-          <thead className="tbl-header"><tr><th className="tbl-th">Empresa</th><th className="tbl-th">NIT</th><th className="tbl-th">Contacto</th><th className="tbl-th">Teléfono</th><th className="tbl-th">Ciudad</th><th className="tbl-th">Estado</th><th className="tbl-th">Acciones</th></tr></thead>
-          <tbody className="tbl-body">
-            {filtrados.map((p) => (
-              <tr key={p.id_proveedor} className="tbl-row">
-                <td className="tbl-td"><span className="proveedores-empresa-name">{p.nombre}</span></td>
-                <td className="tbl-td"><code className="proveedores-nit-code">{p.nit}</code></td>
-                <td className="tbl-td proveedores-contacto-cell">{p.contacto}</td>
-                <td className="tbl-td proveedores-telefono-cell">{p.telefono}</td>
-                <td className="tbl-td"><span className="tabla-ciudad">{p.ciudad}</span></td>
-                <td className="tbl-td"><span className={`tabla-status${p.estado==="Activo"?' activo':' inactivo'}`}>{p.estado}</span></td>
-                <td className="tbl-td">
-                  <div className="proveedores-action-cell">
-                    <button className="proveedores-action-btn proveedores-view-btn" onClick={() => setVerDetalle(p)} title="Ver detalles"><IconEye /></button>
-                    <button className="proveedores-action-btn proveedores-edit-btn" onClick={() => abrirEditar(p)} title="Editar"><IconEdit /></button>
-                    <button className={`proveedores-action-btn${p.estado==="Activo"?" proveedores-deactivate-btn":" proveedores-activate-btn"}`} onClick={() => cambiarEstado(p.id_proveedor)} title={p.estado==="Activo"?"Desactivar":"Activar"}>{p.estado==="Activo"?<IconBan/>:<IconCheck/>}</button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+       <div className="tbl-container">
+         <table className="tbl">
+           <thead className="tbl-header"><tr><th className="tbl-th">Empresa</th><th className="tbl-th">NIT</th><th className="tbl-th">Contacto</th><th className="tbl-th">Teléfono</th><th className="tbl-th">Ciudad</th><th className="tbl-th">Estado</th><th className="tbl-th">Acciones</th></tr></thead>
+           <tbody className="tbl-body">
+             {filtrados.map((p) => (
+               <tr key={p.id_proveedor} className="tbl-row">
+                 <td className="tbl-td"><span className="proveedores-empresa-name">{p.nombre}</span></td>
+                 <td className="tbl-td"><code className="proveedores-nit-code">{p.nit}</code></td>
+                 <td className="tbl-td proveedores-contacto-cell">{p.contacto}</td>
+                 <td className="tbl-td proveedores-telefono-cell">{p.telefono}</td>
+                 <td className="tbl-td"><span className="tabla-ciudad">{p.ciudad}</span></td>
+                 <td className="tbl-td"><span className={`tabla-status${p.estado==="Activo"?' activo':' inactivo'}`}>{p.estado}</span></td>
+                 <td className="tbl-td">
+                   <div className="proveedores-action-cell">
+                     <button className="proveedores-action-btn proveedores-view-btn" onClick={() => setVerDetalle(p)} title="Ver detalles"><IconEye /></button>
+                     <button className="proveedores-action-btn proveedores-edit-btn" onClick={() => abrirEditar(p)} title="Editar"><IconEdit /></button>
+                     <button className={`proveedores-action-btn${p.estado==="Activo"?" proveedores-deactivate-btn":" proveedores-activate-btn"}`} onClick={() => cambiarEstado(p.id_proveedor)} title={p.estado==="Activo"?"Desactivar":"Activar"}>{p.estado==="Activo"?<IconBan/>:<IconCheck/>}</button>
+                   </div>
+                 </td>
+               </tr>
+             ))}
+           </tbody>
+         </table>
+         <div className="print-button-container">
+           <button className="btn-print" onClick={() => window.print()}>
+             <IconPrint />
+           </button>
+         </div>
+       </div>
 
       {modal && (<ModalSteps titulo={editar?"Editar proveedor":"Nuevo proveedor"} pasos={["Datos empresa","Contacto"]} onClose={() => setModal(false)} onGuardar={guardar} labelGuardar={editar?"Actualizar":"Registrar"}>{PasoEmpresa}{PasoContacto}</ModalSteps>)}
 

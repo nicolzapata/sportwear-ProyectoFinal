@@ -34,7 +34,6 @@ app.use('/api/compras',        require('./routes/compras'));
 app.use('/api/detalle-compra', require('./routes/detalleCompra'));
 app.use('/api/ventas',         require('./routes/ventas'));
 app.use('/api/detalle-venta',  require('./routes/detalleVenta'));
-app.use('/api/promociones',    require('./routes/promociones'));
 app.use('/api/pagos',          require('./routes/pagos'));
 app.use('/api/dashboard',      require('./routes/dashboard'));
 app.use('/api/imagenes',       require('./routes/imagenes'));

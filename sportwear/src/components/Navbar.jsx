@@ -1,7 +1,6 @@
 // src/components/Navbar.jsx  —  Admin · Estilo ETHKL
 import { useState } from "react";
 import { useLocation, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,
   IconShoppingBag, IconPalette, IconBox, IconTruck,
@@ -23,7 +22,6 @@ const titulos = {
   "/proveedores":   { label: "Proveedores",       icon: <IconTruck /> },
   "/compras":       { label: "Compras",          icon: <IconShoppingBag /> },
   "/pedidos":       { label: "Pedidos y Ventas",  icon: <IconDollar /> },
-  "/promociones":   { label: "Promociones",       icon: <IconHeart /> },
   "/pagos":         { label: "Pagos y Abonos",    icon: <IconCreditCard /> },
   "/configuracion": { label: "Configuración",     icon: <IconSettings /> },
 };
@@ -34,10 +32,8 @@ const fecha = new Date().toLocaleDateString("es-CO", {
 
 export default function Navbar() {
   const location    = useLocation();
-  const { usuario } = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const current     = titulos[location.pathname] || { label: "Admin", icon: <IconBolt /> };
-  const inicial     = usuario?.nombre?.[0]?.toUpperCase() ?? "U";
 
   const handleLogout = () => {
     localStorage.removeItem("token");

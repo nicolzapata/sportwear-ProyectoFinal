@@ -100,6 +100,7 @@
   padding: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 .usuarios-search-clear svg { width: 12px; height: 12px; }
 .usuarios-search-clear:hover { color: var(--dvna-charcoal); }
@@ -353,4 +354,27 @@
   padding-bottom: 6px;
   border-bottom: 1px solid var(--dvna-border);
   margin-bottom: 14px;
+}
+
+/* Print button */
+.print-button-container {
+  margin-top: 1rem;
+  text-align: right;
+}
+.btn-print {
+  background: var(--dvna-charcoal);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+.btn-print:hover {
+  background: var(--dvna-circle);
+  transform: translateY(-2px);
 }

@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import './PedidosVentas.css';
 import api from "../../services/api";
-import { IconDollar, IconEye, IconSearch, IconX } from "../../components/Icons";
+import { IconDollar, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import ModalSteps from "../../components/ModalSteps";
 
@@ -131,86 +131,91 @@ export default function PedidosVentas() {
         {filtrados.length} venta{filtrados.length !== 1 ? 's' : ''} encontrada{filtrados.length !== 1 ? 's' : ''}
       </div>
 
-      <div className="tbl-container">
-        <table className="tbl">
-          <thead className="tbl-header">
-            <tr>
-              <th className="tbl-th">Cliente</th>
-              <th className="tbl-th">Producto</th>
-              <th className="tbl-th">Cant.</th>
-              <th className="tbl-th">Total</th>
-              <th className="tbl-th">Tipo</th>
-              <th className="tbl-th">Abonos</th>
-              <th className="tbl-th">Saldo</th>
-              <th className="tbl-th">Fecha</th>
-              <th className="tbl-th">Estado</th>
-              <th className="tbl-th">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="tbl-body">
-            {filtrados.map((v) => (
-              <tr key={v.id_venta} className="tbl-row">
-                <td className="tbl-td">
-                  <span className="pedidosventas-cliente-name">{v.cliente}</span>
-                </td>
-                <td className="tbl-td pedidosventas-producto-cell">
-                  {v.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
-                </td>
-                <td className="tbl-td pedidosventas-cantidad-cell">
-                  {v.items?.reduce((sum, i) => sum + i.cantidad, 0) || '-'}
-                </td>
-                <td className="tbl-td pedidosventas-total-cell">{fmt(v.total)}</td>
-                <td className="tbl-td">
-                  {v.tipo_pago === 'cuotas' ? (
-                    <span className="pedidosventas-badge pedidosventas-badge-info">Cuotas ({v.num_cuotas})</span>
-                  ) : (
-                    <span className="pedidosventas-badge">Completo</span>
-                  )}
-                </td>
-                <td className="tbl-td">
-                  <button 
-                    className="pedidosventas-abonos-btn"
-                    onClick={() => setAbonosModal(v)}
-                    title="Ver abonos"
-                  >
-                    {v.total_pagado ? fmt(v.total_pagado) : "-"}
-                  </button>
-                </td>
-                <td className="tbl-td">
-                  <span className={`pedidosventas-saldo ${(v.total - (v.total_pagado || 0)) <= 0 ? 'pedidosventas-saldo-zero' : ''}`}>
-                    {fmt(v.total - (v.total_pagado || 0))}
-                  </span>
-                </td>
-                <td className="tbl-td pedidosventas-fecha-cell">{v.fecha?.toString().split("T")[0]}</td>
-                <td className="tbl-td">
-                  <span className={`pedidosventas-badge ${getEstadoBadge(v.estado)}`}>{v.estado}</span>
-                </td>
-                <td className="tbl-td">
-                  <div className="pedidosventas-action-cell">
-                    <button className="pedidosventas-action-btn pedidosventas-view-btn" onClick={() => setVerDetalle(v)} title="Ver detalles"><IconEye /></button>
-                    {v.estado !== "Anulado" && v.estado !== "Pagado" && (
-                      <button className="pedidosventas-action-btn pedidosventas-pay-btn" onClick={() => setAbonosModal(v)} title="Agregar abono"><IconDollar /></button>
-                    )}
-                    {v.estado === "Pendiente" && (
-                      <button className="pedidosventas-action-btn pedidosventas-pay-full-btn" onClick={() => cambiarEstado(v.id_venta, "Pagado")} title="Marcar como pagado"><IconDollar /></button>
-                    )}
-                    {v.estado !== "Anulado" && (
-                      <button className="pedidosventas-action-btn pedidosventas-cancel-btn" onClick={() => cambiarEstado(v.id_venta, "Anulado")} title="Anular venta"><IconX /></button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {filtrados.length === 0 && (
-              <tr>
-                <td colSpan={9} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
-                  No hay ventas registradas
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+       <div className="tbl-container">
+         <table className="tbl">
+           <thead className="tbl-header">
+             <tr>
+               <th className="tbl-th">Cliente</th>
+               <th className="tbl-th">Producto</th>
+               <th className="tbl-th">Cant.</th>
+               <th className="tbl-th">Total</th>
+               <th className="tbl-th">Tipo</th>
+               <th className="tbl-th">Abonos</th>
+               <th className="tbl-th">Saldo</th>
+               <th className="tbl-th">Fecha</th>
+               <th className="tbl-th">Estado</th>
+               <th className="tbl-th">Acciones</th>
+             </tr>
+           </thead>
+           <tbody className="tbl-body">
+             {filtrados.map((v) => (
+               <tr key={v.id_venta} className="tbl-row">
+                 <td className="tbl-td">
+                   <span className="pedidosventas-cliente-name">{v.cliente}</span>
+                 </td>
+                 <td className="tbl-td pedidosventas-producto-cell">
+                   {v.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
+                 </td>
+                 <td className="tbl-td pedidosventas-cantidad-cell">
+                   {v.items?.reduce((sum, i) => sum + i.cantidad, 0) || '-'}
+                 </td>
+                 <td className="tbl-td pedidosventas-total-cell">{fmt(v.total)}</td>
+                 <td className="tbl-td">
+                   {v.tipo_pago === 'cuotas' ? (
+                     <span className="pedidosventas-badge pedidosventas-badge-info">Cuotas ({v.num_cuotas})</span>
+                   ) : (
+                     <span className="pedidosventas-badge">Completo</span>
+                   )}
+                 </td>
+                 <td className="tbl-td">
+                   <button 
+                     className="pedidosventas-abonos-btn"
+                     onClick={() => setAbonosModal(v)}
+                     title="Ver abonos"
+                   >
+                     {v.total_pagado ? fmt(v.total_pagado) : "-"}
+                   </button>
+                 </td>
+                 <td className="tbl-td">
+                   <span className={`pedidosventas-saldo ${(v.total - (v.total_pagado || 0)) <= 0 ? 'pedidosventas-saldo-zero' : ''}`}>
+                     {fmt(v.total - (v.total_pagado || 0))}
+                   </span>
+                 </td>
+                 <td className="tbl-td pedidosventas-fecha-cell">{v.fecha?.toString().split("T")[0]}</td>
+                 <td className="tbl-td">
+                   <span className={`pedidosventas-badge ${getEstadoBadge(v.estado)}`}>{v.estado}</span>
+                 </td>
+                 <td className="tbl-td">
+                   <div className="pedidosventas-action-cell">
+                     <button className="pedidosventas-action-btn pedidosventas-view-btn" onClick={() => setVerDetalle(v)} title="Ver detalles"><IconEye /></button>
+                     {v.estado !== "Anulado" && v.estado !== "Pagado" && (
+                       <button className="pedidosventas-action-btn pedidosventas-pay-btn" onClick={() => setAbonosModal(v)} title="Agregar abono"><IconDollar /></button>
+                     )}
+                     {v.estado === "Pendiente" && (
+                       <button className="pedidosventas-action-btn pedidosventas-pay-full-btn" onClick={() => cambiarEstado(v.id_venta, "Pagado")} title="Marcar como pagado"><IconDollar /></button>
+                     )}
+                     {v.estado !== "Anulado" && (
+                       <button className="pedidosventas-action-btn pedidosventas-cancel-btn" onClick={() => cambiarEstado(v.id_venta, "Anulado")} title="Anular venta"><IconX /></button>
+                     )}
+                   </div>
+                 </td>
+               </tr>
+             ))}
+             {filtrados.length === 0 && (
+               <tr>
+                 <td colSpan={9} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
+                   No hay ventas registradas
+                 </td>
+               </tr>
+             )}
+           </tbody>
+         </table>
+       </div>
+       <div className="print-button-container">
+         <button className="btn-print" onClick={() => window.print()}>
+           <IconPrint />
+         </button>
+       </div>
 
       {verDetalle && (
         <ModalDetalle

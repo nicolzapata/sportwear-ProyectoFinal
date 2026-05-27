@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import './Usuarios.css';
-import { IconBan, IconCheck, IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconSearch, IconX } from "../../components/Icons";
+import { IconBan, IconCheck, IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
 const TIPOS_DOC = ["CC", "CE", "TI", "NIT", "PP"];
 
@@ -285,77 +285,82 @@ export default function Usuarios() {
         <button className="usuarios-btn-primary" onClick={filterType === 'usuarios' ? abrirRegistrar : abrirRegistrarCliente}><span>+</span> Nuevo {filterType === 'usuarios' ? 'usuario' : 'cliente'}</button>
       </div>
 
-      <div className="tbl-container">
-        <table className="tbl">
-          <thead className="tbl-header">
-            {filterType === 'usuarios' ? (
-              <tr>
-                <th className="tbl-th">Usuario</th>
-                <th className="tbl-th">Email</th>
-                <th className="tbl-th">Rol</th>
-                <th className="tbl-th">Cuotas</th>
-                <th className="tbl-th">Estado</th>
-                <th className="tbl-th">Acciones</th>
-              </tr>
-            ) : (
-              <tr>
-                <th className="tbl-th">Cliente</th>
-                <th className="tbl-th">Documento</th>
-                <th className="tbl-th">Teléfono</th>
-                <th className="tbl-th">Barrio</th>
-                <th className="tbl-th">Tipo</th>
-                <th className="tbl-th">Compras</th>
-                <th className="tbl-th">Total</th>
-                <th className="tbl-th">Estado</th>
-                <th className="tbl-th">Acciones</th>
-              </tr>
-            )}
-          </thead>
-          <tbody className="tbl-body">
-            {filterType === 'usuarios' ? (
-              filtrados.map((u) => (
-                <tr key={u.id_usuario} className="tbl-row">
-                  <td className="tbl-td"><div className="usuarios-user-info"><div className="usuarios-user-name">{u.nombre}</div></div></td>
-                  <td className="tbl-td usuarios-email-cell">{u.email}</td>
-                  <td className="tbl-td"><span className="tabla-rol">{u.rol || getRoleName(u.id_rol)}</span></td>
-                  <td className="tbl-td"><span className={`tabla-status ${u.permiso_cuotas !== false ? "activo" : "inactivo"}`} onClick={() => togglePermisoCuotas(u.id_usuario)} style={{ cursor: 'pointer' }} title="Click para cambiar">{u.permiso_cuotas !== false ? "Sí" : "No"}</span></td>
-                  <td className="tbl-td"><span className={`tabla-status ${u.estado === "Activo" ? "activo" : "inactivo"}`}>{u.estado}</span></td>
-                  <td className="tbl-td">
-                    <div className="usuarios-action-cell">
-                      <button className="usuarios-action-btn usuarios-view-btn" onClick={() => abrirDetalle(u)} title="Ver detalles"><IconEyeOpen /></button>
-                      <button className="usuarios-action-btn usuarios-edit-btn" onClick={() => abrirEditar(u)} title="Editar"><IconEdit /></button>
-                      <button className={`usuarios-action-btn ${u.estado === "Activo" ? "usuarios-deactivate-btn" : "usuarios-activate-btn"}`} onClick={() => cambiarEstado(u.id_usuario)} title={u.estado === "Activo" ? "Desactivar" : "Activar"}>{u.estado === "Activo" ? <IconBan /> : <IconCheck />}</button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              filtrados.map((c) => (
-                <tr key={c.id_cliente} className="tbl-row">
-                  <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
-                  <td className="tbl-td"><span className="clientes-doc-badge">{c.tipo_doc} {c.documento}</span></td>
-                  <td className="tbl-td clientes-phone-cell">{c.telefono || '—'}</td>
-                  <td className="tbl-td">{c.barrio_nombre ? <div><div className="clientes-barrio-name">{c.barrio_nombre}</div><div className="clientes-comuna-name">{c.comuna}</div></div> : <span className="clientes-empty">—</span>}</td>
-                  {/* FIX #5: tipoBadge ahora está definida */}
-                  <td className="tbl-td"><span className={`clientes-tipo-badge ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
-                  <td className="tbl-td">{c.total_compras || 0}</td>
-                  <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
-                  <td className="tbl-td"><span className={`clientes-status-badge ${c.estado === "Activo" ? 'active' : 'inactive'}`}>{c.estado}</span></td>
-                  <td className="tbl-td">
-                    <div className="clientes-action-cell">
-                      {/* FIX #3: IconEye → IconEyeOpen */}
-                      <button className="clientes-action-btn clientes-view-btn" onClick={() => setClienteDetalle(c)} title="Ver detalles"><IconEyeOpen /></button>
-                      <button className="clientes-action-btn clientes-edit-btn" onClick={() => abrirEditarCliente(c)} title="Editar"><IconEdit /></button>
-                      {/* FIX #1: comilla de cierre del template literal corregida */}
-                      <button className={`clientes-action-btn ${c.estado === "Activo" ? "clientes-deactivate-btn" : "clientes-activate-btn"}`} onClick={() => cambiarEstadoCliente(c.id_cliente)} title={c.estado === "Activo" ? "Desactivar" : "Activar"}>{c.estado === "Activo" ? <IconBan /> : <IconCheck />}</button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+       <div className="tbl-container">
+         <table className="tbl">
+           <thead className="tbl-header">
+             {filterType === 'usuarios' ? (
+               <tr>
+                 <th className="tbl-th">Usuario</th>
+                 <th className="tbl-th">Email</th>
+                 <th className="tbl-th">Rol</th>
+                 <th className="tbl-th">Cuotas</th>
+                 <th className="tbl-th">Estado</th>
+                 <th className="tbl-th">Acciones</th>
+               </tr>
+             ) : (
+               <tr>
+                 <th className="tbl-th">Cliente</th>
+                 <th className="tbl-th">Documento</th>
+                 <th className="tbl-th">Teléfono</th>
+                 <th className="tbl-th">Barrio</th>
+                 <th className="tbl-th">Tipo</th>
+                 <th className="tbl-th">Compras</th>
+                 <th className="tbl-th">Total</th>
+                 <th className="tbl-th">Estado</th>
+                 <th className="tbl-th">Acciones</th>
+               </tr>
+             )}
+           </thead>
+           <tbody className="tbl-body">
+             {filterType === 'usuarios' ? (
+               filtrados.map((u) => (
+                 <tr key={u.id_usuario} className="tbl-row">
+                   <td className="tbl-td"><div className="usuarios-user-info"><div className="usuarios-user-name">{u.nombre}</div></div></td>
+                   <td className="tbl-td usuarios-email-cell">{u.email}</td>
+                   <td className="tbl-td"><span className="tabla-rol">{u.rol || getRoleName(u.id_rol)}</span></td>
+                   <td className="tbl-td"><span className={`tabla-status ${u.permiso_cuotas !== false ? "activo" : "inactivo"}`} onClick={() => togglePermisoCuotas(u.id_usuario)} style={{ cursor: 'pointer' }} title="Click para cambiar">{u.permiso_cuotas !== false ? "Sí" : "No"}</span></td>
+                   <td className="tbl-td"><span className={`tabla-status ${u.estado === "Activo" ? "activo" : "inactivo"}`}>{u.estado}</span></td>
+                   <td className="tbl-td">
+                     <div className="usuarios-action-cell">
+                       <button className="usuarios-action-btn usuarios-view-btn" onClick={() => abrirDetalle(u)} title="Ver detalles"><IconEyeOpen /></button>
+                       <button className="usuarios-action-btn usuarios-edit-btn" onClick={() => abrirEditar(u)} title="Editar"><IconEdit /></button>
+                       <button className={`usuarios-action-btn ${u.estado === "Activo" ? "usuarios-deactivate-btn" : "usuarios-activate-btn"}`} onClick={() => cambiarEstado(u.id_usuario)} title={u.estado === "Activo" ? "Desactivar" : "Activar"}>{u.estado === "Activo" ? <IconBan /> : <IconCheck />}</button>
+                     </div>
+                   </td>
+                 </tr>
+               ))
+             ) : (
+               filtrados.map((c) => (
+                 <tr key={c.id_cliente} className="tbl-row">
+                   <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
+                   <td className="tbl-td"><span className="clientes-doc-badge">{c.tipo_doc} {c.documento}</span></td>
+                   <td className="tbl-td clientes-phone-cell">{c.telefono || '—'}</td>
+                   <td className="tbl-td">{c.barrio_nombre ? <div><div className="clientes-barrio-name">{c.barrio_nombre}</div><div className="clientes-comuna-name">{c.comuna}</div></div> : <span className="clientes-empty">—</span>}</td>
+                   {/* FIX #5: tipoBadge ahora está definida */}
+                   <td className="tbl-td"><span className={`clientes-tipo-badge ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
+                   <td className="tbl-td">{c.total_compras || 0}</td>
+                   <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
+                   <td className="tbl-td"><span className={`clientes-status-badge ${c.estado === "Activo" ? 'active' : 'inactive'}`}>{c.estado}</span></td>
+                   <td className="tbl-td">
+                     <div className="clientes-action-cell">
+                       {/* FIX #3: IconEye → IconEyeOpen */}
+                       <button className="clientes-action-btn clientes-view-btn" onClick={() => setClienteDetalle(c)} title="Ver detalles"><IconEyeOpen /></button>
+                       <button className="clientes-action-btn clientes-edit-btn" onClick={() => abrirEditarCliente(c)} title="Editar"><IconEdit /></button>
+                       {/* FIX #1: comilla de cierre del template literal corregida */}
+                       <button className={`clientes-action-btn ${c.estado === "Activo" ? "clientes-deactivate-btn" : "clientes-activate-btn"}`} onClick={() => cambiarEstadoCliente(c.id_cliente)} title={c.estado === "Activo" ? "Desactivar" : "Activar"}>{c.estado === "Activo" ? <IconBan /> : <IconCheck />}</button>
+                     </div>
+                   </td>
+                 </tr>
+               ))
+             )}
+           </tbody>
+         </table>
+         <div className="print-button-container">
+           <button className="btn-print" onClick={() => window.print()}>
+             <IconPrint />
+           </button>
+         </div>
+       </div>
 
       {/* FIX #2: bloque {modal && ()} vacío eliminado — solo queda el modal correcto abajo */}
 {modal && filterType === 'usuarios' && (

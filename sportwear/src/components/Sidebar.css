@@ -45,7 +45,6 @@
   font-size: 17px;
   font-weight: 600;
   letter-spacing: 0.16em;
-  
   color: #fff;
   white-space: nowrap;
   opacity: 0;
@@ -71,7 +70,6 @@
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.18em;
-  
   color: #161616;
   background: rgba(255, 255, 255, 0.363);
   padding: 3px 10px;
@@ -82,24 +80,15 @@
   transition: opacity 0.2s 0.05s;
 }
 .sidebar:hover .role-tag { opacity: 1; }
+.sidebar:hover .role-badge { height: auto; }
 
 /* ── Nav ── */
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 11px 18px;
-    text-decoration: none;
-    color: #ffffff;
-    font-family: var(--font-body);
-    font-size: 14px;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    text-transform: none;
-    white-space: nowrap;
-    position: relative;
-    transition: color 0.2s, background 0.2s;
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+
 .sidebar-nav::-webkit-scrollbar {
   width: 0;
   transition: width 0.25s;
@@ -125,21 +114,21 @@
 }
 
 .nav-item {
-   display: flex;
-   align-items: center;
-   gap: 14px;
-   padding: 11px 18px;
-   text-decoration: none;
-   color: #ffffff;
-   font-family: var(--font-body);
-   font-size: 14px;
-   font-weight: 500;
-   letter-spacing: 0.02em;
-   text-transform: none;
-   white-space: nowrap;
-   position: relative;
-   transition: color 0.2s, background 0.2s;
-  }
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 18px;
+  text-decoration: none;
+  color: #ffffff;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.2s, background 0.2s;
+}
 
 .nav-item::before {
   content: '';
@@ -168,8 +157,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
   color: inherit;
 }
@@ -210,6 +199,36 @@
   min-width: 0;
 }
 
+/* ── Avatar con inicial ── */
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--dark-brown);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0;
+  transition: opacity 0.15s, transform 0.15s, width 0.2s 0.05s, margin 0.2s 0.05s;
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Se oculta al expandir el sidebar */
+.sidebar:hover .user-avatar {
+  opacity: 0;
+  transform: scale(0.7);
+  pointer-events: none;
+  width: 0;
+  margin: 0;
+}
+
+/* ── User text ── */
 .user-text {
   opacity: 0;
   transform: translateX(-6px);
@@ -238,9 +257,9 @@
   font-size: 9px;
   letter-spacing: 0.1em;
   color: rgba(255,255,255,0.4);
-  
 }
 
+/* ── Logout button ── */
 .logout-btn {
   background: transparent;
   border: 1px solid rgba(255,255,255,0.12);
@@ -263,11 +282,9 @@
 }
 .logout-btn:hover { background: rgba(255,255,255,0.1); color: var(--warm-white); }
 .logout-btn svg {
-   stroke: #ffffff;
-   fill: none;
-   width: 16px;
-   height: 16px;
-   display: block;
- }
-
-.sidebar:hover .role-badge { height: auto; }
+  stroke: #ffffff;
+  fill: none;
+  width: 16px;
+  height: 16px;
+  display: block;
+}

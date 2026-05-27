@@ -8,6 +8,7 @@ import OrderDetailModal from "../../components/OrderDetailModal";
 import {
   IconAlertTriangle, IconBox, IconBolt, IconCart, IconCheck,
   IconClock, IconCreditCard, IconDollar, IconShoppingCart, IconTag, IconX,
+  IconPrint, IconUsers,
 } from "../../components/Icons";
 import "./Dashboard.css";
 import "../roles/Roles.css";
@@ -52,14 +53,17 @@ function SalesBarChart({ data }) {
       if (destroyed || !canvasRef.current) return;
       if (chartRef.current) chartRef.current.destroy();
 
+      // Soporta tanto { labels, values } (backend) como { labels, current } (legacy)
+      const valores = data.values || data.current || [];
+
       chartRef.current = new Chart(canvasRef.current, {
         type: "bar",
         data: {
-          labels: data.labels,   // ['Ene','Feb','Mar',...] desde el backend
+          labels: data.labels,
           datasets: [
             {
               label: "Este año",
-              data: data.current, // corregido: antes era data.current
+              data: valores,
               backgroundColor: CHARCOAL,
               borderRadius: 4,
               borderSkipped: false,
@@ -170,14 +174,20 @@ function DonutChart({ pagado, pendiente, cancelado }) {
 ════════════════════════════════════════════ */
 function DashboardAdmin() {
   const [stats, setStats] = useState({
-    ingresos_hoy: 0, ventas_hoy: 0, bajo_stock: 0,
-    clientes_activos: 0, pedidos_pendientes: 0,
-    ingresos_totales: 0, total_productos: 0,
+    ingresos_hoy: 0,
+    ventas_hoy: 0,
+    bajo_stock: 0,
+    clientes_activos: 0,
+    pedidos_pendientes: 0,
+    ingresos_totales: 0,
+    total_productos: 0,
+    numero_ventas: 0,
+    ticket_promedio: 0,
   });
-  const [topProductos, setTopProductos]     = useState([]);
+  const [topProductos, setTopProductos]       = useState([]);
   const [ventasRecientes, setVentasRecientes] = useState([]);
   const [ventasMensuales, setVentasMensuales] = useState(null);
-  const [cargando, setCargando]             = useState(true);
+  const [cargando, setCargando]               = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -200,8 +210,7 @@ function DashboardAdmin() {
     }
   };
 
-  // corregido: values en lugar de current/previous
-  const barData   = ventasMensuales || { labels: [], current: [], previous: [] };
+  const barData   = ventasMensuales || { labels: [], values: [] };
   const pagado    = ventasRecientes.filter((v) => v.estado === "Pagado").length;
   const pendiente = ventasRecientes.filter((v) => v.estado === "Pendiente").length;
   const cancelado = ventasRecientes.filter((v) => v.estado !== "Pagado" && v.estado !== "Pendiente").length;
@@ -278,7 +287,7 @@ function DashboardAdmin() {
               Este año
             </span>
           </div>
-          <SalesBarChart key={barData.labels.join()} data={barData} />
+          <SalesBarChart key={barData.labels?.join()} data={barData} />
         </div>
 
         <div className="chart-card">
@@ -289,7 +298,9 @@ function DashboardAdmin() {
             </div>
           </div>
           <div className="top-products">
-            {topProductos.map((producto, index) => (
+            {topProductos.length === 0 ? (
+              <p style={{ fontSize: 13, color: MUTED, fontStyle: "italic" }}>Sin datos aún.</p>
+            ) : topProductos.map((producto, index) => (
               <div key={index} className="top-product">
                 <div className="top-product-info">
                   <span className={`top-product-rank ${index === 0 ? "gold" : ""}`}>{index + 1}</span>
@@ -337,6 +348,11 @@ function DashboardAdmin() {
                 ))}
               </tbody>
             </table>
+            <div className="print-button-container">
+              <button className="btn-print" onClick={() => window.print()}>
+                <IconPrint />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -358,12 +374,24 @@ function DashboardAdmin() {
                 </div>
               </div>
               <div className="balance-stat">
-                <span className="stat-mini-icon"><IconTag /></span>
+                <span className="stat-mini-icon"><IconUsers /></span>
                 <div>
-                  <span className="stat-mini-label">Productos totales</span>
-                  <span className="stat-mini-value">{stats.total_productos}</span>
+                  <span className="stat-mini-label">Número de ventas</span>
+                  <span className="stat-mini-value">{stats.numero_ventas ?? 0}</span>
                 </div>
               </div>
+              <div className="balance-stat">
+                <span className="stat-mini-icon"><IconShoppingCart /></span>
+                <div>
+                  <span className="stat-mini-label">Ticket promedio</span>
+                  <span className="stat-mini-value">{formatCurrency(stats.ticket_promedio)}</span>
+                </div>
+              </div>
+            </div>
+            <div className="print-button-container">
+              <button className="btn-print" onClick={() => window.print()}>
+                <IconPrint />
+              </button>
             </div>
           </div>
         </div>
