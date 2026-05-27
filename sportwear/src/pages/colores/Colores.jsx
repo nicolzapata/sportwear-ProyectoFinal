@@ -109,31 +109,30 @@ return (
         </div>
       )}
 
-      {tab === 'lista' && (
-        <div className="tbl-container">
-          <table className="tbl">
-            <thead className="tbl-header">
-              <tr><th className="tbl-th">Muestra</th><th className="tbl-th">Nombre</th><th className="tbl-th">HEX</th><th className="tbl-th">Estado</th><th className="tbl-th">Acciones</th></tr>
-            </thead>
-            <tbody className="tbl-body">
-              {filtrados.map((c) => (
-                <tr key={c.id_color} className="tbl-row">
-                  <td className="tbl-td"><div className="colores-sample" style={{ backgroundColor: c.codigo_hex }} /></td>
-                  <td className="tbl-td"><div className="colores-name-cell"><span className="colores-name-text">{c.nombre}</span></div></td>
-                  <td className="tbl-td"><code className="colores-hex-code">{c.codigo_hex}</code></td>
-                  <td className="tbl-td"><span className={`tabla-status${c.estado==="Activo"?' activo':' inactivo'}`}>{c.estado}</span></td>
-                  <td className="tbl-td">
-                    <div className="colores-action-cell">
-                      <button className="colores-action-btn colores-edit-btn" onClick={() => abrirEditar(c)} title="Editar"><IconEdit /></button>
-                      <button className="colores-action-btn colores-deactivate-btn" onClick={() => eliminarColor(c.id_color)} title="Eliminar"><IconTrash /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+       {tab === 'lista' && (
+         <div className="tbl-container">
+           <table className="tbl">
+             <thead className="tbl-header">
+               <tr><th className="tbl-th">Nombre</th><th className="tbl-th">HEX</th><th className="tbl-th">Estado</th><th className="tbl-th">Acciones</th></tr>
+             </thead>
+             <tbody className="tbl-body">
+               {filtrados.map((c) => (
+                 <tr key={c.id_color} className="tbl-row">
+                   <td className="tbl-td"><div className="colores-name-cell"><span className="colores-name-text">{c.nombre}</span></div></td>
+                   <td className="tbl-td"><code className="colores-hex-code">{c.codigo_hex}</code></td>
+                   <td className="tbl-td"><span className={`tabla-status${c.estado==="Activo"?' activo':' inactivo'}`}>{c.estado}</span></td>
+                   <td className="tbl-td">
+                     <div className="colores-action-cell">
+                       <button className="colores-action-btn colores-edit-btn" onClick={() => abrirEditar(c)} title="Editar"><IconEdit /></button>
+                       <button className="colores-action-btn colores-deactivate-btn" onClick={() => eliminarColor(c.id_color)} title="Eliminar"><IconTrash /></button>
+                     </div>
+                   </td>
+                 </tr>
+               ))}
+             </tbody>
+           </table>
+         </div>
+       )}
 
       {modal && (
         <ModalSteps

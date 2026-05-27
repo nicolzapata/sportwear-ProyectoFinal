@@ -704,12 +704,12 @@ html, body {
 .nov-hero-tape-track {
   display: flex;
   width: max-content;
-  animation: tape-scroll 25s linear infinite;
+  animation: tape-scroll 50s linear infinite;
 }
 
 @keyframes tape-scroll {
   from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  to   { transform: translateX(-100%); }
 }
 
 .nov-hero-tape span {

@@ -30,18 +30,16 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
       {/* ── Centro: Links + Filtros ── */}
       <div className="navbar-center">
         <nav className="navbar-nav">
-          <NavLink
+          <Link
             to="/catalogo"
-            className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}
+            className={`navbar-link`}
+            onClick={() => {
+              setBusqueda("");
+              setFiltroCategoria("Todos");
+            }}
           >
             Catálogo
-          </NavLink>
-          <NavLink
-            to="/sobre-nosotros"
-            className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}
-          >
-            Sobre nosotros
-          </NavLink>
+          </Link>
           {categorias && categorias.filter(cat => cat !== "Todos").map((cat) => (
             <button
               key={cat}
@@ -52,6 +50,12 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
               {cat}
             </button>
           ))}
+          <NavLink
+            to="/sobre-nosotros"
+            className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}
+          >
+            Sobre nosotros
+          </NavLink>
         </nav>
         {busqueda !== undefined && (
           <div className="search-input-wrap navbar-search">
@@ -64,6 +68,18 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
+            {(busqueda || filtroCategoria !== "Todos") && (
+              <button
+                className="navbar-clear-btn"
+                onClick={() => {
+                  setBusqueda("");
+                  setFiltroCategoria("Todos");
+                }}
+                title="Limpiar filtros"
+              >
+                ✕
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import api from "../../services/api";
 import "./Catalogo.css";
-import { IconBox, IconSearch } from "../../components/Icons";
+import { IconBox, IconSearch, IconBolt, IconCreditCard, IconStar } from "../../components/Icons";
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("es-CO", {
@@ -213,19 +213,18 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
 
         {(colores.length > 0 || tallas.length > 0) && (
           <div className="catalog-variant-line">
-            {colores.length > 0 && (
-              <div className="catalog-colores">
-                {colores.map(c => (
-                  <button
-                    key={c.id_color}
-                    title={c.nombre}
-                    className={`catalog-color-dot${colorSel?.id_color === c.id_color ? " selected" : ""}`}
-                    style={{ background: c.codigo_hex || "#ccc" }}
-                    onClick={(e) => handleColorClick(e, c)}
-                  />
-                ))}
-              </div>
-            )}
+{colores.length > 0 && (
+  <div className="catalog-colores">
+    {colores.map(c => (
+      <button
+        key={c.id_color}
+        className={`catalog-color-dot${colorSel?.id_color === c.id_color ? " selected" : ""}`}
+        style={{ background: c.codigo_hex || "#ccc" }}
+        onClick={(e) => handleColorClick(e, c)}
+      />
+    ))}
+  </div>
+)}
 
             {tallas.length > 0 && (
               <div className="catalog-tallas">
@@ -301,7 +300,7 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
 export default function Catalogo() {
   const { usuario } = useAuth();
   const esAdmin     = usuario?.rol === "Administrador" || usuario?.rol === "Admin";
-  const { busqueda, filtroCategoria, setCategorias } = useOutletContext();
+  const { busqueda, setBusqueda, filtroCategoria, setFiltroCategoria, setCategorias } = useOutletContext();
 
   const [datos,   setDatos]   = useState([]);
   const [loading, setLoading] = useState(true);
@@ -356,78 +355,88 @@ export default function Catalogo() {
     </div>
   );
 
-  // 30 spans — la animación va a -50% del track total, loop perfecto
-  const tapeTexts = Array(30).fill("DVNA · NUEVA COLECCIÓN · SPORTWEAR · ");
+  const hayFiltroActivo = busqueda.trim() !== "" || filtroCategoria !== "Todos";
+
+  const limpiarFiltros = () => {
+    if (setBusqueda && setFiltroCategoria) {
+      setBusqueda("");
+      setFiltroCategoria("Todos");
+    }
+  };
 
   return (
     <>
       {/* ── Hero ── */}
-      <section className="nov-hero">
-        <div className="nov-hero-tape" aria-hidden="true">
-          <div className="nov-hero-tape-track">
-            {tapeTexts.map((t, i) => <span key={i}>{t}</span>)}
+      {!hayFiltroActivo && (
+        <section className="nov-hero">
+          <div className="nov-hero-content">
+            <span className="nov-eyebrow">DVNA 2026</span>
+            <h1 className="nov-hero-title">
+              Lo nuevo de<br /><em>DVNA</em>
+            </h1>
+            <p className="nov-hero-sub">
+              Ropa deportiva femenina diseñada para tu estilo y comodidad.<br />
+              Calidad, tendencia y confianza en cada prenda.
+            </p>
           </div>
-        </div>
-        <div className="nov-hero-content">
-          <span className="nov-eyebrow">DVNA 2026</span>
-          <h1 className="nov-hero-title">
-            Lo nuevo de<br /><em>DVNA</em>
-          </h1>
-          <p className="nov-hero-sub">
-            Ropa deportiva femenina diseñada para tu estilo y comodidad.<br />
-            Calidad, tendencia y confianza en cada prenda.
-          </p>
-        </div>
-        <div className="nov-hero-strip">
-          <div className="nov-strip-item"><span>⚡</span> Control de inventario en tiempo real</div>
-          <div className="nov-strip-sep" />
-          <div className="nov-strip-item"><span>💳</span> Compra a crédito y paga a cuotas</div>
-          <div className="nov-strip-sep" />
-          <div className="nov-strip-item"><span>✦</span> Marca colombiana DVNA</div>
-        </div>
-      </section>
+          <div className="nov-hero-strip">
+            <div className="nov-strip-item"><IconBolt /> Control de inventario en tiempo real</div>
+            <div className="nov-strip-sep" />
+            <div className="nov-strip-item"><IconCreditCard /> Compra a crédito y paga a cuotas</div>
+            <div className="nov-strip-sep" />
+            <div className="nov-strip-item"><IconStar /> Marca colombiana DVNA</div>
+          </div>
+        </section>
+      )}
 
       {/* ── Catálogo ── */}
       <div className="Catalogo-enter">
-        {filtrados.length === 0 && (
+        {filtrados.length === 0 && hayFiltroActivo && (
           <div style={{ padding: 48, textAlign: "center", color: "var(--muted)" }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><IconSearch /></div>
             <p>No hay productos que coincidan con tu búsqueda.</p>
+            <button className="btn btn-secondary btn-sm" onClick={limpiarFiltros} style={{ marginTop: 16 }}>
+              Ver todos los productos
+            </button>
           </div>
         )}
 
-        <div className="catalog-grid">
-          {filtrados.map((p) => (
-            <ProductCard
-              key={p.id_producto}
-              p={p}
-              esAdmin={esAdmin}
-              onTogglePublicado={handleTogglePublicado}
-            />
-          ))}
-        </div>
+        {filtrados.length > 0 && (
+          <div className="catalog-grid">
+            {filtrados.map((p) => (
+              <ProductCard
+                key={p.id_producto}
+                p={p}
+                esAdmin={esAdmin}
+                onTogglePublicado={handleTogglePublicado}
+              />
+            ))}
+          </div>
+        )}
 
-        <footer className="catalog-footer">
-          <div className="catalog-footer-content">
-            <div className="catalog-footer-brand">
-              <span className="catalog-footer-logo">SPORTWEAR</span>
-              <p className="catalog-footer-desc">Moda deportiva para mujer. Confianza y estilo en cada detalle.</p>
+        {!hayFiltroActivo && (
+          <footer className="catalog-footer">
+            <div className="catalog-footer-content">
+              <div className="catalog-footer-brand">
+                <span className="catalog-footer-logo">SPORTWEAR</span>
+                <p className="catalog-footer-desc">Moda deportiva para mujer. Confianza y estilo en cada detalle.</p>
+              </div>
+              <div className="catalog-footer-links">
+                <a href="https://wa.link/ts1wmb" target="_blank" rel="noopener noreferrer" className="catalog-footer-link whatsapp">
+                  <IconWhatsApp />
+                  <span>WhatsApp</span>
+                </a>
+                <a href="https://www.instagram.com/dvna.co/?hl=es" target="_blank" rel="noopener noreferrer" className="catalog-footer-link instagram">
+                  <IconInstagram />
+                  <span>Instagram</span>
+                </a>
+              </div>
             </div>
-            <div className="catalog-footer-links">
-              <a href="https://wa.link/ts1wmb" target="_blank" rel="noopener noreferrer" className="catalog-footer-link whatsapp">
-                <IconWhatsApp />
-                <span>WhatsApp</span>
-              </a>
-              <a href="https://www.instagram.com/dvna.co/?hl=es" target="_blank" rel="noopener noreferrer" className="catalog-footer-link instagram">
-                <IconInstagram />
-                <span>Instagram</span>
-              </a>
+            <div className="catalog-footer-copy">
+              &copy; {new Date().getFullYear()} Sportwear. Todos los derechos reservados.
             </div>
-          </div>
-          <div className="catalog-footer-copy">
-            &copy; {new Date().getFullYear()} Sportwear. Todos los derechos reservados.
-          </div>
-        </footer>
+          </footer>
+        )}
       </div>
     </>
   );
