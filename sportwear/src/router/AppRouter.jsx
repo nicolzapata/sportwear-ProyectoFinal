@@ -11,7 +11,7 @@ import Login               from "../pages/accesos/Login";
 import Registro            from "../pages/accesos/Registro";
 import RecuperarContrasena from "../pages/accesos/RecuperarContrasena";
 import Catalogo            from "../pages/catalogo/Catalogo";
-import DetalleProducto from "../pages/catalogo/DetalleProducto";
+import DetalleProducto     from "../pages/catalogo/DetalleProducto";
 import Carrito             from "../pages/carrito/Carrito";
 import Checkout            from "../pages/checkout/Checkout";
 import SobreNosotros       from "../pages/sobre-nosotros/SobreNosotros";
@@ -35,7 +35,7 @@ export default function AppRouter() {
   return (
     <AuthProvider>
       <CartProvider>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
 
             {/* Sin navbar */}
@@ -47,7 +47,7 @@ export default function AppRouter() {
             <Route element={<PublicLayout />}>
               <Route path="/"                element={<Catalogo />} />
               <Route path="/catalogo"        element={<Catalogo />} />
-              <Route path="/catalogo/:id" element={<DetalleProducto />} />
+              <Route path="/catalogo/:id"    element={<DetalleProducto />} />
               <Route path="/carrito"         element={<Carrito />} />
               <Route path="/checkout"        element={<Checkout />} />
               <Route path="/sobre-nosotros"  element={<SobreNosotros />} />

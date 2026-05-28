@@ -31,6 +31,7 @@
   box-shadow: 0 32px 80px rgba(10,10,10,0.22);
   animation: ms-slide-in 0.25s cubic-bezier(.4,0,.2,1);
   overflow: hidden;
+  z-index: 10000;
 }
 @keyframes ms-slide-in {
   from { opacity: 0; transform: translateY(20px) scale(0.98); }
@@ -341,4 +342,46 @@
   .ms-form-row { grid-template-columns: 1fr; gap: 0; }
   .ms-step-label { display: none; }
   .ms-stepper { padding: 12px 20px 10px; }
+}
+
+/* Permiso chips - horizontal style */
+.ms-permiso-chip {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: var(--dvna-muted);
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: 20px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+}
+.ms-permiso-chip:hover:not(.selected) {
+  border-color: var(--dvna-circle);
+  color: var(--dvna-circle);
+  background: rgba(180,151,128,0.06);
+}
+.ms-permiso-chip.selected {
+  background: var(--dvna-circle);
+  border-color: var(--dvna-circle);
+  color: #fff;
+}
+.ms-permiso-chip.selected:hover {
+  background: var(--dvna-circle);
+  opacity: 0.9;
+}
+.ms-permiso-chip .chip-remove {
+  background: transparent;
+  border: none;
+  color: currentColor;
+  margin-left: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
 }

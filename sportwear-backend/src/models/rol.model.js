@@ -31,6 +31,15 @@ class RolModel extends BaseModel {
     );
     return result.rows;
   }
+
+  // Count active users with this role
+  async countUsuarios(id_rol) {
+    const result = await pool.query(
+      `SELECT COUNT(*) AS total FROM "Usuarios" WHERE id_rol = $1 AND estado = 'Activo'`,
+      [id_rol]
+    );
+    return parseInt(result.rows[0].total);
+  }
 }
 
 module.exports = new RolModel();

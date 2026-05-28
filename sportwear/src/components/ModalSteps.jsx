@@ -1,19 +1,4 @@
 // src/components/ModalSteps.jsx
-// ─── Componente reutilizable: modal con navegación por secciones ───────────
-// Uso:
-//   <ModalSteps
-//     titulo="Editar usuario"
-//     pasos={["Cuenta", "Documentos", "Ubicación", "Rol"]}
-//     onClose={() => setModal(false)}
-//     onGuardar={guardar}
-//     labelGuardar="Actualizar"
-//   >
-//     {/* paso 0 */}
-//     <div>...campos...</div>
-//     {/* paso 1 */}
-//     <div>...campos...</div>
-//   </ModalSteps>
-
 import { useState, Children } from "react";
 import { createPortal } from "react-dom";
 import "./ModalSteps.css";
@@ -45,7 +30,11 @@ export default function ModalSteps({
   onOverlayClick,
 }) {
   const [paso, setPaso] = useState(0);
+
+  // Convierte children a array en cada render para que siempre
+  // refleje las props más recientes (fix: chips no seleccionados al editar)
   const arrayHijos = Children.toArray(children);
+
   const total = pasos.length;
   const esUltimo = paso === total - 1;
   const esPrimero = paso === 0;
@@ -91,7 +80,6 @@ export default function ModalSteps({
               <span className="ms-step-label">{nombre}</span>
             </button>
           ))}
-          {/* Línea de progreso */}
           <div className="ms-progress-track">
             <div
               className="ms-progress-fill"
@@ -102,6 +90,7 @@ export default function ModalSteps({
 
         {/* ── Contenido del paso actual ── */}
         <div className="ms-body">
+          {/* Se renderiza el hijo del paso activo con sus props frescas */}
           {arrayHijos[paso]}
         </div>
 
@@ -112,15 +101,10 @@ export default function ModalSteps({
             onClick={esPrimero ? onClose : () => setPaso(p => p - 1)}
             disabled={guardando}
           >
-            {esPrimero ? (
-              "Cancelar"
-            ) : (
-              <><IconArrowLeft /> Anterior</>
-            )}
+            {esPrimero ? "Cancelar" : <><IconArrowLeft /> Anterior</>}
           </button>
 
           <div className="ms-footer-right">
-            {/* Puntos de navegación rápida */}
             <div className="ms-dots">
               {pasos.map((_, i) => (
                 <button
@@ -154,6 +138,7 @@ export default function ModalSteps({
             )}
           </div>
         </div>
+
       </div>
     </div>,
     document.body
