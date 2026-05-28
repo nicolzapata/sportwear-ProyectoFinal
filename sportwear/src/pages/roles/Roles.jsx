@@ -1,11 +1,11 @@
 // src/pages/roles/Roles.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import api from "../../services/api";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import './Roles.css';
-import { IconEdit, IconCheck, IconBan, IconX, IconSearch } from "../../components/Icons";
+import { IconX, IconSearch } from "../../components/Icons";
 
 // ── Iconos por rol ────────────────────────────────────────────────────────────
 const ROLE_ICONS = {
@@ -48,6 +48,11 @@ const DEFAULT_ICON = (
 
 const PALETAS = ['#f5ede6', '#f0ebe4', '#e8f0e8', '#ede8f5', '#f5f0e0', '#e8f0f5'];
 
+const MODULOS_FALLBACK = [
+  "Dashboard", "Usuarios", "Roles", "Clientes", "Productos",
+  "Catálogo", "Proveedores", "Compras", "Pedidos", "Pagos", "Configuración"
+];
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const esRolProtegido = (nombre = "") => {
   const n = nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
@@ -57,6 +62,27 @@ const esRolProtegido = (nombre = "") => {
 const getRoleIcon = (nombre = "") => {
   const key = nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   return ROLE_ICONS[key] || DEFAULT_ICON;
+};
+
+/**
+ * FIX BUG 3: normaliza el campo modulos que viene del backend.
+ * PostgreSQL con array_agg puede llegar como:
+ *   - Array JS real:        ["Usuarios", "Roles"]        ← driver pg lo parsea
+ *   - String PG:            "{Usuarios,Roles}"           ← a veces pasa con COALESCE
+ *   - null/undefined:       si el rol no tiene permisos
+ */
+const normalizarModulos = (valor) => {
+  if (!valor) return [];
+  if (Array.isArray(valor)) return valor.filter(Boolean);
+  if (typeof valor === "string") {
+    // Formato PostgreSQL: "{Módulo1,Módulo2}"
+    return valor
+      .replace(/^\{|\}$/g, "")   // quitar llaves
+      .split(",")
+      .map(s => s.trim().replace(/^"|"$/g, ""))  // quitar comillas si las hay
+      .filter(Boolean);
+  }
+  return [];
 };
 
 // ── RoleCard ──────────────────────────────────────────────────────────────────
@@ -82,17 +108,11 @@ function RoleCard({ rol, index, onVerDetalle }) {
             >
               {icon}
             </div>
-            <span
-              className="role-front-name"
-              style={{ color: textColor, background: nameBg }}
-            >
+            <span className="role-front-name" style={{ color: textColor, background: nameBg }}>
               {rol.nombre}
             </span>
             {protegido ? (
-              <span
-                className="role-front-hint"
-                style={{ color: textMuted, display: 'flex', alignItems: 'center', gap: 3 }}
-              >
+              <span className="role-front-hint" style={{ color: textMuted, display: 'flex', alignItems: 'center', gap: 3 }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <rect x="3" y="11" width="18" height="11" rx="2"/>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -109,284 +129,38 @@ function RoleCard({ rol, index, onVerDetalle }) {
   );
 }
 
-// ── Página principal ──────────────────────────────────────────────────────────
-export default function Roles() {
-  const [datos,              setDatos]              = useState([]);
-  const [busqueda,           setBusqueda]           = useState("");
-  const [loading,            setLoading]            = useState(true);
-  const [modal,              setModal]              = useState(false);
-  const [editar,             setEditar]             = useState(null);   // id_rol | null
-  const [detalle,            setDetalle]            = useState(null);   // objeto rol | null
-  const [permisos,           setPermisos]           = useState([]);
-  const [modulosDisponibles, setModulosDisponibles] = useState([]);
-  const [confirm,            setConfirm]            = useState(null);   // { rol, usuariosCount }
+// ── FIX BUG 1 & 2: SubComponente reactivo para la sección de permisos ─────────
+// Al ser un componente React real, se re-renderiza cuando cambian sus props.
+// Antes era una variable JSX calculada una vez → no reactiva.
+function SeccionPermisos({ permisos, loadingPermisos, rolColor }) {
+  // Este cálculo ocurre en CADA render del componente, reactivo a `permisos`
+  const modulosDelRol = [...new Set(
+    permisos
+      .map(p => p.modulo)
+      .filter(Boolean)
+  )];
 
-  const [form,    setForm]    = useState({ nombre: "", descripcion: "", estado: "Activo", nivel_acceso: "Editor", permisos: [] });
-  const [errores, setErrores] = useState({});
-
-  // ── Módulos fallback si el endpoint no responde ───────────────────────────
-  const MODULOS_FALLBACK = [
-    "Dashboard", "Usuarios", "Roles", "Clientes", "Productos",
-    "Catálogo", "Proveedores", "Compras", "Pedidos", "Pagos", "Configuración"
-  ];
-
-  // ── Filtrado ──────────────────────────────────────────────────────────────
-  const filtrados = datos.filter(r =>
-    r.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    (r.descripcion && r.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
-  );
-
-  // ── Carga inicial ─────────────────────────────────────────────────────────
-  const cargar = async () => {
-    try {
-      const { data } = await api.get("/roles");
-      setDatos(data);
-    } catch (err) {
-      console.error("Error cargando roles:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    cargar();
-    // Cargar módulos disponibles desde la API
-    api.get('/roles/modulos')
-      .then(({ data }) => setModulosDisponibles(data))
-      .catch(() => setModulosDisponibles(MODULOS_FALLBACK));
-  }, []);
-
-  // ── Abrir detalle ─────────────────────────────────────────────────────────
-  const abrirDetalle = async (rol) => {
-    setDetalle(rol);
-    setPermisos([]);
-    try {
-      const { data } = await api.get(`/roles/${rol.id_rol}/permisos`);
-      setPermisos(data);
-    } catch (err) {
-      console.error("Error cargando permisos:", err);
-    }
-  };
-
-  // ── Abrir modal registrar ─────────────────────────────────────────────────
-  const abrirRegistrar = () => {
-    setEditar(null);
-    setForm({ nombre: "", descripcion: "", estado: "Activo", nivel_acceso: "Editor", permisos: [] });
-    setErrores({});
-    setModal(true);
-  };
-
-  // ── Abrir modal editar ────────────────────────────────────────────────────
-  const abrirEditar = (r) => {
-    if (esRolProtegido(r.nombre)) return;
-    setEditar(r.id_rol);
-    setForm({
-      nombre:       r.nombre,
-      descripcion:  r.descripcion,
-      estado:       r.estado,
-      nivel_acceso: r.nivel_acceso || "Editor",
-      permisos:     r.modulos || r.permisos || [],
-    });
-    setErrores({});
-    setModal(true);
-  };
-
-  // ── Toggle permiso ────────────────────────────────────────────────────────
-  const togglePermiso = (modulo) => {
-    const ya = form.permisos.includes(modulo);
-    setForm({ ...form, permisos: ya ? form.permisos.filter(p => p !== modulo) : [...form.permisos, modulo] });
-    if (errores.permisos) setErrores({ ...errores, permisos: '' });
-  };
-
-  // ── Validación frontend ───────────────────────────────────────────────────
-  const validar = () => {
-    const e = {};
-    if (!form.nombre.trim())       e.nombre      = "El nombre es obligatorio";
-    if (!form.descripcion.trim())  e.descripcion = "La descripción es obligatoria";
-    if (form.permisos.length === 0) e.permisos   = "Selecciona al menos un módulo";
-    setErrores(e);
-    return Object.keys(e).length === 0;
-  };
-
-  // ── Guardar (crear o editar) ──────────────────────────────────────────────
-  const guardar = async () => {
-    if (!validar()) return;
-    try {
-      if (editar) await api.put(`/roles/${editar}`, form);
-      else        await api.post("/roles", form);
-      setModal(false);
-      cargar();
-    } catch (err) {
-      // Mapear errores del backend al formulario
-      const backendErrors = err.response?.data?.errors;
-      if (backendErrors) {
-        setErrores(prev => ({ ...prev, ...backendErrors }));
-      } else {
-        setErrores(prev => ({
-          ...prev,
-          _general: err.response?.data?.message || 'Ocurrió un error al guardar.'
-        }));
-      }
-    }
-  };
-
-  // ── Cambio de estado (con confirmación si hay usuarios) ───────────────────
-  const solicitarCambioEstado = async (rol) => {
-    if (esRolProtegido(rol.nombre)) return;
-    // Activar no requiere confirmación
-    if (rol.estado === 'Inactivo') {
-      try {
-        await api.patch(`/roles/${rol.id_rol}/estado`);
-        cargar();
-      } catch (err) {
-        console.error("Error activando rol:", err);
-      }
-      return;
-    }
-    // Desactivar: verificar cuántos usuarios tiene
-    setConfirm({ rol, usuariosCount: null });
-    try {
-      const { data } = await api.get(`/roles/${rol.id_rol}/usuarios-count`);
-      setConfirm({ rol, usuariosCount: data.total });
-    } catch {
-      setConfirm({ rol, usuariosCount: 0 });
-    }
-  };
-
-  const confirmarCambioEstado = async () => {
-    if (!confirm) return;
-    try {
-      await api.patch(`/roles/${confirm.rol.id_rol}/estado`);
-      setConfirm(null);
-      cargar();
-    } catch (err) {
-      console.error("Error cambiando estado:", err);
-    }
-  };
-
-  // ── Loading ───────────────────────────────────────────────────────────────
-  if (loading) return (
-    <div className="roles-loading-container">
-      <div className="roles-loading-spinner" />
-      <p className="roles-loading-text">Cargando roles...</p>
-    </div>
-  );
-
-  // ── Pasos del formulario ──────────────────────────────────────────────────
-  const PasoInfo = (
-    <div>
-      <div className="ms-form-row">
-        <div className="ms-form-group">
-          <label className="ms-form-label">
-            Nombre del rol <span className="ms-req">*</span>
-          </label>
-          <input
-            type="text"
-            className={`ms-form-input${errores.nombre ? ' error' : ''}`}
-            placeholder="Ej: Vendedor"
-            value={form.nombre}
-            onChange={e => {
-              setForm({ ...form, nombre: e.target.value });
-              if (errores.nombre) setErrores({ ...errores, nombre: '' });
-            }}
-          />
-          {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
+  if (loadingPermisos) {
+    return (
+      <DetalleSeccion>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 14, height: 14,
+            border: '1.5px solid var(--dvna-border)',
+            borderTopColor: 'var(--dvna-circle)',
+            borderRadius: '50%',
+            animation: 'spin 0.7s linear infinite',
+            flexShrink: 0
+          }} />
+          <p style={{ fontSize: 13, color: 'var(--dvna-muted, #999)', margin: 0 }}>
+            Cargando permisos...
+          </p>
         </div>
-        <div className="ms-form-group">
-          <label className="ms-form-label">Nivel de acceso</label>
-          <select
-            className="ms-form-select"
-            value={form.nivel_acceso}
-            onChange={e => setForm({ ...form, nivel_acceso: e.target.value })}
-          >
-            <option value="Admin">Admin</option>
-            <option value="Editor">Editor</option>
-            <option value="Observador">Observador</option>
-          </select>
-        </div>
-      </div>
-      <div className="ms-form-group">
-        <label className="ms-form-label">
-          Descripción <span className="ms-req">*</span>
-        </label>
-        <input
-          type="text"
-          className={`ms-form-input${errores.descripcion ? ' error' : ''}`}
-          placeholder="Ej: Acceso a ventas y pedidos"
-          value={form.descripcion}
-          onChange={e => {
-            setForm({ ...form, descripcion: e.target.value });
-            if (errores.descripcion) setErrores({ ...errores, descripcion: '' });
-          }}
-        />
-        {errores.descripcion && <span className="ms-form-error">{errores.descripcion}</span>}
-      </div>
-      {/* Error general del backend (nombre duplicado, etc.) */}
-      {errores._general && (
-        <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 4, textAlign: 'center' }}>
-          {errores._general}
-        </p>
-      )}
-    </div>
-  );
+      </DetalleSeccion>
+    );
+  }
 
-  const PasoPermisos = (
-    <div>
-      <div className="ms-form-group">
-        <label className="ms-form-label">
-          Módulos con acceso <span className="ms-req">*</span>
-        </label>
-        <p className="ms-form-hint" style={{ marginBottom: 10 }}>
-          Selecciona los módulos a los que tendrá acceso este rol.
-        </p>
-        <div className="roles-permisos-grid">
-          {modulosDisponibles.map(m => (
-            <button
-              key={m}
-              type="button"
-              className={`roles-permiso-chip${form.permisos.includes(m) ? ' selected' : ''}`}
-              onClick={() => togglePermiso(m)}
-            >
-              {m}
-            </button>
-          ))}
-        </div>
-        {errores.permisos && (
-          <span className="ms-form-error" style={{ marginTop: 8, display: 'block' }}>
-            {errores.permisos}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-
-  // ── Contenido modal detalle ───────────────────────────────────────────────
-  const modulosDelRol = detalle ? [...new Set(permisos.map(p => p.modulo))] : [];
-  const rolIndex      = detalle ? datos.findIndex(r => r.id_rol === detalle.id_rol) : 0;
-  const rolColor      = PALETAS[rolIndex % PALETAS.length];
-  const protegido     = detalle ? esRolProtegido(detalle.nombre) : false;
-
-  const DetalleInfo = detalle && (
-    <DetalleSeccion>
-      <DetalleGrid>
-        <DetalleItem label="Nombre"          value={detalle.nombre} />
-        <DetalleItem label="Nivel de acceso" value={detalle.nivel_acceso || "No definido"} />
-        <DetalleItem label="Estado"          value={detalle.estado} />
-        <DetalleItem label="Descripción"     value={detalle.descripcion} full />
-      </DetalleGrid>
-      {protegido && (
-        <div className="roles-protected-notice">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="11" width="18" height="11" rx="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-          Este rol es protegido del sistema y no puede editarse ni desactivarse.
-        </div>
-      )}
-    </DetalleSeccion>
-  );
-
-  const DetallePermisos = detalle && (
+  return (
     <DetalleSeccion>
       {modulosDelRol.length > 0 ? (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -410,8 +184,307 @@ export default function Roles() {
         </div>
       ) : (
         <p style={{ fontSize: 13, color: "var(--dvna-muted, #999)", fontStyle: "italic", margin: 0 }}>
-          {permisos.length === 0 ? "Cargando permisos..." : "Sin módulos asignados"}
+          Sin módulos asignados
         </p>
+      )}
+    </DetalleSeccion>
+  );
+}
+
+// ── Página principal ──────────────────────────────────────────────────────────
+export default function Roles() {
+  const [datos,              setDatos]              = useState([]);
+  const [busqueda,           setBusqueda]           = useState("");
+  const [loading,            setLoading]            = useState(true);
+  const [modal,              setModal]              = useState(false);
+  const [editar,             setEditar]             = useState(null);
+  const [detalle,            setDetalle]            = useState(null);
+  // FIX BUG 1: estado separado para permisos del detalle
+  const [permisos,           setPermisos]           = useState([]);
+  const [loadingPermisos,    setLoadingPermisos]    = useState(false);
+  const [modulosDisponibles, setModulosDisponibles] = useState([]);
+  const [confirm,            setConfirm]            = useState(null);
+
+  const [form,    setForm]    = useState({
+    nombre: "", descripcion: "", estado: "Activo", nivel_acceso: "Editor", permisos: []
+  });
+  const [errores, setErrores] = useState({});
+
+  // ── Filtrado ──────────────────────────────────────────────────────────────
+  const filtrados = datos.filter(r =>
+    r.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+    (r.descripcion && r.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
+  );
+
+  // ── Carga inicial ─────────────────────────────────────────────────────────
+  const cargar = useCallback(async () => {
+    try {
+      const { data } = await api.get("/roles");
+      setDatos(data);
+    } catch (err) {
+      console.error("Error cargando roles:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    cargar();
+    api.get('/roles/modulos')
+      .then(({ data }) => {
+        // data puede ser array de strings o array de objetos {modulo: "..."}
+        const lista = Array.isArray(data)
+          ? data.map(item => (typeof item === 'string' ? item : item.modulo)).filter(Boolean)
+          : [];
+        setModulosDisponibles(lista.length > 0 ? lista : MODULOS_FALLBACK);
+      })
+      .catch(() => setModulosDisponibles(MODULOS_FALLBACK));
+  }, [cargar]);
+
+  // ── FIX BUG 1: cargar permisos del detalle con estado de carga propio ─────
+  const abrirDetalle = async (rol) => {
+    setDetalle(rol);
+    setPermisos([]);
+    setLoadingPermisos(true);
+    try {
+      const { data } = await api.get(`/roles/${rol.id_rol}/permisos`);
+      // data debe ser array de { id_permiso, nombre, modulo, accion }
+      setPermisos(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Error cargando permisos del detalle:", err);
+      setPermisos([]);
+    } finally {
+      setLoadingPermisos(false);
+    }
+  };
+
+  // ── Abrir modal registrar ─────────────────────────────────────────────────
+  const abrirRegistrar = () => {
+    setEditar(null);
+    setForm({ nombre: "", descripcion: "", estado: "Activo", nivel_acceso: "Editor", permisos: [] });
+    setErrores({});
+    setModal(true);
+  };
+
+  // ── FIX BUG 3: cargar permisos frescos al editar ──────────────────────────
+  // En vez de usar r.modulos del listado (que puede tener formato incorrecto),
+  // cargamos directamente desde /roles/:id/permisos para tener datos limpios.
+  const abrirEditar = async (r) => {
+    if (esRolProtegido(r.nombre)) return;
+    setEditar(r.id_rol);
+    // Ponemos lo que tenemos del listado como base mientras carga
+    const modulosBase = normalizarModulos(r.modulos);
+    setForm({
+      nombre:       r.nombre,
+      descripcion:  r.descripcion,
+      estado:       r.estado,
+      nivel_acceso: r.nivel_acceso || "Editor",
+      permisos:     modulosBase,
+    });
+    setErrores({});
+    setModal(true);
+
+    // Carga fresca de permisos reales desde el endpoint específico
+    try {
+      const { data } = await api.get(`/roles/${r.id_rol}/permisos`);
+      if (Array.isArray(data) && data.length > 0) {
+        const modulosReales = [...new Set(data.map(p => p.modulo).filter(Boolean))];
+        setForm(prev => ({ ...prev, permisos: modulosReales }));
+      }
+    } catch (err) {
+      console.error("Error cargando permisos para edición:", err);
+      // Si falla, nos quedamos con modulosBase (mejor que nada)
+    }
+  };
+
+  // ── Toggle permiso ────────────────────────────────────────────────────────
+  const togglePermiso = (modulo) => {
+    const ya = form.permisos.includes(modulo);
+    setForm(prev => ({
+      ...prev,
+      permisos: ya ? prev.permisos.filter(p => p !== modulo) : [...prev.permisos, modulo]
+    }));
+    if (errores.permisos) setErrores(prev => ({ ...prev, permisos: '' }));
+  };
+
+  // ── Validación frontend ───────────────────────────────────────────────────
+  const validar = () => {
+    const e = {};
+    if (!form.nombre.trim())        e.nombre      = "El nombre es obligatorio";
+    if (!form.descripcion.trim())   e.descripcion = "La descripción es obligatoria";
+    if (form.permisos.length === 0) e.permisos    = "Selecciona al menos un módulo";
+    setErrores(e);
+    return Object.keys(e).length === 0;
+  };
+
+  // ── Guardar ───────────────────────────────────────────────────────────────
+  const guardar = async () => {
+    if (!validar()) return;
+    try {
+      if (editar) await api.put(`/roles/${editar}`, form);
+      else        await api.post("/roles", form);
+      setModal(false);
+      cargar();
+    } catch (err) {
+      const backendErrors = err.response?.data?.errors;
+      if (backendErrors) {
+        setErrores(prev => ({ ...prev, ...backendErrors }));
+      } else {
+        setErrores(prev => ({
+          ...prev,
+          _general: err.response?.data?.message || 'Ocurrió un error al guardar.'
+        }));
+      }
+    }
+  };
+
+  // ── Cambio de estado ──────────────────────────────────────────────────────
+  const solicitarCambioEstado = async (rol) => {
+    if (esRolProtegido(rol.nombre)) return;
+    if (rol.estado === 'Inactivo') {
+      try { await api.patch(`/roles/${rol.id_rol}/estado`); cargar(); }
+      catch (err) { console.error("Error activando rol:", err); }
+      return;
+    }
+    setConfirm({ rol, usuariosCount: null });
+    try {
+      const { data } = await api.get(`/roles/${rol.id_rol}/usuarios-count`);
+      setConfirm({ rol, usuariosCount: data.total });
+    } catch {
+      setConfirm({ rol, usuariosCount: 0 });
+    }
+  };
+
+  const confirmarCambioEstado = async () => {
+    if (!confirm) return;
+    try {
+      await api.patch(`/roles/${confirm.rol.id_rol}/estado`);
+      setConfirm(null);
+      cargar();
+    } catch (err) {
+      console.error("Error cambiando estado:", err);
+    }
+  };
+
+  // ── Loading inicial ───────────────────────────────────────────────────────
+  if (loading) return (
+    <div className="roles-loading-container">
+      <div className="roles-loading-spinner" />
+      <p className="roles-loading-text">Cargando roles...</p>
+    </div>
+  );
+
+  // ── Pasos del formulario ──────────────────────────────────────────────────
+  const PasoInfo = (
+    <div>
+      <div className="ms-form-row">
+        <div className="ms-form-group">
+          <label className="ms-form-label">
+            Nombre del rol <span className="ms-req">*</span>
+          </label>
+          <input
+            type="text"
+            className={`ms-form-input${errores.nombre ? ' error' : ''}`}
+            placeholder="Ej: Vendedor"
+            value={form.nombre}
+            onChange={e => {
+              setForm(prev => ({ ...prev, nombre: e.target.value }));
+              if (errores.nombre) setErrores(prev => ({ ...prev, nombre: '' }));
+            }}
+          />
+          {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
+        </div>
+        <div className="ms-form-group">
+          <label className="ms-form-label">Nivel de acceso</label>
+          <select
+            className="ms-form-select"
+            value={form.nivel_acceso}
+            onChange={e => setForm(prev => ({ ...prev, nivel_acceso: e.target.value }))}
+          >
+            <option value="Admin">Admin</option>
+            <option value="Editor">Editor</option>
+            <option value="Observador">Observador</option>
+          </select>
+        </div>
+      </div>
+      <div className="ms-form-group">
+        <label className="ms-form-label">
+          Descripción <span className="ms-req">*</span>
+        </label>
+        <input
+          type="text"
+          className={`ms-form-input${errores.descripcion ? ' error' : ''}`}
+          placeholder="Ej: Acceso a ventas y pedidos"
+          value={form.descripcion}
+          onChange={e => {
+            setForm(prev => ({ ...prev, descripcion: e.target.value }));
+            if (errores.descripcion) setErrores(prev => ({ ...prev, descripcion: '' }));
+          }}
+        />
+        {errores.descripcion && <span className="ms-form-error">{errores.descripcion}</span>}
+      </div>
+      {errores._general && (
+        <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>
+          {errores._general}
+        </p>
+      )}
+    </div>
+  );
+
+  const PasoPermisos = (
+    <div>
+      <div className="ms-form-group">
+        <label className="ms-form-label">
+          Módulos con acceso <span className="ms-req">*</span>
+        </label>
+        <p className="ms-form-hint" style={{ marginBottom: 10 }}>
+          Selecciona los módulos a los que tendrá acceso este rol.
+        </p>
+        <div className="roles-permisos-grid">
+          {modulosDisponibles.map(m => (
+            <button
+              key={m}
+              type="button"
+              // FIX BUG 3: form.permisos ya son strings normalizados → .includes() funciona
+              className={`roles-permiso-chip${form.permisos.includes(m) ? ' selected' : ''}`}
+              onClick={() => togglePermiso(m)}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+        {errores.permisos && (
+          <span className="ms-form-error" style={{ marginTop: 8, display: 'block' }}>
+            {errores.permisos}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+
+  // ── Datos del detalle ─────────────────────────────────────────────────────
+  const rolIndex  = detalle ? datos.findIndex(r => r.id_rol === detalle.id_rol) : 0;
+  const rolColor  = PALETAS[rolIndex % PALETAS.length];
+  const protegido = detalle ? esRolProtegido(detalle.nombre) : false;
+
+  // FIX BUG 2: DetalleInfo sigue siendo JSX variable (no necesita ser reactivo,
+  // solo depende de `detalle` que cambia al abrir el modal, no de `permisos`)
+  const DetalleInfo = detalle && (
+    <DetalleSeccion>
+      <DetalleGrid>
+        <DetalleItem label="Nombre"          value={detalle.nombre} />
+        <DetalleItem label="Nivel de acceso" value={detalle.nivel_acceso || "No definido"} />
+        <DetalleItem label="Estado"          value={detalle.estado} />
+        <DetalleItem label="Descripción"     value={detalle.descripcion} full />
+      </DetalleGrid>
+      {protegido && (
+        <div className="roles-protected-notice">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Este rol es protegido del sistema y no puede editarse ni desactivarse.
+        </div>
       )}
     </DetalleSeccion>
   );
@@ -460,10 +533,7 @@ export default function Roles() {
       {/* ── Modal confirmación desactivar ── */}
       {confirm && createPortal(
         <div className="roles-modal-overlay" onClick={() => setConfirm(null)}>
-          <div
-            className="roles-modal roles-confirm-modal"
-            onClick={e => e.stopPropagation()}
-          >
+          <div className="roles-modal roles-confirm-modal" onClick={e => e.stopPropagation()}>
             <div className="roles-modal-accent" style={{ background: '#b83232' }} />
             <div className="roles-modal-header">
               <div>
@@ -488,7 +558,6 @@ export default function Roles() {
                   </div>
                   <span className="roles-confirm-nombre">{confirm.rol.nombre}</span>
                 </div>
-
                 {confirm.usuariosCount === null ? (
                   <div className="roles-confirm-safe">
                     <span style={{ color: 'var(--dvna-muted)' }}>Verificando usuarios afectados...</span>
@@ -517,12 +586,8 @@ export default function Roles() {
               </div>
             </div>
             <div className="roles-modal-footer">
-              <button className="roles-btn-secondary" onClick={() => setConfirm(null)}>
-                Cancelar
-              </button>
-              <button className="roles-btn-danger" onClick={confirmarCambioEstado}>
-                Sí, desactivar
-              </button>
+              <button className="roles-btn-secondary" onClick={() => setConfirm(null)}>Cancelar</button>
+              <button className="roles-btn-danger" onClick={confirmarCambioEstado}>Sí, desactivar</button>
             </div>
           </div>
         </div>,
@@ -560,13 +625,17 @@ export default function Roles() {
             </span>
           }
           pasos={["Información", "Módulos y permisos"]}
-          onClose={() => setDetalle(null)}
-          // Roles protegidos no tienen botones de editar/cambiar estado
+          onClose={() => { setDetalle(null); setPermisos([]); }}
           onEditar={protegido ? undefined : () => { setDetalle(null); abrirEditar(detalle); }}
           onCambiarEstado={protegido ? undefined : () => { setDetalle(null); solicitarCambioEstado(detalle); }}
         >
           {DetalleInfo}
-          {DetallePermisos}
+          {/* FIX BUG 1 & 2: componente React real, reactivo a cambios de permisos */}
+          <SeccionPermisos
+            permisos={permisos}
+            loadingPermisos={loadingPermisos}
+            rolColor={rolColor}
+          />
         </ModalDetalle>
       )}
 
