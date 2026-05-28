@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import ModalSteps from "../../components/ModalSteps";
+import StatusToggle from "../../components/StatusToggle";
 import './Colores.css';
-import { IconBan, IconCheck, IconEdit, IconFileText, IconPalette, IconPrint, IconSearch, IconTrash, IconX } from "../../components/Icons";
+import { IconEdit, IconFileText, IconPalette, IconPrint, IconSearch, IconTrash, IconX } from "../../components/Icons";
 
 const getBrightness = (hex) => {
   const r = parseInt(hex.substring(1,3),16), g = parseInt(hex.substring(3,5),16), b = parseInt(hex.substring(5,7),16);
@@ -45,6 +46,16 @@ export default function Colores() {
   const eliminarColor = async (id) => {
     if (!window.confirm("¿Eliminar este color? Se eliminarán las variantes asociadas.")) return;
     try { await api.delete(`/colores/${id}`); cargar(); } catch (err) { console.error(err); }
+  };
+
+  const toggleEstado = async (id, nuevoEstado) => {
+    try {
+      await api.patch(`/colores/${id}/estado`);
+      setDatos(prev => prev.map(c => c.id_color === id ? { ...c, estado: nuevoEstado } : c));
+    } catch (err) {
+      console.error("Error:", err);
+      alert("Error al cambiar estado");
+    }
   };
 
   if (loading) return (
@@ -140,7 +151,7 @@ export default function Colores() {
                   </td>
                   <td className="tbl-td"><code className="colores-hex-code">{c.codigo_hex}</code></td>
                   <td className="tbl-td">
-                    <span className={`tabla-status${c.estado === "Activo" ? ' activo' : ' inactivo'}`}>{c.estado}</span>
+                    <StatusToggle id={c.id_color} estado={c.estado} onToggle={toggleEstado} />
                   </td>
                   <td className="tbl-td">
                     <div className="colores-action-cell">

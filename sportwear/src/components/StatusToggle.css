@@ -1,0 +1,67 @@
+.status-toggle-wrapper {
+  display: inline-block;
+}
+
+.status-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-family: var(--font-body, inherit);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+}
+
+.status-toggle-btn.activo {
+  color: var(--success, #3a6648);
+  border-color: rgba(58, 102, 72, 0.3);
+  background: rgba(58, 102, 72, 0.06);
+}
+
+.status-toggle-btn.activo:hover:not(.disabled):not(.loading) {
+  background: rgba(58, 102, 72, 0.12);
+  border-color: var(--success);
+}
+
+.status-toggle-btn.inactivo {
+  color: var(--danger, #b83232);
+  border-color: rgba(184, 50, 50, 0.3);
+  background: rgba(184, 50, 50, 0.06);
+}
+
+.status-toggle-btn.inactivo:hover:not(.disabled):not(.loading) {
+  background: rgba(184, 50, 50, 0.12);
+  border-color: var(--danger);
+}
+
+.status-toggle-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.status-toggle-btn.loading {
+  cursor: wait;
+}
+
+.status-toggle-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+.status-toggle-spinner {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--dvna-border, #ddd);
+  border-top-color: var(--dvna-circle, #b89280);
+  border-radius: 50%;
+  animation: statusSpin 0.6s linear infinite;
+}
+
+@keyframes statusSpin {
+  to { transform: rotate(360deg); }
+}

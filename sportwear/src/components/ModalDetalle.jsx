@@ -2,6 +2,7 @@
 // ─── Modal de solo lectura con navegación por secciones ───────────────────
 import { useState, Children } from "react";
 import { createPortal } from "react-dom";
+import StatusToggle from "./StatusToggle";
 import "./ModalDetalle.css";
 
 const IconX = () => (
@@ -24,12 +25,6 @@ const IconEdit = () => (
     <path d="M11.5 2.5a1.5 1.5 0 0 1 2.12 2.12L5 13.24 2 14l.76-3L11.5 2.5z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
-const IconBan = () => (
-  <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
-    <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.4"/>
-    <path d="M3.5 3.5l9 9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-  </svg>
-);
 
 export default function ModalDetalle({
   titulo = "Detalle",
@@ -37,11 +32,13 @@ export default function ModalDetalle({
   avatar,
   avatarColor,
   badge,
+  badgeEstado,
+  badgeId,
+  onToggleEstado,
   pasos,
   onClose,
-  onEditar,           // si se pasa, muestra botón "Editar"
-  onCambiarEstado,    // si se pasa, muestra botón "Desactivar/Activar"
-  labelCambiarEstado = "Desactivar", // label personalizable
+  onEditar,
+  onCambiarEstado,
   children,
 }) {
   const [paso, setPaso] = useState(0);
@@ -67,7 +64,6 @@ export default function ModalDetalle({
             {badge && <div className="md-badge-wrap">{badge}</div>}
           </div>
           <button className="md-close" onClick={onClose}><IconX /></button>
-
         </div>
 
         {/* ── Stepper ── */}
@@ -117,10 +113,13 @@ export default function ModalDetalle({
         {/* ── Barra de acciones ── */}
         <div className="md-actions">
           <button className="md-btn-cerrar" onClick={onClose}>Cerrar</button>
-          {onCambiarEstado && (
-            <button className="md-btn-desactivar" onClick={onCambiarEstado}>
-              <IconBan /> {labelCambiarEstado}
-            </button>
+          {onCambiarEstado && badgeEstado && onToggleEstado && badgeId && (
+            <StatusToggle 
+              id={badgeId} 
+              estado={badgeEstado} 
+              onToggle={onToggleEstado} 
+              showConfirmation={true}
+            />
           )}
           {onEditar && (
             <button className="md-btn-editar" onClick={onEditar}>

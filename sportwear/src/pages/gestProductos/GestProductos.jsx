@@ -5,6 +5,7 @@ import GaleriaImagenes from "../../components/GaleriaImagenes";
 import GestVariantes from "../../components/GestVariantes";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
+import StatusToggle from "../../components/StatusToggle";
 import { IconAlertTriangle, IconBan, IconCheck, IconEdit, IconEye, IconPrint, IconSearch, IconX, IconPalette, IconBox, IconTag } from "../../components/Icons";
 import "./GestProductos.css";
 
@@ -193,10 +194,10 @@ export default function GestProductos() {
     }
   };
 
-  const cambiarEstado = async (id) => {
+  const toggleEstadoProducto = async (id, nuevoEstado) => {
     try {
       await api.patch(`/productos/${id}/estado`);
-      cargar();
+      setDatos(prev => prev.map(p => p.id_producto === id ? { ...p, estado: nuevoEstado } : p));
       mostrarToast("exito", "Estado actualizado.");
     } catch { mostrarToast("error", "No se pudo cambiar."); }
   };
@@ -250,12 +251,10 @@ export default function GestProductos() {
     }
   };
 
-  const cambiarEstadoCategoria = async (id) => {
+  const cambiarEstadoCategoria = async (id, nuevoEstado) => {
     try {
       await api.patch(`/categorias/${id}/estado`);
-      setCategorias(prev => prev.map(c =>
-        c.id_categoria === id ? { ...c, estado: c.estado === "Activo" ? "Inactivo" : "Activo" } : c
-      ));
+      setCategorias(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
     } catch (err) {
       console.error(err);
     }
@@ -535,18 +534,13 @@ export default function GestProductos() {
                       {p.publicado ? "Sí" : "No"}
                     </button>
                   </td>
-                  <td className="tbl-td">
-                    <span className={`tabla-status ${p.estado === "Activo" ? "activo" : "inactivo"}`}>
-                      {p.estado}
-                    </span>
+<td className="tbl-td">
+                    <StatusToggle id={p.id_producto} estado={p.estado} onToggle={toggleEstadoProducto} showConfirmation={true} />
                   </td>
                   <td className="tbl-td">
                     <div className="gestproductos-action-cell">
                       <button className="gestproductos-action-btn gestproductos-view-btn" onClick={() => setVerDetalle(p)}><IconEye /></button>
                       <button className="gestproductos-action-btn gestproductos-edit-btn" onClick={() => abrirEditar(p)}><IconEdit /></button>
-                      <button className="gestproductos-action-btn gestproductos-toggle-btn" onClick={() => cambiarEstado(p.id_producto)}>
-                        {p.estado === "Activo" ? <IconBan /> : <IconCheck />}
-                      </button>
                     </div>
                   </td>
                 </tr>
@@ -581,21 +575,12 @@ export default function GestProductos() {
                     </div>
                   </td>
                   <td className="tbl-td">
-                    <span className={`tabla-status ${c.estado === 'Activo' ? 'activo' : 'inactivo'}`}>
-                      {c.estado}
-                    </span>
+                    <StatusToggle id={c.id_categoria} estado={c.estado} onToggle={cambiarEstadoCategoria} showConfirmation={true} />
                   </td>
                   <td className="tbl-td">
                     <div className="catproductos-action-cell">
                       <button className="catproductos-action-btn catproductos-edit-btn" onClick={() => abrirEditarCategoria(c)} title="Editar">
                         <IconEdit />
-                      </button>
-                      <button
-                        className={`catproductos-action-btn ${c.estado === "Activo" ? "catproductos-deactivate-btn" : "catproductos-activate-btn"}`}
-                        onClick={() => cambiarEstadoCategoria(c.id_categoria)}
-                        title={c.estado === "Activo" ? "Desactivar" : "Activar"}
-                      >
-                        {c.estado === "Activo" ? <IconBan /> : <IconCheck />}
                       </button>
                     </div>
                   </td>

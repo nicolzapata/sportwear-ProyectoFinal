@@ -4,8 +4,9 @@ import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
+import StatusToggle from "../../components/StatusToggle";
 import './Usuarios.css';
-import { IconBan, IconCheck, IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconPrint, IconSearch, IconX } from "../../components/Icons";
+import { IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
 const TIPOS_DOC = ["CC", "CE", "TI", "NIT", "PP"];
 
@@ -170,18 +171,14 @@ export default function Usuarios() {
     api.get("/usuarios").then(res => setUsuarios(res.data)).catch(err => console.error(err));
   };
 
-  const cambiarEstado = async (id) => {
-    try { await api.patch(`/usuarios/${id}/estado`); cargar(); } catch (err) { console.error(err); }
+  const toggleEstadoUsuario = async (id, nuevoEstado) => {
+    await api.patch(`/usuarios/${id}/estado`);
+    setUsuarios(prev => prev.map(u => u.id_usuario === id ? { ...u, estado: nuevoEstado } : u));
   };
 
-  const cambiarEstadoCliente = async (id) => {
-    try {
-      await api.patch(`/clientes/${id}/estado`);
-      setClientes(prev => prev.map(c => c.id_cliente === id ? { ...c, estado: c.estado === "Activo" ? "Inactivo" : "Activo" } : c));
-    } catch (err) {
-      console.error("Error:", err);
-      alert("Error al cambiar estado");
-    }
+  const toggleEstadoCliente = async (id, nuevoEstado) => {
+    await api.patch(`/clientes/${id}/estado`);
+    setClientes(prev => prev.map(c => c.id_cliente === id ? { ...c, estado: nuevoEstado } : c));
   };
 
   // FIX #4: setDatos → setUsuarios
@@ -319,14 +316,13 @@ export default function Usuarios() {
                    <td className="tbl-td usuarios-email-cell">{u.email}</td>
                    <td className="tbl-td"><span className="tabla-rol">{u.rol || getRoleName(u.id_rol)}</span></td>
                    <td className="tbl-td"><span className={`tabla-status ${u.permiso_cuotas !== false ? "activo" : "inactivo"}`} onClick={() => togglePermisoCuotas(u.id_usuario)} style={{ cursor: 'pointer' }} title="Click para cambiar">{u.permiso_cuotas !== false ? "Sí" : "No"}</span></td>
-                   <td className="tbl-td"><span className={`tabla-status ${u.estado === "Activo" ? "activo" : "inactivo"}`}>{u.estado}</span></td>
-                   <td className="tbl-td">
-                     <div className="usuarios-action-cell">
-                       <button className="usuarios-action-btn usuarios-view-btn" onClick={() => abrirDetalle(u)} title="Ver detalles"><IconEyeOpen /></button>
-                       <button className="usuarios-action-btn usuarios-edit-btn" onClick={() => abrirEditar(u)} title="Editar"><IconEdit /></button>
-                       <button className={`usuarios-action-btn ${u.estado === "Activo" ? "usuarios-deactivate-btn" : "usuarios-activate-btn"}`} onClick={() => cambiarEstado(u.id_usuario)} title={u.estado === "Activo" ? "Desactivar" : "Activar"}>{u.estado === "Activo" ? <IconBan /> : <IconCheck />}</button>
-                     </div>
-                   </td>
+<td className="tbl-td"><StatusToggle id={u.id_usuario} estado={u.estado} onToggle={toggleEstadoUsuario} showConfirmation={true} /></td>
+                    <td className="tbl-td">
+                      <div className="usuarios-action-cell">
+                        <button className="usuarios-action-btn usuarios-view-btn" onClick={() => abrirDetalle(u)} title="Ver detalles"><IconEyeOpen /></button>
+                        <button className="usuarios-action-btn usuarios-edit-btn" onClick={() => abrirEditar(u)} title="Editar"><IconEdit /></button>
+                      </div>
+                    </td>
                  </tr>
                ))
              ) : (
@@ -340,16 +336,13 @@ export default function Usuarios() {
                    <td className="tbl-td"><span className={`clientes-tipo-badge ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
                    <td className="tbl-td">{c.total_compras || 0}</td>
                    <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
-                   <td className="tbl-td"><span className={`clientes-status-badge ${c.estado === "Activo" ? 'active' : 'inactive'}`}>{c.estado}</span></td>
-                   <td className="tbl-td">
-                     <div className="clientes-action-cell">
-                       {/* FIX #3: IconEye → IconEyeOpen */}
-                       <button className="clientes-action-btn clientes-view-btn" onClick={() => setClienteDetalle(c)} title="Ver detalles"><IconEyeOpen /></button>
-                       <button className="clientes-action-btn clientes-edit-btn" onClick={() => abrirEditarCliente(c)} title="Editar"><IconEdit /></button>
-                       {/* FIX #1: comilla de cierre del template literal corregida */}
-                       <button className={`clientes-action-btn ${c.estado === "Activo" ? "clientes-deactivate-btn" : "clientes-activate-btn"}`} onClick={() => cambiarEstadoCliente(c.id_cliente)} title={c.estado === "Activo" ? "Desactivar" : "Activar"}>{c.estado === "Activo" ? <IconBan /> : <IconCheck />}</button>
-                     </div>
-                   </td>
+<td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstadoCliente} showConfirmation={true} /></td>
+                    <td className="tbl-td">
+                      <div className="clientes-action-cell">
+                        <button className="clientes-action-btn clientes-view-btn" onClick={() => setClienteDetalle(c)} title="Ver detalles"><IconEyeOpen /></button>
+                        <button className="clientes-action-btn clientes-edit-btn" onClick={() => abrirEditarCliente(c)} title="Editar"><IconEdit /></button>
+                      </div>
+                    </td>
                  </tr>
                ))
              )}

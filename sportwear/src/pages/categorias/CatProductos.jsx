@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import ModalSteps from "../../components/ModalSteps";
+import StatusToggle from "../../components/StatusToggle";
 import './CatProductos.css';
 import { IconBan, IconCheck, IconEdit, IconSearch, IconX } from "../../components/Icons";
 
@@ -64,15 +65,10 @@ export default function CatProductos() {
     } catch (err) { console.error(err); }
   };
 
-  const cambiarEstado = async (id) => {
+  const toggleEstado = async (id, nuevoEstado) => {
     try {
       await api.patch(`/categorias/${id}/estado`);
-      // Actualiza localmente sin recargar — evita que desaparezca si el backend filtra inactivos
-      setDatos(prev => prev.map(c =>
-        c.id_categoria === id
-          ? { ...c, estado: c.estado === "Activo" ? "Inactivo" : "Activo" }
-          : c
-      ));
+      setDatos(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
     } catch (err) { console.error(err); }
   };
 
@@ -167,22 +163,13 @@ export default function CatProductos() {
                     <span className="catproductos-categoria-name">{c.nombre}</span>
                   </div>
                 </td>
-                <td className="tbl-td">
-                  <span className={`catproductos-status-badge ${c.estado === "Activo" ? 'active' : 'inactive'}`}>
-                    {c.estado}
-                  </span>
+<td className="tbl-td">
+                  <StatusToggle id={c.id_categoria} estado={c.estado} onToggle={toggleEstado} showConfirmation={true} />
                 </td>
                 <td className="tbl-td">
                   <div className="catproductos-action-cell">
                     <button className="catproductos-action-btn catproductos-edit-btn" onClick={() => abrirEditar(c)} title="Editar">
                       <IconEdit />
-                    </button>
-                    <button
-                      className={`catproductos-action-btn ${c.estado === "Activo" ? "catproductos-deactivate-btn" : "catproductos-activate-btn"}`}
-                      onClick={() => cambiarEstado(c.id_categoria)}
-                      title={c.estado === "Activo" ? "Desactivar" : "Activar"}
-                    >
-                      {c.estado === "Activo" ? <IconBan /> : <IconCheck />}
                     </button>
                   </div>
                 </td>

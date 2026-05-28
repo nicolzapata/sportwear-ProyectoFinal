@@ -2,6 +2,7 @@
 import { useState } from "react";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
+import StatusToggle from "../../components/StatusToggle";
 import './Proveedores.css';
 import { IconBan, IconCheck, IconEdit, IconEye, IconHome, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
@@ -25,9 +26,12 @@ export default function Proveedores() {
 
   const filtrados = datos.filter(p => p.nombre.toLowerCase().includes(busqueda.toLowerCase()) || p.nit?.includes(busqueda));
   const abrirRegistrar = () => { setEditar(null); setForm(FORM_VACIO); setModal(true); };
+  const toggleEstado = async (id, nuevoEstado) => {
+    setDatos(prev => prev.map(p => p.id_proveedor === id ? { ...p, estado: nuevoEstado } : p));
+  };
+
   const abrirEditar = (p) => { setEditar(p.id_proveedor); setForm({ nombre: p.nombre, nit: p.nit, contacto: p.contacto, telefono: p.telefono, ciudad: p.ciudad, estado: p.estado }); setModal(true); };
   const guardar = () => { if (!form.nombre || !form.nit) return; if (editar) { setDatos(prev => prev.map(p => p.id_proveedor === editar ? { ...p, ...form } : p)); } else { const nuevoId = Math.max(...datos.map(p => p.id_proveedor)) + 1; setDatos(prev => [...prev, { ...form, id_proveedor: nuevoId }]); } setModal(false); };
-  const cambiarEstado = (id) => setDatos(prev => prev.map(p => p.id_proveedor === id ? { ...p, estado: p.estado === "Activo" ? "Inactivo" : "Activo" } : p));
 
   // ── Pasos formulario ───────────────────────────────────────────────────────
   const PasoEmpresa = (<div>
@@ -79,14 +83,13 @@ export default function Proveedores() {
                  <td className="tbl-td proveedores-contacto-cell">{p.contacto}</td>
                  <td className="tbl-td proveedores-telefono-cell">{p.telefono}</td>
                  <td className="tbl-td"><span className="tabla-ciudad">{p.ciudad}</span></td>
-                 <td className="tbl-td"><span className={`tabla-status${p.estado==="Activo"?' activo':' inactivo'}`}>{p.estado}</span></td>
-                 <td className="tbl-td">
-                   <div className="proveedores-action-cell">
-                     <button className="proveedores-action-btn proveedores-view-btn" onClick={() => setVerDetalle(p)} title="Ver detalles"><IconEye /></button>
-                     <button className="proveedores-action-btn proveedores-edit-btn" onClick={() => abrirEditar(p)} title="Editar"><IconEdit /></button>
-                     <button className={`proveedores-action-btn${p.estado==="Activo"?" proveedores-deactivate-btn":" proveedores-activate-btn"}`} onClick={() => cambiarEstado(p.id_proveedor)} title={p.estado==="Activo"?"Desactivar":"Activar"}>{p.estado==="Activo"?<IconBan/>:<IconCheck/>}</button>
-                   </div>
-                 </td>
+<td className="tbl-td"><StatusToggle id={p.id_proveedor} estado={p.estado} onToggle={toggleEstado} /></td>
+                  <td className="tbl-td">
+                    <div className="proveedores-action-cell">
+                      <button className="proveedores-action-btn proveedores-view-btn" onClick={() => setVerDetalle(p)} title="Ver detalles"><IconEye /></button>
+                      <button className="proveedores-action-btn proveedores-edit-btn" onClick={() => abrirEditar(p)} title="Editar"><IconEdit /></button>
+                    </div>
+                  </td>
                </tr>
              ))}
            </tbody>

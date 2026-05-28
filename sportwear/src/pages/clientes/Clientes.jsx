@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import api from "../../services/api";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
+import StatusToggle from "../../components/StatusToggle";
 import "./Clientes.css";
-import { IconBan, IconCheck, IconEdit, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
+import { IconEdit, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
 
 
@@ -59,10 +60,10 @@ export default function Clientes() {
       alert(err.response?.data?.message || "Error al guardar cliente");
     }
   };
-  const cambiarEstado = async (id) => {
+  const toggleEstado = async (id, nuevoEstado) => {
     try {
       await api.patch(`/clientes/${id}/estado`);
-      setDatos(prev => prev.map(c => c.id_cliente === id ? { ...c, estado: c.estado === "Activo" ? "Inactivo" : "Activo" } : c));
+      setDatos(prev => prev.map(c => c.id_cliente === id ? { ...c, estado: nuevoEstado } : c));
     } catch (err) {
       console.error("Error:", err);
       alert("Error al cambiar estado");
@@ -154,12 +155,11 @@ export default function Clientes() {
                 <td className="tbl-td"><span className={`tabla-tipo ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
                 <td className="tbl-td">{c.total_compras || 0}</td>
                 <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
-                <td className="tbl-td"><span className={`tabla-status ${c.estado === "Activo" ? 'activo' : 'inactivo'}`}>{c.estado}</span></td>
+                <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstado} showConfirmation={true} /></td>
                 <td className="tbl-td">
                   <div className="clientes-action-cell">
                     <button className="clientes-action-btn clientes-view-btn" onClick={() => setVerDetalle(c)} title="Ver detalles"><IconEye /></button>
                     <button className="clientes-action-btn clientes-edit-btn" onClick={() => abrirEditar(c)} title="Editar"><IconEdit /></button>
-                    <button className={`clientes-action-btn ${c.estado === "Activo" ? "clientes-deactivate-btn" : "clientes-activate-btn"}`} onClick={() => cambiarEstado(c.id_cliente)} title={c.estado === "Activo" ? "Desactivar" : "Activar"}>{c.estado === "Activo" ? <IconBan /> : <IconCheck />}</button>
                   </div>
                 </td>
               </tr>
