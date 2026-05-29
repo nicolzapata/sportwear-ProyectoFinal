@@ -42,8 +42,8 @@ export default function CatProductos() {
   useEffect(() => { cargar(); }, []);
 
    const filtradosAll = datos.filter(c => c.nombre.toLowerCase().includes(busqueda.toLowerCase()));
-   const filtrados = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
    const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
+   const filtrados = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
   const abrirRegistrar = () => {
     setEditar(null);
@@ -138,9 +138,9 @@ export default function CatProductos() {
             className="catproductos-search-input"
             placeholder="Buscar categoría..."
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
           />
-          {busqueda && <button className="catproductos-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
+          {busqueda && <button className="catproductos-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
         </div>
         <button className="catproductos-btn-primary" onClick={abrirRegistrar}><span>+</span> Nueva categoría</button>
       </div>
@@ -181,6 +181,38 @@ export default function CatProductos() {
             ))}
           </tbody>
         </table>
+
+        {/* Paginador */}
+        {totalPaginas > 1 && (
+          <div className="paginador">
+            <button
+              className="paginador-btn"
+              onClick={() => setPagina(p => Math.max(p - 1, 1))}
+              disabled={pagina === 1}
+            >
+              ‹
+            </button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
+              <button
+                key={n}
+                className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`}
+                onClick={() => setPagina(n)}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              className="paginador-btn"
+              onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))}
+              disabled={pagina === totalPaginas}
+            >
+              ›
+            </button>
+            <span className="paginador-info">
+              Página {pagina} de {totalPaginas} · {filtradosAll.length} registros
+            </span>
+          </div>
+        )}
       </div>
 
       {modal && (

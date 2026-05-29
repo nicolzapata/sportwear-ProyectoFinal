@@ -68,7 +68,7 @@ export default function GestProductos() {
       setLoading(false);
     }
   };
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => { cargar(); }, );
 
    const filtradosAll = datos.filter(p =>
      p.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||

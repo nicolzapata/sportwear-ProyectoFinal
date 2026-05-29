@@ -214,7 +214,51 @@
   padding-left: 0.5rem;
 }
 
+.paginador {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-start;
+  margin: 1.25rem 0 0;
+}
 
+.paginador-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #e0e0e0;
+  background: white;
+  color: #333;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  transition: all 0.15s ease;
+}
+
+.paginador-btn:hover:not(:disabled) {
+  background: #fafafa;
+}
+
+.paginador-btn-active {
+  background: var(--brown);
+  color: #fff;
+  border-color: var(--brown);
+  font-weight: 600;
+}
+
+.paginador-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.paginador-info {
+  font-size: 0.8rem;
+  color: #666;
+  margin-left: auto;
+  min-width: 180px;
+}
 
 /* Modal */
 .catproductos-modal-overlay {
