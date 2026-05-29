@@ -68,8 +68,7 @@ const recuperar = async (req, res) => {
       message: 'Si el correo está registrado, recibirás las instrucciones.',
     });
   } catch (err) {
-    console.error('Error en recuperar contraseña:', err);
-    return res.status(500).json({ message: 'Error al procesar la solicitud.' });
+    return res.status(err.status || 500).json({ message: err.message || 'Error interno del servidor.' });
   }
 };
 

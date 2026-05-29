@@ -200,7 +200,7 @@ const recuperarContrasena = async (email) => {
     [email]
   );
   const usuario = result.rows[0];
-  if (!usuario) return; // No revelamos si el email existe
+  if (!usuario) throw { status: 404, message: 'El correo no está registrado.' };
 
   const token  = crypto.randomBytes(32).toString('hex');
   const expira = new Date(Date.now() + 3600 * 1000); // 1 hora
