@@ -5,6 +5,7 @@ import { CartProvider }  from "../context/CartContext";
 import Layout            from "../components/Layout";
 import PublicLayout      from "../components/PublicLayout";
 import ProtectedRoute    from "../components/ProtectedRoute";
+import RestablecerContrasena from "../pages/accesos/RestablecerContrasena";
 
 // Páginas públicas
 import Login               from "../pages/accesos/Login";
@@ -42,6 +43,7 @@ export default function AppRouter() {
             <Route path="/login"     element={<Login />} />
             <Route path="/registro"  element={<Registro />} />
             <Route path="/recuperar" element={<RecuperarContrasena />} />
+            <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
 
             {/* Públicas CON navbar del cliente */}
             <Route element={<PublicLayout />}>

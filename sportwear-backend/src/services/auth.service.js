@@ -1,6 +1,8 @@
 // src/services/auth.service.js
-const pool = require('../config/db');
-const jwt  = require('jsonwebtoken');
+const pool       = require('../config/db');
+const jwt        = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const crypto     = require('crypto');
 
 const generarToken = (usuario) => {
   return jwt.sign(
@@ -192,4 +194,73 @@ const getPerfil = async (id_usuario) => {
   return result.rows[0];
 };
 
-module.exports = { login, registro, crearUsuario, actualizarUsuario, getPerfil };
+const recuperarContrasena = async (email) => {
+  const result = await pool.query(
+    `SELECT id_usuario FROM "Usuarios" WHERE email = $1`,
+    [email]
+  );
+  const usuario = result.rows[0];
+  if (!usuario) return; // No revelamos si el email existe
+
+  const token  = crypto.randomBytes(32).toString('hex');
+  const expira = new Date(Date.now() + 3600 * 1000); // 1 hora
+
+  await pool.query(
+    `UPDATE "Usuarios" SET reset_token = $1, reset_token_expira = $2 WHERE id_usuario = $3`,
+    [token, expira, usuario.id_usuario]
+  );
+
+  const transporter = nodemailer.createTransport({
+    host:   process.env.EMAIL_HOST,
+    port:   Number(process.env.EMAIL_PORT),
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const enlace = `${process.env.FRONTEND_URL}/restablecer-contrasena?token=${token}`;
+
+  await transporter.sendMail({
+    from:    `"DVNA SportWear" <${process.env.EMAIL_USER}>`,
+    to:      email,
+    subject: 'Recuperación de contraseña — DVNA SportWear',
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto">
+        <h2 style="color:#b49780">DVNA SportWear</h2>
+        <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+        <p>Haz clic en el botón para continuar. El enlace expira en <strong>1 hora</strong>.</p>
+        <a href="${enlace}"
+           style="display:inline-block;padding:12px 24px;background:#b49780;color:#fff;
+                  border-radius:6px;text-decoration:none;margin:16px 0">
+          Restablecer contraseña
+        </a>
+        <p style="color:#999;font-size:12px">Si no solicitaste esto, ignora este mensaje.</p>
+      </div>
+    `,
+  });
+};
+
+const restablecerContrasena = async (token, contrasena) => {
+  const result = await pool.query(
+    `SELECT id_usuario, reset_token_expira FROM "Usuarios" WHERE reset_token = $1`,
+    [token]
+  );
+  const usuario = result.rows[0];
+  if (!usuario) throw { status: 400, message: 'Token inválido o expirado.' };
+
+  if (new Date(usuario.reset_token_expira) < new Date())
+    throw { status: 400, message: 'El enlace ha expirado. Solicita uno nuevo.' };
+
+  await pool.query(
+    `UPDATE "Usuarios"
+     SET password_hash       = crypt($1, gen_salt('bf',12)),
+         reset_token         = NULL,
+         reset_token_expira  = NULL
+     WHERE id_usuario = $2`,
+    [contrasena, usuario.id_usuario]
+  );
+};
+
+module.exports = { login, registro, crearUsuario, actualizarUsuario, getPerfil, recuperarContrasena, restablecerContrasena };

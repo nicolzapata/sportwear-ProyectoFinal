@@ -58,4 +58,31 @@ const perfil = async (req, res) => {
   }
 };
 
-module.exports = { login, registro, crearUsuario, actualizarUsuario, perfil };
+const recuperar = async (req, res) => {
+  const { email } = req.body;
+  if (!email)
+    return res.status(400).json({ message: 'El correo es requerido.' });
+  try {
+    await authService.recuperarContrasena(email);
+    return res.status(200).json({
+      message: 'Si el correo está registrado, recibirás las instrucciones.',
+    });
+  } catch (err) {
+    console.error('Error en recuperar contraseña:', err);
+    return res.status(500).json({ message: 'Error al procesar la solicitud.' });
+  }
+};
+
+const restablecer = async (req, res) => {
+  const { token, contrasena } = req.body;
+  if (!token || !contrasena)
+    return res.status(400).json({ message: 'Token y contraseña son requeridos.' });
+  try {
+    await authService.restablecerContrasena(token, contrasena);
+    return res.status(200).json({ message: 'Contraseña actualizada correctamente.' });
+  } catch (err) {
+    return res.status(err.status || 500).json({ message: err.message || 'Error interno del servidor.' });
+  }
+};
+
+module.exports = { login, registro, crearUsuario, actualizarUsuario, perfil, recuperar, restablecer };
