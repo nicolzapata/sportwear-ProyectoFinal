@@ -11,25 +11,26 @@ const fmt = (n) => Number(n || 0).toLocaleString("es-CO", {
   minimumFractionDigits: 0
 });
 
-// VIP → Abono | resto → Pago completo
 const tipoByCliente = (tipo_cliente) =>
   tipo_cliente === "VIP" ? "Abono" : "Pago completo";
 
+const FILAS_POR_PAGINA = 10;
+
 export default function PagosAbonos() {
-  const [datos,     setDatos]     = useState([]);
-  const [ventas,    setVentas]    = useState([]);
-  const [cargando,  setCargando]  = useState(true);
-  const [errorMsg,  setErrorMsg]  = useState("");
-  const [busqueda,  setBusqueda]  = useState("");
-  const [modal,     setModal]     = useState(false);
+  const [datos,      setDatos]      = useState([]);
+  const [ventas,     setVentas]     = useState([]);
+  const [cargando,   setCargando]   = useState(true);
+  const [errorMsg,   setErrorMsg]   = useState("");
+  const [busqueda,   setBusqueda]   = useState("");
+  const [pagina,     setPagina]     = useState(1);
+  const [modal,      setModal]      = useState(false);
   const [verDetalle, setVerDetalle] = useState(null);
-  const [guardando, setGuardando] = useState(false);
+  const [guardando,  setGuardando]  = useState(false);
   const [form, setForm] = useState({
     id_venta: "", monto: "", tipo: "Pago completo",
     metodo: "Efectivo", estado: "Pendiente", fecha: ""
   });
 
-  // ── Carga inicial ──────────────────────────────────────────────────────────
   useEffect(() => {
     cargar();
   }, []);
@@ -52,20 +53,20 @@ export default function PagosAbonos() {
     }
   };
 
-  // ── Al elegir venta, tipo se asigna automáticamente ───────────────────────
   const handleVentaChange = (id_venta) => {
     const venta = ventas.find(v => String(v.id_venta) === String(id_venta));
     const tipo = venta ? tipoByCliente(venta.tipo_cliente) : "Pago completo";
     setForm(f => ({ ...f, id_venta, tipo }));
   };
 
-  // ── Filtrado ───────────────────────────────────────────────────────────────
   const filtrados = datos.filter(p =>
     p.cliente?.toLowerCase().includes(busqueda.toLowerCase()) ||
     String(p.id_pago).includes(busqueda)
   );
 
-  // ── Guardar nuevo pago ─────────────────────────────────────────────────────
+  const totalPaginas = Math.ceil(filtrados.length / FILAS_POR_PAGINA);
+  const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+
   const guardar = async () => {
     if (!form.id_venta || !form.monto) return;
     setGuardando(true);
@@ -79,11 +80,10 @@ export default function PagosAbonos() {
         fecha:     form.fecha || new Date().toISOString().split("T")[0],
       });
 
-      // El endpoint devuelve el pago sin JOIN, así que enriquecemos con la venta
       const venta = ventas.find(v => v.id_venta === Number(form.id_venta));
       setDatos(prev => [{
         ...nuevo,
-        cliente:     venta?.cliente    ?? "—",
+        cliente:      venta?.cliente      ?? "—",
         tipo_cliente: venta?.tipo_cliente ?? "—",
       }, ...prev]);
 
@@ -96,36 +96,32 @@ export default function PagosAbonos() {
     }
   };
 
-// ── Abrir detalle ───────────────────────────────────────────────────────────
-   const abrirDetalle = (pago) => setVerDetalle(pago);
+  const abrirDetalle = (pago) => setVerDetalle(pago);
 
-   // ── Registrar pago ─────────────────────────────────────────────────────────
-   const registrarPago = async (id) => {
-     try {
-       await api.patch(`/pagos/${id}/estado`, { estado: "Confirmado" });
-       setDatos(prev =>
-         prev.map(p => p.id_pago === id ? { ...p, estado: "Confirmado" } : p)
-       );
-     } catch (err) {
-       console.error("Error registrando pago:", err);
-       alert(err.response?.data?.message ?? "Error al registrar el pago.");
-     }
-   };
+  const registrarPago = async (id) => {
+    try {
+      await api.patch(`/pagos/${id}/estado`, { estado: "Confirmado" });
+      setDatos(prev =>
+        prev.map(p => p.id_pago === id ? { ...p, estado: "Confirmado" } : p)
+      );
+    } catch (err) {
+      console.error("Error registrando pago:", err);
+      alert(err.response?.data?.message ?? "Error al registrar el pago.");
+    }
+  };
 
-   // ── Cancelar pago ───────────────────────────────────────────────────────────
-   const cancelarPago = async (id) => {
-     try {
-       await api.patch(`/pagos/${id}/estado`, { estado: "Anulado" });
-       setDatos(prev =>
-         prev.map(p => p.id_pago === id ? { ...p, estado: "Anulado" } : p)
-       );
-     } catch (err) {
-       console.error("Error cancelando pago:", err);
-       alert(err.response?.data?.message ?? "Error al cancelar el pago.");
-     }
-   };
+  const cancelarPago = async (id) => {
+    try {
+      await api.patch(`/pagos/${id}/estado`, { estado: "Anulado" });
+      setDatos(prev =>
+        prev.map(p => p.id_pago === id ? { ...p, estado: "Anulado" } : p)
+      );
+    } catch (err) {
+      console.error("Error cancelando pago:", err);
+      alert(err.response?.data?.message ?? "Error al cancelar el pago.");
+    }
+  };
 
-   // ── Helpers de UI ──────────────────────────────────────────────────────────
   const getMetodoIcon = (metodo) => {
     switch (metodo) {
       case "Efectivo":      return "Ef.";
@@ -144,7 +140,6 @@ export default function PagosAbonos() {
     }
   };
 
-  // ── Estados de carga y error ───────────────────────────────────────────────
   if (cargando) return (
     <div style={{ padding: 48, color: "var(--muted)" }}>Cargando pagos...</div>
   );
@@ -156,7 +151,6 @@ export default function PagosAbonos() {
     </div>
   );
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="pagosabonos-container">
 
@@ -169,10 +163,10 @@ export default function PagosAbonos() {
             className="pagosabonos-search-input"
             placeholder="Buscar por cliente o ID..."
             value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
+            onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
           />
           {busqueda && (
-            <button className="pagosabonos-search-clear" onClick={() => setBusqueda("")}>
+            <button className="pagosabonos-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}>
               <IconX />
             </button>
           )}
@@ -191,81 +185,112 @@ export default function PagosAbonos() {
         </button>
       </div>
 
-      
+      {/* Tabla */}
+      <div className="tbl-container">
+        <table className="tbl">
+          <thead className="tbl-header">
+            <tr>
+              <th className="tbl-th">Venta</th>
+              <th className="tbl-th">Cliente</th>
+              <th className="tbl-th">Monto</th>
+              <th className="tbl-th">Tipo</th>
+              <th className="tbl-th">Método</th>
+              <th className="tbl-th">Fecha</th>
+              <th className="tbl-th">Estado</th>
+              <th className="tbl-th">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="tbl-body">
+            {filtradosPagina.map((p) => (
+              <tr key={p.id_pago} className="tbl-row">
+                <td className="tbl-td">
+                  <span className="pagosabonos-venta-badge">
+                    V-{String(p.id_venta).padStart(3, "0")}
+                  </span>
+                </td>
+                <td className="tbl-td">
+                  <span className="pagosabonos-cliente-name">{p.cliente}</span>
+                </td>
+                <td className="tbl-td pagosabonos-monto-cell">{fmt(p.monto)}</td>
+                <td className="tbl-td pagosabonos-tipo-cell">{p.tipo}</td>
+                <td className="tbl-td">
+                  <span className="pagosabonos-metodo">
+                    <span className="pagosabonos-metodo-icon">{getMetodoIcon(p.metodo)}</span>
+                    {p.metodo}
+                  </span>
+                </td>
+                <td className="tbl-td pagosabonos-fecha-cell">
+                  {p.fecha?.toString().split("T")[0]}
+                </td>
+                <td className="tbl-td">
+                  <span className={`tabla-badge ${getEstadoBadge(p.estado)}`}>
+                    {p.estado}
+                  </span>
+                </td>
+                <td className="tbl-td">
+                  <div className="pagosabonos-action-cell">
+                    <button className="pagosabonos-action-btn pagosabonos-view-btn" onClick={() => abrirDetalle(p)} title="Ver detalles"><IconEye /></button>
+                    {p.estado === "Pendiente" && (
+                      <>
+                        <button className="pagosabonos-action-btn pagosabonos-register-btn" onClick={() => registrarPago(p.id_pago)} title="Registrar pago"><IconCheck /></button>
+                        <button className="pagosabonos-action-btn pagosabonos-cancel-btn" onClick={() => cancelarPago(p.id_pago)} title="Cancelar"><IconX /></button>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
 
-       {/* Tabla */}
-       <div className="tbl-container">
-         <table className="tbl">
-           <thead className="tbl-header">
-             <tr>
-               <th className="tbl-th">Venta</th>
-               <th className="tbl-th">Cliente</th>
-               <th className="tbl-th">Monto</th>
-               <th className="tbl-th">Tipo</th>
-               <th className="tbl-th">Método</th>
-               <th className="tbl-th">Fecha</th>
-               <th className="tbl-th">Estado</th>
-               <th className="tbl-th">Acciones</th>
-             </tr>
-           </thead>
-           <tbody className="tbl-body">
-              {filtrados.map((p) => (
-                <tr key={p.id_pago} className="tbl-row">
-                  <td className="tbl-td">
-                    <span className="pagosabonos-venta-badge">
-                      V-{String(p.id_venta).padStart(3, "0")}
-                    </span>
-                  </td>
-                  <td className="tbl-td">
-                    <span className="pagosabonos-cliente-name">{p.cliente}</span>
-                  </td>
-                  <td className="tbl-td pagosabonos-monto-cell">{fmt(p.monto)}</td>
-                  <td className="tbl-td pagosabonos-tipo-cell">{p.tipo}</td>
-                  <td className="tbl-td">
-                    <span className="pagosabonos-metodo">
-                      <span className="pagosabonos-metodo-icon">{getMetodoIcon(p.metodo)}</span>
-                      {p.metodo}
-                    </span>
-                  </td>
-                  <td className="tbl-td pagosabonos-fecha-cell">
-                    {p.fecha?.toString().split("T")[0]}
-                  </td>
-                  <td className="tbl-td">
-                    <span className={`tabla-badge ${getEstadoBadge(p.estado)}`}>
-                      {p.estado}
-                    </span>
-                  </td>
-                  <td className="tbl-td">
-                    <div className="pagosabonos-action-cell">
-                      <button className="pagosabonos-action-btn pagosabonos-view-btn" onClick={() => abrirDetalle(p)} title="Ver detalles"><IconEye /></button>
-                      {p.estado === "Pendiente" && (
-                        <>
-                          <button className="pagosabonos-action-btn pagosabonos-register-btn" onClick={() => registrarPago(p.id_pago)} title="Registrar pago"><IconCheck /></button>
-                          <button className="pagosabonos-action-btn pagosabonos-cancel-btn" onClick={() => cancelarPago(p.id_pago)} title="Cancelar"><IconX /></button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+            {filtrados.length === 0 && (
+              <tr>
+                <td colSpan={8} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
+                  No hay pagos que coincidan con la búsqueda.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
 
-              {filtrados.length === 0 && (
-                <tr>
-                  <td colSpan={8} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
-                    No hay pagos que coincidan con la búsqueda.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          <div className="print-button-container">
-            <button className="btn-print" onClick={() => window.print()}>
-              <IconPrint />
+        {/* Paginador */}
+        {totalPaginas > 1 && (
+          <div className="paginador">
+            <button
+              className="paginador-btn"
+              onClick={() => setPagina(p => Math.max(p - 1, 1))}
+              disabled={pagina === 1}
+            >
+              ‹
             </button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
+              <button
+                key={n}
+                className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`}
+                onClick={() => setPagina(n)}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              className="paginador-btn"
+              onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))}
+              disabled={pagina === totalPaginas}
+            >
+              ›
+            </button>
+            <span className="paginador-info">
+              Página {pagina} de {totalPaginas} · {filtrados.length} registros
+            </span>
           </div>
-        </div>
+        )}
 
-        {/* Modal registro */}
+        <div className="print-button-container">
+          <button className="btn-print" onClick={() => window.print()}>
+            <IconPrint />
+          </button>
+        </div>
+      </div>
+
+      {/* Modal registro */}
       {modal && (
         <div className="pagosabonos-modal-overlay" onClick={() => setModal(false)}>
           <div className="pagosabonos-modal" onClick={(e) => e.stopPropagation()}>
@@ -379,7 +404,7 @@ export default function PagosAbonos() {
         </div>
       )}
 
-/* Modal detalle */
+      {/* Modal detalle */}
       {verDetalle && (
         <ModalDetalle
           titulo="Detalle del pago"

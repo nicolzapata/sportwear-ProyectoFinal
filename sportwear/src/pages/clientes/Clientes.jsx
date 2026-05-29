@@ -7,22 +7,23 @@ import StatusToggle from "../../components/StatusToggle";
 import "./Clientes.css";
 import { IconEdit, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
-
-
 const FORM_VACIO = { nombre: "", tipo_doc: "CC", documento: "", telefono: "", email: "", id_barrio: "", direccion: "", tipo_cliente: "Regular", permiso_pagos: 1, permiso_cuotas: 1, estado: "Activo" };
 
+const FILAS_POR_PAGINA = 10;
+
 export default function Clientes() {
-  const [datos, setDatos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [barrios, setBarrios] = useState([]);
-  const [zonas, setZonas] = useState([]);
+  const [datos,        setDatos]        = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [error,        setError]        = useState(null);
+  const [barrios,      setBarrios]      = useState([]);
+  const [zonas,        setZonas]        = useState([]);
   const [barFiltrados, setBarFiltrados] = useState([]);
-  const [busqueda, setBusqueda] = useState("");
-  const [modal, setModal] = useState(false);
-  const [verDetalle, setVerDetalle] = useState(null);
-  const [editar, setEditar] = useState(null);
-  const [form, setForm] = useState(FORM_VACIO);
+  const [busqueda,     setBusqueda]     = useState("");
+  const [pagina,       setPagina]       = useState(1);
+  const [modal,        setModal]        = useState(false);
+  const [verDetalle,   setVerDetalle]   = useState(null);
+  const [editar,       setEditar]       = useState(null);
+  const [form,         setForm]         = useState(FORM_VACIO);
 
   useEffect(() => {
     Promise.all([
@@ -40,10 +41,26 @@ export default function Clientes() {
     }).finally(() => setLoading(false));
   }, []);
 
-  const handleZona = (zona) => { setBarFiltrados(zona ? barrios.filter(b => b.zona === zona) : barrios); setForm(f => ({ ...f, id_barrio: "" })); };
-  const filtrados = datos.filter(c => c.nombre.toLowerCase().includes(busqueda.toLowerCase()) || c.documento?.includes(busqueda));
+  const handleZona = (zona) => {
+    setBarFiltrados(zona ? barrios.filter(b => b.zona === zona) : barrios);
+    setForm(f => ({ ...f, id_barrio: "" }));
+  };
+
+  const filtradosAll = datos.filter(c =>
+    c.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+    c.documento?.includes(busqueda)
+  );
+  const totalPaginas   = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
+  const filtrados      = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+
   const abrirRegistrar = () => { setEditar(null); setForm(FORM_VACIO); setBarFiltrados(barrios); setModal(true); };
-  const abrirEditar = (c) => { setEditar(c.id_cliente); setForm({ nombre: c.nombre, tipo_doc: c.tipo_doc, documento: c.documento, telefono: c.telefono || "", email: c.email || "", id_barrio: c.id_barrio || "", direccion: c.direccion || "", tipo_cliente: c.tipo_cliente, permiso_pagos: c.permiso_pagos, permiso_cuotas: c.permiso_cuotas || 1, estado: c.estado }); setBarFiltrados(barrios); setModal(true); };
+  const abrirEditar    = (c) => {
+    setEditar(c.id_cliente);
+    setForm({ nombre: c.nombre, tipo_doc: c.tipo_doc, documento: c.documento, telefono: c.telefono || "", email: c.email || "", id_barrio: c.id_barrio || "", direccion: c.direccion || "", tipo_cliente: c.tipo_cliente, permiso_pagos: c.permiso_pagos, permiso_cuotas: c.permiso_cuotas || 1, estado: c.estado });
+    setBarFiltrados(barrios);
+    setModal(true);
+  };
+
   const guardar = async () => {
     if (!form.nombre || !form.documento) return;
     try {
@@ -60,6 +77,7 @@ export default function Clientes() {
       alert(err.response?.data?.message || "Error al guardar cliente");
     }
   };
+
   const toggleEstado = async (id, nuevoEstado) => {
     try {
       await api.patch(`/clientes/${id}/estado`);
@@ -70,7 +88,12 @@ export default function Clientes() {
     }
   };
 
-  const tipoBadge = (t) => { if (t === "VIP") return "vip"; if (t === "Mayorista") return "mayorista"; if (t === "Corporativo") return "corporativo"; return ""; };
+  const tipoBadge = (t) => {
+    if (t === "VIP") return "vip";
+    if (t === "Mayorista") return "mayorista";
+    if (t === "Corporativo") return "corporativo";
+    return "";
+  };
 
   // ── Pasos formulario ───────────────────────────────────────────────────────
   const PasoDatos = (<div>
@@ -108,39 +131,65 @@ export default function Clientes() {
   // ── Pasos detalle ──────────────────────────────────────────────────────────
   const c = verDetalle;
   const DetalleDatos = c && (<DetalleSeccion><DetalleGrid>
-    <DetalleItem label="ID" value={`#${String(c.id_cliente).padStart(3,'0')}`} />
-    <DetalleItem label="Nombre" value={c.nombre} />
+    <DetalleItem label="ID"        value={`#${String(c.id_cliente).padStart(3,'0')}`} />
+    <DetalleItem label="Nombre"    value={c.nombre} />
     <DetalleItem label="Tipo doc." value={c.tipo_doc} />
     <DetalleItem label="Documento" value={c.documento} />
-    <DetalleItem label="Teléfono" value={c.telefono} />
-    <DetalleItem label="Email" value={c.email} />
+    <DetalleItem label="Teléfono"  value={c.telefono} />
+    <DetalleItem label="Email"     value={c.email} />
   </DetalleGrid></DetalleSeccion>);
 
   const DetalleUbicacion = c && (<DetalleSeccion><DetalleGrid>
-    <DetalleItem label="Ciudad" value={c.ciudad} />
-    <DetalleItem label="Barrio" value={c.barrio_nombre ? `${c.barrio_nombre} (${c.comuna})` : null} />
+    <DetalleItem label="Ciudad"    value={c.ciudad} />
+    <DetalleItem label="Barrio"    value={c.barrio_nombre ? `${c.barrio_nombre} (${c.comuna})` : null} />
     <DetalleItem label="Dirección" value={c.direccion} full />
   </DetalleGrid></DetalleSeccion>);
 
   const DetalleClasificacion = c && (<DetalleSeccion><DetalleGrid>
     <DetalleItem label="Tipo cliente" value={c.tipo_cliente} />
-    <DetalleItem label="Estado" value={c.estado} />
+    <DetalleItem label="Estado"       value={c.estado} />
   </DetalleGrid></DetalleSeccion>);
+
+  if (error) return (
+    <div style={{ padding: 32, color: "var(--danger)" }}>{error}</div>
+  );
 
   return (
     <div className="clientes-container">
       <div className="clientes-actions-bar">
         <div className="clientes-search-wrapper">
           <span className="clientes-search-icon"><IconSearch /></span>
-          <input type="text" className="clientes-search-input" placeholder="Buscar por nombre o documento..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-          {busqueda && <button className="clientes-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
+          <input
+            type="text"
+            className="clientes-search-input"
+            placeholder="Buscar por nombre o documento..."
+            value={busqueda}
+            onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
+          />
+          {busqueda && (
+            <button className="clientes-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}>
+              <IconX />
+            </button>
+          )}
         </div>
         <button className="clientes-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo cliente</button>
       </div>
 
       <div className="tbl-container">
         <table className="tbl">
-          <thead className="tbl-header"><tr><th className="tbl-th">Cliente</th><th className="tbl-th">Documento</th><th className="tbl-th">Teléfono</th><th className="tbl-th">Barrio</th><th className="tbl-th">Tipo</th><th className="tbl-th">Compras</th><th className="tbl-th">Total</th><th className="tbl-th">Estado</th><th className="tbl-th">Acciones</th></tr></thead>
+          <thead className="tbl-header">
+            <tr>
+              <th className="tbl-th">Cliente</th>
+              <th className="tbl-th">Documento</th>
+              <th className="tbl-th">Teléfono</th>
+              <th className="tbl-th">Barrio</th>
+              <th className="tbl-th">Tipo</th>
+              <th className="tbl-th">Compras</th>
+              <th className="tbl-th">Total</th>
+              <th className="tbl-th">Estado</th>
+              <th className="tbl-th">Acciones</th>
+            </tr>
+          </thead>
           <tbody className="tbl-body">
             {loading ? (
               <tr><td colSpan="9" className="tbl-td">Cargando clientes...</td></tr>
@@ -166,9 +215,59 @@ export default function Clientes() {
             ))}
           </tbody>
         </table>
+
+        {/* Paginador */}
+        {totalPaginas > 1 && (
+          <div className="paginador">
+            <button
+              className="paginador-btn"
+              onClick={() => setPagina(p => Math.max(p - 1, 1))}
+              disabled={pagina === 1}
+            >
+              ‹
+            </button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
+              <button
+                key={n}
+                className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`}
+                onClick={() => setPagina(n)}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              className="paginador-btn"
+              onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))}
+              disabled={pagina === totalPaginas}
+            >
+              ›
+            </button>
+            <span className="paginador-info">
+              Página {pagina} de {totalPaginas} · {filtradosAll.length} registros
+            </span>
+          </div>
+        )}
+
+        <div className="print-button-container">
+          <button className="btn-print" onClick={() => window.print()}>
+            <IconPrint />
+          </button>
+        </div>
       </div>
 
-      {modal && (<ModalSteps titulo={editar ? "Editar cliente" : "Nuevo cliente"} pasos={["Datos personales", "Ubicación", "Clasificación"]} onClose={() => setModal(false)} onGuardar={guardar} labelGuardar={editar ? "Actualizar" : "Registrar"}>{PasoDatos}{PasoUbicacion}{PasoClasificacion}</ModalSteps>)}
+      {modal && (
+        <ModalSteps
+          titulo={editar ? "Editar cliente" : "Nuevo cliente"}
+          pasos={["Datos personales", "Ubicación", "Clasificación"]}
+          onClose={() => setModal(false)}
+          onGuardar={guardar}
+          labelGuardar={editar ? "Actualizar" : "Registrar"}
+        >
+          {PasoDatos}
+          {PasoUbicacion}
+          {PasoClasificacion}
+        </ModalSteps>
+      )}
 
       {verDetalle && (
         <ModalDetalle

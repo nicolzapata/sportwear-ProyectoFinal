@@ -222,8 +222,8 @@
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.14em;
-  color: var(--white);
-  background: var(--black);
+  color: var(--black);
+  background: var(--primary);
   border: none;
   border-radius: var(--r);
   padding: 12px 24px;
@@ -232,7 +232,7 @@
 }
 
 .checkout-btn-primary:hover:not(:disabled) {
-  background: var(--primary);
+  background: var(--primary-dark);
   transform: translateY(-1px);
 }
 
@@ -425,7 +425,7 @@
 
 /* Día de pago: círculo con el color primario del tema */
 .cal-dia--pago {
-  background: var(--black, #1a1a1a);
+  background: var(--primary-dark);
   color: var(--white, #fff) !important;
   font-weight: 600;
   border-radius: 50%;

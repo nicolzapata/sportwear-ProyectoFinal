@@ -67,7 +67,7 @@
   transition: border-color 0.2s;
 }
 .dp-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.dp-thumb.active { border-color: var(--dvna-charcoal); }
+.dp-thumb.active { border-color: var(--brown); }
 .dp-thumb:hover:not(.active) { border-color: var(--dvna-mid); }
 
 /* Imagen principal */
@@ -308,7 +308,7 @@
   letter-spacing: 0.16em;
   
   color: var(--dvna-white);
-  background: var(--dvna-charcoal);
+  background: var(--brown);
   border: none;
   border-radius: var(--r);
   padding: 16px 24px;
@@ -543,11 +543,11 @@
   overflow: hidden;
 }
 .dp-talla-chip:hover:not(.agotada) {
-  border-color: var(--dvna-charcoal);
+  border-color: var(--brown);
 }
 .dp-talla-chip.selected {
-  background: var(--dvna-charcoal);
-  border-color: var(--dvna-charcoal);
+  background: var(--brown);
+  border-color: var(--brown);
   color: var(--dvna-white);
 }
 
@@ -639,10 +639,10 @@
   line-height: 1.6;
 }
 .catalog-talla-chip:hover {
-  border-color: var(--dvna-charcoal, #333);
+  border-color: var(--brown);
 }
 .catalog-talla-chip.selected {
-  background: var(--dvna-charcoal, #333);
-  border-color: var(--dvna-charcoal, #333);
+  background: var(--brown);
+  border-color: var(--brown);
   color: #fff;
 }

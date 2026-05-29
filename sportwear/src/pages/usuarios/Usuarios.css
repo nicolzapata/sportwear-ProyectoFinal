@@ -49,13 +49,13 @@
 }
 
 .usuarios-filter-btn.active {
-   background: var(--dvna-charcoal);
+   background: var(--brown);
    color: #fff;
 }
 
 .usuarios-filter-btn:not(.active):hover {
-   color: var(--dvna-charcoal);
-   background: var(--dvna-pale);
+   color: var(--black);
+   background: var(--light);
 }
 
 .usuarios-search-wrapper {
@@ -106,7 +106,7 @@
 .usuarios-search-clear:hover { color: var(--dvna-charcoal); }
 
 .usuarios-btn-primary {
-  background: var(--dvna-charcoal);
+  background: var(--brown);
   color: #fff;
   border: none;
   padding: 0.75rem 1.75rem;
@@ -120,7 +120,7 @@
   align-items: center;
   gap: 6px;
 }
-.usuarios-btn-primary:hover { background: var(--dvna-circle); transform: translateY(-1px); }
+.usuarios-btn-primary:hover { background: var(--accent); transform: translateY(-1px); }
 
 .usuarios-btn-secondary {
   background: transparent;
@@ -362,8 +362,8 @@
   text-align: right;
 }
 .btn-print {
-  background: var(--dvna-charcoal);
-  color: white;
+  background: var(--brown);
+  color: #fff;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;
@@ -375,6 +375,54 @@
   transition: all 0.2s ease;
 }
 .btn-print:hover {
-  background: var(--dvna-circle);
+  background: var(--accent);
   transform: translateY(-2px);
+}
+
+/* Paginador */
+.paginador {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 16px;
+  flex-wrap: wrap;
+}
+
+.paginador-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--dvna-border);
+  background: var(--dvna-white);
+  color: var(--dvna-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+
+.paginador-btn:hover:not(:disabled) {
+  background: var(--brown);
+  color: #fff;
+  border-color: var(--brown);
+}
+
+.paginador-btn-active {
+  background: var(--brown) !important;
+  color: #fff !important;
+  border-color: var(--brown) !important;
+  font-weight: 600;
+}
+
+.paginador-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.paginador-info {
+  margin-left: 8px;
+  font-size: 12px;
+  font-family: var(--font-body);
+  color: var(--dvna-muted);
 }

@@ -176,8 +176,8 @@
   color: #fff;
 }
 .md-step.active .md-step-dot {
-  background: var(--dvna-charcoal, #1a1a1a);
-  border-color: var(--dvna-charcoal, #1a1a1a);
+  background: var(--brown);
+  border-color: var(--brown);
   color: #fff;
   box-shadow: 0 0 0 3px rgba(26,26,26,0.1);
 }
@@ -291,7 +291,7 @@
   transition: all 0.2s;
 }
 .md-dot.active {
-  background: var(--dvna-charcoal, #1a1a1a);
+  background: var(--brown);
   width: 18px;
   border-radius: 3px;
 }
@@ -372,7 +372,7 @@
 }
 
 .md-btn-editar {
-  background: var(--dvna-charcoal, #1a1a1a);
+  background: var(--brown);
   color: #fff;
   border: none;
   padding: 9px 20px;

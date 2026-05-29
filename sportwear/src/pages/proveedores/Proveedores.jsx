@@ -17,14 +17,18 @@ const PROVEEDORES_DEMO = [
 const FORM_VACIO = { nombre: "", nit: "", contacto: "", telefono: "", ciudad: "", estado: "Activo" };
 
 export default function Proveedores() {
-  const [datos,      setDatos]      = useState(PROVEEDORES_DEMO);
-  const [busqueda,   setBusqueda]   = useState("");
-  const [modal,      setModal]      = useState(false);
-  const [verDetalle, setVerDetalle] = useState(null);
-  const [editar,     setEditar]     = useState(null);
-  const [form,       setForm]       = useState(FORM_VACIO);
+    const [datos,      setDatos]      = useState(PROVEEDORES_DEMO);
+    const [busqueda,   setBusqueda]   = useState("");
+    const [modal,      setModal]      = useState(false);
+    const [verDetalle, setVerDetalle] = useState(null);
+    const [editar,     setEditar]     = useState(null);
+    const [form,       setForm]       = useState(FORM_VACIO);
+    const FILAS_POR_PAGINA = 10;
+    const [pagina, setPagina] = useState(1);
 
-  const filtrados = datos.filter(p => p.nombre.toLowerCase().includes(busqueda.toLowerCase()) || p.nit?.includes(busqueda));
+   const filtradosAll = datos.filter(p => p.nombre.toLowerCase().includes(busqueda.toLowerCase()) || p.nit?.includes(busqueda));
+   const filtrados = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+   const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
   const abrirRegistrar = () => { setEditar(null); setForm(FORM_VACIO); setModal(true); };
   const toggleEstado = async (id, nuevoEstado) => {
     setDatos(prev => prev.map(p => p.id_proveedor === id ? { ...p, estado: nuevoEstado } : p));
@@ -66,8 +70,8 @@ export default function Proveedores() {
       <div className="proveedores-actions-bar">
         <div className="proveedores-search-wrapper">
           <span className="proveedores-search-icon"><IconSearch /></span>
-          <input type="text" className="proveedores-search-input" placeholder="Buscar proveedor o NIT..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-          {busqueda && <button className="proveedores-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
+           <input type="text" className="proveedores-search-input" placeholder="Buscar proveedor o NIT..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
+           {busqueda && <button className="proveedores-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
         </div>
         <button className="proveedores-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo proveedor</button>
       </div>
@@ -93,8 +97,38 @@ export default function Proveedores() {
                </tr>
              ))}
            </tbody>
-         </table>
-         <div className="print-button-container">
+          </table>
+          {totalPaginas > 1 && (
+            <div className="paginador">
+              <button
+                className="paginador-btn"
+                onClick={() => setPagina(p => Math.max(p - 1, 1))}
+                disabled={pagina === 1}
+              >
+                ‹
+              </button>
+              {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
+                <button
+                  key={n}
+                  className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`}
+                  onClick={() => setPagina(n)}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                className="paginador-btn"
+                onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))}
+                disabled={pagina === totalPaginas}
+              >
+                ›
+              </button>
+              <span className="paginador-info">
+                Página {pagina} de {totalPaginas} · {filtradosAll.length} registros
+              </span>
+            </div>
+          )}
+          <div className="print-button-container">
            <button className="btn-print" onClick={() => window.print()}>
              <IconPrint />
            </button>

@@ -38,7 +38,7 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
               setFiltroCategoria("Todos");
             }}
           >
-            Catálogo
+            Inicio
           </Link>
           {categorias && categorias.filter(cat => cat !== "Todos").map((cat) => (
             <button

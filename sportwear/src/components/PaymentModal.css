@@ -44,7 +44,7 @@
 .pm-accent {
   height: 4px;
   border-radius: 12px 12px 0 0;
-  background: var(--dvna-charcoal);
+  background: var(--brown);
 }
 .pm-accent--success { background: #3a6648; }
 .pm-accent--partial { background: var(--dvna-circle); }
@@ -164,7 +164,7 @@
 }
 
 .pm-tipo-btn.active {
-  border-color: var(--dvna-charcoal);
+  border-color: var(--brown);
   background: var(--dvna-pale);
 }
 
@@ -377,7 +377,7 @@
   padding: 10px 16px;
   border: none;
   border-radius: 6px;
-  background: var(--dvna-charcoal);
+  background: var(--brown);
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 12px;
   font-weight: 500;

@@ -12,6 +12,8 @@ const TIPOS_DOC = ["CC", "CE", "TI", "NIT", "PP"];
 
 const fmtFecha = (f) => f ? new Date(f).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }) : null;
 
+const FILAS_POR_PAGINA = 10;
+
 export default function Usuarios() {
   const { usuario } = useAuth();
   const [usuarios, setUsuarios] = useState([]);
@@ -30,6 +32,8 @@ export default function Usuarios() {
   const [form, setForm] = useState({ nombre: "", email: "", contrasena: "", id_rol: 1, estado: "Activo", tipo_doc: "CC", documento: "", telefono: "", ciudad: "Medellín", id_barrio: "", direccion: "", permiso_cuotas: true });
   const [filterType, setFilterType] = useState("usuarios");
   const [clienteForm, setClienteForm] = useState({ nombre: "", tipo_doc: "CC", documento: "", telefono: "", email: "", id_barrio: "", direccion: "", tipo_cliente: "Regular", permiso_pagos: 1, permiso_cuotas: 1, estado: "Activo" });
+  const [paginaUsuarios, setPaginaUsuarios] = useState(1);
+  const [paginaClientes, setPaginaClientes] = useState(1);
 
   useEffect(() => {
     Promise.all([
@@ -60,7 +64,6 @@ export default function Usuarios() {
     setClienteForm(f => ({ ...f, id_barrio: "" }));
   };
 
-  // FIX #5: tipoBadge definida
   const tipoBadge = (tipo) => {
     const map = { VIP: "vip", Mayorista: "mayorista", Corporativo: "corporativo" };
     return map[tipo] || "regular";
@@ -76,14 +79,15 @@ export default function Usuarios() {
         c.documento?.includes(busqueda)
       );
 
+  const pagina       = filterType === "usuarios" ? paginaUsuarios : paginaClientes;
+  const setPagina    = filterType === "usuarios" ? setPaginaUsuarios : setPaginaClientes;
+  const totalPaginas = Math.ceil(filtrados.length / FILAS_POR_PAGINA);
+  const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+
   const abrirDetalle = async (u) => {
     setDetalle(u);
     try { const { data } = await api.get(`/usuarios/${u.id_usuario}`); setDetalle(data); }
     catch { /* usa los datos parciales ya seteados */ }
-  };
-
-  const abrirDetalleCliente = async (c) => {
-    setClienteDetalle(c);
   };
 
   const abrirRegistrar = () => {
@@ -133,11 +137,11 @@ export default function Usuarios() {
     if (!editar) {
       if (!form.contrasena) { alert("La contraseña es requerida"); return; }
       if (form.contrasena.length < 6) { alert("La contraseña debe tener al menos 6 caracteres"); return; }
-      if (!/[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]+/.test(form.contrasena)) { alert("La contraseña debe contener al menos un signo (símbolo)"); return; }
+      if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) { alert("La contraseña debe contener al menos un signo (símbolo)"); return; }
     } else {
       if (form.contrasena) {
         if (form.contrasena.length < 6) { alert("La contraseña debe tener al menos 6 caracteres"); return; }
-        if (!/[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]+/.test(form.contrasena)) { alert("La contraseña debe contener al menos un signo (símbolo)"); return; }
+        if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) { alert("La contraseña debe contener al menos un signo (símbolo)"); return; }
       }
     }
     if (!editar) {
@@ -181,7 +185,6 @@ export default function Usuarios() {
     setClientes(prev => prev.map(c => c.id_cliente === id ? { ...c, estado: nuevoEstado } : c));
   };
 
-  // FIX #4: setDatos → setUsuarios
   const togglePermisoCuotas = async (id) => {
     try {
       await api.patch(`/usuarios/${id}/permiso-cuotas`);
@@ -261,102 +264,145 @@ export default function Usuarios() {
         <div className="usuarios-actions-left">
           <div className="usuarios-search-wrapper">
             <span className="usuarios-search-icon"><IconSearch /></span>
-            <input type="text" className="usuarios-search-input" placeholder="Buscar por nombre o email..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-            {busqueda && <button className="usuarios-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
+            <input
+              type="text"
+              className="usuarios-search-input"
+              placeholder="Buscar por nombre o email..."
+              value={busqueda}
+              onChange={(e) => { setBusqueda(e.target.value); setPaginaUsuarios(1); setPaginaClientes(1); }}
+            />
+            {busqueda && (
+              <button className="usuarios-search-clear" onClick={() => { setBusqueda(""); setPaginaUsuarios(1); setPaginaClientes(1); }}>
+                <IconX />
+              </button>
+            )}
           </div>
           <div className="usuarios-filter-toggle">
             <button
               className={`usuarios-filter-btn ${filterType === 'usuarios' ? 'active' : ''}`}
-              onClick={() => setFilterType('usuarios')}
+              onClick={() => { setFilterType('usuarios'); setPaginaUsuarios(1); }}
             >
               Usuarios
             </button>
             <button
               className={`usuarios-filter-btn ${filterType === 'clientes' ? 'active' : ''}`}
-              onClick={() => setFilterType('clientes')}
+              onClick={() => { setFilterType('clientes'); setPaginaClientes(1); }}
             >
               Clientes
             </button>
           </div>
         </div>
-        <button className="usuarios-btn-primary" onClick={filterType === 'usuarios' ? abrirRegistrar : abrirRegistrarCliente}><span>+</span> Nuevo {filterType === 'usuarios' ? 'usuario' : 'cliente'}</button>
+        <button className="usuarios-btn-primary" onClick={filterType === 'usuarios' ? abrirRegistrar : abrirRegistrarCliente}>
+          <span>+</span> Nuevo {filterType === 'usuarios' ? 'usuario' : 'cliente'}
+        </button>
       </div>
 
-       <div className="tbl-container">
-         <table className="tbl">
-           <thead className="tbl-header">
-             {filterType === 'usuarios' ? (
-               <tr>
-                 <th className="tbl-th">Usuario</th>
-                 <th className="tbl-th">Email</th>
-                 <th className="tbl-th">Rol</th>
-                 <th className="tbl-th">Cuotas</th>
-                 <th className="tbl-th">Estado</th>
-                 <th className="tbl-th">Acciones</th>
-               </tr>
-             ) : (
-               <tr>
-                 <th className="tbl-th">Cliente</th>
-                 <th className="tbl-th">Documento</th>
-                 <th className="tbl-th">Teléfono</th>
-                 <th className="tbl-th">Barrio</th>
-                 <th className="tbl-th">Tipo</th>
-                 <th className="tbl-th">Compras</th>
-                 <th className="tbl-th">Total</th>
-                 <th className="tbl-th">Estado</th>
-                 <th className="tbl-th">Acciones</th>
-               </tr>
-             )}
-           </thead>
-           <tbody className="tbl-body">
-             {filterType === 'usuarios' ? (
-               filtrados.map((u) => (
-                 <tr key={u.id_usuario} className="tbl-row">
-                   <td className="tbl-td"><div className="usuarios-user-info"><div className="usuarios-user-name">{u.nombre}</div></div></td>
-                   <td className="tbl-td usuarios-email-cell">{u.email}</td>
-                   <td className="tbl-td"><span className="tabla-rol">{u.rol || getRoleName(u.id_rol)}</span></td>
-                   <td className="tbl-td"><span className={`tabla-status ${u.permiso_cuotas !== false ? "activo" : "inactivo"}`} onClick={() => togglePermisoCuotas(u.id_usuario)} style={{ cursor: 'pointer' }} title="Click para cambiar">{u.permiso_cuotas !== false ? "Sí" : "No"}</span></td>
-<td className="tbl-td"><StatusToggle id={u.id_usuario} estado={u.estado} onToggle={toggleEstadoUsuario} showConfirmation={true} /></td>
-                    <td className="tbl-td">
-                      <div className="usuarios-action-cell">
-                        <button className="usuarios-action-btn usuarios-view-btn" onClick={() => abrirDetalle(u)} title="Ver detalles"><IconEyeOpen /></button>
-                        <button className="usuarios-action-btn usuarios-edit-btn" onClick={() => abrirEditar(u)} title="Editar"><IconEdit /></button>
-                      </div>
-                    </td>
-                 </tr>
-               ))
-             ) : (
-               filtrados.map((c) => (
-                 <tr key={c.id_cliente} className="tbl-row">
-                   <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
-                   <td className="tbl-td"><span className="clientes-doc-badge">{c.tipo_doc} {c.documento}</span></td>
-                   <td className="tbl-td clientes-phone-cell">{c.telefono || '—'}</td>
-                   <td className="tbl-td">{c.barrio_nombre ? <div><div className="clientes-barrio-name">{c.barrio_nombre}</div><div className="clientes-comuna-name">{c.comuna}</div></div> : <span className="clientes-empty">—</span>}</td>
-                   {/* FIX #5: tipoBadge ahora está definida */}
-                   <td className="tbl-td"><span className={`clientes-tipo-badge ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
-                   <td className="tbl-td">{c.total_compras || 0}</td>
-                   <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
-<td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstadoCliente} showConfirmation={true} /></td>
-                    <td className="tbl-td">
-                      <div className="clientes-action-cell">
-                        <button className="clientes-action-btn clientes-view-btn" onClick={() => setClienteDetalle(c)} title="Ver detalles"><IconEyeOpen /></button>
-                        <button className="clientes-action-btn clientes-edit-btn" onClick={() => abrirEditarCliente(c)} title="Editar"><IconEdit /></button>
-                      </div>
-                    </td>
-                 </tr>
-               ))
-             )}
-           </tbody>
-         </table>
-         <div className="print-button-container">
-           <button className="btn-print" onClick={() => window.print()}>
-             <IconPrint />
-           </button>
-         </div>
-       </div>
+      <div className="tbl-container">
+        <table className="tbl">
+          <thead className="tbl-header">
+            {filterType === 'usuarios' ? (
+              <tr>
+                <th className="tbl-th">Usuario</th>
+                <th className="tbl-th">Email</th>
+                <th className="tbl-th">Rol</th>
+                <th className="tbl-th">Cuotas</th>
+                <th className="tbl-th">Estado</th>
+                <th className="tbl-th">Acciones</th>
+              </tr>
+            ) : (
+              <tr>
+                <th className="tbl-th">Cliente</th>
+                <th className="tbl-th">Documento</th>
+                <th className="tbl-th">Teléfono</th>
+                <th className="tbl-th">Barrio</th>
+                <th className="tbl-th">Tipo</th>
+                <th className="tbl-th">Compras</th>
+                <th className="tbl-th">Total</th>
+                <th className="tbl-th">Estado</th>
+                <th className="tbl-th">Acciones</th>
+              </tr>
+            )}
+          </thead>
+          <tbody className="tbl-body">
+            {filterType === 'usuarios' ? (
+              filtradosPagina.map((u) => (
+                <tr key={u.id_usuario} className="tbl-row">
+                  <td className="tbl-td"><div className="usuarios-user-info"><div className="usuarios-user-name">{u.nombre}</div></div></td>
+                  <td className="tbl-td usuarios-email-cell">{u.email}</td>
+                  <td className="tbl-td"><span className="tabla-rol">{u.rol || getRoleName(u.id_rol)}</span></td>
+                  <td className="tbl-td"><span className={`tabla-status ${u.permiso_cuotas !== false ? "activo" : "inactivo"}`} onClick={() => togglePermisoCuotas(u.id_usuario)} style={{ cursor: 'pointer' }} title="Click para cambiar">{u.permiso_cuotas !== false ? "Sí" : "No"}</span></td>
+                  <td className="tbl-td"><StatusToggle id={u.id_usuario} estado={u.estado} onToggle={toggleEstadoUsuario} showConfirmation={true} /></td>
+                  <td className="tbl-td">
+                    <div className="usuarios-action-cell">
+                      <button className="usuarios-action-btn usuarios-view-btn" onClick={() => abrirDetalle(u)} title="Ver detalles"><IconEyeOpen /></button>
+                      <button className="usuarios-action-btn usuarios-edit-btn" onClick={() => abrirEditar(u)} title="Editar"><IconEdit /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              filtradosPagina.map((c) => (
+                <tr key={c.id_cliente} className="tbl-row">
+                  <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
+                  <td className="tbl-td"><span className="clientes-doc-badge">{c.tipo_doc} {c.documento}</span></td>
+                  <td className="tbl-td clientes-phone-cell">{c.telefono || '—'}</td>
+                  <td className="tbl-td">{c.barrio_nombre ? <div><div className="clientes-barrio-name">{c.barrio_nombre}</div><div className="clientes-comuna-name">{c.comuna}</div></div> : <span className="clientes-empty">—</span>}</td>
+                  <td className="tbl-td"><span className={`clientes-tipo-badge ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
+                  <td className="tbl-td">{c.total_compras || 0}</td>
+                  <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
+                  <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstadoCliente} showConfirmation={true} /></td>
+                  <td className="tbl-td">
+                    <div className="clientes-action-cell">
+                      <button className="clientes-action-btn clientes-view-btn" onClick={() => setClienteDetalle(c)} title="Ver detalles"><IconEyeOpen /></button>
+                      <button className="clientes-action-btn clientes-edit-btn" onClick={() => abrirEditarCliente(c)} title="Editar"><IconEdit /></button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
 
-      {/* FIX #2: bloque {modal && ()} vacío eliminado — solo queda el modal correcto abajo */}
-{modal && filterType === 'usuarios' && (
+        {/* Paginador */}
+        {totalPaginas > 1 && (
+          <div className="paginador">
+            <button
+              className="paginador-btn"
+              onClick={() => setPagina(p => Math.max(p - 1, 1))}
+              disabled={pagina === 1}
+            >
+              ‹
+            </button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
+              <button
+                key={n}
+                className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`}
+                onClick={() => setPagina(n)}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              className="paginador-btn"
+              onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))}
+              disabled={pagina === totalPaginas}
+            >
+              ›
+            </button>
+            <span className="paginador-info">
+              Página {pagina} de {totalPaginas} · {filtrados.length} registros
+            </span>
+          </div>
+        )}
+
+        <div className="print-button-container">
+          <button className="btn-print" onClick={() => window.print()}>
+            <IconPrint />
+          </button>
+        </div>
+      </div>
+
+      {modal && filterType === 'usuarios' && (
         <ModalSteps
           titulo={editar ? "Editar usuario" : "Nuevo usuario"}
           pasos={["Documento", "Cuenta", "Ubicación", "Rol"]}

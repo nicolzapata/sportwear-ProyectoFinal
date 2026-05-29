@@ -8,11 +8,14 @@ import ModalSteps from "../../components/ModalSteps";
 
 const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 
+const FILAS_POR_PAGINA = 10;
+
 export default function PedidosVentas() {
   const [datos, setDatos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [busqueda, setBusqueda] = useState("");
+  const [pagina, setPagina] = useState(1);
   const [verDetalle, setVerDetalle] = useState(null);
   const [abonosModal, setAbonosModal] = useState(null);
   const [formAbono, setFormAbono] = useState({ monto: "", metodo: "Efectivo", fecha: "" });
@@ -44,7 +47,6 @@ export default function PedidosVentas() {
           estado = totalPagado >= v.total ? "Pagado" : "Pendiente";
         }
         
-        // Solo mostrar pedidos confirmados o pagados (no carritos pendientes)
         if (estado === "Pendiente" && v.estado === "Pendiente") return null;
         
         return { ...v, total_pagado: totalPagado, abonos, estado };
@@ -62,6 +64,9 @@ export default function PedidosVentas() {
   const filtrados = datos.filter(v =>
     v.cliente?.toLowerCase().includes(busqueda.toLowerCase())
   );
+
+  const totalPaginas = Math.ceil(filtrados.length / FILAS_POR_PAGINA);
+  const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
   const cambiarEstado = async (id, estado) => {
     try {
@@ -122,8 +127,18 @@ export default function PedidosVentas() {
       <div className="pedidosventas-actions-bar">
         <div className="pedidosventas-search-wrapper">
           <span className="pedidosventas-search-icon"><IconSearch /></span>
-          <input type="text" className="pedidosventas-search-input" placeholder="Buscar por cliente o ID..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-          {busqueda && <button className="pedidosventas-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
+          <input
+            type="text"
+            className="pedidosventas-search-input"
+            placeholder="Buscar por cliente o ID..."
+            value={busqueda}
+            onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
+          />
+          {busqueda && (
+            <button className="pedidosventas-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}>
+              <IconX />
+            </button>
+          )}
         </div>
       </div>
 
@@ -131,91 +146,124 @@ export default function PedidosVentas() {
         {filtrados.length} venta{filtrados.length !== 1 ? 's' : ''} encontrada{filtrados.length !== 1 ? 's' : ''}
       </div>
 
-       <div className="tbl-container">
-         <table className="tbl">
-           <thead className="tbl-header">
-             <tr>
-               <th className="tbl-th">Cliente</th>
-               <th className="tbl-th">Producto</th>
-               <th className="tbl-th">Cant.</th>
-               <th className="tbl-th">Total</th>
-               <th className="tbl-th">Tipo</th>
-               <th className="tbl-th">Abonos</th>
-               <th className="tbl-th">Saldo</th>
-               <th className="tbl-th">Fecha</th>
-               <th className="tbl-th">Estado</th>
-               <th className="tbl-th">Acciones</th>
-             </tr>
-           </thead>
-           <tbody className="tbl-body">
-             {filtrados.map((v) => (
-               <tr key={v.id_venta} className="tbl-row">
-                 <td className="tbl-td">
-                   <span className="pedidosventas-cliente-name">{v.cliente}</span>
-                 </td>
-                 <td className="tbl-td pedidosventas-producto-cell">
-                   {v.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
-                 </td>
-                 <td className="tbl-td pedidosventas-cantidad-cell">
-                   {v.items?.reduce((sum, i) => sum + i.cantidad, 0) || '-'}
-                 </td>
-                 <td className="tbl-td pedidosventas-total-cell">{fmt(v.total)}</td>
-                 <td className="tbl-td">
-                   {v.tipo_pago === 'cuotas' ? (
-                     <span className="pedidosventas-badge pedidosventas-badge-info">Cuotas ({v.num_cuotas})</span>
-                   ) : (
-                     <span className="pedidosventas-badge">Completo</span>
-                   )}
-                 </td>
-                 <td className="tbl-td">
-                   <button 
-                     className="pedidosventas-abonos-btn"
-                     onClick={() => setAbonosModal(v)}
-                     title="Ver abonos"
-                   >
-                     {v.total_pagado ? fmt(v.total_pagado) : "-"}
-                   </button>
-                 </td>
-                 <td className="tbl-td">
-                   <span className={`pedidosventas-saldo ${(v.total - (v.total_pagado || 0)) <= 0 ? 'pedidosventas-saldo-zero' : ''}`}>
-                     {fmt(v.total - (v.total_pagado || 0))}
-                   </span>
-                 </td>
-                 <td className="tbl-td pedidosventas-fecha-cell">{v.fecha?.toString().split("T")[0]}</td>
-                 <td className="tbl-td">
-                   <span className={`pedidosventas-badge ${getEstadoBadge(v.estado)}`}>{v.estado}</span>
-                 </td>
-                 <td className="tbl-td">
-                   <div className="pedidosventas-action-cell">
-                     <button className="pedidosventas-action-btn pedidosventas-view-btn" onClick={() => setVerDetalle(v)} title="Ver detalles"><IconEye /></button>
-                     {v.estado !== "Anulado" && v.estado !== "Pagado" && (
-                       <button className="pedidosventas-action-btn pedidosventas-pay-btn" onClick={() => setAbonosModal(v)} title="Agregar abono"><IconDollar /></button>
-                     )}
-                     {v.estado === "Pendiente" && (
-                       <button className="pedidosventas-action-btn pedidosventas-pay-full-btn" onClick={() => cambiarEstado(v.id_venta, "Pagado")} title="Marcar como pagado"><IconDollar /></button>
-                     )}
-                     {v.estado !== "Anulado" && (
-                       <button className="pedidosventas-action-btn pedidosventas-cancel-btn" onClick={() => cambiarEstado(v.id_venta, "Anulado")} title="Anular venta"><IconX /></button>
-                     )}
-                   </div>
-                 </td>
-               </tr>
-             ))}
-             {filtrados.length === 0 && (
-               <tr>
-                 <td colSpan={9} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
-                   No hay ventas registradas
-                 </td>
-               </tr>
-             )}
-           </tbody>
-         </table>
-       </div>
-       <div className="print-button-container">
-         <button className="btn-print" onClick={() => window.print()}>
-           <IconPrint />
-         </button>
-       </div>
+      <div className="tbl-container">
+        <table className="tbl">
+          <thead className="tbl-header">
+            <tr>
+              <th className="tbl-th">Cliente</th>
+              <th className="tbl-th">Producto</th>
+              <th className="tbl-th">Cant.</th>
+              <th className="tbl-th">Total</th>
+              <th className="tbl-th">Tipo</th>
+              <th className="tbl-th">Abonos</th>
+              <th className="tbl-th">Saldo</th>
+              <th className="tbl-th">Fecha</th>
+              <th className="tbl-th">Estado</th>
+              <th className="tbl-th">Acciones</th>
+            </tr>
+          </thead>
+          <tbody className="tbl-body">
+            {filtradosPagina.map((v) => (
+              <tr key={v.id_venta} className="tbl-row">
+                <td className="tbl-td">
+                  <span className="pedidosventas-cliente-name">{v.cliente}</span>
+                </td>
+                <td className="tbl-td pedidosventas-producto-cell">
+                  {v.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
+                </td>
+                <td className="tbl-td pedidosventas-cantidad-cell">
+                  {v.items?.reduce((sum, i) => sum + i.cantidad, 0) || '-'}
+                </td>
+                <td className="tbl-td pedidosventas-total-cell">{fmt(v.total)}</td>
+                <td className="tbl-td">
+                  {v.tipo_pago === 'cuotas' ? (
+                    <span className="pedidosventas-badge pedidosventas-badge-info">Cuotas ({v.num_cuotas})</span>
+                  ) : (
+                    <span className="pedidosventas-badge">Completo</span>
+                  )}
+                </td>
+                <td className="tbl-td">
+                  <button
+                    className="pedidosventas-abonos-btn"
+                    onClick={() => setAbonosModal(v)}
+                    title="Ver abonos"
+                  >
+                    {v.total_pagado ? fmt(v.total_pagado) : "-"}
+                  </button>
+                </td>
+                <td className="tbl-td">
+                  <span className={`pedidosventas-saldo ${(v.total - (v.total_pagado || 0)) <= 0 ? 'pedidosventas-saldo-zero' : ''}`}>
+                    {fmt(v.total - (v.total_pagado || 0))}
+                  </span>
+                </td>
+                <td className="tbl-td pedidosventas-fecha-cell">{v.fecha?.toString().split("T")[0]}</td>
+                <td className="tbl-td">
+                  <span className={`pedidosventas-badge ${getEstadoBadge(v.estado)}`}>{v.estado}</span>
+                </td>
+                <td className="tbl-td">
+                  <div className="pedidosventas-action-cell">
+                    <button className="pedidosventas-action-btn pedidosventas-view-btn" onClick={() => setVerDetalle(v)} title="Ver detalles"><IconEye /></button>
+                    {v.estado !== "Anulado" && v.estado !== "Pagado" && (
+                      <button className="pedidosventas-action-btn pedidosventas-pay-btn" onClick={() => setAbonosModal(v)} title="Agregar abono"><IconDollar /></button>
+                    )}
+                    {v.estado === "Pendiente" && (
+                      <button className="pedidosventas-action-btn pedidosventas-pay-full-btn" onClick={() => cambiarEstado(v.id_venta, "Pagado")} title="Marcar como pagado"><IconDollar /></button>
+                    )}
+                    {v.estado !== "Anulado" && (
+                      <button className="pedidosventas-action-btn pedidosventas-cancel-btn" onClick={() => cambiarEstado(v.id_venta, "Anulado")} title="Anular venta"><IconX /></button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filtrados.length === 0 && (
+              <tr>
+                <td colSpan={10} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
+                  No hay ventas registradas
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        {/* Paginador */}
+        {totalPaginas > 1 && (
+          <div className="paginador">
+            <button
+              className="paginador-btn"
+              onClick={() => setPagina(p => Math.max(p - 1, 1))}
+              disabled={pagina === 1}
+            >
+              ‹
+            </button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
+              <button
+                key={n}
+                className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`}
+                onClick={() => setPagina(n)}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              className="paginador-btn"
+              onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))}
+              disabled={pagina === totalPaginas}
+            >
+              ›
+            </button>
+            <span className="paginador-info">
+              Página {pagina} de {totalPaginas} · {filtrados.length} registros
+            </span>
+          </div>
+        )}
+
+        <div className="print-button-container">
+          <button className="btn-print" onClick={() => window.print()}>
+            <IconPrint />
+          </button>
+        </div>
+      </div>
 
       {verDetalle && (
         <ModalDetalle
@@ -236,10 +284,10 @@ export default function PedidosVentas() {
           <DetalleSeccion titulo="Productos">
             <DetalleGrid>
               {verDetalle.items?.map((item, idx) => (
-                <DetalleItem 
-                  key={idx} 
-                  label={`${item.producto} (Talla: ${item.talla || '-'})`} 
-                  value={`Cant: ${item.cantidad} - ${fmt(item.subtotal)}`} 
+                <DetalleItem
+                  key={idx}
+                  label={`${item.producto} (Talla: ${item.talla || '-'})`}
+                  value={`Cant: ${item.cantidad} - ${fmt(item.subtotal)}`}
                 />
               ))}
             </DetalleGrid>
@@ -256,10 +304,10 @@ export default function PedidosVentas() {
             <DetalleSeccion titulo="Historial de Abonos">
               <DetalleGrid>
                 {verDetalle.abonos.map((a, idx) => (
-                  <DetalleItem 
-                    key={idx} 
-                    label={a.num_cuota ? `Cuota ${a.num_cuota}` : `Abono ${idx + 1}`} 
-                    value={`${fmt(a.monto)} - ${a.estado}`} 
+                  <DetalleItem
+                    key={idx}
+                    label={a.num_cuota ? `Cuota ${a.num_cuota}` : `Abono ${idx + 1}`}
+                    value={`${fmt(a.monto)} - ${a.estado}`}
                   />
                 ))}
               </DetalleGrid>
@@ -314,9 +362,9 @@ export default function PedidosVentas() {
                   <div className="pedidosventas-form-row">
                     <div className="pedidosventas-form-group">
                       <label className="pedidosventas-form-label">Monto (COP)</label>
-                      <input 
-                        type="number" 
-                        className="pedidosventas-form-input" 
+                      <input
+                        type="number"
+                        className="pedidosventas-form-input"
                         placeholder={`Máx: ${fmt(abonosModal.total - (abonosModal.total_pagado || 0))}`}
                         value={formAbono.monto}
                         onChange={(e) => setFormAbono({ ...formAbono, monto: e.target.value })}
@@ -324,7 +372,7 @@ export default function PedidosVentas() {
                     </div>
                     <div className="pedidosventas-form-group">
                       <label className="pedidosventas-form-label">Método</label>
-                      <select 
+                      <select
                         className="pedidosventas-form-select"
                         value={formAbono.metodo}
                         onChange={(e) => setFormAbono({ ...formAbono, metodo: e.target.value })}
@@ -338,8 +386,8 @@ export default function PedidosVentas() {
                   <div className="pedidosventas-form-row">
                     <div className="pedidosventas-form-group">
                       <label className="pedidosventas-form-label">Fecha</label>
-                      <input 
-                        type="date" 
+                      <input
+                        type="date"
                         className="pedidosventas-form-input"
                         value={formAbono.fecha}
                         onChange={(e) => setFormAbono({ ...formAbono, fecha: e.target.value })}

@@ -419,7 +419,7 @@
 .btn-primary {
   font-family: 'DM Sans', system-ui, sans-serif !important;
   font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: none;
-  color: #fff !important; background: var(--dvna-charcoal) !important;
+  color: #fff !important; background: var(--brown) !important;
   border: none !important; border-radius: 4px; padding: 10px 24px;
   cursor: pointer; text-decoration: none; display: inline-block;
   box-shadow: none !important; transition: background 0.2s;
@@ -458,7 +458,7 @@
 
 .dvna-toast {
   position: fixed; top: 20px; right: 20px; z-index: 99999;
-  background: #1a1a1a; color: #fff; padding: 12px 20px;
+  background: var(--brown); color: #fff; padding: 12px 20px;
   border-radius: 10px; font-family: 'Jost', sans-serif;
   font-size: 13px; font-weight: 500;
   box-shadow: 0 8px 30px rgba(0,0,0,0.2);
@@ -480,7 +480,7 @@
   font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 600;
   cursor: pointer; white-space: nowrap; border: 1.5px solid transparent;
 }
-.tbl-action-btn--pay    { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.tbl-action-btn--pay    { background: var(--brown); color: #fff; border-color: #1a1a1a; }
 .tbl-action-btn--detail { background: #fff; color: #1a1a1a; border-color: #e5e5e5; }
 .tbl-action-btn--view   { background: #fff; color: #1a1a1a; border-color: #e5e5e5; }
 .tbl-disabled           { font-size: 11px; color: #aaa; font-style: italic; }
@@ -518,7 +518,7 @@
   text-align: right;
 }
 .btn-print {
-  background: #1a1a1a;
+  background: var(--brown);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -531,6 +531,6 @@
   transition: all 0.2s ease;
 }
 .btn-print:hover {
-  background: #333;
+  background: var(--accent);
   transform: translateY(-2px);
 }

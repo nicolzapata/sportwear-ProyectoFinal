@@ -175,7 +175,7 @@
 
 /* Buttons */
 .colores-btn-primary {
-  background: #1a1a1a;
+  background: var(--brown);
   color: white;
   border: none;
   padding: 0.8rem 2rem;
@@ -187,11 +187,11 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  border: 1px solid #1a1a1a;
+  border: 1px solid var(--brown);
 }
 
 .colores-btn-primary:hover {
-  background: #333;
+  background: var(--accent);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -254,7 +254,7 @@
 }
 
 .colores-tab-btn.active {
-  background: #1a1a1a;
+  background: var(--brown);
   color: white;
 }
 
@@ -567,7 +567,7 @@
 }
 
 .btn-print {
-  background: #1a1a1a;
+  background: var(--brown);
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -581,6 +581,6 @@
 }
 
 .btn-print:hover {
-  background: #333;
+  background: var(--accent);
   transform: translateY(-2px);
 }

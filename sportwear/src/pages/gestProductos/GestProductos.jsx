@@ -27,12 +27,15 @@ export default function GestProductos() {
   const [toast, setToast] = useState(null);
   const [form, setForm] = useState(FORM_VACIO);
   const [pendingVariantes, setPendingVariantes] = useState([]);
-  const [pendingImagenes, setPendingImagenes] = useState([]);
-  const [tab, setTab] = useState("productos");
-
-  // Estados para categorías
-  const [formCategoria, setFormCategoria] = useState({ nombre: "", icono: "tag" });
-  const [editarCategoria, setEditarCategoria] = useState(null);
+   const [pendingImagenes, setPendingImagenes] = useState([]);
+   const [tab, setTab] = useState("productos");
+   const [paginaProductos, setPaginaProductos] = useState(1);
+   const [paginaCategorias, setPaginaCategorias] = useState(1);
+   const FILAS_POR_PAGINA = 10;
+   
+   // Estados para categorías
+   const [formCategoria, setFormCategoria] = useState({ nombre: "", icono: "tag" });
+   const [editarCategoria, setEditarCategoria] = useState(null);
 
   const mostrarToast = (tipo, mensaje) => {
     setToast({ tipo, mensaje });
@@ -67,14 +70,18 @@ export default function GestProductos() {
   };
   useEffect(() => { cargar(); }, []);
 
-  const filtrados = datos.filter(p =>
-    p.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.categoria?.toLowerCase().includes(busqueda.toLowerCase())
-  );
+   const filtradosAll = datos.filter(p =>
+     p.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
+     p.categoria?.toLowerCase().includes(busqueda.toLowerCase())
+   );
+   const filtrados = filtradosAll.slice((paginaProductos - 1) * FILAS_POR_PAGINA, paginaProductos * FILAS_POR_PAGINA);
+   const totalPaginasProductos = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
 
-  const categoriasFiltradas = categorias.filter(c =>
-    c.nombre?.toLowerCase().includes(busqueda.toLowerCase())
-  );
+   const categoriasFiltradasAll = categorias.filter(c =>
+     c.nombre?.toLowerCase().includes(busqueda.toLowerCase())
+   );
+   const categoriasFiltradas = categoriasFiltradasAll.slice((paginaCategorias - 1) * FILAS_POR_PAGINA, paginaCategorias * FILAS_POR_PAGINA);
+   const totalPaginasCategorias = Math.ceil(categoriasFiltradasAll.length / FILAS_POR_PAGINA);
 
   // ── Funciones para productos ───────────────────────────────────────────────────
   const abrirRegistrar = () => {
@@ -456,9 +463,9 @@ export default function GestProductos() {
         <div className="gestproductos-actions-left">
           <div className="gestproductos-search-wrapper">
             <span className="gestproductos-search-icon"><IconSearch /></span>
-            <input className="gestproductos-search-input" placeholder="Buscar por nombre o categoría..."
-              value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-            {busqueda && <button className="gestproductos-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
+             <input className="gestproductos-search-input" placeholder="Buscar por nombre o categoría..."
+               value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPaginaProductos(1); setPaginaCategorias(1); }} />
+             {busqueda && <button className="gestproductos-search-clear" onClick={() => { setBusqueda(""); setPaginaProductos(1); setPaginaCategorias(1); }}><IconX /></button>}
           </div>
           <div className="gestproductos-tabs-bar">
             <button className={`gestproductos-tab-btn${tab === 'productos' ? ' active' : ''}`} onClick={() => setTab('productos')}><IconBox /> Productos</button>
@@ -544,16 +551,48 @@ export default function GestProductos() {
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <div className="print-button-container">
-            <button className="btn-print" onClick={() => window.print()}>
-              <IconPrint />
-            </button>
-          </div>
-        </div>
-      ) : (
+               ))}
+             </tbody>
+           </table>
+           <div className="paginador">
+             {totalPaginasProductos > 1 && (
+               <div className="paginador">
+                 <button
+                   className="paginador-btn"
+                   onClick={() => setPaginaProductos(p => Math.max(p - 1, 1))}
+                   disabled={paginaProductos === 1}
+                 >
+                   ‹
+                 </button>
+                 {Array.from({ length: totalPaginasProductos }, (_, i) => i + 1).map(n => (
+                   <button
+                     key={n}
+                     className={`paginador-btn ${n === paginaProductos ? "paginador-btn-active" : ""}`}
+                     onClick={() => setPaginaProductos(n)}
+                   >
+                     {n}
+                   </button>
+                 ))}
+                 <button
+                   className="paginador-btn"
+                   onClick={() => setPaginaProductos(p => Math.min(p + 1, totalPaginasProductos))}
+                   disabled={paginaProductos === totalPaginasProductos}
+                 >
+                   ›
+                 </button>
+                 <span className="paginador-info">
+                   Página {paginaProductos} de {totalPaginasProductos} · {filtradosAll.length} registros
+                 </span>
+               </div>
+             )}
+           </div>
+           <div className="print-button-container">
+             <button className="btn-print" onClick={() => window.print()}>
+               <IconPrint />
+             </button>
+           </div>
+         </div>
+       ) : (
         <div className="gestproductos-table-container">
           <table className="tbl">
             <thead className="tbl-header">
@@ -586,15 +625,47 @@ export default function GestProductos() {
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-          <div className="print-button-container">
-            <button className="btn-print" onClick={() => window.print()}>
-              <IconPrint />
-            </button>
-          </div>
-        </div>
-      )}
+             </tbody>
+           </table>
+           <div className="paginador">
+             {totalPaginasCategorias > 1 && (
+               <div className="paginador">
+                 <button
+                   className="paginador-btn"
+                   onClick={() => setPaginaCategorias(p => Math.max(p - 1, 1))}
+                   disabled={paginaCategorias === 1}
+                 >
+                   ‹
+                 </button>
+                 {Array.from({ length: totalPaginasCategorias }, (_, i) => i + 1).map(n => (
+                   <button
+                     key={n}
+                     className={`paginador-btn ${n === paginaCategorias ? "paginador-btn-active" : ""}`}
+                     onClick={() => setPaginaCategorias(n)}
+                   >
+                     {n}
+                   </button>
+                 ))}
+                 <button
+                   className="paginador-btn"
+                   onClick={() => setPaginaCategorias(p => Math.min(p + 1, totalPaginasCategorias))}
+                   disabled={paginaCategorias === totalPaginasCategorias}
+                 >
+                   ›
+                 </button>
+                 <span className="paginador-info">
+                   Página {paginaCategorias} de {totalPaginasCategorias} · {categoriasFiltradasAll.length} registros
+                 </span>
+               </div>
+             )}
+           </div>
+           <div className="print-button-container">
+             <button className="btn-print" onClick={() => window.print()}>
+               <IconPrint />
+             </button>
+           </div>
+         </div>
+       )}
 
       {/* Modal para productos */}
       {modal && tab === 'productos' && (

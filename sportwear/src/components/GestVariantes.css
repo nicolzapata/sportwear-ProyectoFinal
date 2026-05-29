@@ -261,7 +261,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--dvna-charcoal);
+  background: var(--brown);
   color: #fff;
   font-size: 9px;
   font-weight: 700;
@@ -287,8 +287,8 @@
 }
 .gv-color-chip:hover { border-color: var(--dvna-mid); }
 .gv-color-chip.active {
-  border-color: var(--dvna-charcoal);
-  background: var(--dvna-charcoal);
+  border-color: var(--brown);
+  background: var(--brown);
   color: #fff;
 }
 .gv-chip-dot {
@@ -319,8 +319,8 @@
 }
 .gv-talla-chip:hover { border-color: var(--dvna-mid); }
 .gv-talla-chip.active {
-  border-color: var(--dvna-charcoal);
-  background: var(--dvna-charcoal);
+  border-color: var(--brown);
+  background: var(--brown);
   color: #fff;
 }
 
@@ -335,7 +335,7 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--dvna-white);
-  background: var(--dvna-charcoal);
+  background: var(--brown);
   border: none;
   border-radius: var(--r);
   padding: 10px 20px;

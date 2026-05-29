@@ -30,7 +30,9 @@ export default function CatProductos() {
   const [editar,     setEditar]     = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [iconPicker, setIconPicker] = useState(false);
-  const [form, setForm] = useState({ nombre: "", descripcion: "", estado: "Activo", icono: "tag" });
+   const [form, setForm] = useState({ nombre: "", descripcion: "", estado: "Activo", icono: "tag" });
+   const FILAS_POR_PAGINA = 10;
+   const [pagina, setPagina] = useState(1);
 
   const cargar = async () => {
     try { const { data } = await api.get("/categorias"); setDatos(data); }
@@ -39,7 +41,9 @@ export default function CatProductos() {
   };
   useEffect(() => { cargar(); }, []);
 
-  const filtrados = datos.filter(c => c.nombre.toLowerCase().includes(busqueda.toLowerCase()));
+   const filtradosAll = datos.filter(c => c.nombre.toLowerCase().includes(busqueda.toLowerCase()));
+   const filtrados = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+   const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
 
   const abrirRegistrar = () => {
     setEditar(null);
