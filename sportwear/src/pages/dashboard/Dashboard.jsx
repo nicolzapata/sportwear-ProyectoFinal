@@ -794,10 +794,7 @@ function DashboardCliente() {
   );
 }
 
-/* ════════════════════════════════════════════
-   EXPORT PRINCIPAL
-════════════════════════════════════════════ */
 export default function Dashboard() {
   const { usuario } = useAuth();
-  return usuario?.rol === "Admin" ? <DashboardAdmin /> : <DashboardCliente />;
+  return usuario?.rol === "Cliente" ? <DashboardCliente /> : <DashboardAdmin />;
 }

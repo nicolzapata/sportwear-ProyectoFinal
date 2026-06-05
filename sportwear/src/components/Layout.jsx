@@ -4,26 +4,11 @@ import { Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
-import PublicNavbar from "./PublicNavbar";
 import "./Layout.css";
 
 export default function Layout() {
-  const { usuario } = useAuth();
-  const esAdmin = usuario?.rol === "Admin";
+  useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  if (!esAdmin) {
-    return (
-      <div className="layout-cliente">
-        <PublicNavbar />
-        <main className="layout-main">
-          <div className="layout-container">
-            <Outlet />
-          </div>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="layout-admin">

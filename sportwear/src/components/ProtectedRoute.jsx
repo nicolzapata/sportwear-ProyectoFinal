@@ -1,12 +1,7 @@
 // src/components/ProtectedRoute.jsx
-// =====================================================
-// Protege rutas:
-//   1. Redirige al login si no hay sesión
-//   2. Redirige al dashboard si el rol no tiene permiso
-// =====================================================
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { MENU_ITEMS, PERMISOS } from "../config/permisos";
+import { MENU_ITEMS } from "../config/permisos";
 
 export default function ProtectedRoute({ children, requiredKey }) {
   const { usuario } = useAuth();
@@ -14,25 +9,24 @@ export default function ProtectedRoute({ children, requiredKey }) {
   // Sin sesión → al login
   if (!usuario) return <Navigate to="/" replace />;
 
+  // Cliente no tiene acceso al área administrativa → al catálogo
+  if (usuario.rol === 'Cliente') return <Navigate to="/catalogo" replace />;
+
   const normalizeModulo = (value) =>
     value?.toString?.().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 
   if (requiredKey) {
+    // Dashboard siempre accesible para cualquier rol administrativo
+    if (requiredKey === 'dashboard') return children;
+
     const item = MENU_ITEMS.find(i => i.key === requiredKey);
     const requiredModule = item?.module;
 
-    if (requiredModule) {
-      if (usuario.rol !== 'Admin') {
-        const usuarioModulos = Array.isArray(usuario.modulos)
-          ? usuario.modulos.map((m) => normalizeModulo(m)).filter(Boolean)
-          : [];
-        if (!usuarioModulos.includes(normalizeModulo(requiredModule))) {
-          return <Navigate to="/dashboard" replace />;
-        }
-      }
-    } else {
-      const permisosRol = PERMISOS[usuario.rol] ?? ["dashboard"];
-      if (!permisosRol.includes(requiredKey)) {
+    if (requiredModule && usuario.rol !== 'Admin') {
+      const usuarioModulos = Array.isArray(usuario.modulos)
+        ? usuario.modulos.map((m) => normalizeModulo(m)).filter(Boolean)
+        : [];
+      if (!usuarioModulos.includes(normalizeModulo(requiredModule))) {
         return <Navigate to="/dashboard" replace />;
       }
     }

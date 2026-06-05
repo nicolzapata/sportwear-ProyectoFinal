@@ -100,8 +100,37 @@ const handleSubmit = async (e) => {
   try {
     const { data } = await api.post("/auth/login", form);
     login(data.usuario, data.token);
-    const esCliente = data.usuario?.rol === "Cliente";
-    navigate(esCliente ? "/catalogo" : "/dashboard");
+const esCliente = data.usuario?.rol === "Cliente";
+
+if (esCliente) {
+  navigate("/catalogo");
+} else {
+  // Ir al primer módulo asignado, o dashboard si es Admin
+  const modulos = data.usuario?.modulos || [];
+  if (data.usuario?.rol === "Admin" || modulos.length === 0) {
+    navigate("/dashboard");
+  } else {
+    // Buscar la ruta del primer módulo asignado
+    const MENU_ITEMS = [
+      { module: "Dashboard",     path: "/dashboard" },
+      { module: "Usuarios",      path: "/usuarios" },
+      { module: "Roles",         path: "/roles" },
+      { module: "Productos",     path: "/productos" },
+      { module: "Colores",       path: "/colores" },
+      { module: "Catálogo",      path: "/catalogo-admin" },
+      { module: "Proveedores",   path: "/proveedores" },
+      { module: "Compras",       path: "/compras" },
+      { module: "PedidosVentas", path: "/pedidos" },
+      { module: "Pagos",         path: "/pagos" },
+      { module: "Configuración", path: "/configuracion" },
+    ];
+    const normalizar = (v) => v?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+    const primerModulo = MENU_ITEMS.find(item =>
+      modulos.some(m => normalizar(m) === normalizar(item.module))
+    );
+    navigate(primerModulo ? primerModulo.path : "/dashboard");
+  }
+}
   } catch (err) {
     setError(err.response?.data?.message || "Credenciales incorrectas");
   } finally {

@@ -98,7 +98,6 @@ const mergeModulos = (backendModulos) => {
     result.push(modulo);
   };
 
-  // Preferir el orden oficial siempre que haya coincidencia
   MODULOS_FALLBACK.forEach((modulo) => {
     if (raw.length === 0 || raw.some((item) => normalizeModulo(item) === normalizeModulo(modulo))) {
       pushIfNew(modulo);
@@ -155,9 +154,7 @@ function RoleCard({ rol, index, onVerDetalle }) {
   );
 }
 
-// ── FIX BUG 1 & 2: SubComponente reactivo para la sección de permisos ─────────
-// Al ser un componente React real, se re-renderiza cuando cambian sus props.
-// Antes era una variable JSX calculada una vez → no reactiva.
+// ── SeccionPermisos ───────────────────────────────────────────────────────────
 function SeccionPermisos({ permisos, loadingPermisos, rolColor }) {
   const permisosPorModulo = permisos.reduce((acc, permiso) => {
     const modulo = permiso?.modulo || 'Sin módulo';
@@ -239,23 +236,19 @@ export default function Roles() {
   const [modal,              setModal]              = useState(false);
   const [editar,             setEditar]             = useState(null);
   const [detalle,            setDetalle]            = useState(null);
-  // FIX BUG 1: estado separado para permisos del detalle
   const [permisos,           setPermisos]           = useState([]);
   const [loadingPermisos,    setLoadingPermisos]    = useState(false);
   const [modulosDisponibles, setModulosDisponibles] = useState([]);
   const [permisosCatalogo,   setPermisosCatalogo]   = useState({});
   const [confirm,            setConfirm]            = useState(null);
 
-  const [form,    setForm]    = useState({
-    nombre: "", descripcion: "", estado: "Activo", nivel_acceso: "Editor", permisos: []
-  });
+  const [form,    setForm]    = useState({ nombre: "", estado: "Activo", permisos: [] });
   const [errores, setErrores] = useState({});
   const [modalStep, setModalStep] = useState(0);
 
   // ── Filtrado ──────────────────────────────────────────────────────────────
   const filtrados = datos.filter(r =>
-    r.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    (r.descripcion && r.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
+    r.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   // ── Carga inicial ─────────────────────────────────────────────────────────
@@ -272,32 +265,25 @@ export default function Roles() {
 
   useEffect(() => {
     cargar();
-    // Cargar módulos disponibles
     api.get('/roles/modulos')
-      .then(({ data }) => {
-        setModulosDisponibles(mergeModulos(data));
-      })
+      .then(({ data }) => setModulosDisponibles(mergeModulos(data)))
       .catch(() => setModulosDisponibles(MODULOS_FALLBACK));
-    
-    // Cargar catálogo granular de permisos (módulo × acción)
+
     api.get('/roles/permisos')
-      .then(({ data }) => {
-        setPermisosCatalogo(data || {});
-      })
+      .then(({ data }) => setPermisosCatalogo(data || {}))
       .catch(err => {
         console.error("Error cargando catálogo de permisos:", err);
         setPermisosCatalogo({});
       });
   }, [cargar]);
 
-  // ── FIX BUG 1: cargar permisos del detalle con estado de carga propio ─────
+  // ── Abrir detalle ─────────────────────────────────────────────────────────
   const abrirDetalle = async (rol) => {
     setDetalle(rol);
     setPermisos([]);
     setLoadingPermisos(true);
     try {
       const { data } = await api.get(`/roles/${rol.id_rol}/permisos`);
-      // data debe ser array de { id_permiso, nombre, modulo, accion }
       setPermisos(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error cargando permisos del detalle:", err);
@@ -310,45 +296,33 @@ export default function Roles() {
   // ── Abrir modal registrar ─────────────────────────────────────────────────
   const abrirRegistrar = () => {
     setEditar(null);
-    setForm({ nombre: "", descripcion: "", estado: "Activo", nivel_acceso: "Editor", permisos: [] });
+    setForm({ nombre: "", estado: "Activo", permisos: [] });
     setErrores({});
     setModalStep(0);
     setModal(true);
   };
 
-  // ── FIX BUG 3: cargar permisos frescos al editar ──────────────────────────
-  // Ahora cargamos los id_permiso específicos (granular), no solo módulos.
+  // ── Abrir modal editar ────────────────────────────────────────────────────
   const abrirEditar = async (r) => {
     if (esRolProtegido(r.nombre)) return;
     setEditar(r.id_rol);
-    // Inicializar con permisos vacíos mientras carga
-    setForm({
-      nombre:       r.nombre,
-      descripcion:  r.descripcion,
-      estado:       r.estado,
-      nivel_acceso: r.nivel_acceso || "Editor",
-      permisos:     [],
-    });
+    setForm({ nombre: r.nombre, estado: r.estado, permisos: [] });
     setErrores({});
     setModalStep(0);
     setModal(true);
 
-    // Carga fresca de permisos reales desde el endpoint específico
     try {
       const { data } = await api.get(`/roles/${r.id_rol}/permisos`);
       if (Array.isArray(data) && data.length > 0) {
-        // Extraer id_permiso de los permisos devueltos
         const idsPermiso = data.map(p => p.id_permiso).filter(Boolean);
         setForm(prev => ({ ...prev, permisos: idsPermiso }));
       }
     } catch (err) {
       console.error("Error cargando permisos para edición:", err);
-      // Si falla, nos quedamos con permisos vacío
     }
   };
 
-  // ── Toggle permiso granular ──────────────────────────────────────────────
-  // Ahora trabaja con id_permiso (números) en lugar de módulos (strings)
+  // ── Toggle permiso granular ───────────────────────────────────────────────
   const togglePermiso = (id_permiso) => {
     const ya = form.permisos.includes(id_permiso);
     setForm(prev => ({
@@ -361,9 +335,8 @@ export default function Roles() {
   // ── Validación frontend ───────────────────────────────────────────────────
   const validar = () => {
     const e = {};
-    if (!form.nombre.trim())        e.nombre      = "El nombre es obligatorio";
-    if (!form.descripcion.trim())   e.descripcion = "La descripción es obligatoria";
-    if (form.permisos.length === 0) e.permisos    = "Selecciona al menos un permiso";
+    if (!form.nombre.trim())        e.nombre   = "El nombre es obligatorio";
+    if (form.permisos.length === 0) e.permisos = "Selecciona al menos un permiso";
     setErrores(e);
     return e;
   };
@@ -372,7 +345,7 @@ export default function Roles() {
   const guardar = async () => {
     const erroresValidacion = validar();
     if (Object.keys(erroresValidacion).length > 0) {
-      if (erroresValidacion.nombre || erroresValidacion.descripcion) setModalStep(0);
+      if (erroresValidacion.nombre) setModalStep(0);
       else if (erroresValidacion.permisos) setModalStep(1);
       return false;
     }
@@ -435,51 +408,21 @@ export default function Roles() {
   // ── Pasos del formulario ──────────────────────────────────────────────────
   const PasoInfo = (
     <div>
-      <div className="ms-form-row">
-        <div className="ms-form-group">
-          <label className="ms-form-label">
-            Nombre del rol <span className="ms-req">*</span>
-          </label>
-          <input
-            type="text"
-            className={`ms-form-input${errores.nombre ? ' error' : ''}`}
-            placeholder="Ej: Vendedor"
-            value={form.nombre}
-            onChange={e => {
-              setForm(prev => ({ ...prev, nombre: e.target.value }));
-              if (errores.nombre) setErrores(prev => ({ ...prev, nombre: '' }));
-            }}
-          />
-          {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
-        </div>
-        <div className="ms-form-group">
-          <label className="ms-form-label">Nivel de acceso</label>
-          <select
-            className="ms-form-select"
-            value={form.nivel_acceso}
-            onChange={e => setForm(prev => ({ ...prev, nivel_acceso: e.target.value }))}
-          >
-            <option value="Admin">Admin</option>
-            <option value="Editor">Editor</option>
-            <option value="Observador">Observador</option>
-          </select>
-        </div>
-      </div>
       <div className="ms-form-group">
         <label className="ms-form-label">
-          Descripción <span className="ms-req">*</span>
+          Nombre del rol <span className="ms-req">*</span>
         </label>
         <input
           type="text"
-          className={`ms-form-input${errores.descripcion ? ' error' : ''}`}
-          placeholder="Ej: Acceso a ventas y pedidos"
-          value={form.descripcion}
+          className={`ms-form-input${errores.nombre ? ' error' : ''}`}
+          placeholder="Ej: Vendedor"
+          value={form.nombre}
           onChange={e => {
-            setForm(prev => ({ ...prev, descripcion: e.target.value }));
-            if (errores.descripcion) setErrores(prev => ({ ...prev, descripcion: '' }));
+            setForm(prev => ({ ...prev, nombre: e.target.value }));
+            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: '' }));
           }}
         />
-        {errores.descripcion && <span className="ms-form-error">{errores.descripcion}</span>}
+        {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
       </div>
       {errores._general && (
         <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>
@@ -508,8 +451,7 @@ export default function Roles() {
             Usando módulos predefinidos por defecto mientras se carga el catálogo.
           </p>
         )}
-        
-        {/* Matriz de módulos × acciones */}
+
         <div style={{ overflowX: 'auto', marginBottom: 10 }}>
           <table style={{
             width: '100%',
@@ -540,11 +482,7 @@ export default function Roles() {
                             type="button"
                             className={`roles-permiso-chip${form.permisos.includes(accion.id_permiso) ? ' selected' : ''}`}
                             onClick={() => togglePermiso(accion.id_permiso)}
-                            style={{
-                              fontSize: 11,
-                              padding: '4px 8px',
-                              minWidth: 'auto'
-                            }}
+                            style={{ fontSize: 11, padding: '4px 8px', minWidth: 'auto' }}
                             title={accion.descripcion || accion.accion}
                           >
                             {accion.accion}
@@ -573,15 +511,11 @@ export default function Roles() {
   const rolColor  = PALETAS[rolIndex % PALETAS.length];
   const protegido = detalle ? esRolProtegido(detalle.nombre) : false;
 
-  // FIX BUG 2: DetalleInfo sigue siendo JSX variable (no necesita ser reactivo,
-  // solo depende de `detalle` que cambia al abrir el modal, no de `permisos`)
   const DetalleInfo = detalle && (
     <DetalleSeccion>
       <DetalleGrid>
-        <DetalleItem label="Nombre"          value={detalle.nombre} />
-        <DetalleItem label="Nivel de acceso" value={detalle.nivel_acceso || "No definido"} />
-        <DetalleItem label="Estado"          value={detalle.estado} />
-        <DetalleItem label="Descripción"     value={detalle.descripcion} full />
+        <DetalleItem label="Nombre" value={detalle.nombre} />
+        <DetalleItem label="Estado" value={detalle.estado} />
       </DetalleGrid>
       {protegido && (
         <div className="roles-protected-notice">
@@ -711,7 +645,7 @@ export default function Roles() {
           onGuardar={guardar}
           onValidationFail={() => {
             const erroresValidacion = validar();
-            if (erroresValidacion.nombre || erroresValidacion.descripcion) setModalStep(0);
+            if (erroresValidacion.nombre) setModalStep(0);
             else if (erroresValidacion.permisos) setModalStep(1);
           }}
           labelGuardar={editar ? "Actualizar" : "Registrar"}
@@ -743,7 +677,6 @@ export default function Roles() {
           onCambiarEstado={protegido ? undefined : () => { setDetalle(null); solicitarCambioEstado(detalle); }}
         >
           {DetalleInfo}
-          {/* FIX BUG 1 & 2: componente React real, reactivo a cambios de permisos */}
           <SeccionPermisos
             permisos={permisos}
             loadingPermisos={loadingPermisos}
