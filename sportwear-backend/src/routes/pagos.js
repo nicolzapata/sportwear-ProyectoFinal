@@ -7,12 +7,13 @@ const {
 const {
   verificarToken, soloAdmin, soloCliente
 } = require('../middlewares/auth.middleware');
+const { tieneModulo } = require('../middlewares/auth.middleware');
 
 // ── Rutas de Admin ─────────────────────────────────────────────────────────
-router.get('/',             verificarToken, soloAdmin, getPagos);
-router.get('/:id',          verificarToken, soloAdmin, getPagoById);
-router.post('/',            verificarToken, soloAdmin, crearPago);
-router.patch('/:id/estado', verificarToken, soloAdmin, cambiarEstado);
+router.get('/',             verificarToken, tieneModulo('Pagos'), getPagos);
+router.get('/:id',          verificarToken, tieneModulo('Pagos'), getPagoById);
+router.post('/',            verificarToken, tieneModulo('Pagos'), crearPago);
+router.patch('/:id/estado', verificarToken, tieneModulo('Pagos'), cambiarEstado);
 
 // ── Rutas de Cliente ───────────────────────────────────────────────────────
 

@@ -6,7 +6,7 @@
 // =====================================================
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { PERMISOS } from "../config/permisos";
+import { MENU_ITEMS, PERMISOS } from "../config/permisos";
 
 export default function ProtectedRoute({ children, requiredKey }) {
   const { usuario } = useAuth();
@@ -14,11 +14,27 @@ export default function ProtectedRoute({ children, requiredKey }) {
   // Sin sesión → al login
   if (!usuario) return <Navigate to="/" replace />;
 
-  // Si hay clave requerida, verificar que el rol tenga permiso
+  const normalizeModulo = (value) =>
+    value?.toString?.().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+
   if (requiredKey) {
-    const permisosRol = PERMISOS[usuario.rol] ?? ["dashboard"];
-    if (!permisosRol.includes(requiredKey)) {
-      return <Navigate to="/dashboard" replace />;
+    const item = MENU_ITEMS.find(i => i.key === requiredKey);
+    const requiredModule = item?.module;
+
+    if (requiredModule) {
+      if (usuario.rol !== 'Admin') {
+        const usuarioModulos = Array.isArray(usuario.modulos)
+          ? usuario.modulos.map((m) => normalizeModulo(m)).filter(Boolean)
+          : [];
+        if (!usuarioModulos.includes(normalizeModulo(requiredModule))) {
+          return <Navigate to="/dashboard" replace />;
+        }
+      }
+    } else {
+      const permisosRol = PERMISOS[usuario.rol] ?? ["dashboard"];
+      if (!permisosRol.includes(requiredKey)) {
+        return <Navigate to="/dashboard" replace />;
+      }
     }
   }
 

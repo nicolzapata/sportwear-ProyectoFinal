@@ -11,12 +11,14 @@ const generarToken = (usuario) => {
       nombre:     usuario.nombre,
       email:      usuario.email,
       rol:        usuario.rol,
+      modulos:    Array.isArray(usuario.modulos) ? usuario.modulos : [],
       id_cliente: usuario.id_cliente || null,
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
   );
 };
+
 
 const login = async ({ email, contrasena }) => {
   const baseResult = await pool.query(
@@ -56,7 +58,21 @@ const login = async ({ email, contrasena }) => {
     [base.id_usuario]
   );
 
-  const token = generarToken(base);
+  const modulosResult = await pool.query(
+    `SELECT DISTINCT p.modulo
+     FROM "Permisos" p
+     JOIN "RolesPermisos" rp ON p.id_permiso = rp.id_permiso
+     WHERE rp.id_rol = (SELECT id_rol FROM "Usuarios" WHERE id_usuario = $1)
+       AND rp.estado = 'Activo'
+       AND p.estado = 'Activo'`,
+    [base.id_usuario]
+  );
+
+  const modulos = modulosResult.rows
+    .map(row => row.modulo)
+    .filter(Boolean);
+
+  const token = generarToken({ ...base, modulos });
   return {
     token,
     usuario: {
@@ -66,6 +82,7 @@ const login = async ({ email, contrasena }) => {
       rol:        base.rol,
       estado:     base.estado,
       id_cliente: base.id_cliente,
+      modulos,
     },
   };
 };

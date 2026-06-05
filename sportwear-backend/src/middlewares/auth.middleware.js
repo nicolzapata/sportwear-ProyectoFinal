@@ -49,4 +49,29 @@ const adminOPropietario = (req, res, next) => {
   return res.status(403).json({ message: 'Acceso denegado.' });
 };
 
-module.exports = { verificarToken, soloAdmin, soloCliente, adminOPropietario };
+// ── Comprueba que el usuario tenga asignado un módulo específico ─────
+const normalizeModulo = (value) =>
+  value?.toString?.().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+
+const tieneModulo = (moduloNombre) => {
+  return (req, res, next) => {
+    // Admin siempre tiene acceso
+    if (req.usuario?.rol === 'Admin') return next();
+
+    const modulos = req.usuario?.modulos;
+    if (!Array.isArray(modulos)) {
+      return res.status(403).json({ message: 'Acceso denegado. Módulos no definidos.' });
+    }
+
+    const requestedModulo = normalizeModulo(moduloNombre);
+    const usuarioModulos = modulos.map(normalizeModulo).filter(Boolean);
+
+    if (!requestedModulo || !usuarioModulos.includes(requestedModulo)) {
+      return res.status(403).json({ message: `Acceso denegado. Requiere módulo: ${moduloNombre}` });
+    }
+
+    next();
+  };
+};
+
+module.exports = { verificarToken, soloAdmin, soloCliente, adminOPropietario, tieneModulo };

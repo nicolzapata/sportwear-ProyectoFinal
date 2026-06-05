@@ -5,18 +5,18 @@ const {
   actualizarCliente, toggleEstado, togglePermisoPagos, togglePermisoCuotas,
   getMiPerfil, actualizarMiPerfil, debugClientesVentas 
 } = require('../controllers/clientes.controller');
-const { verificarToken, soloAdmin, soloCliente } = require('../middlewares/auth.middleware');
+const { verificarToken, soloAdmin, soloCliente, tieneModulo } = require('../middlewares/auth.middleware');
 
 router.get('/mi-perfil', verificarToken, soloCliente, getMiPerfil);
 router.put('/mi-perfil', verificarToken, soloCliente, actualizarMiPerfil);
-router.get('/',                    verificarToken, soloAdmin, getClientes);
-router.get('/con-ventas', verificarToken, soloAdmin, getClientesConVentas);
+router.get('/',                    verificarToken, tieneModulo('Clientes'), getClientes);
+router.get('/con-ventas', verificarToken, tieneModulo('Clientes'), getClientesConVentas);
 router.get('/debug', debugClientesVentas);
-router.get('/:id',                 verificarToken, getClienteById);
-router.post('/',                   verificarToken, soloAdmin, crearCliente);
-router.put('/:id',                 verificarToken, soloAdmin, actualizarCliente);
-router.patch('/:id/estado',        verificarToken, soloAdmin, toggleEstado);
-router.patch('/:id/permiso-pagos', verificarToken, soloAdmin, togglePermisoPagos);
-router.patch('/:id/permiso-cuotas', verificarToken, soloAdmin, togglePermisoCuotas);
+router.get('/:id',                 verificarToken, tieneModulo('Clientes'), getClienteById);
+router.post('/',                   verificarToken, tieneModulo('Clientes'), crearCliente);
+router.put('/:id',                 verificarToken, tieneModulo('Clientes'), actualizarCliente);
+router.patch('/:id/estado',        verificarToken, tieneModulo('Clientes'), toggleEstado);
+router.patch('/:id/permiso-pagos', verificarToken, tieneModulo('Clientes'), togglePermisoPagos);
+router.patch('/:id/permiso-cuotas', verificarToken, tieneModulo('Clientes'), togglePermisoCuotas);
 
 module.exports = router;

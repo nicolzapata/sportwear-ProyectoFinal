@@ -234,21 +234,15 @@ export default function Usuarios() {
   </div>);
 
   // ── Pasos detalle ──────────────────────────────────────────────────────────
-  const detalleId = detalle ? `#${String(detalle.id_usuario).padStart(3, '0')}` : '';
 
-  const DetalleCuenta = detalle && (<DetalleSeccion><DetalleGrid>
-    <DetalleItem label="ID" value={detalleId} />
-    <DetalleItem label="Email" value={detalle.email} />
-    <DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} />
-    <DetalleItem label="Estado" value={detalle.estado} />
-    <DetalleItem label="Último acceso" value={fmtFecha(detalle.ultimo_acceso)} />
-    <DetalleItem label="Fecha registro" value={fmtFecha(detalle.fecha_creacion)} />
-    <DetalleItem label="Intentos fallidos" value={String(detalle.intentos_fallidos ?? 0)} />
-  </DetalleGrid></DetalleSeccion>);
-
-  const DetallePersonal = detalle && (<DetalleSeccion><DetalleGrid>
+  const DetalleDocumento = detalle && (<DetalleSeccion><DetalleGrid>
     <DetalleItem label="Tipo doc." value={detalle.tipo_doc} />
     <DetalleItem label="Documento" value={detalle.documento} />
+    <DetalleItem label="Nombre completo" value={detalle.nombre} full />
+  </DetalleGrid></DetalleSeccion>);
+
+  const DetalleCuenta = detalle && (<DetalleSeccion><DetalleGrid>
+    <DetalleItem label="Correo electrónico" value={detalle.email} />
     <DetalleItem label="Teléfono" value={detalle.telefono} />
   </DetalleGrid></DetalleSeccion>);
 
@@ -256,6 +250,12 @@ export default function Usuarios() {
     <DetalleItem label="Ciudad" value={detalle.ciudad} />
     <DetalleItem label="Barrio" value={detalle.barrio ? `${detalle.barrio}${detalle.comuna ? ` — ${detalle.comuna}` : ''}` : null} />
     <DetalleItem label="Dirección" value={detalle.direccion} full />
+  </DetalleGrid></DetalleSeccion>);
+
+  const DetalleRol = detalle && (<DetalleSeccion><DetalleGrid>
+    <DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} />
+    <DetalleItem label="Pago por cuotas" value={detalle.permiso_cuotas !== false ? "Permitido" : "Bloqueado"} />
+    <DetalleItem label="Estado" value={detalle.estado} />
   </DetalleGrid></DetalleSeccion>);
 
   return (
@@ -458,13 +458,14 @@ export default function Usuarios() {
           titulo="Perfil del usuario"
           subtitulo={detalle.nombre}
           badge={<span className={`tabla-status ${detalle.estado === "Activo" ? "activo" : "inactivo"}`}>{detalle.estado}</span>}
-          pasos={["Cuenta", "Datos personales", "Ubicación"]}
+          pasos={["Documento", "Cuenta", "Ubicación", "Rol"]}
           onClose={() => setDetalle(null)}
           onEditar={() => { setDetalle(null); abrirEditar(detalle); }}
         >
+          {DetalleDocumento}
           {DetalleCuenta}
-          {DetallePersonal}
           {DetalleUbicacion}
+          {DetalleRol}
         </ModalDetalle>
       )}
 
@@ -478,22 +479,23 @@ export default function Usuarios() {
           onEditar={() => { setClienteDetalle(null); abrirEditarCliente(clienteDetalle); }}
         >
           <DetalleSeccion><DetalleGrid>
-            <DetalleItem label="ID" value={`#${String(clienteDetalle.id_cliente).padStart(3, '0')}`} />
-            <DetalleItem label="Nombre" value={clienteDetalle.nombre} />
-            <DetalleItem label="Tipo doc." value={clienteDetalle.tipo_doc} />
-            <DetalleItem label="Documento" value={clienteDetalle.documento} />
+            <DetalleItem label="Nombre completo" value={clienteDetalle.nombre} full />
+            <DetalleItem label="Tipo documento" value={clienteDetalle.tipo_doc} />
+            <DetalleItem label="N° documento" value={clienteDetalle.documento} />
             <DetalleItem label="Teléfono" value={clienteDetalle.telefono} />
-            <DetalleItem label="Email" value={clienteDetalle.email} />
+            <DetalleItem label="Correo electrónico" value={clienteDetalle.email} />
           </DetalleGrid></DetalleSeccion>
 
           <DetalleSeccion><DetalleGrid>
             <DetalleItem label="Ciudad" value={clienteDetalle.ciudad} />
             <DetalleItem label="Barrio" value={clienteDetalle.barrio_nombre ? `${clienteDetalle.barrio_nombre} (${clienteDetalle.comuna})` : null} />
-            <DetalleItem label="Dirección" value={clienteDetalle.direccion} full />
+            <DetalleItem label="Dirección completa" value={clienteDetalle.direccion} full />
           </DetalleGrid></DetalleSeccion>
 
           <DetalleSeccion><DetalleGrid>
-            <DetalleItem label="Tipo cliente" value={clienteDetalle.tipo_cliente} />
+            <DetalleItem label="Tipo de cliente" value={clienteDetalle.tipo_cliente} />
+            <DetalleItem label="Permiso de pagos" value={clienteDetalle.permiso_pagos ? "Permitido" : "Bloqueado"} />
+            <DetalleItem label="Pago por cuotas" value={clienteDetalle.permiso_cuotas ? "Permitido" : "Bloqueado"} />
             <DetalleItem label="Estado" value={clienteDetalle.estado} />
           </DetalleGrid></DetalleSeccion>
         </ModalDetalle>

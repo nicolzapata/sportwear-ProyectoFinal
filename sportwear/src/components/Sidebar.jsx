@@ -1,37 +1,59 @@
-// src/components/Sidebar.jsx
-import { NavLink, useNavigate } from "react-router-dom";
+﻿import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { MENU_ITEMS, PERMISOS } from "../config/permisos";
 import logo from "../assets/LOGO.png";
 import {
-  IconDashboard, IconShield, IconUsers, IconUser, IconTag,
-  IconShoppingBag, IconPalette, IconBox, IconTruck, IconCart,
-  IconDollar, IconHeart, IconCreditCard, IconSettings, IconLogOut
+  IconDashboard,
+  IconShield,
+  IconUsers,
+  IconUser,
+  IconTag,
+  IconShoppingBag,
+  IconPalette,
+  IconBox,
+  IconTruck,
+  IconCart,
+  IconDollar,
+  IconHeart,
+  IconCreditCard,
+  IconSettings,
+  IconLogOut,
 } from "./Icons";
 import "./Sidebar.css";
 
 const NAV_ICONS = {
-  "/dashboard":    <IconDashboard />,
-  "/roles":        <IconShield />,
-  "/usuarios":     <IconUsers />,
-  "/productos":    <IconShoppingBag />,
-  "/colores":      <IconPalette />,
-  "/catalogo":     <IconBox />,
-  "/proveedores":  <IconTruck />,
-  "/compras":      <IconCart />,
-  "/pedidos":      <IconDollar />,
-  "/pagos":        <IconCreditCard />,
-  "/configuracion":<IconSettings />,
+  "/dashboard": <IconDashboard />,
+  "/roles": <IconShield />,
+  "/usuarios": <IconUsers />,
+  "/productos": <IconShoppingBag />,
+  "/colores": <IconPalette />,
+  "/catalogo": <IconBox />,
+  "/proveedores": <IconTruck />,
+  "/compras": <IconCart />,
+  "/pedidos": <IconDollar />,
+  "/pagos": <IconCreditCard />,
+  "/configuracion": <IconSettings />,
 };
+
+const normalizeModulo = (value) =>
+  value?.toString?.().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 
 export default function Sidebar() {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
 
-  const permisosRol = PERMISOS[usuario?.rol] ?? ["dashboard"];
-  const menuFiltrado = MENU_ITEMS.filter((item) =>
-    permisosRol.includes(item.key)
-  );
+  const usuarioModulos = Array.isArray(usuario?.modulos)
+    ? [...new Set(usuario.modulos.map((m) => normalizeModulo(m)).filter(Boolean))]
+    : [];
+
+  const permisosRol = usuarioModulos.length > 0
+    ? usuarioModulos
+    : PERMISOS[usuario?.rol] ?? ["dashboard"];
+
+  const menuFiltrado = MENU_ITEMS.filter((item) => {
+    const moduleKey = normalizeModulo(item.module);
+    return moduleKey ? permisosRol.includes(moduleKey) : false;
+  });
 
   const handleLogout = () => {
     logout();
@@ -40,23 +62,23 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar">
-      {/* Logo */}
       <div className="sidebar-logo">
         <img src={logo} alt="Logo" className="logo-img" />
-        <div className="logo-name">SPORT<span>WEAR</span></div>
+        <div className="logo-name">
+          SPORT<span>WEAR</span>
+        </div>
       </div>
 
-      {/* Nav */}
       <nav className="sidebar-nav">
         {menuFiltrado.map((item) => (
           <div key={item.path}>
-            {item.divider && permisosRol.includes(item.key) && (
+            {item.divider && permisosRol.includes(normalizeModulo(item.module)) && (
               <div className="nav-divider" />
             )}
             <NavLink
               to={item.path}
               className={({ isActive }) =>
-                `nav-item ${isActive ? "active" : ""}`
+                "nav-item " + (isActive ? "active" : "")
               }
               title={item.label}
             >
@@ -69,14 +91,11 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Footer */}
       <div className="sidebar-footer">
         <div className="user-info">
-          {/* Avatar con inicial — visible solo cuando está colapsado */}
           <div className="user-avatar">
             {(usuario?.nombre ?? "U").charAt(0).toUpperCase()}
           </div>
-
           <div className="user-text">
             <div className="user-name">{usuario?.nombre ?? "Usuario"}</div>
             <div className="user-role">{usuario?.rol ?? "—"}</div>

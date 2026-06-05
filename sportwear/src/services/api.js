@@ -22,7 +22,11 @@ api.interceptors.response.use(
       window.location.href = "/login";
     }
     if (error.message === "Network Error" || error.message.includes("ERR_CONNECTION_REFUSED")) {
-      return Promise.resolve({ data: null });
+      return Promise.reject({
+        message: 'No se pudo conectar con el servidor.',
+        code: 'ECONNREFUSED',
+        response: { data: null, status: 503 }
+      });
     }
     return Promise.reject(error);
   }

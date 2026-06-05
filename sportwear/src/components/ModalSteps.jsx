@@ -1,5 +1,5 @@
 // src/components/ModalSteps.jsx
-import { useState, Children } from "react";
+import { useState, useEffect, Children } from "react";
 import { createPortal } from "react-dom";
 import "./ModalSteps.css";
 
@@ -28,8 +28,22 @@ export default function ModalSteps({
   guardando = false,
   children,
   onOverlayClick,
+  step,
+  onStepChange,
+  onValidationFail,
 }) {
-  const [paso, setPaso] = useState(0);
+  const [paso, setPasoState] = useState(step ?? 0);
+
+  useEffect(() => {
+    if (typeof step === 'number') {
+      setPasoState(step);
+    }
+  }, [step]);
+
+  const setPaso = (value) => {
+    setPasoState(value);
+    if (typeof onStepChange === 'function') onStepChange(value);
+  };
 
   // Convierte children a array en cada render para que siempre
   // refleje las props más recientes (fix: chips no seleccionados al editar)
@@ -97,6 +111,7 @@ export default function ModalSteps({
         {/* ── Footer ── */}
         <div className="ms-footer">
           <button
+            type="button"
             className="ms-btn-secondary"
             onClick={esPrimero ? onClose : () => setPaso(p => p - 1)}
             disabled={guardando}
@@ -118,8 +133,14 @@ export default function ModalSteps({
 
             {esUltimo ? (
               <button
+                type="button"
                 className="ms-btn-primary"
-                onClick={onGuardar}
+                onClick={async () => {
+                  const result = await Promise.resolve(onGuardar?.());
+                  if (result === false && typeof onValidationFail === 'function') {
+                    onValidationFail();
+                  }
+                }}
                 disabled={guardando}
               >
                 {guardando ? (
@@ -130,6 +151,7 @@ export default function ModalSteps({
               </button>
             ) : (
               <button
+                type="button"
                 className="ms-btn-primary"
                 onClick={() => setPaso(p => p + 1)}
               >
