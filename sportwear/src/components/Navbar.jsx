@@ -23,7 +23,6 @@ const titulos = {
   "/compras":       { label: "Compras",          icon: <IconShoppingBag /> },
   "/pedidos":       { label: "Pedidos y Ventas",  icon: <IconDollar /> },
   "/pagos":         { label: "Pagos y Abonos",    icon: <IconCreditCard /> },
-  "/configuracion": { label: "Configuración",     icon: <IconSettings /> },
 };
 
 const fecha = new Date().toLocaleDateString("es-CO", {
@@ -63,9 +62,6 @@ export default function Navbar() {
           <IconBell />
         </Link>
 
-        <Link to="/configuracion" className="navbar-btn" title="Configuración">
-          <IconSettings />
-        </Link>
 
         <div className="navbar-divider" />
 

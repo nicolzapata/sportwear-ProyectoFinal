@@ -13,7 +13,6 @@ const OFFICIAL_MODULES = [
   'Compras',
   'PedidosVentas',
   'Pagos',
-  'Configuración',
 ];
 
 module.exports = { OFFICIAL_MODULES };

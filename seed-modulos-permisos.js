@@ -19,7 +19,6 @@ const OFFICIAL_MODULES = [
   'Compras',
   'PedidosVentas',
   'Pagos',
-  'Configuración',
 ];
 
 const ACCIONES = ['crear', 'leer', 'editar', 'eliminar'];

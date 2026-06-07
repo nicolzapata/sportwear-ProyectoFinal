@@ -211,7 +211,6 @@ function ReceiptView({ pedido, cliente, pago, onClose }) {
 ══════════════════════════════════════════════ */
 function PaymentFormView({ pedido, cliente, onClose, onPagoConfirmado, setPagoRealizado }) {
   const [tipoPago, setTipoPago]     = useState("total");
-  const [metodo, setMetodo]         = useState("Transferencia");
   const [card, setCard]             = useState({ numero: "", nombre: "", expiry: "", cvv: "" });
   const [errores, setErrores]       = useState({});
   const [procesando, setProcesando] = useState(false);
@@ -220,7 +219,6 @@ function PaymentFormView({ pedido, cliente, onClose, onPagoConfirmado, setPagoRe
   const totalPagado      = Number(pedido.total_pagado || abonosConfirmados.reduce((acc, a) => acc + Number(a.monto), 0));
   const totalPedido      = Number(pedido.total || 0);
   const restante         = totalPedido - totalPagado;
-  const estaPagado       = restante <= 0;
 
   const cuotasPendientes = pedido.abonos?.filter((a) => a.estado === "Pendiente") || [];
   const proximaCuota    = cuotasPendientes[0] || null;

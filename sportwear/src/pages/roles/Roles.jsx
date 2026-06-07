@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import api from "../../services/api";
-import ModalSteps from "../../components/ModalSteps";
 import './Roles.css';
 import { IconX, IconSearch } from "../../components/Icons";
 
@@ -45,11 +44,12 @@ const DEFAULT_ICON = (
   </svg>
 );
 
+
 const PALETAS = ['#f5ede6', '#f0ebe4', '#e8f0e8', '#ede8f5', '#f5f0e0', '#e8f0f5'];
 
 const MODULOS_FALLBACK = [
   "Dashboard", "Usuarios", "Roles", "Productos", "Colores",
-  "Catálogo", "Proveedores", "Compras", "PedidosVentas", "Pagos", "Configuración",
+  "Catálogo", "Proveedores", "Compras", "PedidosVentas", "Pagos",
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ const mergeModulos = (backendModulos) => {
   return result;
 };
 
-// ── RoleCard con flip y detalle completo inline ───────────────────────────────
+// ── RoleCard con flip controlado solo por ícono ───────────────────────────────
 function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
   const [flipped,         setFlipped]         = useState(false);
   const [permisos,        setPermisos]        = useState([]);
@@ -119,10 +119,10 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
   }, {});
   const modulos = Object.keys(permisosPorModulo);
 
-  // Carga permisos la primera vez que se voltea
-  const handleFlip = async (e) => {
+  // Solo se voltea al hacer clic en el ícono de info
+  const handleFlipOpen = async (e) => {
     e.stopPropagation();
-    if (!flipped && !permisosLoaded) {
+    if (!permisosLoaded) {
       setLoadingPermisos(true);
       try {
         const { data } = await api.get(`/roles/${rol.id_rol}/permisos`);
@@ -134,16 +134,37 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
         setPermisosLoaded(true);
       }
     }
-    setFlipped(f => !f);
+    setFlipped(true);
+  };
+
+  // Solo se cierra con el ícono X del reverso
+  const handleFlipClose = (e) => {
+    e.stopPropagation();
+    setFlipped(false);
   };
 
   return (
-    <div className="role-scene" onClick={handleFlip}>
+    <div className="role-scene">
       <div className={`role-card${flipped ? ' flipped' : ''}`}>
 
         {/* ── FRENTE ── */}
         <div className="role-face role-front">
           <div className="role-front-bg" style={{ background: color }} />
+
+          {/* Botón "ver detalle" — esquina superior derecha, igual que el X del reverso */}
+          {!protegido && (
+            <button
+              className="role-front-detail-btn"
+              onClick={handleFlipOpen}
+              title="Ver detalle"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+              <span>ver detalle</span>
+            </button>
+          )}
+
           <div className="role-front-content">
             <div className="role-front-icon">
               {icon}
@@ -155,7 +176,7 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
               <svg width="5" height="5" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="currentColor"/></svg>
               {rol.estado}
             </span>
-            {protegido ? (
+            {protegido && (
               <span className="role-front-hint">
                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <rect x="3" y="11" width="18" height="11" rx="2"/>
@@ -163,8 +184,6 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
                 </svg>
                 protegido
               </span>
-            ) : (
-              <span className="role-front-hint">clic para ver detalle</span>
             )}
           </div>
         </div>
@@ -181,9 +200,10 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
                 {rol.estado}
               </span>
             </div>
+            {/* Único botón para cerrar (volver al frente) */}
             <button
               className="role-back-close"
-              onClick={(e) => { e.stopPropagation(); setFlipped(false); }}
+              onClick={handleFlipClose}
               title="Cerrar"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -276,6 +296,123 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
   );
 }
 
+// ── Modal formulario simple (un solo paso) ───────────────────────────────────
+function RolModal({ titulo, form, setForm, errores, setErrores, modulosDisponibles, permisosCatalogo, onClose, onGuardar, labelGuardar }) {
+  const togglePermiso = (id_permiso) => {
+    setForm(prev => ({
+      ...prev,
+      permisos: prev.permisos.includes(id_permiso)
+        ? prev.permisos.filter(p => p !== id_permiso)
+        : [...prev.permisos, id_permiso]
+    }));
+    if (errores.permisos) setErrores(prev => ({ ...prev, permisos: '' }));
+  };
+
+  return createPortal(
+    <div className="roles-modal-overlay" onClick={onClose}>
+      <div className="roles-modal roles-form-modal" onClick={e => e.stopPropagation()}>
+        <div className="roles-modal-accent" />
+
+        {/* Header */}
+        <div className="roles-modal-header">
+          <div>
+            <h2 className="roles-modal-title">{titulo}</h2>
+            <p className="roles-modal-subtitle">Completa la información y los permisos del rol</p>
+          </div>
+          <button className="roles-modal-close" onClick={onClose}>
+            <IconX />
+          </button>
+        </div>
+
+        {/* Cuerpo scrolleable */}
+        <div className="roles-modal-body roles-form-body">
+
+          {/* Nombre del rol */}
+          <div className="ms-form-group">
+            <label className="ms-form-label">
+              Nombre del rol <span className="ms-req">*</span>
+            </label>
+            <input
+              type="text"
+              className={`ms-form-input${errores.nombre ? ' error' : ''}`}
+              placeholder="Ej: Vendedor"
+              value={form.nombre}
+              onChange={e => {
+                setForm(prev => ({ ...prev, nombre: e.target.value }));
+                if (errores.nombre) setErrores(prev => ({ ...prev, nombre: '' }));
+              }}
+            />
+            {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
+          </div>
+
+          {/* Permisos */}
+          <div className="ms-form-group">
+            <label className="ms-form-label">
+              Permisos del rol <span className="ms-req">*</span>
+            </label>
+            <p className="ms-form-hint">
+              Selecciona los módulos y acciones específicas para este rol.
+            </p>
+            <div className="roles-permisos-table-wrap">
+              <table className="roles-permisos-table">
+                <thead>
+                  <tr>
+                    <th>Módulo</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(modulosDisponibles.length > 0 ? modulosDisponibles : MODULOS_FALLBACK).map((modulo, idx) => {
+                    const accionesDelModulo = permisosCatalogo[modulo] || [];
+                    return (
+                      <tr key={modulo} className={idx % 2 === 0 ? '' : 'roles-tr-alt'}>
+                        <td className="roles-td-modulo">{modulo}</td>
+                        <td className="roles-td-acciones">
+                          <div className="roles-chips-wrap">
+                            {accionesDelModulo.map(accion => (
+                              <button
+                                key={accion.id_permiso}
+                                type="button"
+                                className={`roles-permiso-chip${form.permisos.includes(accion.id_permiso) ? ' selected' : ''}`}
+                                onClick={() => togglePermiso(accion.id_permiso)}
+                                title={accion.descripcion || accion.accion}
+                              >
+                                {accion.accion}
+                              </button>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {errores.permisos && (
+              <span className="ms-form-error" style={{ marginTop: 8, display: 'block' }}>
+                {errores.permisos}
+              </span>
+            )}
+          </div>
+
+          {errores._general && (
+            <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center' }}>
+              {errores._general}
+            </p>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="roles-modal-footer">
+          <button className="roles-btn-secondary" onClick={onClose}>Cancelar</button>
+          <button className="roles-btn-primary" onClick={onGuardar}>{labelGuardar}</button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function Roles() {
   const [datos,              setDatos]              = useState([]);
@@ -287,9 +424,8 @@ export default function Roles() {
   const [permisosCatalogo,   setPermisosCatalogo]   = useState({});
   const [confirm,            setConfirm]            = useState(null);
 
-  const [form,      setForm]      = useState({ nombre: "", estado: "Activo", permisos: [] });
-  const [errores,   setErrores]   = useState({});
-  const [modalStep, setModalStep] = useState(0);
+  const [form,    setForm]    = useState({ nombre: "", estado: "Activo", permisos: [] });
+  const [errores, setErrores] = useState({});
 
   const filtrados = datos.filter(r =>
     r.nombre.toLowerCase().includes(busqueda.toLowerCase())
@@ -320,7 +456,6 @@ export default function Roles() {
     setEditar(null);
     setForm({ nombre: "", estado: "Activo", permisos: [] });
     setErrores({});
-    setModalStep(0);
     setModal(true);
   };
 
@@ -329,7 +464,6 @@ export default function Roles() {
     setEditar(r.id_rol);
     setForm({ nombre: r.nombre, estado: r.estado, permisos: [] });
     setErrores({});
-    setModalStep(0);
     setModal(true);
     try {
       const { data } = await api.get(`/roles/${r.id_rol}/permisos`);
@@ -339,16 +473,6 @@ export default function Roles() {
     } catch (err) {
       console.error("Error cargando permisos para edición:", err);
     }
-  };
-
-  const togglePermiso = (id_permiso) => {
-    setForm(prev => ({
-      ...prev,
-      permisos: prev.permisos.includes(id_permiso)
-        ? prev.permisos.filter(p => p !== id_permiso)
-        : [...prev.permisos, id_permiso]
-    }));
-    if (errores.permisos) setErrores(prev => ({ ...prev, permisos: '' }));
   };
 
   const validar = () => {
@@ -361,17 +485,12 @@ export default function Roles() {
 
   const guardar = async () => {
     const erroresValidacion = validar();
-    if (Object.keys(erroresValidacion).length > 0) {
-      if (erroresValidacion.nombre) setModalStep(0);
-      else if (erroresValidacion.permisos) setModalStep(1);
-      return false;
-    }
+    if (Object.keys(erroresValidacion).length > 0) return;
     try {
       if (editar) await api.put(`/roles/${editar}`, form);
       else        await api.post("/roles", form);
       setModal(false);
       cargar();
-      return true;
     } catch (err) {
       const backendErrors = err.response?.data?.errors;
       if (backendErrors) {
@@ -382,7 +501,6 @@ export default function Roles() {
           _general: err.response?.data?.message || 'Ocurrió un error al guardar.'
         }));
       }
-      return false;
     }
   };
 
@@ -420,91 +538,6 @@ export default function Roles() {
     </div>
   );
 
-  // ── Pasos del formulario ──────────────────────────────────────────────────
-  const PasoInfo = (
-    <div>
-      <div className="ms-form-group">
-        <label className="ms-form-label">
-          Nombre del rol <span className="ms-req">*</span>
-        </label>
-        <input
-          type="text"
-          className={`ms-form-input${errores.nombre ? ' error' : ''}`}
-          placeholder="Ej: Vendedor"
-          value={form.nombre}
-          onChange={e => {
-            setForm(prev => ({ ...prev, nombre: e.target.value }));
-            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: '' }));
-          }}
-        />
-        {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
-      </div>
-      {errores._general && (
-        <p style={{ color: 'var(--danger)', fontSize: 12, marginTop: 8, textAlign: 'center' }}>
-          {errores._general}
-        </p>
-      )}
-    </div>
-  );
-
-  const PasoPermisos = (
-    <div>
-      <div className="ms-form-group">
-        <label className="ms-form-label">
-          Permisos del rol <span className="ms-req">*</span>
-        </label>
-        <p className="ms-form-hint" style={{ marginBottom: 10 }}>
-          Selecciona los módulos y acciones específicas para este rol.
-        </p>
-        <div style={{ overflowX: 'auto', marginBottom: 10 }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--dvna-border)', backgroundColor: 'var(--dvna-bg2)' }}>
-                <th style={{ padding: '8px', textAlign: 'left', fontWeight: 600 }}>Módulo</th>
-                <th style={{ padding: '8px', textAlign: 'center', fontWeight: 600 }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(modulosDisponibles.length > 0 ? modulosDisponibles : MODULOS_FALLBACK).map((modulo, idx) => {
-                const accionesDelModulo = permisosCatalogo[modulo] || [];
-                return (
-                  <tr key={modulo} style={{
-                    borderBottom: '1px solid var(--dvna-border)',
-                    backgroundColor: idx % 2 === 0 ? 'transparent' : 'var(--dvna-bg2)'
-                  }}>
-                    <td style={{ padding: '8px', fontWeight: 500 }}>{modulo}</td>
-                    <td style={{ padding: '8px' }}>
-                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
-                        {accionesDelModulo.map(accion => (
-                          <button
-                            key={accion.id_permiso}
-                            type="button"
-                            className={`roles-permiso-chip${form.permisos.includes(accion.id_permiso) ? ' selected' : ''}`}
-                            onClick={() => togglePermiso(accion.id_permiso)}
-                            style={{ fontSize: 11, padding: '4px 8px', minWidth: 'auto' }}
-                            title={accion.descripcion || accion.accion}
-                          >
-                            {accion.accion}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {errores.permisos && (
-          <span className="ms-form-error" style={{ marginTop: 8, display: 'block' }}>
-            {errores.permisos}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="roles-container">
 
@@ -614,25 +647,20 @@ export default function Roles() {
         document.body
       )}
 
-      {/* ── Modal formulario por pasos ── */}
+      {/* ── Modal formulario (un solo paso) ── */}
       {modal && (
-        <ModalSteps
+        <RolModal
           titulo={editar ? "Editar rol" : "Nuevo rol"}
-          pasos={["Información", "Permisos"]}
-          step={modalStep}
-          onStepChange={setModalStep}
+          form={form}
+          setForm={setForm}
+          errores={errores}
+          setErrores={setErrores}
+          modulosDisponibles={modulosDisponibles}
+          permisosCatalogo={permisosCatalogo}
           onClose={() => setModal(false)}
           onGuardar={guardar}
-          onValidationFail={() => {
-            const erroresValidacion = validar();
-            if (erroresValidacion.nombre) setModalStep(0);
-            else if (erroresValidacion.permisos) setModalStep(1);
-          }}
           labelGuardar={editar ? "Actualizar" : "Registrar"}
-        >
-          {PasoInfo}
-          {PasoPermisos}
-        </ModalSteps>
+        />
       )}
 
     </div>

@@ -11,7 +11,6 @@ const OFFICIAL_MODULES = [
   'Compras',
   'PedidosVentas',
   'Pagos',
-  'Configuración',
 ];
 
 const ACCIONES = ['ver', 'crear', 'editar', 'eliminar'];

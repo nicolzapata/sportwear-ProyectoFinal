@@ -122,7 +122,6 @@ if (esCliente) {
       { module: "Compras",       path: "/compras" },
       { module: "PedidosVentas", path: "/pedidos" },
       { module: "Pagos",         path: "/pagos" },
-      { module: "Configuración", path: "/configuracion" },
     ];
     const normalizar = (v) => v?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
     const primerModulo = MENU_ITEMS.find(item =>

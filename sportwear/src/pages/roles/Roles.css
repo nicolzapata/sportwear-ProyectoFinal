@@ -20,7 +20,6 @@
 .role-scene {
   perspective: 1200px;
   height: 380px;
-  cursor: pointer;
 }
 
 /* ── Card 3D ── */
@@ -53,6 +52,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  /* sin cursor pointer — la tarjeta ya no se voltea al hacer clic */
+  cursor: default;
 }
 .role-front-bg {
   position: absolute;
@@ -106,6 +107,38 @@
 .estado-activo   { color: #3a6648; }
 .estado-inactivo { color: #b83232; }
 
+/* ── Botón "ver detalle" — esquina superior derecha del frente ── */
+.role-front-detail-btn {
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px 5px 8px;
+  border-radius: 20px;
+  border: 1px solid rgba(26, 26, 26, 0.15);
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  color: rgba(26, 26, 26, 0.55);
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+}
+.role-front-detail-btn:hover {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(26, 26, 26, 0.3);
+  color: rgba(26, 26, 26, 0.85);
+}
+.role-front-detail-btn svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
 .role-front-hint {
   font-family: var(--font-body);
   font-size: 11px;
@@ -125,6 +158,7 @@
   border: 1px solid var(--dvna-border, #e8e0d8);
   display: flex;
   flex-direction: column;
+  cursor: default;
 }
 
 /* Header fijo */
@@ -178,11 +212,12 @@
   color: var(--dvna-muted, #999);
   padding: 0;
   flex-shrink: 0;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .role-back-close:hover {
-  background: var(--dvna-pale, #f7f4f1);
-  border-color: var(--dvna-mid, #c4b5a8);
+  background: #fdeaea;
+  border-color: rgba(184,50,50,0.3);
+  color: #b83232;
 }
 .role-back-close svg { width: 10px; height: 10px; }
 
@@ -194,7 +229,6 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  /* scrollbar sutil */
   scrollbar-width: thin;
   scrollbar-color: var(--dvna-border, #e8e0d8) transparent;
 }
@@ -413,14 +447,23 @@
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-.roles-modal-accent { height: 4px; background: var(--dvna-circle, #b49780); }
+/* Modal formulario — más alto para acomodar todo en un paso */
+.roles-form-modal {
+  max-width: 620px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.roles-modal-accent { height: 4px; background: var(--dvna-circle, #b49780); flex-shrink: 0; }
 
 .roles-modal-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   padding: 28px 32px 0;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 .roles-modal-title {
   font-family: var(--font-body);
@@ -460,15 +503,86 @@
   gap: 20px;
   padding: 0 32px;
 }
+
+/* Cuerpo del formulario scrolleable */
+.roles-form-body {
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--dvna-border) transparent;
+}
+.roles-form-body::-webkit-scrollbar { width: 4px; }
+.roles-form-body::-webkit-scrollbar-thumb {
+  background: var(--dvna-border);
+  border-radius: 4px;
+}
+
 .roles-modal-footer {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
-  margin-top: 28px;
+  margin-top: 0;
   padding: 20px 32px;
   border-top: 1px solid var(--dvna-border);
   background: var(--dvna-pale);
   border-radius: 0 0 20px 20px;
+  flex-shrink: 0;
+}
+
+/* ── Tabla de permisos en formulario ── */
+.roles-permisos-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--dvna-border);
+  border-radius: 10px;
+  margin-top: 8px;
+}
+.roles-permisos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.roles-permisos-table thead tr {
+  border-bottom: 1px solid var(--dvna-border);
+  background: var(--dvna-bg2, var(--dvna-pale));
+}
+.roles-permisos-table thead th {
+  padding: 9px 12px;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--dvna-muted);
+  text-transform: uppercase;
+}
+.roles-permisos-table thead th:last-child {
+  text-align: center;
+}
+.roles-permisos-table tbody tr {
+  border-bottom: 1px solid var(--dvna-border);
+  transition: background 0.12s;
+}
+.roles-permisos-table tbody tr:last-child { border-bottom: none; }
+.roles-tr-alt { background: var(--dvna-pale, #f7f4f1); }
+.roles-td-modulo {
+  padding: 9px 12px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.roles-td-acciones {
+  padding: 7px 12px;
+  vertical-align: middle;
+}
+.roles-chips-wrap {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 /* Botones modal */
@@ -515,7 +629,7 @@
   background: var(--dvna-pale);
   border: 1px solid var(--dvna-border);
   border-radius: 20px;
-  padding: 5px 14px;
+  padding: 4px 11px;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
@@ -636,8 +750,37 @@
   color: var(--dvna-muted); white-space: nowrap;
 }
 
+/* Inputs de formulario */
+.ms-form-group { display: flex; flex-direction: column; gap: 6px; }
+.ms-form-label {
+  font-family: var(--font-body); font-size: 12px; font-weight: 500;
+  color: var(--dvna-charcoal); letter-spacing: 0.03em;
+}
+.ms-req { color: var(--dvna-circle, #b49780); margin-left: 2px; }
+.ms-form-input {
+  font-family: var(--font-body); font-size: 13px; font-weight: 300;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 10px;
+  padding: 10px 14px; outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ms-form-input::placeholder { color: var(--dvna-mid); }
+.ms-form-input:focus {
+  border-color: var(--dvna-circle);
+  box-shadow: 0 0 0 3px rgba(180,151,128,0.1);
+}
+.ms-form-input.error { border-color: #b83232; }
+.ms-form-error { font-family: var(--font-body); font-size: 11px; color: #b83232; }
+.ms-form-hint { font-family: var(--font-body); font-size: 11px; color: var(--dvna-muted); margin: 0; }
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .roles-grid { grid-template-columns: 1fr; }
   .role-scene { height: 340px; }
+  .roles-form-modal { max-height: 95vh; }
+  .roles-modal-header { padding: 20px 20px 0; }
+  .roles-modal-body { padding: 0 20px; }
+  .roles-modal-footer { padding: 16px 20px; }
 }

@@ -32,7 +32,6 @@ const NAV_ICONS = {
   "/compras": <IconCart />,
   "/pedidos": <IconDollar />,
   "/pagos": <IconCreditCard />,
-  "/configuracion": <IconSettings />,
 };
 
 const normalizeModulo = (value) =>
