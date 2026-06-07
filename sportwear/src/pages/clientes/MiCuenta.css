@@ -1,0 +1,305 @@
+/* ── MiCuenta.css — DVNA Cliente ── */
+
+.mi-cuenta {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px 72px;
+  animation: fadeUp 0.45s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ── */
+.mi-cuenta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 28px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--dvna-border);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mi-cuenta-title {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 34px;
+  font-weight: 300;
+  color: var(--dvna-charcoal);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.mi-cuenta-date {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--dvna-muted);
+  letter-spacing: 0.02em;
+  text-transform: capitalize;
+}
+
+/* ── Card base ── */
+.mc-card {
+  background: white;
+  border-radius: 12px;
+  padding: 22px;
+  border: 0.5px solid var(--dvna-border);
+  box-sizing: border-box;
+  margin-bottom: 16px;
+}
+.mc-card-title {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--dvna-charcoal);
+  margin: 0 0 2px;
+  letter-spacing: -0.01em;
+}
+.mc-card-subtitle {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 300;
+  color: var(--dvna-muted);
+  margin: 0 0 16px;
+}
+
+/* ── Estado de cuenta ── */
+.mc-estado-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+.mc-estado-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--dvna-bg2, #faf9f7);
+  border: 0.5px solid var(--dvna-border);
+}
+.mc-estado-label {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  color: var(--dvna-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.mc-estado-value {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 300;
+  color: var(--dvna-charcoal);
+  line-height: 1;
+}
+.mc-estado-pagado    { color: #3a6648; }
+.mc-estado-pendiente { color: #b83232; }
+
+/* ── Perfil ── */
+.profile-top-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  margin-bottom: 0;
+}
+.profile-avatar {
+  width: 84px; height: 84px; border-radius: 50%;
+  background: var(--dvna-pale); border: 0.5px solid var(--dvna-border);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.profile-initials {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 28px; font-weight: 300; color: var(--dvna-muted);
+  letter-spacing: -0.02em; line-height: 1; text-transform: uppercase;
+}
+.profile-right { flex: 1; min-width: 0; }
+.profile-name {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 22px; font-weight: 400; color: var(--dvna-charcoal);
+  margin: 0 0 2px; letter-spacing: -0.01em; text-transform: none;
+}
+.profile-doc {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px; color: var(--dvna-muted); margin: 0 0 14px;
+}
+.profile-stats-row {
+  display: flex; align-items: center; gap: 0;
+  margin-bottom: 16px; flex-wrap: wrap; row-gap: 10px;
+}
+.profile-stats-group { display: flex; align-items: center; }
+.profile-stat-item {
+  display: flex; flex-direction: column; align-items: center; padding: 0 18px;
+}
+.profile-stat-item:first-child { padding-left: 0; }
+.profile-stat-value {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 20px; font-weight: 300; color: var(--dvna-charcoal);
+  line-height: 1; text-transform: none; letter-spacing: -0.01em;
+}
+.profile-stat-label {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 9px; font-weight: 400; color: var(--dvna-muted);
+  margin-top: 3px; letter-spacing: 0.03em; text-transform: none; white-space: nowrap;
+}
+.profile-stat-divider { width: 1px; height: 32px; background: var(--dvna-border); flex-shrink: 0; }
+.profile-edit-btn { font-size: 11px !important; padding: 7px 18px !important; letter-spacing: 0.04em !important; }
+.profile-fields-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px 24px; border-top: 0.5px solid var(--dvna-border);
+  margin-top: 20px; padding-top: 18px;
+}
+.profile-field-item { display: block; }
+.profile-field-label {
+  display: block; font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 9px; font-weight: 500; color: var(--dvna-muted);
+  letter-spacing: 0.05em; text-transform: none; margin-bottom: 4px;
+}
+.profile-field-value {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px; color: var(--dvna-charcoal); margin: 0;
+}
+
+/* ── Tabla ── */
+.mi-cuenta thead th {
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+  font-size: 9px !important; font-weight: 500 !important;
+  letter-spacing: 0.06em !important; text-transform: none !important;
+  color: var(--dvna-muted) !important; background: var(--dvna-pale) !important;
+  border-bottom: 1px solid var(--dvna-border) !important; white-space: nowrap;
+}
+.tbl-container { overflow-x: auto; margin: 0 -22px; padding: 0 22px; }
+.tbl { width: 100%; min-width: 500px; border-collapse: collapse; }
+.tbl-td {
+  font-size: 12px; padding: 12px 8px; vertical-align: middle;
+  border-bottom: 0.5px solid var(--dvna-border);
+  max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tbl-td:first-child { padding-left: 0; }
+.tbl-td:last-child  { padding-right: 0; }
+
+/* ── Badges ── */
+.badge {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 9px; font-weight: 600; letter-spacing: 0.04em;
+  text-transform: none; padding: 3px 8px; border-radius: 99px;
+}
+.badge.exito      { color: #3a6648; background: #e6f0ea; }
+.badge.pendiente  { color: #7a5500; background: #f5ecd6; }
+.badge.error      { color: #b83232; background: #f5e0e0; }
+.badge.info       { color: #1a4f7a; background: #ddeaf5; }
+.badge-info       { color: #1a4f7a; background: #ddeaf5; border-radius: 99px; padding: 3px 8px; font-size: 9px; }
+.badge-secondary  { color: var(--dvna-muted); background: var(--dvna-pale); border-radius: 99px; padding: 3px 8px; font-size: 9px; }
+
+/* ── Botones de acción ── */
+.tbl-action-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 11px; border-radius: 7px;
+  font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; border: 1.5px solid transparent;
+}
+.tbl-action-btn--pay    { background: var(--brown); color: #fff; border-color: #1a1a1a; }
+.tbl-action-btn--detail { background: #fff; color: #1a1a1a; border-color: #e5e5e5; }
+.tbl-action-btn--view   { background: #fff; color: #1a1a1a; border-color: #e5e5e5; }
+.tbl-disabled           { font-size: 11px; color: #aaa; font-style: italic; }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 60px 24px; }
+.empty-state-icon { display: flex; justify-content: center; margin-bottom: 16px; color: var(--dvna-mid); }
+.empty-state-icon svg { width: 48px; height: 48px; }
+.empty-state-title {
+  font-family: 'DM Sans', system-ui, sans-serif; font-size: 22px;
+  font-weight: 300; color: var(--dvna-charcoal); margin-bottom: 8px; text-transform: none;
+}
+.empty-state-text {
+  font-family: 'DM Sans', system-ui, sans-serif; font-size: 13px;
+  color: var(--dvna-muted); margin-bottom: 20px;
+}
+.btn-primary {
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: none;
+  color: #fff !important; background: var(--brown) !important;
+  border: none !important; border-radius: 4px; padding: 10px 24px;
+  cursor: pointer; text-decoration: none; display: inline-block;
+  box-shadow: none !important; transition: background 0.2s;
+}
+.btn-primary:hover { background: var(--dvna-circle) !important; }
+
+/* ── Toast ── */
+.dvna-toast {
+  position: fixed; top: 20px; right: 20px; z-index: 99999;
+  background: var(--brown); color: #fff; padding: 12px 20px;
+  border-radius: 10px; font-family: 'Jost', sans-serif;
+  font-size: 13px; font-weight: 500;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  animation: toast-in 0.25s ease, toast-out 0.25s ease 3.2s forwards;
+  max-width: 340px;
+}
+@keyframes toast-in {
+  from { transform: translateY(-16px) scale(0.95); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes toast-out {
+  from { transform: translateY(0) scale(1); opacity: 1; }
+  to   { transform: translateY(-16px) scale(0.95); opacity: 0; }
+}
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45); display: flex;
+  align-items: center; justify-content: center; z-index: 1000;
+}
+.modal-box {
+  background: var(--dvna-white); border-radius: 12px;
+  max-width: 520px; width: 92%; max-height: 82vh;
+  overflow-y: auto; display: flex; flex-direction: column;
+}
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 24px 16px; border-bottom: 0.5px solid var(--dvna-border);
+  position: sticky; top: 0; background: var(--dvna-white); z-index: 1;
+}
+.modal-title {
+  font-family: 'DM Sans', system-ui, sans-serif; font-size: 18px;
+  font-weight: 400; color: var(--dvna-charcoal); margin: 0; text-transform: none;
+}
+.modal-close {
+  border: none; background: none; font-size: 22px;
+  color: var(--dvna-muted); cursor: pointer; line-height: 1;
+  padding: 0; transition: color 0.15s;
+}
+.modal-close:hover { color: var(--dvna-charcoal); }
+.modal-body { padding: 20px 24px 24px; }
+.modal-meta { margin-bottom: 20px; }
+.modal-meta-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 0.5px solid var(--dvna-border);
+}
+.modal-meta-row:last-child { border-bottom: none; }
+.modal-meta-label { font-family: 'DM Sans', system-ui, sans-serif; font-size: 11px; color: var(--dvna-muted); font-weight: 400; }
+.modal-meta-value { font-family: 'DM Sans', system-ui, sans-serif; font-size: 13px; color: var(--dvna-charcoal); font-weight: 400; }
+.modal-section-title {
+  font-family: 'DM Sans', system-ui, sans-serif; font-size: 12px;
+  font-weight: 500; color: var(--dvna-charcoal); letter-spacing: 0.04em;
+  margin: 0 0 10px; text-transform: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .profile-top-row     { flex-direction: column; align-items: flex-start; gap: 16px; }
+  .profile-stats-row   { gap: 0; }
+  .profile-stat-item   { padding: 0 12px; }
+  .profile-fields-grid { grid-template-columns: 1fr 1fr; }
+  .mc-estado-grid      { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .mi-cuenta-title     { font-size: 28px; }
+  .profile-avatar      { width: 68px; height: 68px; }
+  .profile-initials    { font-size: 22px; }
+  .profile-name        { font-size: 19px; }
+  .profile-fields-grid { grid-template-columns: 1fr; }
+  .profile-stat-item   { padding: 0 10px; }
+  .modal-box           { width: 96%; }
+}

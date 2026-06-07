@@ -16,6 +16,7 @@ import DetalleProducto     from "../pages/catalogo/DetalleProducto";
 import Carrito             from "../pages/carrito/Carrito";
 import Checkout            from "../pages/checkout/Checkout";
 import SobreNosotros       from "../pages/sobre-nosotros/SobreNosotros";
+import MiCuenta            from "../pages/clientes/MiCuenta";
 
 // Páginas protegidas
 import Dashboard     from "../pages/dashboard/Dashboard";
@@ -53,6 +54,7 @@ export default function AppRouter() {
               <Route path="/carrito"         element={<Carrito />} />
               <Route path="/checkout"        element={<Checkout />} />
               <Route path="/sobre-nosotros"  element={<SobreNosotros />} />
+              <Route path="/mi-cuenta"       element={<MiCuenta />} />
             </Route>
 
             {/* Protegidas — admin/empleados */}

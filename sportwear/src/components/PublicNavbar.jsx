@@ -94,7 +94,7 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
             }}>
               {usuario.nombre}
             </span>
-            <Link to="/dashboard" className="navbar-btn" title="Mi cuenta">
+            <Link to={usuario?.rol === "Cliente" ? "/mi-cuenta" : "/dashboard"} className="navbar-btn" title="Mi cuenta">
               <IconUser />
             </Link>
             <button className="navbar-btn" onClick={handleLogout} title="Cerrar sesión" style={{ cursor: "pointer" }}>
