@@ -459,23 +459,30 @@ export default function GestProductos() {
         </div>
       )}
 
-      <div className="gestproductos-actions-bar">
-        <div className="gestproductos-actions-left">
-          <div className="gestproductos-search-wrapper">
-            <span className="gestproductos-search-icon"><IconSearch /></span>
-             <input className="gestproductos-search-input" placeholder="Buscar por nombre o categoría..."
-               value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPaginaProductos(1); setPaginaCategorias(1); }} />
-             {busqueda && <button className="gestproductos-search-clear" onClick={() => { setBusqueda(""); setPaginaProductos(1); setPaginaCategorias(1); }}><IconX /></button>}
-          </div>
-          <div className="gestproductos-tabs-bar">
-            <button className={`gestproductos-tab-btn${tab === 'productos' ? ' active' : ''}`} onClick={() => setTab('productos')}><IconBox /> Productos</button>
-            <button className={`gestproductos-tab-btn${tab === 'categorias' ? ' active' : ''}`} onClick={() => setTab('categorias')}><IconTag /> Categorías</button>
-          </div>
-        </div>
-        <button className="gestproductos-btn-primary" onClick={tab === 'productos' ? abrirRegistrar : abrirRegistrarCategoria}>
-          <span>+</span> Nuevo {tab === 'productos' ? 'producto' : 'categoría'}
-        </button>
-      </div>
+<div className="gestproductos-actions-bar">
+         <div className="gestproductos-actions-left">
+           <div className="gestproductos-search-wrapper">
+             <span className="gestproductos-search-icon"><IconSearch /></span>
+              <input className="gestproductos-search-input" placeholder="Buscar por nombre o categoría..."
+                value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPaginaProductos(1); setPaginaCategorias(1); }} />
+              {busqueda && <button className="gestproductos-search-clear" onClick={() => { setBusqueda(""); setPaginaProductos(1); setPaginaCategorias(1); }}><IconX /></button>}
+           </div>
+           <div className="gestproductos-tabs-bar">
+             <button className={`gestproductos-tab-btn${tab === 'productos' ? ' active' : ''}`} onClick={() => setTab('productos')}><IconBox /> Productos</button>
+             <button className={`gestproductos-tab-btn${tab === 'categorias' ? ' active' : ''}`} onClick={() => setTab('categorias')}><IconTag /> Categorías</button>
+           </div>
+         </div>
+         <div className="gestproductos-actions-right">
+           <button className="gestproductos-btn-primary" onClick={tab === 'productos' ? abrirRegistrar : abrirRegistrarCategoria}>
+             <span>+</span> Nuevo {tab === 'productos' ? 'producto' : 'categoría'}
+           </button>
+           {tab === 'productos' && (
+             <button className="btn-print" onClick={() => window.print()}>
+               <IconPrint />
+             </button>
+           )}
+         </div>
+       </div>
 
       {tab === 'productos' ? (
         <div className="gestproductos-table-container">
@@ -586,13 +593,8 @@ export default function GestProductos() {
                </div>
              )}
            </div>
-           <div className="print-button-container">
-             <button className="btn-print" onClick={() => window.print()}>
-               <IconPrint />
-             </button>
-           </div>
-         </div>
-       ) : (
+</div>
+        ) : (
         <div className="gestproductos-table-container">
           <table className="tbl">
             <thead className="tbl-header">
@@ -659,58 +661,8 @@ export default function GestProductos() {
                </div>
              )}
            </div>
-           <div className="print-button-container">
-             <button className="btn-print" onClick={() => window.print()}>
-               <IconPrint />
-             </button>
-           </div>
-         </div>
-       )}
-
-      {/* Modal para productos */}
-      {modal && tab === 'productos' && (
-        <ModalSteps
-          titulo={editar ? "Editar producto" : "Nuevo producto"}
-          pasos={["Info y variantes", "Categoría y precio", "Publicación", "Imágenes"]}
-          onClose={cerrarModal}
-          onGuardar={guardar}
-          labelGuardar={editar ? "Actualizar" : "Registrar"}
-          guardando={guardando}
-        >
-          {PasoInfo}
-          {PasoCategoria}
-          {PasoEstado}
-          {PasoImagenes}
-        </ModalSteps>
-      )}
-
-      {/* Modal para categorías */}
-      {modal && tab === 'categorias' && (
-        <ModalSteps
-          titulo={editarCategoria ? "Editar categoría" : "Nueva categoría"}
-          pasos={["Datos"]}
-          onClose={() => setModal(false)}
-          onGuardar={guardarCategoria}
-          labelGuardar={editarCategoria ? "Actualizar" : "Registrar"}
-        >
-          {PasoCategoriaForm}
-        </ModalSteps>
-      )}
-
-      {verDetalle && (
-        <ModalDetalle
-          titulo="Detalle del producto"
-          subtitulo={verDetalle.nombre}
-          badge={<span className={`tabla-status ${verDetalle.estado === "Activo" ? "activo" : "inactivo"}`}>{verDetalle.estado}</span>}
-          pasos={["Info y variantes", "Categoría y precio", "Estado e imágenes"]}
-          onClose={() => setVerDetalle(null)}
-          onEditar={() => { setVerDetalle(null); abrirEditar(verDetalle); }}
-        >
-          {DetalleInfo}
-          {DetallePrecio}
-          {DetalleEstado}
-        </ModalDetalle>
-      )}
-    </div>
-  );
+</div>
+        )}
+      </div>
+      );
 }

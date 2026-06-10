@@ -49,7 +49,7 @@ const PALETAS = ['#f5ede6', '#f0ebe4', '#e8f0e8', '#ede8f5', '#f5f0e0', '#e8f0f5
 
 const MODULOS_FALLBACK = [
   "Dashboard", "Usuarios", "Roles", "Productos", "Colores",
-  "Catálogo", "Proveedores", "Compras", "PedidosVentas", "Pagos",
+  "Catálogo", "Proveedores", "Compras", "PedidosVentas", "Pagos", "Configuración",
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -151,19 +151,17 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
         <div className="role-face role-front">
           <div className="role-front-bg" style={{ background: color }} />
 
-          {/* Botón "ver detalle" — esquina superior derecha, igual que el X del reverso */}
-          {!protegido && (
-            <button
-              className="role-front-detail-btn"
-              onClick={handleFlipOpen}
-              title="Ver detalle"
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M13 6l6 6-6 6"/>
-              </svg>
-              <span>ver detalle</span>
-            </button>
-          )}
+          {/* Botón "ver detalle" — esquina superior derecha, para todos los roles */}
+          <button
+            className="role-front-detail-btn"
+            onClick={handleFlipOpen}
+            title="Ver detalle"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+            <span>ver detalle</span>
+          </button>
 
           <div className="role-front-content">
             <div className="role-front-icon">
