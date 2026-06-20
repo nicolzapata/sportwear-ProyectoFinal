@@ -5,13 +5,12 @@ const {
   getPagos, getPagoById, crearPago, cambiarEstado, pagarCuota, pagarTotal
 } = require('../controllers/pagos.controller');
 const {
-  verificarToken, soloAdmin, soloCliente
+  verificarToken, soloCliente, tieneModulo, tieneAlgunModulo
 } = require('../middlewares/auth.middleware');
-const { tieneModulo } = require('../middlewares/auth.middleware');
 
-// ── Rutas de Admin ─────────────────────────────────────────────────────────
-router.get('/',             verificarToken, tieneModulo('Pagos'), getPagos);
-router.get('/:id',          verificarToken, tieneModulo('Pagos'), getPagoById);
+// ── Rutas de Admin / roles con módulo Pagos o PedidosVentas ───────────────────
+router.get('/',             verificarToken, tieneAlgunModulo('Pagos', 'PedidosVentas'), getPagos);
+router.get('/:id',          verificarToken, tieneAlgunModulo('Pagos', 'PedidosVentas'), getPagoById);
 router.post('/',            verificarToken, tieneModulo('Pagos'), crearPago);
 router.patch('/:id/estado', verificarToken, tieneModulo('Pagos'), cambiarEstado);
 

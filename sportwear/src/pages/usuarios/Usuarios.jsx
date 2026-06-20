@@ -9,56 +9,78 @@ import './Usuarios.css';
 import { IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
 const TIPOS_DOC = ["CC", "CE", "TI", "NIT", "PP"];
-
-const fmtFecha = (f) => f ? new Date(f).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }) : null;
-
 const FILAS_POR_PAGINA = 10;
+
+const normalizeM = (v) => v?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 
 export default function Usuarios() {
   const { usuario } = useAuth();
-  const [usuarios, setUsuarios] = useState([]);
-  const [clientes, setClientes] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [barrios, setBarrios] = useState([]);
-  const [zonas, setZonas] = useState([]);
-  const [barFiltrados, setBarFiltrados] = useState([]);
-  const [busqueda, setBusqueda] = useState("");
-  const [modal, setModal] = useState(false);
-  const [detalle, setDetalle] = useState(null);
+
+  // ── Permisos del usuario actual ────────────────────────────────────────────
+  const modulosUsuario = Array.isArray(usuario?.modulos) ? usuario.modulos.map(normalizeM) : [];
+  const esAdmin       = usuario?.rol === 'Admin';
+  const tieneUsuarios = esAdmin || modulosUsuario.includes('usuarios');
+  const tieneClientes = esAdmin || modulosUsuario.includes('clientes');
+
+  const [usuarios,       setUsuarios]       = useState([]);
+  const [clientes,       setClientes]       = useState([]);
+  const [roles,          setRoles]          = useState([]);
+  const [barrios,        setBarrios]        = useState([]);
+  const [zonas,          setZonas]          = useState([]);
+  const [barFiltrados,   setBarFiltrados]   = useState([]);
+  const [busqueda,       setBusqueda]       = useState("");
+  const [modal,          setModal]          = useState(false);
+  const [detalle,        setDetalle]        = useState(null);
   const [clienteDetalle, setClienteDetalle] = useState(null);
-  const [editar, setEditar] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ nombre: "", email: "", contrasena: "", id_rol: 1, estado: "Activo", tipo_doc: "CC", documento: "", telefono: "", ciudad: "Medellín", id_barrio: "", direccion: "", permiso_cuotas: true });
-  const [filterType, setFilterType] = useState("usuarios");
-  const [clienteForm, setClienteForm] = useState({ nombre: "", tipo_doc: "CC", documento: "", telefono: "", email: "", id_barrio: "", direccion: "", tipo_cliente: "Regular", permiso_pagos: 1, permiso_cuotas: 1, estado: "Activo" });
+  const [editar,         setEditar]         = useState(null);
+  const [loading,        setLoading]        = useState(true);
+  const [showPassword,   setShowPassword]   = useState(false);
   const [paginaUsuarios, setPaginaUsuarios] = useState(1);
   const [paginaClientes, setPaginaClientes] = useState(1);
 
-  useEffect(() => {
-    Promise.all([
-      api.get("/usuarios"),
-      api.get("/roles"),
-      api.get("/barrios")
-    ]).then(([usuariosRes, rolesRes, barriosRes]) => {
-      setUsuarios(usuariosRes.data);
-      setRoles(rolesRes.data);
-      setBarrios(barriosRes.data);
-    }).catch(err => console.error(err)).finally(() => setLoading(false));
+  // filterType según permisos
+  const [filterType, setFilterType] = useState(() =>
+    tieneUsuarios ? 'usuarios' : 'clientes'
+  );
 
-    api.get("/barrios/zonas").then((res) => {
-      setZonas(res.data);
-    }).catch(err => console.error(err));
-  }, []);
+  const [form, setForm] = useState({
+    nombre: "", email: "", contrasena: "", id_rol: 1, estado: "Activo",
+    tipo_doc: "CC", documento: "", telefono: "", ciudad: "Medellín",
+    id_barrio: "", direccion: "", permiso_cuotas: true
+  });
+
+  const [clienteForm, setClienteForm] = useState({
+    nombre: "", tipo_doc: "CC", documento: "", telefono: "", email: "",
+    id_barrio: "", direccion: "", tipo_cliente: "Regular",
+    permiso_pagos: 1, permiso_cuotas: 1, estado: "Activo"
+  });
+
+  // ── Carga inicial ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const promesas = [api.get("/roles"), api.get("/barrios")];
+    if (tieneUsuarios) promesas.unshift(api.get("/usuarios"));
+
+    Promise.all(promesas).then((res) => {
+      if (tieneUsuarios) {
+        setUsuarios(res[0].data);
+        setRoles(res[1].data);
+        setBarrios(res[2].data);
+      } else {
+        setRoles(res[0].data);
+        setBarrios(res[1].data);
+      }
+    }).catch(console.error).finally(() => setLoading(false));
+
+    api.get("/barrios/zonas").then(r => setZonas(r.data)).catch(console.error);
+  }, [tieneUsuarios]);
 
   useEffect(() => {
-    if (filterType === "clientes") {
-      api.get("/clientes/con-ventas").then((res) => {
-        setClientes(res.data);
-      }).catch(err => console.error(err));
+    if (filterType === "clientes" && tieneClientes) {
+      api.get("/clientes/con-ventas").then(r => setClientes(r.data)).catch(console.error);
     }
-  }, [filterType]);
+  }, [filterType, tieneClientes]);
 
+  // ── Helpers ────────────────────────────────────────────────────────────────
   const handleZona = (zona) => {
     setBarFiltrados(zona ? barrios.filter(b => b.zona === zona) : barrios);
     setClienteForm(f => ({ ...f, id_barrio: "" }));
@@ -69,12 +91,16 @@ export default function Usuarios() {
     return map[tipo] || "regular";
   };
 
+  const getRoleName = (id_rol) =>
+    roles.find(r => Number(r.id_rol) === Number(id_rol))?.nombre || id_rol;
+
+  // ── Filtrado ───────────────────────────────────────────────────────────────
   const filtrados = filterType === "usuarios"
-    ? usuarios.filter((u) =>
+    ? usuarios.filter(u =>
         u.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
         u.email?.toLowerCase().includes(busqueda.toLowerCase())
       )
-    : clientes.filter((c) =>
+    : clientes.filter(c =>
         c.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
         c.documento?.includes(busqueda)
       );
@@ -84,15 +110,16 @@ export default function Usuarios() {
   const totalPaginas = Math.ceil(filtrados.length / FILAS_POR_PAGINA);
   const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
+  // ── Abrir modales ──────────────────────────────────────────────────────────
   const abrirDetalle = async (u) => {
     setDetalle(u);
     try { const { data } = await api.get(`/usuarios/${u.id_usuario}`); setDetalle(data); }
-    catch { /* usa los datos parciales ya seteados */ }
+    catch { /* usa datos parciales */ }
   };
 
   const abrirRegistrar = () => {
     setEditar(null);
-    setForm({ nombre: "", email: "", contrasena: "", id_rol: roles[0]?.id_rol || 1, estado: "Activo", tipo_doc: "CC", documento: "", telefono: "", ciudad: "Medellín", id_barrio: "", direccion: "" });
+    setForm({ nombre: "", email: "", contrasena: "", id_rol: roles[0]?.id_rol || 1, estado: "Activo", tipo_doc: "CC", documento: "", telefono: "", ciudad: "Medellín", id_barrio: "", direccion: "", permiso_cuotas: true });
     setModal(true);
   };
 
@@ -116,42 +143,27 @@ export default function Usuarios() {
 
   const abrirEditarCliente = (c) => {
     setEditar(c.id_cliente);
-    setClienteForm({
-      nombre: c.nombre,
-      tipo_doc: c.tipo_doc,
-      documento: c.documento,
-      telefono: c.telefono || "",
-      email: c.email || "",
-      id_barrio: c.id_barrio || "",
-      direccion: c.direccion || "",
-      tipo_cliente: c.tipo_cliente,
-      permiso_pagos: c.permiso_pagos,
-      permiso_cuotas: c.permiso_cuotas || 1,
-      estado: c.estado
-    });
+    setClienteForm({ nombre: c.nombre, tipo_doc: c.tipo_doc, documento: c.documento, telefono: c.telefono || "", email: c.email || "", id_barrio: c.id_barrio || "", direccion: c.direccion || "", tipo_cliente: c.tipo_cliente, permiso_pagos: c.permiso_pagos, permiso_cuotas: c.permiso_cuotas || 1, estado: c.estado });
     setModal(true);
   };
 
+  // ── Guardar ────────────────────────────────────────────────────────────────
   const guardar = async () => {
     if (!form.nombre || !form.email) return;
     if (!editar) {
       if (!form.contrasena) { alert("La contraseña es requerida"); return; }
-      if (form.contrasena.length < 6) { alert("La contraseña debe tener al menos 6 caracteres"); return; }
-      if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) { alert("La contraseña debe contener al menos un signo (símbolo)"); return; }
-    } else {
-      if (form.contrasena) {
-        if (form.contrasena.length < 6) { alert("La contraseña debe tener al menos 6 caracteres"); return; }
-        if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) { alert("La contraseña debe contener al menos un signo (símbolo)"); return; }
-      }
+      if (form.contrasena.length < 6) { alert("Mínimo 6 caracteres"); return; }
+      if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) { alert("Debe contener al menos un símbolo"); return; }
+    } else if (form.contrasena) {
+      if (form.contrasena.length < 6) { alert("Mínimo 6 caracteres"); return; }
+      if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) { alert("Debe contener al menos un símbolo"); return; }
     }
-    if (!editar) {
-      try { await api.post("/usuarios", form); cargar(); }
-      catch (err) { console.error(err); }
-      setModal(false); return;
-    }
-    try { await api.put(`/usuarios/${editar}`, form); cargar(); }
-    catch (err) { console.error(err); }
-    setModal(false);
+    try {
+      if (!editar) { await api.post("/usuarios", form); }
+      else         { await api.put(`/usuarios/${editar}`, form); }
+      cargar();
+      setModal(false);
+    } catch (err) { console.error(err); }
   };
 
   const guardarCliente = async () => {
@@ -166,15 +178,15 @@ export default function Usuarios() {
       }
       setModal(false);
     } catch (err) {
-      console.error("Error guardando:", err);
       alert(err.response?.data?.message || "Error al guardar cliente");
     }
   };
 
   const cargar = () => {
-    api.get("/usuarios").then(res => setUsuarios(res.data)).catch(err => console.error(err));
+    if (tieneUsuarios) api.get("/usuarios").then(r => setUsuarios(r.data)).catch(console.error);
   };
 
+  // ── Acciones rápidas ───────────────────────────────────────────────────────
   const toggleEstadoUsuario = async (id, nuevoEstado) => {
     await api.patch(`/usuarios/${id}/estado`);
     setUsuarios(prev => prev.map(u => u.id_usuario === id ? { ...u, estado: nuevoEstado } : u));
@@ -189,75 +201,67 @@ export default function Usuarios() {
     try {
       await api.patch(`/usuarios/${id}/permiso-cuotas`);
       setUsuarios(prev => prev.map(u => u.id_usuario === id ? { ...u, permiso_cuotas: !u.permiso_cuotas } : u));
-    } catch (err) { console.error(err); alert("Error al cambiar permiso de cuotas"); }
-  };
+}     catch { alert("Error al cambiar permiso de cuotas"); }  };
 
-  const getRoleName = (id_rol) => roles.find(r => Number(r.id_rol) === Number(id_rol))?.nombre || id_rol;
-
-  if (loading) return (<div className="usuarios-loading-container"><div className="usuarios-loading-spinner" /><p className="usuarios-loading-text">Cargando usuarios...</p></div>);
-
-  // ── Pasos formulario ───────────────────────────────────────────────────────
-  const PasosDocumento = (<div>
-    <div className="ms-form-row">
-      <div className="ms-form-group"><label className="ms-form-label">Tipo doc. <span className="ms-req">*</span></label><select className="ms-form-select" value={form.tipo_doc} onChange={e => setForm({ ...form, tipo_doc: e.target.value })}>{TIPOS_DOC.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
-      <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="1001234567" value={form.documento} onChange={e => setForm({ ...form, documento: e.target.value })} /></div>
+  if (loading) return (
+    <div className="usuarios-loading-container">
+      <div className="usuarios-loading-spinner" />
+      <p className="usuarios-loading-text">Cargando usuarios...</p>
     </div>
-    <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="Ej: Nicol Zapata" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} /></div>
-  </div>);
+  );
 
-  const PasosCuenta = (<div>
-    <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className="ms-form-input" placeholder="ejemplo@correo.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
-    <div className="ms-form-group"><label className="ms-form-label">Teléfono</label><input className="ms-form-input" placeholder="3001234567" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} /></div>
-    {(!editar || editar === usuario?.id_usuario) && (<div className="ms-form-group"><label className="ms-form-label">Contraseña {!editar && <span className="ms-req">*</span>}</label>
-      <div className="input-wrapper">
-        <span className="input-icon"><IconLock /></span>
-        <input type={showPassword ? "text" : "password"} className="ms-form-input" placeholder={editar ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"}
-          value={form.contrasena} onChange={e => setForm({ ...form, contrasena: e.target.value })} />
-        <div className="input-bar" />
-        <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>
-          {showPassword ? <IconEyeOpen /> : <IconEyeClosed />}
-        </span>
+  // ── Pasos formulario usuarios ──────────────────────────────────────────────
+  const PasosDocumento = (
+    <div>
+      <div className="ms-form-row">
+        <div className="ms-form-group"><label className="ms-form-label">Tipo doc. <span className="ms-req">*</span></label><select className="ms-form-select" value={form.tipo_doc} onChange={e => setForm({ ...form, tipo_doc: e.target.value })}>{TIPOS_DOC.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+        <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="1001234567" value={form.documento} onChange={e => setForm({ ...form, documento: e.target.value })} /></div>
       </div>
-    </div>)}
-  </div>);
+      <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="Ej: Nicol Zapata" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} /></div>
+    </div>
+  );
 
-  const PasosUbicacion = (<div>
-    <div className="ms-form-group"><label className="ms-form-label">Ciudad</label><input className="ms-form-input" placeholder="Medellín" value={form.ciudad} onChange={e => setForm({ ...form, ciudad: e.target.value })} /></div>
-    <div className="ms-form-group"><label className="ms-form-label">Barrio</label><select className="ms-form-select" value={form.id_barrio} onChange={e => setForm({ ...form, id_barrio: e.target.value })}><option value="">— Selecciona un barrio —</option>{barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} — {b.comuna}</option>)}</select></div>
-    <div className="ms-form-group"><label className="ms-form-label">Dirección</label><input className="ms-form-input" placeholder="Cra 43A # 10-20 Apto 301" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })} /></div>
-  </div>);
+  const PasosCuenta = (
+    <div>
+      <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className="ms-form-input" placeholder="ejemplo@correo.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
+      <div className="ms-form-group"><label className="ms-form-label">Teléfono</label><input className="ms-form-input" placeholder="3001234567" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} /></div>
+      {(!editar || editar === usuario?.id_usuario) && (
+        <div className="ms-form-group">
+          <label className="ms-form-label">Contraseña {!editar && <span className="ms-req">*</span>}</label>
+          <div className="input-wrapper">
+            <span className="input-icon"><IconLock /></span>
+            <input type={showPassword ? "text" : "password"} className="ms-form-input" placeholder={editar ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"} value={form.contrasena} onChange={e => setForm({ ...form, contrasena: e.target.value })} />
+            <div className="input-bar" />
+            <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <IconEyeOpen /> : <IconEyeClosed />}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
-  const PasosRol = (<div>
-    <div className="ms-form-group"><label className="ms-form-label">Rol</label><select className="ms-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>{roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}</select></div>
-    <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><select className="ms-form-select" value={form.permiso_cuotas ? 1 : 0} onChange={e => setForm({ ...form, permiso_cuotas: Number(e.target.value) === 1 })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
-    <div className="ms-form-group"><label className="ms-form-label">Estado</label><select className="ms-form-select" value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
-  </div>);
+  const PasosUbicacion = (
+    <div>
+      <div className="ms-form-group"><label className="ms-form-label">Ciudad</label><input className="ms-form-input" placeholder="Medellín" value={form.ciudad} onChange={e => setForm({ ...form, ciudad: e.target.value })} /></div>
+      <div className="ms-form-group"><label className="ms-form-label">Barrio</label><select className="ms-form-select" value={form.id_barrio} onChange={e => setForm({ ...form, id_barrio: e.target.value })}><option value="">— Selecciona un barrio —</option>{barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} — {b.comuna}</option>)}</select></div>
+      <div className="ms-form-group"><label className="ms-form-label">Dirección</label><input className="ms-form-input" placeholder="Cra 43A # 10-20 Apto 301" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })} /></div>
+    </div>
+  );
 
-  // ── Pasos detalle ──────────────────────────────────────────────────────────
+  const PasosRol = (
+    <div>
+      <div className="ms-form-group"><label className="ms-form-label">Rol</label><select className="ms-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>{roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}</select></div>
+      <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><select className="ms-form-select" value={form.permiso_cuotas ? 1 : 0} onChange={e => setForm({ ...form, permiso_cuotas: Number(e.target.value) === 1 })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
+      <div className="ms-form-group"><label className="ms-form-label">Estado</label><select className="ms-form-select" value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+    </div>
+  );
 
-  const DetalleDocumento = detalle && (<DetalleSeccion><DetalleGrid>
-    <DetalleItem label="Tipo doc." value={detalle.tipo_doc} />
-    <DetalleItem label="Documento" value={detalle.documento} />
-    <DetalleItem label="Nombre completo" value={detalle.nombre} full />
-  </DetalleGrid></DetalleSeccion>);
+  // ── Pasos detalle usuario ──────────────────────────────────────────────────
+  const DetalleDocumento  = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Tipo doc." value={detalle.tipo_doc} /><DetalleItem label="Documento" value={detalle.documento} /><DetalleItem label="Nombre completo" value={detalle.nombre} full /></DetalleGrid></DetalleSeccion>);
+  const DetalleCuenta     = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Correo electrónico" value={detalle.email} /><DetalleItem label="Teléfono" value={detalle.telefono} /></DetalleGrid></DetalleSeccion>);
+  const DetalleUbicacion  = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Ciudad" value={detalle.ciudad} /><DetalleItem label="Barrio" value={detalle.barrio ? `${detalle.barrio}${detalle.comuna ? ` — ${detalle.comuna}` : ''}` : null} /><DetalleItem label="Dirección" value={detalle.direccion} full /></DetalleGrid></DetalleSeccion>);
+  const DetalleRol        = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} /><DetalleItem label="Pago por cuotas" value={detalle.permiso_cuotas !== false ? "Permitido" : "Bloqueado"} /><DetalleItem label="Estado" value={detalle.estado} /></DetalleGrid></DetalleSeccion>);
 
-  const DetalleCuenta = detalle && (<DetalleSeccion><DetalleGrid>
-    <DetalleItem label="Correo electrónico" value={detalle.email} />
-    <DetalleItem label="Teléfono" value={detalle.telefono} />
-  </DetalleGrid></DetalleSeccion>);
-
-  const DetalleUbicacion = detalle && (<DetalleSeccion><DetalleGrid>
-    <DetalleItem label="Ciudad" value={detalle.ciudad} />
-    <DetalleItem label="Barrio" value={detalle.barrio ? `${detalle.barrio}${detalle.comuna ? ` — ${detalle.comuna}` : ''}` : null} />
-    <DetalleItem label="Dirección" value={detalle.direccion} full />
-  </DetalleGrid></DetalleSeccion>);
-
-  const DetalleRol = detalle && (<DetalleSeccion><DetalleGrid>
-    <DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} />
-    <DetalleItem label="Pago por cuotas" value={detalle.permiso_cuotas !== false ? "Permitido" : "Bloqueado"} />
-    <DetalleItem label="Estado" value={detalle.estado} />
-  </DetalleGrid></DetalleSeccion>);
-
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="usuarios-container">
       <div className="usuarios-actions-bar">
@@ -269,7 +273,7 @@ export default function Usuarios() {
               className="usuarios-search-input"
               placeholder="Buscar por nombre o email..."
               value={busqueda}
-              onChange={(e) => { setBusqueda(e.target.value); setPaginaUsuarios(1); setPaginaClientes(1); }}
+              onChange={e => { setBusqueda(e.target.value); setPaginaUsuarios(1); setPaginaClientes(1); }}
             />
             {busqueda && (
               <button className="usuarios-search-clear" onClick={() => { setBusqueda(""); setPaginaUsuarios(1); setPaginaClientes(1); }}>
@@ -277,22 +281,30 @@ export default function Usuarios() {
               </button>
             )}
           </div>
-          <div className="usuarios-filter-toggle">
-            <button
-              className={`usuarios-filter-btn ${filterType === 'usuarios' ? 'active' : ''}`}
-              onClick={() => { setFilterType('usuarios'); setPaginaUsuarios(1); }}
-            >
-              Usuarios
-            </button>
-            <button
-              className={`usuarios-filter-btn ${filterType === 'clientes' ? 'active' : ''}`}
-              onClick={() => { setFilterType('clientes'); setPaginaClientes(1); }}
-            >
-              Clientes
-            </button>
-          </div>
+
+          {/* Toggle solo si tiene ambos módulos */}
+          {tieneUsuarios && tieneClientes && (
+            <div className="usuarios-filter-toggle">
+              <button
+                className={`usuarios-filter-btn ${filterType === 'usuarios' ? 'active' : ''}`}
+                onClick={() => { setFilterType('usuarios'); setPaginaUsuarios(1); }}
+              >
+                Usuarios
+              </button>
+              <button
+                className={`usuarios-filter-btn ${filterType === 'clientes' ? 'active' : ''}`}
+                onClick={() => { setFilterType('clientes'); setPaginaClientes(1); }}
+              >
+                Clientes
+              </button>
+            </div>
+          )}
         </div>
-        <button className="usuarios-btn-primary" onClick={filterType === 'usuarios' ? abrirRegistrar : abrirRegistrarCliente}>
+
+        <button
+          className="usuarios-btn-primary"
+          onClick={filterType === 'usuarios' ? abrirRegistrar : abrirRegistrarCliente}
+        >
           <span>+</span> Nuevo {filterType === 'usuarios' ? 'usuario' : 'cliente'}
         </button>
       </div>
@@ -325,7 +337,7 @@ export default function Usuarios() {
           </thead>
           <tbody className="tbl-body">
             {filterType === 'usuarios' ? (
-              filtradosPagina.map((u) => (
+              filtradosPagina.map(u => (
                 <tr key={u.id_usuario} className="tbl-row">
                   <td className="tbl-td"><div className="usuarios-user-info"><div className="usuarios-user-name">{u.nombre}</div></div></td>
                   <td className="tbl-td usuarios-email-cell">{u.email}</td>
@@ -341,7 +353,7 @@ export default function Usuarios() {
                 </tr>
               ))
             ) : (
-              filtradosPagina.map((c) => (
+              filtradosPagina.map(c => (
                 <tr key={c.id_cliente} className="tbl-row">
                   <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
                   <td className="tbl-td"><span className="clientes-doc-badge">{c.tipo_doc} {c.documento}</span></td>
@@ -363,45 +375,23 @@ export default function Usuarios() {
           </tbody>
         </table>
 
-        {/* Paginador */}
         {totalPaginas > 1 && (
           <div className="paginador">
-            <button
-              className="paginador-btn"
-              onClick={() => setPagina(p => Math.max(p - 1, 1))}
-              disabled={pagina === 1}
-            >
-              ‹
-            </button>
+            <button className="paginador-btn" onClick={() => setPagina(p => Math.max(p - 1, 1))} disabled={pagina === 1}>‹</button>
             {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
-              <button
-                key={n}
-                className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`}
-                onClick={() => setPagina(n)}
-              >
-                {n}
-              </button>
+              <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
-            <button
-              className="paginador-btn"
-              onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))}
-              disabled={pagina === totalPaginas}
-            >
-              ›
-            </button>
-            <span className="paginador-info">
-              Página {pagina} de {totalPaginas} · {filtrados.length} registros
-            </span>
+            <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} registros</span>
           </div>
         )}
 
         <div className="print-button-container">
-          <button className="btn-print" onClick={() => window.print()}>
-            <IconPrint />
-          </button>
+          <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
         </div>
       </div>
 
+      {/* Modal formulario usuarios */}
       {modal && filterType === 'usuarios' && (
         <ModalSteps
           titulo={editar ? "Editar usuario" : "Nuevo usuario"}
@@ -417,6 +407,7 @@ export default function Usuarios() {
         </ModalSteps>
       )}
 
+      {/* Modal formulario clientes */}
       {modal && filterType === 'clientes' && (
         <ModalSteps
           titulo={editar ? "Editar cliente" : "Nuevo cliente"}
@@ -425,34 +416,39 @@ export default function Usuarios() {
           onGuardar={guardarCliente}
           labelGuardar={editar ? "Actualizar" : "Registrar"}
         >
-          <div className="ms-form-row">
-            <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="Ej: Juan Pérez" value={clienteForm.nombre} onChange={e => setClienteForm({ ...clienteForm, nombre: e.target.value })} /></div>
-            <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={clienteForm.tipo_doc} onChange={e => setClienteForm({ ...clienteForm, tipo_doc: e.target.value })}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
-          </div>
-          <div className="ms-form-row">
-            <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="123456789" value={clienteForm.documento} onChange={e => setClienteForm({ ...clienteForm, documento: e.target.value })} /></div>
-            <div className="ms-form-group"><label className="ms-form-label">Teléfono</label><input className="ms-form-input" placeholder="3001234567" value={clienteForm.telefono} onChange={e => setClienteForm({ ...clienteForm, telefono: e.target.value })} /></div>
-          </div>
-          <div className="ms-form-row">
+          <div>
+            <div className="ms-form-row">
+              <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="Ej: Juan Pérez" value={clienteForm.nombre} onChange={e => setClienteForm({ ...clienteForm, nombre: e.target.value })} /></div>
+              <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={clienteForm.tipo_doc} onChange={e => setClienteForm({ ...clienteForm, tipo_doc: e.target.value })}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
+            </div>
+            <div className="ms-form-row">
+              <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="123456789" value={clienteForm.documento} onChange={e => setClienteForm({ ...clienteForm, documento: e.target.value })} /></div>
+              <div className="ms-form-group"><label className="ms-form-label">Teléfono</label><input className="ms-form-input" placeholder="3001234567" value={clienteForm.telefono} onChange={e => setClienteForm({ ...clienteForm, telefono: e.target.value })} /></div>
+            </div>
             <div className="ms-form-group"><label className="ms-form-label">Correo electrónico</label><input type="email" className="ms-form-input" placeholder="ejemplo@correo.com" value={clienteForm.email} onChange={e => setClienteForm({ ...clienteForm, email: e.target.value })} /></div>
           </div>
-          <div className="ms-form-row">
-            <div className="ms-form-group"><label className="ms-form-label">Ciudad</label><input className="ms-form-input" value="Medellín" disabled style={{ opacity: 0.55 }} /></div>
-            <div className="ms-form-group"><label className="ms-form-label">Zona / Área</label><select className="ms-form-select" onChange={e => handleZona(e.target.value)}><option value="">— Todas las zonas —</option>{zonas.map(z => <option key={z} value={z}>{z}</option>)}</select></div>
+          <div>
+            <div className="ms-form-row">
+              <div className="ms-form-group"><label className="ms-form-label">Ciudad</label><input className="ms-form-input" value="Medellín" disabled style={{ opacity: 0.55 }} /></div>
+              <div className="ms-form-group"><label className="ms-form-label">Zona / Área</label><select className="ms-form-select" onChange={e => handleZona(e.target.value)}><option value="">— Todas las zonas —</option>{zonas.map(z => <option key={z} value={z}>{z}</option>)}</select></div>
+            </div>
+            <div className="ms-form-group"><label className="ms-form-label">Barrio / Comuna</label><select className="ms-form-select" value={clienteForm.id_barrio} onChange={e => setClienteForm({ ...clienteForm, id_barrio: Number(e.target.value) })}><option value="">— Seleccionar —</option>{barFiltrados.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} — {b.comuna}</option>)}</select></div>
+            <div className="ms-form-group"><label className="ms-form-label">Dirección completa</label><input className="ms-form-input" placeholder="Cra 70 # 48-15 Apto 201" value={clienteForm.direccion} onChange={e => setClienteForm({ ...clienteForm, direccion: e.target.value })} /></div>
           </div>
-          <div className="ms-form-group"><label className="ms-form-label">Barrio / Comuna</label><select className="ms-form-select" value={clienteForm.id_barrio} onChange={e => setClienteForm({ ...clienteForm, id_barrio: Number(e.target.value) })}><option value="">— Seleccionar —</option>{barFiltrados.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} — {b.comuna}</option>)}</select></div>
-          <div className="ms-form-group"><label className="ms-form-label">Dirección completa</label><input className="ms-form-input" placeholder="Cra 70 # 48-15 Apto 201" value={clienteForm.direccion} onChange={e => setClienteForm({ ...clienteForm, direccion: e.target.value })} /></div>
-          <div className="ms-form-row">
-            <div className="ms-form-group"><label className="ms-form-label">Tipo de cliente</label><select className="ms-form-select" value={clienteForm.tipo_cliente} onChange={e => setClienteForm({ ...clienteForm, tipo_cliente: e.target.value })}>{["Regular", "VIP", "Mayorista", "Corporativo"].map(t => <option key={t}>{t}</option>)}</select></div>
-            <div className="ms-form-group"><label className="ms-form-label">Permiso de pagos</label><select className="ms-form-select" value={clienteForm.permiso_pagos} onChange={e => setClienteForm({ ...clienteForm, permiso_pagos: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
-          </div>
-          <div className="ms-form-row">
-            <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><select className="ms-form-select" value={clienteForm.permiso_cuotas} onChange={e => setClienteForm({ ...clienteForm, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
-            <div className="ms-form-group"><label className="ms-form-label">Estado</label><select className="ms-form-select" value={clienteForm.estado} onChange={e => setClienteForm({ ...clienteForm, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+          <div>
+            <div className="ms-form-row">
+              <div className="ms-form-group"><label className="ms-form-label">Tipo de cliente</label><select className="ms-form-select" value={clienteForm.tipo_cliente} onChange={e => setClienteForm({ ...clienteForm, tipo_cliente: e.target.value })}>{["Regular", "VIP", "Mayorista", "Corporativo"].map(t => <option key={t}>{t}</option>)}</select></div>
+              <div className="ms-form-group"><label className="ms-form-label">Permiso de pagos</label><select className="ms-form-select" value={clienteForm.permiso_pagos} onChange={e => setClienteForm({ ...clienteForm, permiso_pagos: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
+            </div>
+            <div className="ms-form-row">
+              <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><select className="ms-form-select" value={clienteForm.permiso_cuotas} onChange={e => setClienteForm({ ...clienteForm, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
+              <div className="ms-form-group"><label className="ms-form-label">Estado</label><select className="ms-form-select" value={clienteForm.estado} onChange={e => setClienteForm({ ...clienteForm, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+            </div>
           </div>
         </ModalSteps>
       )}
 
+      {/* Modal detalle usuario */}
       {detalle && (
         <ModalDetalle
           titulo="Perfil del usuario"
@@ -469,6 +465,7 @@ export default function Usuarios() {
         </ModalDetalle>
       )}
 
+      {/* Modal detalle cliente */}
       {clienteDetalle && (
         <ModalDetalle
           titulo="Detalle del cliente"
@@ -479,24 +476,22 @@ export default function Usuarios() {
           onEditar={() => { setClienteDetalle(null); abrirEditarCliente(clienteDetalle); }}
         >
           <DetalleSeccion><DetalleGrid>
-            <DetalleItem label="Nombre completo" value={clienteDetalle.nombre} full />
-            <DetalleItem label="Tipo documento" value={clienteDetalle.tipo_doc} />
-            <DetalleItem label="N° documento" value={clienteDetalle.documento} />
-            <DetalleItem label="Teléfono" value={clienteDetalle.telefono} />
+            <DetalleItem label="Nombre completo"    value={clienteDetalle.nombre} full />
+            <DetalleItem label="Tipo documento"     value={clienteDetalle.tipo_doc} />
+            <DetalleItem label="N° documento"       value={clienteDetalle.documento} />
+            <DetalleItem label="Teléfono"           value={clienteDetalle.telefono} />
             <DetalleItem label="Correo electrónico" value={clienteDetalle.email} />
           </DetalleGrid></DetalleSeccion>
-
           <DetalleSeccion><DetalleGrid>
-            <DetalleItem label="Ciudad" value={clienteDetalle.ciudad} />
-            <DetalleItem label="Barrio" value={clienteDetalle.barrio_nombre ? `${clienteDetalle.barrio_nombre} (${clienteDetalle.comuna})` : null} />
+            <DetalleItem label="Ciudad"             value={clienteDetalle.ciudad} />
+            <DetalleItem label="Barrio"             value={clienteDetalle.barrio_nombre ? `${clienteDetalle.barrio_nombre} (${clienteDetalle.comuna})` : null} />
             <DetalleItem label="Dirección completa" value={clienteDetalle.direccion} full />
           </DetalleGrid></DetalleSeccion>
-
           <DetalleSeccion><DetalleGrid>
-            <DetalleItem label="Tipo de cliente" value={clienteDetalle.tipo_cliente} />
+            <DetalleItem label="Tipo de cliente"  value={clienteDetalle.tipo_cliente} />
             <DetalleItem label="Permiso de pagos" value={clienteDetalle.permiso_pagos ? "Permitido" : "Bloqueado"} />
-            <DetalleItem label="Pago por cuotas" value={clienteDetalle.permiso_cuotas ? "Permitido" : "Bloqueado"} />
-            <DetalleItem label="Estado" value={clienteDetalle.estado} />
+            <DetalleItem label="Pago por cuotas"  value={clienteDetalle.permiso_cuotas ? "Permitido" : "Bloqueado"} />
+            <DetalleItem label="Estado"           value={clienteDetalle.estado} />
           </DetalleGrid></DetalleSeccion>
         </ModalDetalle>
       )}

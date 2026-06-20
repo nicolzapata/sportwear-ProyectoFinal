@@ -3,14 +3,14 @@ const router  = require('express').Router();
 const make    = require('../controllers/crudFactory');
 const pool    = require('../config/db');
 const { crearUsuario, actualizarUsuario } = require('../controllers/auth.controller');
-const { verificarToken, soloAdmin } = require('../middlewares/auth.middleware');
+const { verificarToken, tieneModulo } = require('../middlewares/auth.middleware');
 
 const ctrl = make('Usuarios', ['nombre','email','id_rol','estado'], 'id_usuario');
 
-router.get('/',             verificarToken, soloAdmin, ctrl.getAll);
-router.put('/:id',          verificarToken, soloAdmin, actualizarUsuario);
-router.patch('/:id/estado', verificarToken, soloAdmin, ctrl.cambiarEstado);
-router.patch('/:id/permiso-cuotas', verificarToken, soloAdmin, async (req, res) => {
+router.get('/',             verificarToken, tieneModulo('Usuarios'), ctrl.getAll);
+router.put('/:id',          verificarToken, tieneModulo('Usuarios'), actualizarUsuario);
+router.patch('/:id/estado', verificarToken, tieneModulo('Usuarios'), ctrl.cambiarEstado);
+router.patch('/:id/permiso-cuotas', verificarToken, tieneModulo('Usuarios'), async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE "Usuarios" SET permiso_cuotas = NOT permiso_cuotas WHERE id_usuario = $1 RETURNING id_usuario, permiso_cuotas`,
@@ -20,10 +20,10 @@ router.patch('/:id/permiso-cuotas', verificarToken, soloAdmin, async (req, res) 
     res.json(result.rows[0]);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
-router.post('/',            verificarToken, soloAdmin, crearUsuario);
+router.post('/',            verificarToken, tieneModulo('Usuarios'), crearUsuario);
 
 /* ── Detalle completo: usuario + rol + cliente ── */
-router.get('/:id', verificarToken, soloAdmin, async (req, res) => {
+router.get('/:id', verificarToken, tieneModulo('Usuarios'), async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT
@@ -43,6 +43,7 @@ router.get('/:id', verificarToken, soloAdmin, async (req, res) => {
          c.telefono,
          c.ciudad,
          c.direccion,
+         c.tipo_cliente,
          b.nombre        AS barrio,
          b.comuna
         FROM "Usuarios" u

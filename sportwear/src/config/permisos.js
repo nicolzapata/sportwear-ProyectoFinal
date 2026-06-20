@@ -3,8 +3,8 @@
 // ─── Menú completo (orden, metadatos y nombre oficial de módulo) ──────────────────────────
 export const MENU_ITEMS = [
   { key: "roles",       path: "/roles",       icon: "🔑", label: "Roles", module: "Roles" },
-  { key: "usuarios",    path: "/usuarios",    icon: "👤", label: "Usuarios",    divider: true, module: "Usuarios" },
-  { key: "productos",   path: "/productos",   icon: "👕", label: "Productos",   divider: true,module: "Productos" },
+  { key: "usuarios",    path: "/usuarios",    icon: "👤", label: "Usuarios",    divider: true, modules: ["Usuarios", "Clientes"] },
+  { key: "productos",   path: "/productos",   icon: "👕", label: "Productos",   divider: true, module: "Productos" },
   { key: "proveedores", path: "/proveedores", icon: "🏭", label: "Proveedores", module: "Proveedores" },
   { key: "compras",     path: "/compras",     icon: "📦", label: "Compras", module: "Compras" },
   { key: "catalogo",    path: "/catalogo",    icon: "📋", label: "Catálogo",    divider: true, module: "Catálogo" },

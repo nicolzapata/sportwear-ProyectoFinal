@@ -1,4 +1,3 @@
-// src/middlewares/auth.middleware.js
 const jwt = require('jsonwebtoken');
 
 // ── Verifica que el token sea válido ──────────────────────────
@@ -74,4 +73,34 @@ const tieneModulo = (moduloNombre) => {
   };
 };
 
-module.exports = { verificarToken, soloAdmin, soloCliente, adminOPropietario, tieneModulo };
+// ── Comprueba que el usuario tenga AL MENOS UNO de los módulos dados ─────
+const tieneAlgunModulo = (...modulosNombres) => {
+  return (req, res, next) => {
+    // Admin siempre tiene acceso
+    if (req.usuario?.rol === 'Admin') return next();
+
+    const modulos = req.usuario?.modulos;
+    if (!Array.isArray(modulos)) {
+      return res.status(403).json({ message: 'Acceso denegado. Módulos no definidos.' });
+    }
+
+    const usuarioModulos = modulos.map(normalizeModulo).filter(Boolean);
+    const requeridos = modulosNombres.map(normalizeModulo);
+
+    const tieneAcceso = requeridos.some(r => usuarioModulos.includes(r));
+    if (!tieneAcceso) {
+      return res.status(403).json({ message: `Acceso denegado. Requiere alguno de estos módulos: ${modulosNombres.join(', ')}` });
+    }
+
+    next();
+  };
+};
+
+module.exports = {
+  verificarToken,
+  soloAdmin,
+  soloCliente,
+  adminOPropietario,
+  tieneModulo,
+  tieneAlgunModulo,
+};

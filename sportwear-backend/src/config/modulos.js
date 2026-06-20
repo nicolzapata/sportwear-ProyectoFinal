@@ -5,6 +5,7 @@
 const OFFICIAL_MODULES = [
   'Dashboard',
   'Usuarios',
+  'Clientes',
   'Roles',
   'Productos',
   'Colores',

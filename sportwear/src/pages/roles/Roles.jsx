@@ -48,8 +48,8 @@ const DEFAULT_ICON = (
 const PALETAS = ['#f5ede6', '#f0ebe4', '#e8f0e8', '#ede8f5', '#f5f0e0', '#e8f0f5'];
 
 const MODULOS_FALLBACK = [
-  "Dashboard", "Usuarios", "Roles", "Productos", "Colores",
-  "Catálogo", "Proveedores", "Compras", "PedidosVentas", "Pagos", "Configuración",
+  "Dashboard", "Usuarios","Clientes", "Roles", "Productos", "Colores",
+  "Catálogo", "Proveedores", "Compras", "PedidosVentas", "Pagos",
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

@@ -49,10 +49,28 @@ export default function Sidebar() {
     ? usuarioModulos
     : PERMISOS[usuario?.rol] ?? ["dashboard"];
 
-  const menuFiltrado = MENU_ITEMS.filter((item) => {
-    const moduleKey = normalizeModulo(item.module);
-    return moduleKey ? permisosRol.includes(moduleKey) : false;
-  });
+  // Un ítem es visible si tiene AL MENOS UNO de sus módulos requeridos
+  const itemEsVisible = (item) => {
+    const modulosItem = item.modules
+      ? item.modules.map(normalizeModulo)
+      : [normalizeModulo(item.module)];
+    return modulosItem.some((m) => m && permisosRol.includes(m));
+  };
+
+  const menuFiltrado = MENU_ITEMS.filter(itemEsVisible);
+
+  const tieneUsuariosModulo = permisosRol.includes('usuarios');
+  const tieneClientesModulo = permisosRol.includes('clientes');
+
+  // Etiqueta dinámica: Usuarios / Clientes / ambos
+  const getLabel = (item) => {
+    if (item.key === 'usuarios') {
+      if (tieneUsuariosModulo && tieneClientesModulo) return 'Usuarios';
+      if (tieneClientesModulo) return 'Clientes';
+      return 'Usuarios';
+    }
+    return item.label;
+  };
 
   const handleLogout = () => {
     logout();
@@ -71,7 +89,7 @@ export default function Sidebar() {
       <nav className="sidebar-nav">
         {menuFiltrado.map((item) => (
           <div key={item.path}>
-            {item.divider && permisosRol.includes(normalizeModulo(item.module)) && (
+            {item.divider && itemEsVisible(item) && (
               <div className="nav-divider" />
             )}
             <NavLink
@@ -79,12 +97,12 @@ export default function Sidebar() {
               className={({ isActive }) =>
                 "nav-item " + (isActive ? "active" : "")
               }
-              title={item.label}
+              title={getLabel(item)}
             >
               <span className="nav-icon">
                 {NAV_ICONS[item.path] ?? <IconBox />}
               </span>
-              <span className="nav-label">{item.label}</span>
+              <span className="nav-label">{getLabel(item)}</span>
             </NavLink>
           </div>
         ))}
