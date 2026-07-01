@@ -8,37 +8,26 @@ const {
   verificarToken, soloCliente, tieneModulo, tieneAlgunModulo
 } = require('../middlewares/auth.middleware');
 
-// ── Rutas de Admin / roles con módulo Pagos o PedidosVentas ───────────────────
 router.get('/',             verificarToken, tieneAlgunModulo('Pagos', 'PedidosVentas'), getPagos);
 router.get('/:id',          verificarToken, tieneAlgunModulo('Pagos', 'PedidosVentas'), getPagoById);
-router.post('/',            verificarToken, tieneModulo('Pagos'), crearPago);
-router.patch('/:id/estado', verificarToken, tieneModulo('Pagos'), cambiarEstado);
+router.post('/',            verificarToken, tieneModulo('Pagos', 'crear'),  crearPago);
+router.patch('/:id/estado', verificarToken, tieneModulo('Pagos', 'estado'), cambiarEstado);
 
-// ── Rutas de Cliente ───────────────────────────────────────────────────────
-
-// GET /api/pagos/mis-pagos  → todos los pagos del cliente autenticado
 router.get('/mis-pagos', verificarToken, soloCliente, async (req, res) => {
   try {
-    const id_cliente = req.usuario.id_cliente;
-
-    const result = await pool.query(`
-      SELECT pa.*, v.id_cliente
-      FROM "PagosAbonos" pa
-      JOIN "Ventas" v ON pa.id_venta = v.id_venta
-      WHERE v.id_cliente = $1
-      ORDER BY pa.id_pago DESC
-    `, [id_cliente]);
-
+    const result = await pool.query(
+      `SELECT pa.*, v.id_cliente
+       FROM "PagosAbonos" pa
+       JOIN "Ventas" v ON pa.id_venta = v.id_venta
+       WHERE v.id_cliente = $1
+       ORDER BY pa.id_pago DESC`,
+      [req.usuario.id_cliente]
+    );
     res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-// Pagar una cuota específica
-router.post('/cuota/:id', verificarToken, soloCliente, pagarCuota);
-
-// Pagar total del pedido (todas las cuotas pendientes)
+router.post('/cuota/:id',       verificarToken, soloCliente, pagarCuota);
 router.post('/venta/:id/total', verificarToken, soloCliente, pagarTotal);
 
 module.exports = router;

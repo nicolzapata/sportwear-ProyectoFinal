@@ -2,21 +2,18 @@
 import { useState, useEffect } from "react";
 import './PagosAbonos.css';
 import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import { IconCheck, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 
-const fmt = (n) => Number(n || 0).toLocaleString("es-CO", {
-  style: "currency",
-  currency: "COP",
-  minimumFractionDigits: 0
-});
-
-const tipoByCliente = (tipo_cliente) =>
-  tipo_cliente === "VIP" ? "Abono" : "Pago completo";
-
+const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
+const tipoByCliente = (tipo_cliente) => tipo_cliente === "VIP" ? "Abono" : "Pago completo";
 const FILAS_POR_PAGINA = 10;
 
 export default function PagosAbonos() {
+  const { usuario } = useAuth();
+  const tienePerm = (p) => (usuario?.permisos || []).includes(p);
+
   const [datos,      setDatos]      = useState([]);
   const [ventas,     setVentas]     = useState([]);
   const [cargando,   setCargando]   = useState(true);
@@ -26,23 +23,15 @@ export default function PagosAbonos() {
   const [modal,      setModal]      = useState(false);
   const [verDetalle, setVerDetalle] = useState(null);
   const [guardando,  setGuardando]  = useState(false);
-  const [form, setForm] = useState({
-    id_venta: "", monto: "", tipo: "Pago completo",
-    metodo: "Efectivo", estado: "Pendiente", fecha: ""
-  });
+  const [form, setForm] = useState({ id_venta: "", monto: "", tipo: "Pago completo", metodo: "Efectivo", estado: "Pendiente", fecha: "" });
 
-  useEffect(() => {
-    cargar();
-  }, []);
+  useEffect(() => { cargar(); }, []);
 
   const cargar = async () => {
     setCargando(true);
     setErrorMsg("");
     try {
-      const [pagosRes, ventasRes] = await Promise.all([
-        api.get("/pagos"),
-        api.get("/ventas"),
-      ]);
+      const [pagosRes, ventasRes] = await Promise.all([api.get("/pagos"), api.get("/ventas")]);
       setDatos(pagosRes.data);
       setVentas(ventasRes.data);
     } catch (err) {
@@ -55,16 +44,12 @@ export default function PagosAbonos() {
 
   const handleVentaChange = (id_venta) => {
     const venta = ventas.find(v => String(v.id_venta) === String(id_venta));
-    const tipo = venta ? tipoByCliente(venta.tipo_cliente) : "Pago completo";
+    const tipo  = venta ? tipoByCliente(venta.tipo_cliente) : "Pago completo";
     setForm(f => ({ ...f, id_venta, tipo }));
   };
 
-  const filtrados = datos.filter(p =>
-    p.cliente?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    String(p.id_pago).includes(busqueda)
-  );
-
-  const totalPaginas = Math.ceil(filtrados.length / FILAS_POR_PAGINA);
+  const filtrados       = datos.filter(p => p.cliente?.toLowerCase().includes(busqueda.toLowerCase()) || String(p.id_pago).includes(busqueda));
+  const totalPaginas    = Math.ceil(filtrados.length / FILAS_POR_PAGINA);
   const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
   const guardar = async () => {
@@ -72,54 +57,35 @@ export default function PagosAbonos() {
     setGuardando(true);
     try {
       const { data: nuevo } = await api.post("/pagos", {
-        id_venta:  Number(form.id_venta),
-        monto:     Number(form.monto),
-        tipo:      form.tipo,
-        metodo:    form.metodo,
-        estado:    form.estado,
-        fecha:     form.fecha || new Date().toISOString().split("T")[0],
+        id_venta: Number(form.id_venta),
+        monto:    Number(form.monto),
+        tipo:     form.tipo,
+        metodo:   form.metodo,
+        estado:   form.estado,
+        fecha:    form.fecha || new Date().toISOString().split("T")[0],
       });
-
       const venta = ventas.find(v => v.id_venta === Number(form.id_venta));
-      setDatos(prev => [{
-        ...nuevo,
-        cliente:      venta?.cliente      ?? "—",
-        tipo_cliente: venta?.tipo_cliente ?? "—",
-      }, ...prev]);
-
+      setDatos(prev => [{ ...nuevo, cliente: venta?.cliente ?? "—", tipo_cliente: venta?.tipo_cliente ?? "—" }, ...prev]);
       setModal(false);
     } catch (err) {
-      console.error("Error guardando pago:", err);
       alert(err.response?.data?.message ?? "Error al registrar el pago.");
     } finally {
       setGuardando(false);
     }
   };
 
-  const abrirDetalle = (pago) => setVerDetalle(pago);
-
   const registrarPago = async (id) => {
     try {
       await api.patch(`/pagos/${id}/estado`, { estado: "Confirmado" });
-      setDatos(prev =>
-        prev.map(p => p.id_pago === id ? { ...p, estado: "Confirmado" } : p)
-      );
-    } catch (err) {
-      console.error("Error registrando pago:", err);
-      alert(err.response?.data?.message ?? "Error al registrar el pago.");
-    }
+      setDatos(prev => prev.map(p => p.id_pago === id ? { ...p, estado: "Confirmado" } : p));
+    } catch (err) { alert(err.response?.data?.message ?? "Error al registrar el pago."); }
   };
 
   const cancelarPago = async (id) => {
     try {
       await api.patch(`/pagos/${id}/estado`, { estado: "Anulado" });
-      setDatos(prev =>
-        prev.map(p => p.id_pago === id ? { ...p, estado: "Anulado" } : p)
-      );
-    } catch (err) {
-      console.error("Error cancelando pago:", err);
-      alert(err.response?.data?.message ?? "Error al cancelar el pago.");
-    }
+      setDatos(prev => prev.map(p => p.id_pago === id ? { ...p, estado: "Anulado" } : p));
+    } catch (err) { alert(err.response?.data?.message ?? "Error al cancelar el pago."); }
   };
 
   const getMetodoIcon = (metodo) => {
@@ -140,52 +106,24 @@ export default function PagosAbonos() {
     }
   };
 
-  if (cargando) return (
-    <div style={{ padding: 48, color: "var(--muted)" }}>Cargando pagos...</div>
-  );
-
-  if (errorMsg) return (
-    <div style={{ padding: 32, color: "var(--danger)" }}>
-      {errorMsg}
-      <button onClick={cargar} style={{ marginLeft: 12 }}>Reintentar</button>
-    </div>
-  );
+  if (cargando) return <div style={{ padding: 48, color: "var(--muted)" }}>Cargando pagos...</div>;
+  if (errorMsg) return <div style={{ padding: 32, color: "var(--danger)" }}>{errorMsg}<button onClick={cargar} style={{ marginLeft: 12 }}>Reintentar</button></div>;
 
   return (
     <div className="pagosabonos-container">
-
-      {/* Barra de acciones */}
       <div className="pagosabonos-actions-bar">
         <div className="pagosabonos-search-wrapper">
           <span className="pagosabonos-search-icon"><IconSearch /></span>
-          <input
-            type="text"
-            className="pagosabonos-search-input"
-            placeholder="Buscar por cliente o ID..."
-            value={busqueda}
-            onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
-          />
-          {busqueda && (
-            <button className="pagosabonos-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}>
-              <IconX />
-            </button>
-          )}
+          <input type="text" className="pagosabonos-search-input" placeholder="Buscar por cliente o ID..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
+          {busqueda && <button className="pagosabonos-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
         </div>
-        <button
-          className="pagosabonos-btn-primary"
-          onClick={() => {
-            setForm({
-              id_venta: "", monto: "", tipo: "Pago completo",
-              metodo: "Efectivo", estado: "Pendiente", fecha: ""
-            });
-            setModal(true);
-          }}
-        >
-          <span>+</span> Nuevo pago
-        </button>
+        {tienePerm('Pagos.crear') && (
+          <button className="pagosabonos-btn-primary" onClick={() => { setForm({ id_venta: "", monto: "", tipo: "Pago completo", metodo: "Efectivo", estado: "Pendiente", fecha: "" }); setModal(true); }}>
+            <span>+</span> Nuevo pago
+          </button>
+        )}
       </div>
 
-      {/* Tabla */}
       <div className="tbl-container">
         <table className="tbl">
           <thead className="tbl-header">
@@ -203,14 +141,8 @@ export default function PagosAbonos() {
           <tbody className="tbl-body">
             {filtradosPagina.map((p) => (
               <tr key={p.id_pago} className="tbl-row">
-                <td className="tbl-td">
-                  <span className="pagosabonos-venta-badge">
-                    V-{String(p.id_venta).padStart(3, "0")}
-                  </span>
-                </td>
-                <td className="tbl-td">
-                  <span className="pagosabonos-cliente-name">{p.cliente}</span>
-                </td>
+                <td className="tbl-td"><span className="pagosabonos-venta-badge">V-{String(p.id_venta).padStart(3, "0")}</span></td>
+                <td className="tbl-td"><span className="pagosabonos-cliente-name">{p.cliente}</span></td>
                 <td className="tbl-td pagosabonos-monto-cell">{fmt(p.monto)}</td>
                 <td className="tbl-td pagosabonos-tipo-cell">{p.tipo}</td>
                 <td className="tbl-td">
@@ -219,18 +151,12 @@ export default function PagosAbonos() {
                     {p.metodo}
                   </span>
                 </td>
-                <td className="tbl-td pagosabonos-fecha-cell">
-                  {p.fecha?.toString().split("T")[0]}
-                </td>
-                <td className="tbl-td">
-                  <span className={`tabla-badge ${getEstadoBadge(p.estado)}`}>
-                    {p.estado}
-                  </span>
-                </td>
+                <td className="tbl-td pagosabonos-fecha-cell">{p.fecha?.toString().split("T")[0]}</td>
+                <td className="tbl-td"><span className={`tabla-badge ${getEstadoBadge(p.estado)}`}>{p.estado}</span></td>
                 <td className="tbl-td">
                   <div className="pagosabonos-action-cell">
-                    <button className="pagosabonos-action-btn pagosabonos-view-btn" onClick={() => abrirDetalle(p)} title="Ver detalles"><IconEye /></button>
-                    {p.estado === "Pendiente" && (
+                    <button className="pagosabonos-action-btn pagosabonos-view-btn" onClick={() => setVerDetalle(p)}><IconEye /></button>
+                    {tienePerm('Pagos.estado') && p.estado === "Pendiente" && (
                       <>
                         <button className="pagosabonos-action-btn pagosabonos-register-btn" onClick={() => registrarPago(p.id_pago)} title="Registrar pago"><IconCheck /></button>
                         <button className="pagosabonos-action-btn pagosabonos-cancel-btn" onClick={() => cancelarPago(p.id_pago)} title="Cancelar"><IconX /></button>
@@ -240,163 +166,79 @@ export default function PagosAbonos() {
                 </td>
               </tr>
             ))}
-
             {filtrados.length === 0 && (
-              <tr>
-                <td colSpan={8} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
-                  No hay pagos que coincidan con la búsqueda.
-                </td>
-              </tr>
+              <tr><td colSpan={8} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>No hay pagos que coincidan con la búsqueda.</td></tr>
             )}
           </tbody>
         </table>
 
-        {/* Paginador */}
         {totalPaginas > 1 && (
           <div className="paginador">
-            <button
-              className="paginador-btn"
-              onClick={() => setPagina(p => Math.max(p - 1, 1))}
-              disabled={pagina === 1}
-            >
-              ‹
-            </button>
+            <button className="paginador-btn" onClick={() => setPagina(p => Math.max(p - 1, 1))} disabled={pagina === 1}>‹</button>
             {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
-              <button
-                key={n}
-                className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`}
-                onClick={() => setPagina(n)}
-              >
-                {n}
-              </button>
+              <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
-            <button
-              className="paginador-btn"
-              onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))}
-              disabled={pagina === totalPaginas}
-            >
-              ›
-            </button>
-            <span className="paginador-info">
-              Página {pagina} de {totalPaginas} · {filtrados.length} registros
-            </span>
+            <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} registros</span>
           </div>
         )}
-
         <div className="print-button-container">
-          <button className="btn-print" onClick={() => window.print()}>
-            <IconPrint />
-          </button>
+          <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
         </div>
       </div>
 
-      {/* Modal registro */}
       {modal && (
         <div className="pagosabonos-modal-overlay" onClick={() => setModal(false)}>
           <div className="pagosabonos-modal" onClick={(e) => e.stopPropagation()}>
             <div className="pagosabonos-modal-header">
               <h2 className="pagosabonos-modal-title">Registrar pago o abono</h2>
-              <button className="pagosabonos-modal-close" onClick={() => setModal(false)}>
-                <IconX />
-              </button>
+              <button className="pagosabonos-modal-close" onClick={() => setModal(false)}><IconX /></button>
             </div>
-
             <div className="pagosabonos-modal-body">
               <div className="pagosabonos-form-row">
                 <div className="pagosabonos-form-group">
                   <label className="pagosabonos-form-label">Venta asociada</label>
-                  <select
-                    className="pagosabonos-form-select"
-                    value={form.id_venta}
-                    onChange={(e) => handleVentaChange(e.target.value)}
-                  >
+                  <select className="pagosabonos-form-select" value={form.id_venta} onChange={(e) => handleVentaChange(e.target.value)}>
                     <option value="">Seleccionar venta...</option>
-                    {ventas.map(v => (
-                      <option key={v.id_venta} value={v.id_venta}>
-                        V-{String(v.id_venta).padStart(3, "0")} — {v.cliente} ({v.tipo_cliente})
-                      </option>
-                    ))}
+                    {ventas.map(v => <option key={v.id_venta} value={v.id_venta}>V-{String(v.id_venta).padStart(3, "0")} — {v.cliente} ({v.tipo_cliente})</option>)}
                   </select>
                 </div>
-
                 <div className="pagosabonos-form-group">
                   <label className="pagosabonos-form-label">Monto (COP)</label>
-                  <input
-                    type="number"
-                    className="pagosabonos-form-input"
-                    placeholder="Ej: 50000"
-                    value={form.monto}
-                    onChange={(e) => setForm({ ...form, monto: e.target.value })}
-                  />
+                  <input type="number" className="pagosabonos-form-input" placeholder="Ej: 50000" value={form.monto} onChange={(e) => setForm({ ...form, monto: e.target.value })} />
                 </div>
               </div>
-
               <div className="pagosabonos-form-row">
                 <div className="pagosabonos-form-group">
-                  <label className="pagosabonos-form-label">
-                    Tipo <small style={{ color: "#888" }}>(auto según cliente)</small>
-                  </label>
-                  <input
-                    className="pagosabonos-form-input"
-                    value={form.tipo}
-                    readOnly
-                    style={{ background: "var(--input-disabled-bg, #f3f4f6)", cursor: "not-allowed" }}
-                    title="VIP → Abono | Otros → Pago completo"
-                  />
+                  <label className="pagosabonos-form-label">Tipo <small style={{ color: "#888" }}>(auto según cliente)</small></label>
+                  <input className="pagosabonos-form-input" value={form.tipo} readOnly style={{ background: "var(--input-disabled-bg, #f3f4f6)", cursor: "not-allowed" }} />
                 </div>
-
                 <div className="pagosabonos-form-group">
                   <label className="pagosabonos-form-label">Método</label>
-                  <select
-                    className="pagosabonos-form-select"
-                    value={form.metodo}
-                    onChange={(e) => setForm({ ...form, metodo: e.target.value })}
-                  >
+                  <select className="pagosabonos-form-select" value={form.metodo} onChange={(e) => setForm({ ...form, metodo: e.target.value })}>
                     <option value="Efectivo">Efectivo</option>
                     <option value="Tarjeta">Tarjeta</option>
                     <option value="Transferencia">Transferencia</option>
                   </select>
                 </div>
               </div>
-
               <div className="pagosabonos-form-row">
                 <div className="pagosabonos-form-group">
                   <label className="pagosabonos-form-label">Fecha</label>
-                  <input
-                    type="date"
-                    className="pagosabonos-form-input"
-                    value={form.fecha}
-                    onChange={(e) => setForm({ ...form, fecha: e.target.value })}
-                  />
+                  <input type="date" className="pagosabonos-form-input" value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} />
                 </div>
-
                 <div className="pagosabonos-form-group">
                   <label className="pagosabonos-form-label">Estado</label>
-                  <select
-                    className="pagosabonos-form-select"
-                    value={form.estado}
-                    onChange={(e) => setForm({ ...form, estado: e.target.value })}
-                  >
+                  <select className="pagosabonos-form-select" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
                     <option value="Pendiente">Pendiente</option>
                     <option value="Confirmado">Confirmado</option>
                   </select>
                 </div>
               </div>
             </div>
-
             <div className="pagosabonos-modal-footer">
-              <button
-                className="pagosabonos-btn-secondary"
-                onClick={() => setModal(false)}
-                disabled={guardando}
-              >
-                Cancelar
-              </button>
-              <button
-                className="pagosabonos-btn-primary"
-                onClick={guardar}
-                disabled={guardando || !form.id_venta || !form.monto}
-              >
+              <button className="pagosabonos-btn-secondary" onClick={() => setModal(false)} disabled={guardando}>Cancelar</button>
+              <button className="pagosabonos-btn-primary" onClick={guardar} disabled={guardando || !form.id_venta || !form.monto}>
                 {guardando ? "Registrando..." : "Registrar"}
               </button>
             </div>
@@ -404,16 +246,11 @@ export default function PagosAbonos() {
         </div>
       )}
 
-      {/* Modal detalle */}
       {verDetalle && (
         <ModalDetalle
           titulo="Detalle del pago"
           subtitulo={`P-${String(verDetalle.id_pago).padStart(3, "0")}`}
-          badge={
-            <span className={`tabla-badge ${getEstadoBadge(verDetalle.estado)}`}>
-              {verDetalle.estado}
-            </span>
-          }
+          badge={<span className={`tabla-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>}
           pasos={["Información", "Pago"]}
           onClose={() => setVerDetalle(null)}
         >

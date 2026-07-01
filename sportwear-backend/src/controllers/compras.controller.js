@@ -37,4 +37,13 @@ const cambiarEstado = async (req, res) => {
   }
 };
 
-module.exports = { getCompras, getCompraById, crearCompra, cambiarEstado };
+const anularCompra = async (req, res) => {
+  try {
+    const data = await comprasService.cambiarEstado(req.params.id, 'Anulado');
+    res.json(data);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+module.exports = { getCompras, getCompraById, crearCompra, cambiarEstado, anularCompra };

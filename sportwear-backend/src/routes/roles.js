@@ -1,7 +1,7 @@
 // src/routes/roles.js
 const router = require('express').Router();
 const pool   = require('../config/db');
-const { verificarToken, soloAdmin } = require('../middlewares/auth.middleware');
+const { verificarToken, soloAdmin, tieneModulo } = require('../middlewares/auth.middleware');
 const { OFFICIAL_MODULES } = require('../config/modulos');
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -23,15 +23,29 @@ const fail = (res, err) => {
   return res.status(status).json(errors ? { message, errors } : { message });
 };
 
-/** Inserta en RolesPermisos los permisos dados.
- * - Strings (módulos): busca TODOS los permisos de ese módulo (legacy)
- * - Numbers (id_permiso): inserta directamente (granular)
- */
 const asignarPermisos = async (client, id_rol, permisos) => {
   if (!Array.isArray(permisos) || permisos.length === 0) return;
 
   const modulos = permisos.filter(p => typeof p === 'string').map(m => m.trim()).filter(Boolean);
-  const ids     = permisos.filter(p => typeof p === 'number');
+  let ids       = permisos.filter(p => typeof p === 'number');
+
+  if (ids.length > 0) {
+    const { rows: permisosInfo } = await client.query(
+      `SELECT id_permiso, modulo FROM "Permisos" WHERE id_permiso = ANY($1::int[])`,
+      [ids]
+    );
+    const modulosConAccion = [...new Set(permisosInfo.map(p => p.modulo))];
+
+    if (modulosConAccion.length > 0) {
+      const { rows: verPermisos } = await client.query(
+        `SELECT id_permiso FROM "Permisos"
+         WHERE accion = 'ver' AND modulo = ANY($1::text[]) AND estado = 'Activo'`,
+        [modulosConAccion]
+      );
+      const idsVer = verPermisos.map(p => p.id_permiso);
+      ids = [...new Set([...ids, ...idsVer])];
+    }
+  }
 
   if (modulos.length > 0) {
     const unicos = [...new Set(modulos)];
@@ -94,7 +108,7 @@ router.get('/modulos', verificarToken, soloAdmin, async (req, res) => {
   } catch (err) { fail(res, err); }
 });
 
-// ── GET /permisos — catálogo agrupado por módulo ──────────────────────────────
+// ── GET /permisos ─────────────────────────────────────────────────────────────
 router.get('/permisos', verificarToken, soloAdmin, async (req, res) => {
   try {
     const { rows } = await pool.query(
@@ -150,7 +164,7 @@ router.post('/modulos/sync', verificarToken, soloAdmin, async (req, res) => {
 });
 
 // ── GET / — listar roles ──────────────────────────────────────────────────────
-router.get('/', verificarToken, async (req, res) => {
+router.get('/', verificarToken, tieneModulo('Roles', 'ver'), async (req, res) => {
   try {
     if (req.usuario.rol === 'Admin') {
       const { rows } = await pool.query(
@@ -191,7 +205,7 @@ router.get('/', verificarToken, async (req, res) => {
 });
 
 // ── GET /:id — detalle del rol ────────────────────────────────────────────────
-router.get('/:id', verificarToken, async (req, res) => {
+router.get('/:id', verificarToken, tieneModulo('Roles', 'ver'), async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT r.*,

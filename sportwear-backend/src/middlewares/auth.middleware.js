@@ -49,20 +49,37 @@ const adminOPropietario = (req, res, next) => {
 };
 
 // ── Comprueba que el usuario tenga asignado un módulo específico ─────
+// ── Comprueba que el usuario tenga asignado un módulo (y opcionalmente una acción específica) ─────
 const normalizeModulo = (value) =>
   value?.toString?.().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 
-const tieneModulo = (moduloNombre) => {
+const tieneModulo = (moduloNombre, accion = null) => {
   return (req, res, next) => {
     // Admin siempre tiene acceso
     if (req.usuario?.rol === 'Admin') return next();
 
+    const requestedModulo = normalizeModulo(moduloNombre);
+
+    if (accion) {
+      // Validación granular: requiere modulo.accion específico
+      const permisos = req.usuario?.permisos;
+      if (!Array.isArray(permisos)) {
+        return res.status(403).json({ message: 'Acceso denegado. Permisos no definidos.' });
+      }
+      const permisoRequerido = `${requestedModulo}.${normalizeModulo(accion)}`;
+      const usuarioPermisos = permisos.map(p => normalizeModulo(p));
+
+      if (!usuarioPermisos.includes(permisoRequerido)) {
+        return res.status(403).json({ message: `Acceso denegado. Requiere permiso: ${moduloNombre}.${accion}` });
+      }
+      return next();
+    }
+
+    // Validación por módulo (compatibilidad con rutas que no distinguen acción)
     const modulos = req.usuario?.modulos;
     if (!Array.isArray(modulos)) {
       return res.status(403).json({ message: 'Acceso denegado. Módulos no definidos.' });
     }
-
-    const requestedModulo = normalizeModulo(moduloNombre);
     const usuarioModulos = modulos.map(normalizeModulo).filter(Boolean);
 
     if (!requestedModulo || !usuarioModulos.includes(requestedModulo)) {
@@ -72,7 +89,6 @@ const tieneModulo = (moduloNombre) => {
     next();
   };
 };
-
 // ── Comprueba que el usuario tenga AL MENOS UNO de los módulos dados ─────
 const tieneAlgunModulo = (...modulosNombres) => {
   return (req, res, next) => {

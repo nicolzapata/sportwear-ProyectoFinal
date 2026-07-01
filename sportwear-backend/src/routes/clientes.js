@@ -5,14 +5,20 @@ const {
   actualizarCliente, toggleEstado, togglePermisoPagos, togglePermisoCuotas,
   getMiPerfil, actualizarMiPerfil, debugClientesVentas 
 } = require('../controllers/clientes.controller');
-const { verificarToken, soloAdmin, soloCliente, tieneModulo } = require('../middlewares/auth.middleware');
+const { verificarToken, tieneModulo } = require('../middlewares/auth.middleware');
 
-router.get('/',                    verificarToken, tieneModulo('Clientes'), getClientes);
-router.get('/con-ventas',          verificarToken, tieneModulo('Clientes'), getClientesConVentas);
-router.get('/:id',                 verificarToken, tieneModulo('Clientes'), getClienteById);
-router.post('/',                   verificarToken, tieneModulo('Clientes'), crearCliente);
-router.put('/:id',                 verificarToken, tieneModulo('Clientes'), actualizarCliente);
-router.patch('/:id/estado',        verificarToken, tieneModulo('Clientes'), toggleEstado);
-router.patch('/:id/permiso-pagos', verificarToken, tieneModulo('Clientes'), togglePermisoPagos);
-router.patch('/:id/permiso-cuotas',verificarToken, tieneModulo('Clientes'), togglePermisoCuotas);
+// ── Rutas de perfil propio (cualquier usuario con id_cliente vinculado) ───────
+router.get('/mi-perfil',            verificarToken, getMiPerfil);
+router.put('/mi-perfil',            verificarToken, actualizarMiPerfil);
+
+// ── Rutas administrativas ─────────────────────────────────────────────────────
+router.get('/',                     verificarToken, tieneModulo('Clientes', 'ver'),    getClientes);
+router.get('/con-ventas',           verificarToken, tieneModulo('Clientes', 'ver'),    getClientesConVentas);
+router.get('/:id',                  verificarToken, tieneModulo('Clientes', 'ver'),    getClienteById);
+router.post('/',                    verificarToken, tieneModulo('Clientes', 'crear'),  crearCliente);
+router.put('/:id',                  verificarToken, tieneModulo('Clientes', 'editar'), actualizarCliente);
+router.patch('/:id/estado',         verificarToken, tieneModulo('Clientes', 'estado'), toggleEstado);
+router.patch('/:id/permiso-pagos',  verificarToken, tieneModulo('Clientes', 'editar'), togglePermisoPagos);
+router.patch('/:id/permiso-cuotas', verificarToken, tieneModulo('Clientes', 'editar'), togglePermisoCuotas);
+
 module.exports = router;

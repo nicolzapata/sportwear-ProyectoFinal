@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";  // ← AGREGAR
 import './Roles.css';
 import { IconX, IconSearch } from "../../components/Icons";
 
@@ -44,15 +45,12 @@ const DEFAULT_ICON = (
   </svg>
 );
 
-
 const PALETAS = ['#f5ede6', '#f0ebe4', '#e8f0e8', '#ede8f5', '#f5f0e0', '#e8f0f5'];
 
 const MODULOS_FALLBACK = [
-  "Dashboard", "Usuarios","Clientes", "Roles", "Productos", "Colores",
-  "Catálogo", "Proveedores", "Compras", "PedidosVentas", "Pagos",
+  "Dashboard", "Usuarios", "Clientes", "Roles", "Productos", "Categorias", "Colores", "Proveedores", "Compras", "PedidosVentas", "Pagos",
 ];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const esRolProtegido = (nombre = "") => {
   const n = nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   return n === "administrador" || n === "admin";
@@ -97,8 +95,8 @@ const mergeModulos = (backendModulos) => {
   return result;
 };
 
-// ── RoleCard con flip controlado solo por ícono ───────────────────────────────
-function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
+// ── RoleCard ──────────────────────────────────────────────────────────────────
+function RoleCard({ rol, index, onEditar, onCambiarEstado, puedeEditar, puedeEstado }) {
   const [flipped,         setFlipped]         = useState(false);
   const [permisos,        setPermisos]        = useState([]);
   const [loadingPermisos, setLoadingPermisos] = useState(false);
@@ -109,7 +107,6 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
   const protegido = esRolProtegido(rol.nombre);
   const activo    = rol.estado === 'Activo';
 
-  // Agrupa permisos por módulo
   const permisosPorModulo = permisos.reduce((acc, p) => {
     const mod = p?.modulo || 'Sin módulo';
     if (!acc[mod]) acc[mod] = [];
@@ -119,7 +116,6 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
   }, {});
   const modulos = Object.keys(permisosPorModulo);
 
-  // Solo se voltea al hacer clic en el ícono de info
   const handleFlipOpen = async (e) => {
     e.stopPropagation();
     if (!permisosLoaded) {
@@ -127,49 +123,31 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
       try {
         const { data } = await api.get(`/roles/${rol.id_rol}/permisos`);
         setPermisos(Array.isArray(data) ? data : []);
-      } catch {
-        setPermisos([]);
-      } finally {
-        setLoadingPermisos(false);
-        setPermisosLoaded(true);
-      }
+      } catch { setPermisos([]); }
+      finally { setLoadingPermisos(false); setPermisosLoaded(true); }
     }
     setFlipped(true);
   };
 
-  // Solo se cierra con el ícono X del reverso
-  const handleFlipClose = (e) => {
-    e.stopPropagation();
-    setFlipped(false);
-  };
+  const handleFlipClose = (e) => { e.stopPropagation(); setFlipped(false); };
+
+  // Mostrar acciones solo si no es protegido Y tiene al menos un permiso
+  const mostrarAcciones = !protegido && (puedeEditar || puedeEstado);
 
   return (
     <div className="role-scene">
       <div className={`role-card${flipped ? ' flipped' : ''}`}>
-
-        {/* ── FRENTE ── */}
         <div className="role-face role-front">
           <div className="role-front-bg" style={{ background: color }} />
-
-          {/* Botón "ver detalle" — esquina superior derecha, para todos los roles */}
-          <button
-            className="role-front-detail-btn"
-            onClick={handleFlipOpen}
-            title="Ver detalle"
-          >
+          <button className="role-front-detail-btn" onClick={handleFlipOpen} title="Ver detalle">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14M13 6l6 6-6 6"/>
             </svg>
             <span>ver detalle</span>
           </button>
-
           <div className="role-front-content">
-            <div className="role-front-icon">
-              {icon}
-            </div>
-            <span className="role-front-name">
-              {rol.nombre}
-            </span>
+            <div className="role-front-icon">{icon}</div>
+            <span className="role-front-name">{rol.nombre}</span>
             <span className={`role-front-estado ${activo ? 'estado-activo' : 'estado-inactivo'}`}>
               <svg width="5" height="5" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="currentColor"/></svg>
               {rol.estado}
@@ -186,31 +164,20 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
           </div>
         </div>
 
-        {/* ── REVERSO ── */}
         <div className="role-face role-back" style={{ borderTop: `3px solid ${color}` }}>
-
-          {/* Header fijo */}
           <div className="role-back-header">
             <div className="role-back-title">
               <span className="role-back-dot" style={{ background: color }} />
               {rol.nombre}
-              <span className={`role-back-badge ${activo ? 'estado-activo' : 'estado-inactivo'}`}>
-                {rol.estado}
-              </span>
+              <span className={`role-back-badge ${activo ? 'estado-activo' : 'estado-inactivo'}`}>{rol.estado}</span>
             </div>
-            {/* Único botón para cerrar (volver al frente) */}
-            <button
-              className="role-back-close"
-              onClick={handleFlipClose}
-              title="Cerrar"
-            >
+            <button className="role-back-close" onClick={handleFlipClose} title="Cerrar">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
           </div>
 
-          {/* Cuerpo scrolleable */}
           <div className="role-back-body">
             {loadingPermisos ? (
               <div className="role-back-loading">
@@ -224,13 +191,7 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
                     <span className="role-back-modulo-nombre">{mod}</span>
                     <div className="role-back-chips">
                       {permisosPorModulo[mod].map((accion, i) => (
-                        <span
-                          key={i}
-                          className="role-back-chip"
-                          style={{ borderColor: color }}
-                        >
-                          {accion}
-                        </span>
+                        <span key={i} className="role-back-chip" style={{ borderColor: color }}>{accion}</span>
                       ))}
                     </div>
                   </div>
@@ -251,58 +212,68 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado }) {
             )}
           </div>
 
-          {/* Acciones fijas al fondo */}
-          {!protegido && (
+          {mostrarAcciones && (
             <div className="role-back-actions">
-              <button
-                className="role-flip-btn"
-                onClick={(e) => { e.stopPropagation(); setFlipped(false); onEditar(rol); }}
-              >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                Editar
-              </button>
-              <button
-                className={`role-flip-btn ${activo ? 'role-flip-deactivate' : 'role-flip-activate'}`}
-                onClick={(e) => { e.stopPropagation(); setFlipped(false); onCambiarEstado(rol); }}
-              >
-                {activo ? (
-                  <>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-                    </svg>
-                    Desactivar
-                  </>
-                ) : (
-                  <>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                      <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                    Activar
-                  </>
-                )}
-              </button>
+              {puedeEditar && (
+                <button className="role-flip-btn" onClick={(e) => { e.stopPropagation(); setFlipped(false); onEditar(rol); }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  Editar
+                </button>
+              )}
+              {puedeEstado && (
+                <button
+                  className={`role-flip-btn ${activo ? 'role-flip-deactivate' : 'role-flip-activate'}`}
+                  onClick={(e) => { e.stopPropagation(); setFlipped(false); onCambiarEstado(rol); }}
+                >
+                  {activo ? (
+                    <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Desactivar</>
+                  ) : (
+                    <><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>Activar</>
+                  )}
+                </button>
+              )}
             </div>
           )}
-
         </div>
       </div>
     </div>
   );
 }
 
-// ── Modal formulario simple (un solo paso) ───────────────────────────────────
+// ── RolModal ──────────────────────────────────────────────────────────────────
 function RolModal({ titulo, form, setForm, errores, setErrores, modulosDisponibles, permisosCatalogo, onClose, onGuardar, labelGuardar }) {
-  const togglePermiso = (id_permiso) => {
-    setForm(prev => ({
-      ...prev,
-      permisos: prev.permisos.includes(id_permiso)
-        ? prev.permisos.filter(p => p !== id_permiso)
-        : [...prev.permisos, id_permiso]
-    }));
+
+  const togglePermiso = (id_permiso, modulo, accion) => {
+    const ya = form.permisos.includes(id_permiso);
+    const accionesDelModulo = permisosCatalogo[modulo] || [];
+    const permisoVer = accionesDelModulo.find(a => a.accion === 'ver');
+
+    setForm(prev => {
+      let nuevosPermisos;
+      if (accion === 'ver') {
+        if (ya) {
+          const otrasAccionesActivas = accionesDelModulo.some(a => a.accion !== 'ver' && prev.permisos.includes(a.id_permiso));
+          if (otrasAccionesActivas) return prev;
+          nuevosPermisos = prev.permisos.filter(p => p !== id_permiso);
+        } else {
+          nuevosPermisos = [...prev.permisos, id_permiso];
+        }
+      } else {
+        if (ya) {
+          nuevosPermisos = prev.permisos.filter(p => p !== id_permiso);
+        } else {
+          nuevosPermisos = [...prev.permisos, id_permiso];
+          if (permisoVer && !nuevosPermisos.includes(permisoVer.id_permiso)) {
+            nuevosPermisos.push(permisoVer.id_permiso);
+          }
+        }
+      }
+      return { ...prev, permisos: nuevosPermisos };
+    });
+
     if (errores.permisos) setErrores(prev => ({ ...prev, permisos: '' }));
   };
 
@@ -310,54 +281,29 @@ function RolModal({ titulo, form, setForm, errores, setErrores, modulosDisponibl
     <div className="roles-modal-overlay" onClick={onClose}>
       <div className="roles-modal roles-form-modal" onClick={e => e.stopPropagation()}>
         <div className="roles-modal-accent" />
-
-        {/* Header */}
         <div className="roles-modal-header">
           <div>
             <h2 className="roles-modal-title">{titulo}</h2>
             <p className="roles-modal-subtitle">Completa la información y los permisos del rol</p>
           </div>
-          <button className="roles-modal-close" onClick={onClose}>
-            <IconX />
-          </button>
+          <button className="roles-modal-close" onClick={onClose}><IconX /></button>
         </div>
 
-        {/* Cuerpo scrolleable */}
         <div className="roles-modal-body roles-form-body">
-
-          {/* Nombre del rol */}
           <div className="ms-form-group">
-            <label className="ms-form-label">
-              Nombre del rol <span className="ms-req">*</span>
-            </label>
-            <input
-              type="text"
-              className={`ms-form-input${errores.nombre ? ' error' : ''}`}
-              placeholder="Ej: Vendedor"
-              value={form.nombre}
-              onChange={e => {
-                setForm(prev => ({ ...prev, nombre: e.target.value }));
-                if (errores.nombre) setErrores(prev => ({ ...prev, nombre: '' }));
-              }}
-            />
+            <label className="ms-form-label">Nombre del rol <span className="ms-req">*</span></label>
+            <input type="text" className={`ms-form-input${errores.nombre ? ' error' : ''}`} placeholder="Ej: Vendedor" value={form.nombre}
+              onChange={e => { setForm(prev => ({ ...prev, nombre: e.target.value })); if (errores.nombre) setErrores(prev => ({ ...prev, nombre: '' })); }} />
             {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
           </div>
 
-          {/* Permisos */}
           <div className="ms-form-group">
-            <label className="ms-form-label">
-              Permisos del rol <span className="ms-req">*</span>
-            </label>
-            <p className="ms-form-hint">
-              Selecciona los módulos y acciones específicas para este rol.
-            </p>
+            <label className="ms-form-label">Permisos del rol <span className="ms-req">*</span></label>
+            <p className="ms-form-hint">Selecciona los módulos y acciones. Al elegir cualquier acción, "ver" se activa automáticamente.</p>
             <div className="roles-permisos-table-wrap">
               <table className="roles-permisos-table">
                 <thead>
-                  <tr>
-                    <th>Módulo</th>
-                    <th>Acciones</th>
-                  </tr>
+                  <tr><th>Módulo</th><th>Acciones</th></tr>
                 </thead>
                 <tbody>
                   {(modulosDisponibles.length > 0 ? modulosDisponibles : MODULOS_FALLBACK).map((modulo, idx) => {
@@ -367,17 +313,22 @@ function RolModal({ titulo, form, setForm, errores, setErrores, modulosDisponibl
                         <td className="roles-td-modulo">{modulo}</td>
                         <td className="roles-td-acciones">
                           <div className="roles-chips-wrap">
-                            {accionesDelModulo.map(accion => (
-                              <button
-                                key={accion.id_permiso}
-                                type="button"
-                                className={`roles-permiso-chip${form.permisos.includes(accion.id_permiso) ? ' selected' : ''}`}
-                                onClick={() => togglePermiso(accion.id_permiso)}
-                                title={accion.descripcion || accion.accion}
-                              >
-                                {accion.accion}
-                              </button>
-                            ))}
+                            {accionesDelModulo.map(accion => {
+                              const otrasActivas = accion.accion === 'ver' && accionesDelModulo.some(
+                                a => a.accion !== 'ver' && form.permisos.includes(a.id_permiso)
+                              );
+                              return (
+                                <button key={accion.id_permiso} type="button"
+                                  className={`roles-permiso-chip${form.permisos.includes(accion.id_permiso) ? ' selected' : ''}`}
+                                  onClick={() => togglePermiso(accion.id_permiso, modulo, accion.accion)}
+                                  disabled={otrasActivas}
+                                  style={{ opacity: otrasActivas ? 0.6 : 1, cursor: otrasActivas ? 'not-allowed' : 'pointer' }}
+                                  title={otrasActivas ? 'No se puede quitar "ver" mientras haya otras acciones activas' : (accion.descripcion || accion.accion)}
+                                >
+                                  {accion.accion}
+                                </button>
+                              );
+                            })}
                           </div>
                         </td>
                       </tr>
@@ -386,21 +337,12 @@ function RolModal({ titulo, form, setForm, errores, setErrores, modulosDisponibl
                 </tbody>
               </table>
             </div>
-            {errores.permisos && (
-              <span className="ms-form-error" style={{ marginTop: 8, display: 'block' }}>
-                {errores.permisos}
-              </span>
-            )}
+            {errores.permisos && <span className="ms-form-error" style={{ marginTop: 8, display: 'block' }}>{errores.permisos}</span>}
           </div>
 
-          {errores._general && (
-            <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center' }}>
-              {errores._general}
-            </p>
-          )}
+          {errores._general && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center' }}>{errores._general}</p>}
         </div>
 
-        {/* Footer */}
         <div className="roles-modal-footer">
           <button className="roles-btn-secondary" onClick={onClose}>Cancelar</button>
           <button className="roles-btn-primary" onClick={onGuardar}>{labelGuardar}</button>
@@ -413,6 +355,9 @@ function RolModal({ titulo, form, setForm, errores, setErrores, modulosDisponibl
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function Roles() {
+  const { usuario } = useAuth();
+  const tienePerm   = (p) => (usuario?.permisos || []).includes(p);
+
   const [datos,              setDatos]              = useState([]);
   const [busqueda,           setBusqueda]           = useState("");
   const [loading,            setLoading]            = useState(true);
@@ -421,56 +366,41 @@ export default function Roles() {
   const [modulosDisponibles, setModulosDisponibles] = useState([]);
   const [permisosCatalogo,   setPermisosCatalogo]   = useState({});
   const [confirm,            setConfirm]            = useState(null);
-
   const [form,    setForm]    = useState({ nombre: "", estado: "Activo", permisos: [] });
   const [errores, setErrores] = useState({});
 
-  const filtrados = datos.filter(r =>
-    r.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const mostrarBuscador = datos.length >= 10;
+  const filtrados = mostrarBuscador
+    ? datos.filter(r => r.nombre.toLowerCase().includes(busqueda.toLowerCase()))
+    : datos;
 
   const cargar = useCallback(async () => {
     try {
       const { data } = await api.get("/roles");
       setDatos(data);
-    } catch (err) {
-      console.error("Error cargando roles:", err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error("Error cargando roles:", err); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => {
     cargar();
-    api.get('/roles/modulos')
-      .then(({ data }) => setModulosDisponibles(mergeModulos(data)))
-      .catch(() => setModulosDisponibles(MODULOS_FALLBACK));
-    api.get('/roles/permisos')
-      .then(({ data }) => setPermisosCatalogo(data || {}))
-      .catch(() => setPermisosCatalogo({}));
+    api.get('/roles/modulos').then(({ data }) => setModulosDisponibles(mergeModulos(data))).catch(() => setModulosDisponibles(MODULOS_FALLBACK));
+    api.get('/roles/permisos').then(({ data }) => setPermisosCatalogo(data || {})).catch(() => setPermisosCatalogo({}));
   }, [cargar]);
 
   const abrirRegistrar = () => {
-    setEditar(null);
-    setForm({ nombre: "", estado: "Activo", permisos: [] });
-    setErrores({});
-    setModal(true);
+    setEditar(null); setForm({ nombre: "", estado: "Activo", permisos: [] }); setErrores({}); setModal(true);
   };
 
   const abrirEditar = async (r) => {
     if (esRolProtegido(r.nombre)) return;
-    setEditar(r.id_rol);
-    setForm({ nombre: r.nombre, estado: r.estado, permisos: [] });
-    setErrores({});
-    setModal(true);
+    setEditar(r.id_rol); setForm({ nombre: r.nombre, estado: r.estado, permisos: [] }); setErrores({}); setModal(true);
     try {
       const { data } = await api.get(`/roles/${r.id_rol}/permisos`);
       if (Array.isArray(data) && data.length > 0) {
         setForm(prev => ({ ...prev, permisos: data.map(p => p.id_permiso).filter(Boolean) }));
       }
-    } catch (err) {
-      console.error("Error cargando permisos para edición:", err);
-    }
+    } catch (err) { console.error("Error cargando permisos:", err); }
   };
 
   const validar = () => {
@@ -487,18 +417,11 @@ export default function Roles() {
     try {
       if (editar) await api.put(`/roles/${editar}`, form);
       else        await api.post("/roles", form);
-      setModal(false);
-      cargar();
+      setModal(false); cargar();
     } catch (err) {
       const backendErrors = err.response?.data?.errors;
-      if (backendErrors) {
-        setErrores(prev => ({ ...prev, ...backendErrors }));
-      } else {
-        setErrores(prev => ({
-          ...prev,
-          _general: err.response?.data?.message || 'Ocurrió un error al guardar.'
-        }));
-      }
+      if (backendErrors) setErrores(prev => ({ ...prev, ...backendErrors }));
+      else setErrores(prev => ({ ...prev, _general: err.response?.data?.message || 'Ocurrió un error al guardar.' }));
     }
   };
 
@@ -513,20 +436,13 @@ export default function Roles() {
     try {
       const { data } = await api.get(`/roles/${rol.id_rol}/usuarios-count`);
       setConfirm({ rol, usuariosCount: data.total });
-    } catch {
-      setConfirm({ rol, usuariosCount: 0 });
-    }
+    } catch { setConfirm({ rol, usuariosCount: 0 }); }
   };
 
   const confirmarCambioEstado = async () => {
     if (!confirm) return;
-    try {
-      await api.patch(`/roles/${confirm.rol.id_rol}/estado`);
-      setConfirm(null);
-      cargar();
-    } catch (err) {
-      console.error("Error cambiando estado:", err);
-    }
+    try { await api.patch(`/roles/${confirm.rol.id_rol}/estado`); setConfirm(null); cargar(); }
+    catch (err) { console.error("Error cambiando estado:", err); }
   };
 
   if (loading) return (
@@ -538,51 +454,35 @@ export default function Roles() {
 
   return (
     <div className="roles-container">
-
-      {/* Barra de búsqueda */}
-      <div className="roles-search-bar">
-        <div className="roles-search-wrapper">
-          <span className="roles-search-icon"><IconSearch /></span>
-          <input
-            type="text"
-            className="roles-search-input"
-            placeholder="Buscar rol..."
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-          />
-          {busqueda && (
-            <button className="roles-search-clear" onClick={() => setBusqueda("")}>
-              <IconX />
-            </button>
+      <div className="roles-actions-bar">
+        <div className="roles-actions-left">
+          {mostrarBuscador && (
+            <div className="roles-search-wrapper">
+              <span className="roles-search-icon"><IconSearch /></span>
+              <input type="text" className="roles-search-input" placeholder="Buscar rol..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+              {busqueda && <button className="roles-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
+            </div>
           )}
+          {mostrarBuscador && busqueda && <span className="roles-search-count">{filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}</span>}
         </div>
-        {busqueda && (
-          <span className="roles-search-count">
-            {filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}
-          </span>
+
+        {tienePerm('Roles.crear') && (
+          <button className="roles-btn-nuevo" onClick={abrirRegistrar}><span>+</span> Nuevo rol</button>
         )}
       </div>
 
-      {/* Grid de cards */}
       <div className="roles-grid">
         {filtrados.map((r, i) => (
           <RoleCard
-            key={r.id_rol}
-            rol={r}
-            index={i}
+            key={r.id_rol} rol={r} index={i}
             onEditar={abrirEditar}
             onCambiarEstado={solicitarCambioEstado}
+            puedeEditar={tienePerm('Roles.editar')}
+            puedeEstado={tienePerm('Roles.estado')}
           />
         ))}
-        <div className="role-scene">
-          <div className="role-add-card" onClick={abrirRegistrar}>
-            <div className="role-add-icon">+</div>
-            <span className="role-add-label">Nuevo rol</span>
-          </div>
-        </div>
       </div>
 
-      {/* ── Modal confirmación desactivar ── */}
       {confirm && createPortal(
         <div className="roles-modal-overlay" onClick={() => setConfirm(null)}>
           <div className="roles-modal roles-confirm-modal" onClick={e => e.stopPropagation()}>
@@ -592,45 +492,26 @@ export default function Roles() {
                 <h2 className="roles-modal-title">Desactivar rol</h2>
                 <p className="roles-modal-subtitle">Esta acción afectará a los usuarios asignados</p>
               </div>
-              <button className="roles-modal-close" onClick={() => setConfirm(null)}>
-                <IconX />
-              </button>
+              <button className="roles-modal-close" onClick={() => setConfirm(null)}><IconX /></button>
             </div>
             <div className="roles-modal-body">
               <div className="roles-confirm-info">
                 <div className="roles-confirm-rol">
-                  <div
-                    className="roles-confirm-icon"
-                    style={{
-                      background: PALETAS[datos.findIndex(r => r.id_rol === confirm.rol.id_rol) % PALETAS.length] + '22',
-                      borderColor: PALETAS[datos.findIndex(r => r.id_rol === confirm.rol.id_rol) % PALETAS.length]
-                    }}
-                  >
+                  <div className="roles-confirm-icon" style={{ background: PALETAS[datos.findIndex(r => r.id_rol === confirm.rol.id_rol) % PALETAS.length] + '22', borderColor: PALETAS[datos.findIndex(r => r.id_rol === confirm.rol.id_rol) % PALETAS.length] }}>
                     {getRoleIcon(confirm.rol.nombre)}
                   </div>
                   <span className="roles-confirm-nombre">{confirm.rol.nombre}</span>
                 </div>
                 {confirm.usuariosCount === null ? (
-                  <div className="roles-confirm-safe">
-                    <span style={{ color: 'var(--dvna-muted)' }}>Verificando usuarios afectados...</span>
-                  </div>
+                  <div className="roles-confirm-safe"><span style={{ color: 'var(--dvna-muted)' }}>Verificando usuarios afectados...</span></div>
                 ) : confirm.usuariosCount > 0 ? (
                   <div className="roles-confirm-warning">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                    </svg>
-                    <span>
-                      <strong>{confirm.usuariosCount} usuario{confirm.usuariosCount !== 1 ? 's' : ''}</strong>
-                      {' '}con este rol {confirm.usuariosCount !== 1 ? 'quedarán' : 'quedará'} bloqueado{confirm.usuariosCount !== 1 ? 's' : ''}.
-                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span><strong>{confirm.usuariosCount} usuario{confirm.usuariosCount !== 1 ? 's' : ''}</strong>{' '}con este rol {confirm.usuariosCount !== 1 ? 'quedarán' : 'quedará'} bloqueado{confirm.usuariosCount !== 1 ? 's' : ''}.</span>
                   </div>
                 ) : (
                   <div className="roles-confirm-safe">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                      <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                     <span>Ningún usuario tiene este rol asignado actualmente.</span>
                   </div>
                 )}
@@ -645,22 +526,15 @@ export default function Roles() {
         document.body
       )}
 
-      {/* ── Modal formulario (un solo paso) ── */}
       {modal && (
         <RolModal
           titulo={editar ? "Editar rol" : "Nuevo rol"}
-          form={form}
-          setForm={setForm}
-          errores={errores}
-          setErrores={setErrores}
-          modulosDisponibles={modulosDisponibles}
-          permisosCatalogo={permisosCatalogo}
-          onClose={() => setModal(false)}
-          onGuardar={guardar}
+          form={form} setForm={setForm} errores={errores} setErrores={setErrores}
+          modulosDisponibles={modulosDisponibles} permisosCatalogo={permisosCatalogo}
+          onClose={() => setModal(false)} onGuardar={guardar}
           labelGuardar={editar ? "Actualizar" : "Registrar"}
         />
       )}
-
     </div>
   );
 }

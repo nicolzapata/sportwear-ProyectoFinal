@@ -784,3 +784,39 @@
   .roles-modal-body { padding: 0 20px; }
   .roles-modal-footer { padding: 16px 20px; }
 }
+/* ── Barra de acciones ── */
+.roles-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 1rem;
+}
+
+.roles-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* ── Botón Nuevo rol ── */
+.roles-btn-nuevo {
+  background: var(--brown);
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.75rem;
+  border-radius: 40px;
+  font-size: 12px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.roles-btn-nuevo:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+}

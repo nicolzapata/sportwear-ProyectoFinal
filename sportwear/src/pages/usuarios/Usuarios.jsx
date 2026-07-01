@@ -10,17 +10,16 @@ import { IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconPrint, IconSearch, 
 
 const TIPOS_DOC = ["CC", "CE", "TI", "NIT", "PP"];
 const FILAS_POR_PAGINA = 10;
-
 const normalizeM = (v) => v?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
 
 export default function Usuarios() {
   const { usuario } = useAuth();
 
-  // ── Permisos del usuario actual ────────────────────────────────────────────
   const modulosUsuario = Array.isArray(usuario?.modulos) ? usuario.modulos.map(normalizeM) : [];
-  const esAdmin       = usuario?.rol === 'Admin';
-  const tieneUsuarios = esAdmin || modulosUsuario.includes('usuarios');
-  const tieneClientes = esAdmin || modulosUsuario.includes('clientes');
+  const esAdmin        = usuario?.rol === 'Admin';
+  const tieneUsuarios  = esAdmin || modulosUsuario.includes('usuarios');
+  const tieneClientes  = esAdmin || modulosUsuario.includes('clientes');
+  const tienePerm      = (p) => (usuario?.permisos || []).includes(p);
 
   const [usuarios,       setUsuarios]       = useState([]);
   const [clientes,       setClientes]       = useState([]);
@@ -38,7 +37,6 @@ export default function Usuarios() {
   const [paginaUsuarios, setPaginaUsuarios] = useState(1);
   const [paginaClientes, setPaginaClientes] = useState(1);
 
-  // filterType según permisos
   const [filterType, setFilterType] = useState(() =>
     tieneUsuarios ? 'usuarios' : 'clientes'
   );
@@ -55,7 +53,6 @@ export default function Usuarios() {
     permiso_pagos: 1, permiso_cuotas: 1, estado: "Activo"
   });
 
-  // ── Carga inicial ──────────────────────────────────────────────────────────
   useEffect(() => {
     const promesas = [api.get("/roles"), api.get("/barrios")];
     if (tieneUsuarios) promesas.unshift(api.get("/usuarios"));
@@ -65,9 +62,11 @@ export default function Usuarios() {
         setUsuarios(res[0].data);
         setRoles(res[1].data);
         setBarrios(res[2].data);
+        setBarFiltrados(res[2].data);
       } else {
         setRoles(res[0].data);
         setBarrios(res[1].data);
+        setBarFiltrados(res[1].data);
       }
     }).catch(console.error).finally(() => setLoading(false));
 
@@ -80,7 +79,6 @@ export default function Usuarios() {
     }
   }, [filterType, tieneClientes]);
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
   const handleZona = (zona) => {
     setBarFiltrados(zona ? barrios.filter(b => b.zona === zona) : barrios);
     setClienteForm(f => ({ ...f, id_barrio: "" }));
@@ -94,7 +92,6 @@ export default function Usuarios() {
   const getRoleName = (id_rol) =>
     roles.find(r => Number(r.id_rol) === Number(id_rol))?.nombre || id_rol;
 
-  // ── Filtrado ───────────────────────────────────────────────────────────────
   const filtrados = filterType === "usuarios"
     ? usuarios.filter(u =>
         u.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -110,7 +107,6 @@ export default function Usuarios() {
   const totalPaginas = Math.ceil(filtrados.length / FILAS_POR_PAGINA);
   const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
-  // ── Abrir modales ──────────────────────────────────────────────────────────
   const abrirDetalle = async (u) => {
     setDetalle(u);
     try { const { data } = await api.get(`/usuarios/${u.id_usuario}`); setDetalle(data); }
@@ -147,7 +143,6 @@ export default function Usuarios() {
     setModal(true);
   };
 
-  // ── Guardar ────────────────────────────────────────────────────────────────
   const guardar = async () => {
     if (!form.nombre || !form.email) return;
     if (!editar) {
@@ -159,8 +154,8 @@ export default function Usuarios() {
       if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) { alert("Debe contener al menos un símbolo"); return; }
     }
     try {
-      if (!editar) { await api.post("/usuarios", form); }
-      else         { await api.put(`/usuarios/${editar}`, form); }
+      if (!editar) await api.post("/usuarios", form);
+      else         await api.put(`/usuarios/${editar}`, form);
       cargar();
       setModal(false);
     } catch (err) { console.error(err); }
@@ -186,7 +181,6 @@ export default function Usuarios() {
     if (tieneUsuarios) api.get("/usuarios").then(r => setUsuarios(r.data)).catch(console.error);
   };
 
-  // ── Acciones rápidas ───────────────────────────────────────────────────────
   const toggleEstadoUsuario = async (id, nuevoEstado) => {
     await api.patch(`/usuarios/${id}/estado`);
     setUsuarios(prev => prev.map(u => u.id_usuario === id ? { ...u, estado: nuevoEstado } : u));
@@ -201,7 +195,8 @@ export default function Usuarios() {
     try {
       await api.patch(`/usuarios/${id}/permiso-cuotas`);
       setUsuarios(prev => prev.map(u => u.id_usuario === id ? { ...u, permiso_cuotas: !u.permiso_cuotas } : u));
-}     catch { alert("Error al cambiar permiso de cuotas"); }  };
+    } catch { alert("Error al cambiar permiso de cuotas"); }
+  };
 
   if (loading) return (
     <div className="usuarios-loading-container">
@@ -255,58 +250,36 @@ export default function Usuarios() {
     </div>
   );
 
-  // ── Pasos detalle usuario ──────────────────────────────────────────────────
-  const DetalleDocumento  = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Tipo doc." value={detalle.tipo_doc} /><DetalleItem label="Documento" value={detalle.documento} /><DetalleItem label="Nombre completo" value={detalle.nombre} full /></DetalleGrid></DetalleSeccion>);
-  const DetalleCuenta     = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Correo electrónico" value={detalle.email} /><DetalleItem label="Teléfono" value={detalle.telefono} /></DetalleGrid></DetalleSeccion>);
-  const DetalleUbicacion  = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Ciudad" value={detalle.ciudad} /><DetalleItem label="Barrio" value={detalle.barrio ? `${detalle.barrio}${detalle.comuna ? ` — ${detalle.comuna}` : ''}` : null} /><DetalleItem label="Dirección" value={detalle.direccion} full /></DetalleGrid></DetalleSeccion>);
-  const DetalleRol        = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} /><DetalleItem label="Pago por cuotas" value={detalle.permiso_cuotas !== false ? "Permitido" : "Bloqueado"} /><DetalleItem label="Estado" value={detalle.estado} /></DetalleGrid></DetalleSeccion>);
+  const DetalleDocumento = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Tipo doc." value={detalle.tipo_doc} /><DetalleItem label="Documento" value={detalle.documento} /><DetalleItem label="Nombre completo" value={detalle.nombre} full /></DetalleGrid></DetalleSeccion>);
+  const DetalleCuenta    = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Correo electrónico" value={detalle.email} /><DetalleItem label="Teléfono" value={detalle.telefono} /></DetalleGrid></DetalleSeccion>);
+  const DetalleUbicacion = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Ciudad" value={detalle.ciudad} /><DetalleItem label="Barrio" value={detalle.barrio ? `${detalle.barrio}${detalle.comuna ? ` — ${detalle.comuna}` : ''}` : null} /><DetalleItem label="Dirección" value={detalle.direccion} full /></DetalleGrid></DetalleSeccion>);
+  const DetalleRol       = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} /><DetalleItem label="Pago por cuotas" value={detalle.permiso_cuotas !== false ? "Permitido" : "Bloqueado"} /><DetalleItem label="Estado" value={detalle.estado} /></DetalleGrid></DetalleSeccion>);
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="usuarios-container">
       <div className="usuarios-actions-bar">
         <div className="usuarios-actions-left">
           <div className="usuarios-search-wrapper">
             <span className="usuarios-search-icon"><IconSearch /></span>
-            <input
-              type="text"
-              className="usuarios-search-input"
-              placeholder="Buscar por nombre o email..."
-              value={busqueda}
-              onChange={e => { setBusqueda(e.target.value); setPaginaUsuarios(1); setPaginaClientes(1); }}
-            />
-            {busqueda && (
-              <button className="usuarios-search-clear" onClick={() => { setBusqueda(""); setPaginaUsuarios(1); setPaginaClientes(1); }}>
-                <IconX />
-              </button>
-            )}
+            <input type="text" className="usuarios-search-input" placeholder="Buscar por nombre o email..." value={busqueda}
+              onChange={e => { setBusqueda(e.target.value); setPaginaUsuarios(1); setPaginaClientes(1); }} />
+            {busqueda && <button className="usuarios-search-clear" onClick={() => { setBusqueda(""); setPaginaUsuarios(1); setPaginaClientes(1); }}><IconX /></button>}
           </div>
 
-          {/* Toggle solo si tiene ambos módulos */}
           {tieneUsuarios && tieneClientes && (
             <div className="usuarios-filter-toggle">
-              <button
-                className={`usuarios-filter-btn ${filterType === 'usuarios' ? 'active' : ''}`}
-                onClick={() => { setFilterType('usuarios'); setPaginaUsuarios(1); }}
-              >
-                Usuarios
-              </button>
-              <button
-                className={`usuarios-filter-btn ${filterType === 'clientes' ? 'active' : ''}`}
-                onClick={() => { setFilterType('clientes'); setPaginaClientes(1); }}
-              >
-                Clientes
-              </button>
+              <button className={`usuarios-filter-btn ${filterType === 'usuarios' ? 'active' : ''}`} onClick={() => { setFilterType('usuarios'); setPaginaUsuarios(1); }}>Usuarios</button>
+              <button className={`usuarios-filter-btn ${filterType === 'clientes' ? 'active' : ''}`} onClick={() => { setFilterType('clientes'); setPaginaClientes(1); }}>Clientes</button>
             </div>
           )}
         </div>
 
-        <button
-          className="usuarios-btn-primary"
-          onClick={filterType === 'usuarios' ? abrirRegistrar : abrirRegistrarCliente}
-        >
-          <span>+</span> Nuevo {filterType === 'usuarios' ? 'usuario' : 'cliente'}
-        </button>
+        {filterType === 'usuarios' && tienePerm('Usuarios.crear') && (
+          <button className="usuarios-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo usuario</button>
+        )}
+        {filterType === 'clientes' && tienePerm('Clientes.crear') && (
+          <button className="usuarios-btn-primary" onClick={abrirRegistrarCliente}><span>+</span> Nuevo cliente</button>
+        )}
       </div>
 
       <div className="tbl-container">
@@ -318,7 +291,7 @@ export default function Usuarios() {
                 <th className="tbl-th">Email</th>
                 <th className="tbl-th">Rol</th>
                 <th className="tbl-th">Cuotas</th>
-                <th className="tbl-th">Estado</th>
+                {tienePerm('Usuarios.estado') && <th className="tbl-th">Estado</th>}
                 <th className="tbl-th">Acciones</th>
               </tr>
             ) : (
@@ -330,7 +303,7 @@ export default function Usuarios() {
                 <th className="tbl-th">Tipo</th>
                 <th className="tbl-th">Compras</th>
                 <th className="tbl-th">Total</th>
-                <th className="tbl-th">Estado</th>
+                {tienePerm('Clientes.estado') && <th className="tbl-th">Estado</th>}
                 <th className="tbl-th">Acciones</th>
               </tr>
             )}
@@ -342,12 +315,21 @@ export default function Usuarios() {
                   <td className="tbl-td"><div className="usuarios-user-info"><div className="usuarios-user-name">{u.nombre}</div></div></td>
                   <td className="tbl-td usuarios-email-cell">{u.email}</td>
                   <td className="tbl-td"><span className="tabla-rol">{u.rol || getRoleName(u.id_rol)}</span></td>
-                  <td className="tbl-td"><span className={`tabla-status ${u.permiso_cuotas !== false ? "activo" : "inactivo"}`} onClick={() => togglePermisoCuotas(u.id_usuario)} style={{ cursor: 'pointer' }} title="Click para cambiar">{u.permiso_cuotas !== false ? "Sí" : "No"}</span></td>
-                  <td className="tbl-td"><StatusToggle id={u.id_usuario} estado={u.estado} onToggle={toggleEstadoUsuario} showConfirmation={true} /></td>
+                  <td className="tbl-td">
+                    {tienePerm('Usuarios.editar')
+                      ? <span className={`tabla-status ${u.permiso_cuotas !== false ? "activo" : "inactivo"}`} onClick={() => togglePermisoCuotas(u.id_usuario)} style={{ cursor: 'pointer' }} title="Click para cambiar">{u.permiso_cuotas !== false ? "Sí" : "No"}</span>
+                      : <span className={`tabla-status ${u.permiso_cuotas !== false ? "activo" : "inactivo"}`}>{u.permiso_cuotas !== false ? "Sí" : "No"}</span>
+                    }
+                  </td>
+                  {tienePerm('Usuarios.estado') && (
+                    <td className="tbl-td"><StatusToggle id={u.id_usuario} estado={u.estado} onToggle={toggleEstadoUsuario} showConfirmation={true} /></td>
+                  )}
                   <td className="tbl-td">
                     <div className="usuarios-action-cell">
                       <button className="usuarios-action-btn usuarios-view-btn" onClick={() => abrirDetalle(u)} title="Ver detalles"><IconEyeOpen /></button>
-                      <button className="usuarios-action-btn usuarios-edit-btn" onClick={() => abrirEditar(u)} title="Editar"><IconEdit /></button>
+                      {tienePerm('Usuarios.editar') && (
+                        <button className="usuarios-action-btn usuarios-edit-btn" onClick={() => abrirEditar(u)} title="Editar"><IconEdit /></button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -362,11 +344,15 @@ export default function Usuarios() {
                   <td className="tbl-td"><span className={`clientes-tipo-badge ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
                   <td className="tbl-td">{c.total_compras || 0}</td>
                   <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
-                  <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstadoCliente} showConfirmation={true} /></td>
+                  {tienePerm('Clientes.estado') && (
+                    <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstadoCliente} showConfirmation={true} /></td>
+                  )}
                   <td className="tbl-td">
                     <div className="clientes-action-cell">
                       <button className="clientes-action-btn clientes-view-btn" onClick={() => setClienteDetalle(c)} title="Ver detalles"><IconEyeOpen /></button>
-                      <button className="clientes-action-btn clientes-edit-btn" onClick={() => abrirEditarCliente(c)} title="Editar"><IconEdit /></button>
+                      {tienePerm('Clientes.editar') && (
+                        <button className="clientes-action-btn clientes-edit-btn" onClick={() => abrirEditarCliente(c)} title="Editar"><IconEdit /></button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -391,31 +377,14 @@ export default function Usuarios() {
         </div>
       </div>
 
-      {/* Modal formulario usuarios */}
       {modal && filterType === 'usuarios' && (
-        <ModalSteps
-          titulo={editar ? "Editar usuario" : "Nuevo usuario"}
-          pasos={["Documento", "Cuenta", "Ubicación", "Rol"]}
-          onClose={() => setModal(false)}
-          onGuardar={guardar}
-          labelGuardar={editar ? "Actualizar" : "Registrar"}
-        >
-          {PasosDocumento}
-          {PasosCuenta}
-          {PasosUbicacion}
-          {PasosRol}
+        <ModalSteps titulo={editar ? "Editar usuario" : "Nuevo usuario"} pasos={["Documento", "Cuenta", "Ubicación", "Rol"]} onClose={() => setModal(false)} onGuardar={guardar} labelGuardar={editar ? "Actualizar" : "Registrar"}>
+          {PasosDocumento}{PasosCuenta}{PasosUbicacion}{PasosRol}
         </ModalSteps>
       )}
 
-      {/* Modal formulario clientes */}
       {modal && filterType === 'clientes' && (
-        <ModalSteps
-          titulo={editar ? "Editar cliente" : "Nuevo cliente"}
-          pasos={["Datos personales", "Ubicación", "Clasificación"]}
-          onClose={() => setModal(false)}
-          onGuardar={guardarCliente}
-          labelGuardar={editar ? "Actualizar" : "Registrar"}
-        >
+        <ModalSteps titulo={editar ? "Editar cliente" : "Nuevo cliente"} pasos={["Datos personales", "Ubicación", "Clasificación"]} onClose={() => setModal(false)} onGuardar={guardarCliente} labelGuardar={editar ? "Actualizar" : "Registrar"}>
           <div>
             <div className="ms-form-row">
               <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="Ej: Juan Pérez" value={clienteForm.nombre} onChange={e => setClienteForm({ ...clienteForm, nombre: e.target.value })} /></div>
@@ -448,32 +417,23 @@ export default function Usuarios() {
         </ModalSteps>
       )}
 
-      {/* Modal detalle usuario */}
       {detalle && (
-        <ModalDetalle
-          titulo="Perfil del usuario"
-          subtitulo={detalle.nombre}
+        <ModalDetalle titulo="Perfil del usuario" subtitulo={detalle.nombre}
           badge={<span className={`tabla-status ${detalle.estado === "Activo" ? "activo" : "inactivo"}`}>{detalle.estado}</span>}
           pasos={["Documento", "Cuenta", "Ubicación", "Rol"]}
           onClose={() => setDetalle(null)}
-          onEditar={() => { setDetalle(null); abrirEditar(detalle); }}
+          onEditar={tienePerm('Usuarios.editar') ? () => { setDetalle(null); abrirEditar(detalle); } : undefined}
         >
-          {DetalleDocumento}
-          {DetalleCuenta}
-          {DetalleUbicacion}
-          {DetalleRol}
+          {DetalleDocumento}{DetalleCuenta}{DetalleUbicacion}{DetalleRol}
         </ModalDetalle>
       )}
 
-      {/* Modal detalle cliente */}
       {clienteDetalle && (
-        <ModalDetalle
-          titulo="Detalle del cliente"
-          subtitulo={clienteDetalle.nombre}
+        <ModalDetalle titulo="Detalle del cliente" subtitulo={clienteDetalle.nombre}
           badge={<span className={`tabla-status ${clienteDetalle.estado === "Activo" ? "activo" : "inactivo"}`}>{clienteDetalle.estado}</span>}
           pasos={["Datos personales", "Ubicación", "Clasificación"]}
           onClose={() => setClienteDetalle(null)}
-          onEditar={() => { setClienteDetalle(null); abrirEditarCliente(clienteDetalle); }}
+          onEditar={tienePerm('Clientes.editar') ? () => { setClienteDetalle(null); abrirEditarCliente(clienteDetalle); } : undefined}
         >
           <DetalleSeccion><DetalleGrid>
             <DetalleItem label="Nombre completo"    value={clienteDetalle.nombre} full />

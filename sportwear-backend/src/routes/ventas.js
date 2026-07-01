@@ -4,18 +4,17 @@ const {
   getVentas, getVentaById, crearVenta, cambiarEstado, crearMiPedido,
   crearCarritoAbandonado, getMisPedidos,
 } = require('../controllers/ventas.controller');
-const { verificarToken, soloAdmin, soloCliente, tieneModulo } = require('../middlewares/auth.middleware');
+const { verificarToken, soloCliente, tieneModulo } = require('../middlewares/auth.middleware');
 
 router.post('/abandonado', crearCarritoAbandonado);
 
-// ✅ NUEVO: ruta para clientes
 router.get('/mis-pedidos', verificarToken, soloCliente, getMisPedidos);
-router.post('/mi-pedido', verificarToken, soloCliente, crearMiPedido);
+router.post('/mi-pedido',  verificarToken, soloCliente, crearMiPedido);
 
-router.get('/',             verificarToken, tieneModulo('PedidosVentas'), getVentas);
-router.get('/:id',          verificarToken, tieneModulo('PedidosVentas'), getVentaById);
-router.post('/',            verificarToken, tieneModulo('PedidosVentas'), crearVenta);
-router.patch('/:id/estado', verificarToken, tieneModulo('PedidosVentas'), cambiarEstado);
+router.get('/',             verificarToken, tieneModulo('PedidosVentas', 'ver'),    getVentas);
+router.get('/:id',          verificarToken, tieneModulo('PedidosVentas', 'ver'),    getVentaById);
+router.post('/',            verificarToken, tieneModulo('PedidosVentas', 'crear'),  crearVenta);
+router.patch('/:id/estado', verificarToken, tieneModulo('PedidosVentas', 'estado'), cambiarEstado);
 router.patch('/:id/cancelar', verificarToken, soloCliente, cambiarEstado);
 
 module.exports = router;

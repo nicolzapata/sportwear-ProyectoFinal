@@ -1,6 +1,7 @@
 // src/pages/clientes/Clientes.jsx
 import { useState, useEffect } from "react";
 import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
@@ -8,10 +9,12 @@ import "./Clientes.css";
 import { IconEdit, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
 const FORM_VACIO = { nombre: "", tipo_doc: "CC", documento: "", telefono: "", email: "", id_barrio: "", direccion: "", tipo_cliente: "Regular", permiso_pagos: 1, permiso_cuotas: 1, estado: "Activo" };
-
 const FILAS_POR_PAGINA = 10;
 
 export default function Clientes() {
+  const { usuario } = useAuth();
+  const tienePerm = (p) => (usuario?.permisos || []).includes(p);
+
   const [datos,        setDatos]        = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState(null);
@@ -36,7 +39,6 @@ export default function Clientes() {
       setBarFiltrados(barriosRes.data);
       setZonas(zonasRes.data);
     }).catch((err) => {
-      console.error("Error cargando clientes:", err);
       setError(err.response?.data?.message || "Error al cargar clientes");
     }).finally(() => setLoading(false));
   }, []);
@@ -50,8 +52,8 @@ export default function Clientes() {
     c.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
     c.documento?.includes(busqueda)
   );
-  const totalPaginas   = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
-  const filtrados      = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+  const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
+  const filtrados    = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
   const abrirRegistrar = () => { setEditar(null); setForm(FORM_VACIO); setBarFiltrados(barrios); setModal(true); };
   const abrirEditar    = (c) => {
@@ -73,7 +75,6 @@ export default function Clientes() {
       }
       setModal(false);
     } catch (err) {
-      console.error("Error guardando:", err);
       alert(err.response?.data?.message || "Error al guardar cliente");
     }
   };
@@ -82,10 +83,7 @@ export default function Clientes() {
     try {
       await api.patch(`/clientes/${id}/estado`);
       setDatos(prev => prev.map(c => c.id_cliente === id ? { ...c, estado: nuevoEstado } : c));
-    } catch (err) {
-      console.error("Error:", err);
-      alert("Error al cambiar estado");
-    }
+    } catch { alert("Error al cambiar estado"); }
   };
 
   const tipoBadge = (t) => {
@@ -95,7 +93,6 @@ export default function Clientes() {
     return "";
   };
 
-  // ── Pasos formulario ───────────────────────────────────────────────────────
   const PasoDatos = (<div>
     <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="Ej: Juan Pérez" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} /></div>
     <div className="ms-form-row">
@@ -128,7 +125,6 @@ export default function Clientes() {
     </div>
   </div>);
 
-  // ── Pasos detalle ──────────────────────────────────────────────────────────
   const c = verDetalle;
   const DetalleDatos = c && (<DetalleSeccion><DetalleGrid>
     <DetalleItem label="ID"        value={`#${String(c.id_cliente).padStart(3,'0')}`} />
@@ -150,29 +146,19 @@ export default function Clientes() {
     <DetalleItem label="Estado"       value={c.estado} />
   </DetalleGrid></DetalleSeccion>);
 
-  if (error) return (
-    <div style={{ padding: 32, color: "var(--danger)" }}>{error}</div>
-  );
+  if (error) return <div style={{ padding: 32, color: "var(--danger)" }}>{error}</div>;
 
   return (
     <div className="clientes-container">
       <div className="clientes-actions-bar">
         <div className="clientes-search-wrapper">
           <span className="clientes-search-icon"><IconSearch /></span>
-          <input
-            type="text"
-            className="clientes-search-input"
-            placeholder="Buscar por nombre o documento..."
-            value={busqueda}
-            onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
-          />
-          {busqueda && (
-            <button className="clientes-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}>
-              <IconX />
-            </button>
-          )}
+          <input type="text" className="clientes-search-input" placeholder="Buscar por nombre o documento..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
+          {busqueda && <button className="clientes-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
         </div>
-        <button className="clientes-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo cliente</button>
+        {tienePerm('Clientes.crear') && (
+          <button className="clientes-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo cliente</button>
+        )}
       </div>
 
       <div className="tbl-container">
@@ -186,7 +172,7 @@ export default function Clientes() {
               <th className="tbl-th">Tipo</th>
               <th className="tbl-th">Compras</th>
               <th className="tbl-th">Total</th>
-              <th className="tbl-th">Estado</th>
+              {tienePerm('Clientes.estado') && <th className="tbl-th">Estado</th>}
               <th className="tbl-th">Acciones</th>
             </tr>
           </thead>
@@ -204,11 +190,15 @@ export default function Clientes() {
                 <td className="tbl-td"><span className={`tabla-tipo ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
                 <td className="tbl-td">{c.total_compras || 0}</td>
                 <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
-                <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstado} showConfirmation={true} /></td>
+                {tienePerm('Clientes.estado') && (
+                  <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstado} showConfirmation={true} /></td>
+                )}
                 <td className="tbl-td">
                   <div className="clientes-action-cell">
                     <button className="clientes-action-btn clientes-view-btn" onClick={() => setVerDetalle(c)} title="Ver detalles"><IconEye /></button>
-                    <button className="clientes-action-btn clientes-edit-btn" onClick={() => abrirEditar(c)} title="Editar"><IconEdit /></button>
+                    {tienePerm('Clientes.editar') && (
+                      <button className="clientes-action-btn clientes-edit-btn" onClick={() => abrirEditar(c)} title="Editar"><IconEdit /></button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -216,42 +206,19 @@ export default function Clientes() {
           </tbody>
         </table>
 
-        {/* Paginador */}
         {totalPaginas > 1 && (
           <div className="paginador">
-            <button
-              className="paginador-btn"
-              onClick={() => setPagina(p => Math.max(p - 1, 1))}
-              disabled={pagina === 1}
-            >
-              ‹
-            </button>
+            <button className="paginador-btn" onClick={() => setPagina(p => Math.max(p - 1, 1))} disabled={pagina === 1}>‹</button>
             {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
-              <button
-                key={n}
-                className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`}
-                onClick={() => setPagina(n)}
-              >
-                {n}
-              </button>
+              <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
-            <button
-              className="paginador-btn"
-              onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))}
-              disabled={pagina === totalPaginas}
-            >
-              ›
-            </button>
-            <span className="paginador-info">
-              Página {pagina} de {totalPaginas} · {filtradosAll.length} registros
-            </span>
+            <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtradosAll.length} registros</span>
           </div>
         )}
 
         <div className="print-button-container">
-          <button className="btn-print" onClick={() => window.print()}>
-            <IconPrint />
-          </button>
+          <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
         </div>
       </div>
 
@@ -276,7 +243,7 @@ export default function Clientes() {
           badge={<span className={`tabla-status ${verDetalle.estado === "Activo" ? 'activo' : 'inactivo'}`}>{verDetalle.estado}</span>}
           pasos={["Datos personales", "Ubicación", "Clasificación"]}
           onClose={() => setVerDetalle(null)}
-          onEditar={() => { setVerDetalle(null); abrirEditar(verDetalle); }}
+          onEditar={tienePerm('Clientes.editar') ? () => { setVerDetalle(null); abrirEditar(verDetalle); } : undefined}
         >
           {DetalleDatos}
           {DetalleUbicacion}

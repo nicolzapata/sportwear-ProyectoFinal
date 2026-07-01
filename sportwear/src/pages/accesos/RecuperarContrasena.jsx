@@ -17,21 +17,45 @@ const IconMail = () => (
 );
 
 export default function RecuperarContrasena() {
-  const [email, setEmail]     = useState("");
-  const [error, setError]     = useState("");
-  const [loading, setLoading] = useState(false);
-  const [enviado, setEnviado] = useState(false);
+  const [email, setEmail]           = useState("");
+  const [error, setError]           = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [loading, setLoading]       = useState(false);
+  const [enviado, setEnviado]       = useState(false);
+
+  // Validación de formato de correo
+  const validateEmail = (email) => {
+    if (!email) return "El correo electrónico es requerido";
+    if (!email.includes("@")) return "El correo debe contener @";
+    if (!email.includes(".")) return "El correo debe contener un punto (.)";
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(email)) return "Formato de correo inválido";
+
+    return "";
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email) { setError("Ingresa tu correo."); return; }
-    setLoading(true);
+
+    const emailErrorMsg = validateEmail(email);
+    setEmailError(emailErrorMsg);
     setError("");
+
+    // Si hay error de formato, NO se llama a la API
+    if (emailErrorMsg) return;
+
+    setLoading(true);
     try {
       await api.post("/auth/recuperar", { email });
       setEnviado(true);
     } catch (err) {
-      setError(err.response?.data?.message || "Error al enviar el correo");
+      const status = err.response?.status;
+      if (status === 404) {
+        setError(err.response?.data?.message || "El correo no está registrado.");
+      } else {
+        setError(err.response?.data?.message || "Error al enviar el correo");
+      }
     } finally {
       setLoading(false);
     }
@@ -72,7 +96,7 @@ export default function RecuperarContrasena() {
               <p>Te enviaremos un enlace a tu correo registrado</p>
             </div>
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               <div className="form-group">
                 <label><IconMail /> Correo electrónico</label>
                 <div className="input-wrapper">
@@ -81,11 +105,17 @@ export default function RecuperarContrasena() {
                     type="email"
                     placeholder="correo@gmail.com"
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); setError(""); }}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setEmailError("");
+                      setError("");
+                    }}
                     onFocus={onFocus} onBlur={onBlur}
+                    aria-describedby="email-error"
                   />
                   <div className="input-bar" />
                 </div>
+                {emailError && <div id="email-error" className="field-error">{emailError}</div>}
               </div>
 
               {error && <div className="error-message">{error}</div>}

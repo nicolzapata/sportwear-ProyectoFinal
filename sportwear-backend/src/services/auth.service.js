@@ -12,6 +12,7 @@ const generarToken = (usuario) => {
       email:      usuario.email,
       rol:        usuario.rol,
       modulos:    Array.isArray(usuario.modulos) ? usuario.modulos : [],
+      permisos:   Array.isArray(usuario.permisos) ? usuario.permisos : [],
       id_cliente: usuario.id_cliente || null,
     },
     process.env.JWT_SECRET,
@@ -58,8 +59,9 @@ const login = async ({ email, contrasena }) => {
     [base.id_usuario]
   );
 
-  const modulosResult = await pool.query(
-    `SELECT DISTINCT p.modulo
+  // Trae módulo + acción de cada permiso activo del rol
+  const permisosResult = await pool.query(
+    `SELECT DISTINCT p.modulo, p.accion
      FROM "Permisos" p
      JOIN "RolesPermisos" rp ON p.id_permiso = rp.id_permiso
      WHERE rp.id_rol = (SELECT id_rol FROM "Usuarios" WHERE id_usuario = $1)
@@ -68,11 +70,15 @@ const login = async ({ email, contrasena }) => {
     [base.id_usuario]
   );
 
-  const modulos = modulosResult.rows
-    .map(row => row.modulo)
+  // permisos: ["Usuarios.ver", "Clientes.ver", "Clientes.crear", ...]
+  const permisos = permisosResult.rows
+    .map(row => `${row.modulo}.${row.accion}`)
     .filter(Boolean);
 
-  const token = generarToken({ ...base, modulos });
+  // modulos: ["Usuarios", "Clientes", ...] (para el sidebar, igual que antes)
+  const modulos = [...new Set(permisosResult.rows.map(row => row.modulo).filter(Boolean))];
+
+  const token = generarToken({ ...base, modulos, permisos });
   return {
     token,
     usuario: {
@@ -83,6 +89,7 @@ const login = async ({ email, contrasena }) => {
       estado:     base.estado,
       id_cliente: base.id_cliente,
       modulos,
+      permisos,
     },
   };
 };
@@ -117,7 +124,7 @@ const registro = async (datos) => {
 
     await client.query('COMMIT');
 
-    const token = generarToken({ ...nuevoUsuario.rows[0], rol: 'Cliente', id_cliente });
+    const token = generarToken({ ...nuevoUsuario.rows[0], rol: 'Cliente', id_cliente, modulos: [], permisos: [] });
     return { token, usuario: nuevoUsuario.rows[0] };
   } catch (err) {
     await client.query('ROLLBACK');
@@ -127,22 +134,64 @@ const registro = async (datos) => {
   }
 };
 
-const crearUsuario = async ({ nombre, email, contrasena, id_rol, permiso_cuotas }) => {
+/**
+ * Crea un usuario administrativo (o Cliente) desde el panel de administración.
+ * Si el rol seleccionado es "Cliente", crea también el registro en "Clientes"
+ * y lo vincula vía id_cliente, manteniendo ambas tablas sincronizadas.
+ */
+const crearUsuario = async ({
+  nombre, email, contrasena, id_rol, permiso_cuotas,
+  tipo_doc, documento, telefono, ciudad, id_barrio, direccion, tipo_cliente,
+}) => {
   const emailExiste = await pool.query(`SELECT id_usuario FROM "Usuarios" WHERE email = $1`, [email]);
   if (emailExiste.rows.length > 0)
     throw { status: 409, message: 'El email ya está registrado' };
 
-  const result = await pool.query(
-    `INSERT INTO "Usuarios" (nombre, email, password_hash, id_rol, permiso_cuotas)
-     VALUES ($1, $2, crypt($3, gen_salt('bf',12)), $4, $5)
-     RETURNING id_usuario, nombre, email`,
-    [nombre, email, contrasena, id_rol, permiso_cuotas !== false]
-  );
-  return result.rows[0];
+  const rolResult = await pool.query(`SELECT nombre FROM "Roles" WHERE id_rol = $1`, [id_rol]);
+  const esCliente = rolResult.rows[0]?.nombre?.toLowerCase() === 'cliente';
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    let id_cliente = null;
+
+    if (esCliente && documento) {
+      const docExiste = await client.query(`SELECT id_cliente FROM "Clientes" WHERE documento = $1`, [documento]);
+      if (docExiste.rows.length > 0)
+        throw { status: 409, message: 'El documento ya está registrado' };
+
+      const nuevoCliente = await client.query(
+        `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion, tipo_cliente)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id_cliente`,
+        [
+          nombre, tipo_doc || 'CC', documento, telefono || null, email,
+          ciudad || 'Medellín', id_barrio || null, direccion || null,
+          tipo_cliente || 'Regular',
+        ]
+      );
+      id_cliente = nuevoCliente.rows[0].id_cliente;
+    }
+
+    const result = await client.query(
+      `INSERT INTO "Usuarios" (nombre, email, password_hash, id_rol, permiso_cuotas, id_cliente)
+       VALUES ($1, $2, crypt($3, gen_salt('bf',12)), $4, $5, $6)
+       RETURNING id_usuario, nombre, email`,
+      [nombre, email, contrasena, id_rol, permiso_cuotas !== false, id_cliente]
+    );
+
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 const actualizarUsuario = async (id, datos, usuarioActual) => {
-  const { nombre, email, id_rol, estado, contrasena, tipo_doc, documento, telefono, ciudad, id_barrio, direccion, permiso_cuotas } = datos;
+  const { nombre, email, id_rol, estado, contrasena, tipo_doc, documento, telefono, ciudad, id_barrio, direccion, permiso_cuotas, tipo_cliente } = datos;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -171,16 +220,17 @@ const actualizarUsuario = async (id, datos, usuarioActual) => {
     if (id_cliente) {
       await client.query(
         `UPDATE "Clientes" SET nombre=$1, tipo_doc=$2, documento=$3, telefono=$4,
-         ciudad=$5, id_barrio=$6, direccion=$7 WHERE id_cliente=$8`,
+         ciudad=$5, id_barrio=$6, direccion=$7, tipo_cliente=COALESCE($9, tipo_cliente)
+         WHERE id_cliente=$8`,
         [nombre, tipo_doc || 'CC', documento || null, telefono || null,
-         ciudad || 'Medellín', id_barrio || null, direccion || null, id_cliente]
+         ciudad || 'Medellín', id_barrio || null, direccion || null, id_cliente, tipo_cliente || null]
       );
     } else if (documento) {
       const nuevoCliente = await client.query(
-        `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id_cliente`,
+        `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion, tipo_cliente)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id_cliente`,
         [nombre, tipo_doc || 'CC', documento, telefono || null, email,
-         ciudad || 'Medellín', id_barrio || null, direccion || null]
+         ciudad || 'Medellín', id_barrio || null, direccion || null, tipo_cliente || 'Regular']
       );
       await client.query(
         `UPDATE "Usuarios" SET id_cliente=$1 WHERE id_usuario=$2`,

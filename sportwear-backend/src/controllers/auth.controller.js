@@ -27,10 +27,10 @@ const registro = async (req, res) => {
 
 const crearUsuario = async (req, res) => {
   try {
-    const { nombre, email, contrasena, id_rol } = req.body;
+    const { nombre, email, contrasena, id_rol, permiso_cuotas, tipo_doc, documento, telefono, ciudad, id_barrio, direccion, tipo_cliente } = req.body;
     if (!nombre || !email || !contrasena || !id_rol)
       return res.status(400).json({ message: 'Nombre, email, contraseña y rol son requeridos' });
-    const usuario = await authService.crearUsuario({ nombre, email, contrasena, id_rol });
+    const usuario = await authService.crearUsuario({ nombre, email, contrasena, id_rol, permiso_cuotas, tipo_doc, documento, telefono, ciudad, id_barrio, direccion, tipo_cliente });
     res.status(201).json({ ok: true, message: 'Usuario creado correctamente', usuario });
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message || 'Error interno del servidor' });

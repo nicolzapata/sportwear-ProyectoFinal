@@ -1,41 +1,38 @@
-﻿import { NavLink, useNavigate } from "react-router-dom";
+﻿// src/components/Sidebar.jsx
+import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { MENU_ITEMS, PERMISOS } from "../config/permisos";
 import logo from "../assets/LOGO.png";
 import {
-  IconDashboard,
-  IconShield,
-  IconUsers,
-  IconUser,
-  IconTag,
-  IconShoppingBag,
-  IconPalette,
-  IconBox,
-  IconTruck,
-  IconCart,
-  IconDollar,
-  IconHeart,
-  IconCreditCard,
-  IconSettings,
-  IconLogOut,
+  IconDashboard, IconShield, IconUsers, IconUser, IconTag,
+  IconShoppingBag, IconPalette, IconBox, IconTruck, IconCart,
+  IconDollar, IconHeart, IconCreditCard, IconSettings, IconLogOut,
 } from "./Icons";
 import "./Sidebar.css";
 
 const NAV_ICONS = {
-  "/dashboard": <IconDashboard />,
-  "/roles": <IconShield />,
-  "/usuarios": <IconUsers />,
-  "/productos": <IconShoppingBag />,
-  "/colores": <IconPalette />,
-  "/catalogo": <IconBox />,
-  "/proveedores": <IconTruck />,
-  "/compras": <IconCart />,
-  "/pedidos": <IconDollar />,
-  "/pagos": <IconCreditCard />,
+  "/dashboard":  <IconDashboard />,
+  "/roles":      <IconShield />,
+  "/usuarios":   <IconUsers />,
+  "/productos":  <IconShoppingBag />,
+  "/colores":    <IconPalette />,
+  "/catalogo":   <IconBox />,
+  "/proveedores":<IconTruck />,
+  "/compras":    <IconCart />,
+  "/pedidos":    <IconDollar />,
+  "/pagos":      <IconCreditCard />,
+  "/mi-cuenta":  <IconUser />,
 };
+
+const MODULOS_CLIENTE = ['dashboard', 'catalogo', 'categorias'];
 
 const normalizeModulo = (value) =>
   value?.toString?.().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+
+const tieneModulosAdmin = (modulos = []) => {
+  const normalizados = modulos.map(normalizeModulo).filter(Boolean);
+  return normalizados.some(m => !MODULOS_CLIENTE.includes(m));
+};
 
 export default function Sidebar() {
   const { usuario, logout } = useAuth();
@@ -49,7 +46,6 @@ export default function Sidebar() {
     ? usuarioModulos
     : PERMISOS[usuario?.rol] ?? ["dashboard"];
 
-  // Un ítem es visible si tiene AL MENOS UNO de sus módulos requeridos
   const itemEsVisible = (item) => {
     const modulosItem = item.modules
       ? item.modules.map(normalizeModulo)
@@ -59,10 +55,15 @@ export default function Sidebar() {
 
   const menuFiltrado = MENU_ITEMS.filter(itemEsVisible);
 
+  // Si es Cliente con módulos admin, agregar "Mi cuenta" al sidebar
+  const esClienteConAdmin = usuario?.rol === 'Cliente' && tieneModulosAdmin(usuario?.modulos || []);
+  const menuFinal = esClienteConAdmin
+    ? [...menuFiltrado, { key: 'mi-cuenta', path: '/mi-cuenta', label: 'Mi cuenta', module: null }]
+    : menuFiltrado;
+
   const tieneUsuariosModulo = permisosRol.includes('usuarios');
   const tieneClientesModulo = permisosRol.includes('clientes');
 
-  // Etiqueta dinámica: Usuarios / Clientes / ambos
   const getLabel = (item) => {
     if (item.key === 'usuarios') {
       if (tieneUsuariosModulo && tieneClientesModulo) return 'Usuarios';
@@ -81,27 +82,19 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-logo">
         <img src={logo} alt="Logo" className="logo-img" />
-        <div className="logo-name">
-          SPORT<span>WEAR</span>
-        </div>
+        <div className="logo-name">SPORT<span>WEAR</span></div>
       </div>
 
       <nav className="sidebar-nav">
-        {menuFiltrado.map((item) => (
+        {menuFinal.map((item) => (
           <div key={item.path}>
-            {item.divider && itemEsVisible(item) && (
-              <div className="nav-divider" />
-            )}
+            {item.divider && itemEsVisible(item) && <div className="nav-divider" />}
             <NavLink
               to={item.path}
-              className={({ isActive }) =>
-                "nav-item " + (isActive ? "active" : "")
-              }
+              className={({ isActive }) => "nav-item " + (isActive ? "active" : "")}
               title={getLabel(item)}
             >
-              <span className="nav-icon">
-                {NAV_ICONS[item.path] ?? <IconBox />}
-              </span>
+              <span className="nav-icon">{NAV_ICONS[item.path] ?? <IconBox />}</span>
               <span className="nav-label">{getLabel(item)}</span>
             </NavLink>
           </div>
@@ -110,15 +103,12 @@ export default function Sidebar() {
 
       <div className="sidebar-footer">
         <div className="user-info">
-          <div className="user-avatar">
-            {(usuario?.nombre ?? "U").charAt(0).toUpperCase()}
-          </div>
+          <div className="user-avatar">{(usuario?.nombre ?? "U").charAt(0).toUpperCase()}</div>
           <div className="user-text">
             <div className="user-name">{usuario?.nombre ?? "Usuario"}</div>
             <div className="user-role">{usuario?.rol ?? "—"}</div>
           </div>
         </div>
-
         <button className="logout-btn" onClick={handleLogout} title="Cerrar sesión">
           <IconLogOut />
         </button>

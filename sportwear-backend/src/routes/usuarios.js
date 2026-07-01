@@ -7,10 +7,11 @@ const { verificarToken, tieneModulo } = require('../middlewares/auth.middleware'
 
 const ctrl = make('Usuarios', ['nombre','email','id_rol','estado'], 'id_usuario');
 
-router.get('/',             verificarToken, tieneModulo('Usuarios'), ctrl.getAll);
-router.put('/:id',          verificarToken, tieneModulo('Usuarios'), actualizarUsuario);
-router.patch('/:id/estado', verificarToken, tieneModulo('Usuarios'), ctrl.cambiarEstado);
-router.patch('/:id/permiso-cuotas', verificarToken, tieneModulo('Usuarios'), async (req, res) => {
+router.get('/',             verificarToken, tieneModulo('Usuarios', 'ver'),    ctrl.getAll);
+router.post('/',            verificarToken, tieneModulo('Usuarios', 'crear'),  crearUsuario);
+router.put('/:id',          verificarToken, tieneModulo('Usuarios', 'editar'), actualizarUsuario);
+router.patch('/:id/estado', verificarToken, tieneModulo('Usuarios', 'estado'), ctrl.cambiarEstado);
+router.patch('/:id/permiso-cuotas', verificarToken, tieneModulo('Usuarios', 'editar'), async (req, res) => {
   try {
     const result = await pool.query(
       `UPDATE "Usuarios" SET permiso_cuotas = NOT permiso_cuotas WHERE id_usuario = $1 RETURNING id_usuario, permiso_cuotas`,
@@ -20,41 +21,24 @@ router.patch('/:id/permiso-cuotas', verificarToken, tieneModulo('Usuarios'), asy
     res.json(result.rows[0]);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
-router.post('/',            verificarToken, tieneModulo('Usuarios'), crearUsuario);
 
-/* ── Detalle completo: usuario + rol + cliente ── */
-router.get('/:id', verificarToken, tieneModulo('Usuarios'), async (req, res) => {
+router.get('/:id', verificarToken, tieneModulo('Usuarios', 'ver'), async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT
-         u.id_usuario,
-         u.nombre,
-         u.email,
-         u.estado,
-         u.permiso_cuotas,
-         u.ultimo_acceso,
-         u.intentos_fallidos,
-         u.bloqueado_hasta,
-         u.fecha_creacion,
-         r.nombre        AS rol,
-         r.id_rol,
-         c.tipo_doc,
-         c.documento,
-         c.telefono,
-         c.ciudad,
-         c.direccion,
-         c.tipo_cliente,
-         b.nombre        AS barrio,
-         b.comuna
-        FROM "Usuarios" u
-        JOIN "Roles"    r ON u.id_rol      = r.id_rol
-        LEFT JOIN "Clientes" c ON u.id_cliente  = c.id_cliente
-        LEFT JOIN "Barrios"  b ON c.id_barrio   = b.id_barrio
-        WHERE u.id_usuario = $1`,
+         u.id_usuario, u.nombre, u.email, u.estado, u.permiso_cuotas,
+         u.ultimo_acceso, u.intentos_fallidos, u.bloqueado_hasta, u.fecha_creacion,
+         r.nombre AS rol, r.id_rol,
+         c.tipo_doc, c.documento, c.telefono, c.ciudad, c.direccion, c.tipo_cliente,
+         b.nombre AS barrio, b.comuna
+       FROM "Usuarios" u
+       JOIN "Roles"    r ON u.id_rol     = r.id_rol
+       LEFT JOIN "Clientes" c ON u.id_cliente = c.id_cliente
+       LEFT JOIN "Barrios"  b ON c.id_barrio  = b.id_barrio
+       WHERE u.id_usuario = $1`,
       [req.params.id]
     );
-    if (!result.rows.length)
-      return res.status(404).json({ message: 'Usuario no encontrado' });
+    if (!result.rows.length) return res.status(404).json({ message: 'Usuario no encontrado' });
     res.json(result.rows[0]);
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
