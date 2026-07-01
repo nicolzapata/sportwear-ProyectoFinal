@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
+import Toast from "../../components/Toast";
 import "./Clientes.css";
 import { IconEdit, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
@@ -27,6 +28,13 @@ export default function Clientes() {
   const [verDetalle,   setVerDetalle]   = useState(null);
   const [editar,       setEditar]       = useState(null);
   const [form,         setForm]         = useState(FORM_VACIO);
+  const [errores,      setErrores]      = useState({ nombre: "", documento: "" });
+  const [toast,        setToast]        = useState(null);
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   useEffect(() => {
     Promise.all([
@@ -64,7 +72,7 @@ export default function Clientes() {
   };
 
   const guardar = async () => {
-    if (!form.nombre || !form.documento) return;
+    if (!form.nombre || !form.documento) return false;
     try {
       if (editar) {
         const { data } = await api.put(`/clientes/${editar}`, form);
@@ -75,15 +83,28 @@ export default function Clientes() {
       }
       setModal(false);
     } catch (err) {
-      alert(err.response?.data?.message || "Error al guardar cliente");
+      showToast("error", err.response?.data?.message || "Error al guardar cliente");
+      return false;
     }
   };
+
+  const validarPasoDatos = () => {
+    const e = {};
+    if (!form.nombre.trim()) e.nombre = "El nombre es obligatorio";
+    if (!form.documento.trim()) e.documento = "El documento es obligatorio";
+    setErrores(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validarPasoUbicacion = () => true;
+
+  const validarPasoClasificacion = () => true;
 
   const toggleEstado = async (id, nuevoEstado) => {
     try {
       await api.patch(`/clientes/${id}/estado`);
       setDatos(prev => prev.map(c => c.id_cliente === id ? { ...c, estado: nuevoEstado } : c));
-    } catch { alert("Error al cambiar estado"); }
+    } catch { showToast("error", "Error al cambiar estado"); }
   };
 
   const tipoBadge = (t) => {
@@ -94,10 +115,10 @@ export default function Clientes() {
   };
 
   const PasoDatos = (<div>
-    <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="Ej: Juan Pérez" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} /></div>
+    <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className={`ms-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Juan Pérez" value={form.nombre} onChange={e => { setForm({ ...form, nombre: e.target.value }); if (errores.nombre) setErrores(prev => ({ ...prev, nombre: "" })); }} />{errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}</div>
     <div className="ms-form-row">
       <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={form.tipo_doc} onChange={e => setForm({ ...form, tipo_doc: e.target.value })}>{["CC","CE","TI","NIT","Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
-      <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className="ms-form-input" placeholder="123456789" value={form.documento} onChange={e => setForm({ ...form, documento: e.target.value })} /></div>
+      <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="123456789" value={form.documento} onChange={e => { setForm({ ...form, documento: e.target.value }); if (errores.documento) setErrores(prev => ({ ...prev, documento: "" })); }} />{errores.documento && <span className="ms-form-error">{errores.documento}</span>}</div>
     </div>
     <div className="ms-form-row">
       <div className="ms-form-group"><label className="ms-form-label">Teléfono</label><input className="ms-form-input" placeholder="3001234567" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} /></div>
@@ -155,10 +176,13 @@ export default function Clientes() {
           <span className="clientes-search-icon"><IconSearch /></span>
           <input type="text" className="clientes-search-input" placeholder="Buscar por nombre o documento..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
           {busqueda && <button className="clientes-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
-        </div>
-        {tienePerm('Clientes.crear') && (
-          <button className="clientes-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo cliente</button>
-        )}
+          </div>
+          <div className="clientes-actions-right">
+            {tienePerm('Clientes.crear') && (
+              <button className="clientes-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo cliente</button>
+            )}
+            <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+          </div>
       </div>
 
       <div className="tbl-container">
@@ -217,9 +241,7 @@ export default function Clientes() {
           </div>
         )}
 
-        <div className="print-button-container">
-          <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
-        </div>
+        {/* Print button moved to top actions bar */}
       </div>
 
       {modal && (
@@ -228,6 +250,7 @@ export default function Clientes() {
           pasos={["Datos personales", "Ubicación", "Clasificación"]}
           onClose={() => setModal(false)}
           onGuardar={guardar}
+          validaciones={[validarPasoDatos, validarPasoUbicacion, validarPasoClasificacion]}
           labelGuardar={editar ? "Actualizar" : "Registrar"}
         >
           {PasoDatos}
@@ -250,6 +273,7 @@ export default function Clientes() {
           {DetalleClasificacion}
         </ModalDetalle>
       )}
+      <Toast toast={toast} />
     </div>
   );
 }

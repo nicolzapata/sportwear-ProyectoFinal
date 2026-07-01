@@ -471,7 +471,7 @@ export default function PaymentModal({ pedido, cliente, onClose, onPagoConfirmad
   const [pagoRealizado, setPagoRealizado] = useState(null);
 
   return createPortal(
-    <div className="pm-overlay" onClick={pagoRealizado ? onClose : onClose}>
+    <div className="pm-overlay">
       <div
         className={`pm-modal ${pagoRealizado ? "pm-modal--receipt" : ""}`}
         onClick={(e) => e.stopPropagation()}

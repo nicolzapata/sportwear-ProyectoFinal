@@ -24,6 +24,7 @@ export default function PagosAbonos() {
   const [verDetalle, setVerDetalle] = useState(null);
   const [guardando,  setGuardando]  = useState(false);
   const [form, setForm] = useState({ id_venta: "", monto: "", tipo: "Pago completo", metodo: "Efectivo", estado: "Pendiente", fecha: "" });
+  const [errores, setErrores] = useState({ id_venta: "", monto: "", fecha: "" });
 
   useEffect(() => { cargar(); }, []);
 
@@ -53,7 +54,12 @@ export default function PagosAbonos() {
   const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
   const guardar = async () => {
-    if (!form.id_venta || !form.monto) return;
+    const e = {};
+    if (!form.id_venta) e.id_venta = "Selecciona una venta";
+    if (!form.monto || Number(form.monto) <= 0) e.monto = "El monto es obligatorio";
+    if (!form.fecha) e.fecha = "La fecha es obligatoria";
+    setErrores(e);
+    if (Object.keys(e).length > 0) return;
     setGuardando(true);
     try {
       const { data: nuevo } = await api.post("/pagos", {
@@ -112,16 +118,21 @@ export default function PagosAbonos() {
   return (
     <div className="pagosabonos-container">
       <div className="pagosabonos-actions-bar">
-        <div className="pagosabonos-search-wrapper">
+        <div className="pagosabonos-actions-left">
+          <div className="pagosabonos-search-wrapper">
           <span className="pagosabonos-search-icon"><IconSearch /></span>
           <input type="text" className="pagosabonos-search-input" placeholder="Buscar por cliente o ID..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
           {busqueda && <button className="pagosabonos-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
+          </div>
         </div>
-        {tienePerm('Pagos.crear') && (
-          <button className="pagosabonos-btn-primary" onClick={() => { setForm({ id_venta: "", monto: "", tipo: "Pago completo", metodo: "Efectivo", estado: "Pendiente", fecha: "" }); setModal(true); }}>
-            <span>+</span> Nuevo pago
-          </button>
-        )}
+        <div className="pagosabonos-actions-right">
+          {tienePerm('Pagos.crear') && (
+            <button className="pagosabonos-btn-primary" onClick={() => { setForm({ id_venta: "", monto: "", tipo: "Pago completo", metodo: "Efectivo", estado: "Pendiente", fecha: "" }); setModal(true); }}>
+              <span>+</span> Nuevo pago
+            </button>
+          )}
+          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+        </div>
       </div>
 
       <div className="tbl-container">
@@ -182,13 +193,11 @@ export default function PagosAbonos() {
             <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} registros</span>
           </div>
         )}
-        <div className="print-button-container">
-          <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
-        </div>
+        {/* Print button moved to top actions bar */}
       </div>
 
       {modal && (
-        <div className="pagosabonos-modal-overlay" onClick={() => setModal(false)}>
+        <div className="pagosabonos-modal-overlay">
           <div className="pagosabonos-modal" onClick={(e) => e.stopPropagation()}>
             <div className="pagosabonos-modal-header">
               <h2 className="pagosabonos-modal-title">Registrar pago o abono</h2>
@@ -198,14 +207,32 @@ export default function PagosAbonos() {
               <div className="pagosabonos-form-row">
                 <div className="pagosabonos-form-group">
                   <label className="pagosabonos-form-label">Venta asociada</label>
-                  <select className="pagosabonos-form-select" value={form.id_venta} onChange={(e) => handleVentaChange(e.target.value)}>
+                  <select
+                    className={`pagosabonos-form-select${errores.id_venta ? " input-error" : ""}`}
+                    value={form.id_venta}
+                    onChange={(e) => {
+                      handleVentaChange(e.target.value);
+                      if (errores.id_venta) setErrores(prev => ({ ...prev, id_venta: "" }));
+                    }}
+                  >
                     <option value="">Seleccionar venta...</option>
                     {ventas.map(v => <option key={v.id_venta} value={v.id_venta}>V-{String(v.id_venta).padStart(3, "0")} — {v.cliente} ({v.tipo_cliente})</option>)}
                   </select>
+                  {errores.id_venta && <span className="pagosabonos-field-error">{errores.id_venta}</span>}
                 </div>
                 <div className="pagosabonos-form-group">
                   <label className="pagosabonos-form-label">Monto (COP)</label>
-                  <input type="number" className="pagosabonos-form-input" placeholder="Ej: 50000" value={form.monto} onChange={(e) => setForm({ ...form, monto: e.target.value })} />
+                  <input
+                    type="number"
+                    className={`pagosabonos-form-input${errores.monto ? " input-error" : ""}`}
+                    placeholder="Ej: 50000"
+                    value={form.monto}
+                    onChange={(e) => {
+                      setForm({ ...form, monto: e.target.value });
+                      if (errores.monto) setErrores(prev => ({ ...prev, monto: "" }));
+                    }}
+                  />
+                  {errores.monto && <span className="pagosabonos-field-error">{errores.monto}</span>}
                 </div>
               </div>
               <div className="pagosabonos-form-row">
@@ -225,7 +252,16 @@ export default function PagosAbonos() {
               <div className="pagosabonos-form-row">
                 <div className="pagosabonos-form-group">
                   <label className="pagosabonos-form-label">Fecha</label>
-                  <input type="date" className="pagosabonos-form-input" value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} />
+                  <input
+                    type="date"
+                    className={`pagosabonos-form-input${errores.fecha ? " input-error" : ""}`}
+                    value={form.fecha}
+                    onChange={(e) => {
+                      setForm({ ...form, fecha: e.target.value });
+                      if (errores.fecha) setErrores(prev => ({ ...prev, fecha: "" }));
+                    }}
+                  />
+                  {errores.fecha && <span className="pagosabonos-field-error">{errores.fecha}</span>}
                 </div>
                 <div className="pagosabonos-form-group">
                   <label className="pagosabonos-form-label">Estado</label>

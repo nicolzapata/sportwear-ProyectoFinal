@@ -87,7 +87,7 @@
 }
 
 .md-nombre {
-  font-family: var(--font-body, inherit);
+  font-family: 'DM Sans';
   font-size: 17px;
   font-weight: 500;
   color: var(--dvna-charcoal, #1a1a1a);
@@ -96,7 +96,7 @@
 }
 
 .md-titulo-label {
-  font-family: var(--font-body, inherit);
+  font-family: 'DM Sans';
   font-size: 11px;
   font-weight: 300;
   color: var(--dvna-muted, #999);
@@ -164,7 +164,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-body, inherit);
+  font-family: 'DM Sans';
   font-size: 10px;
   font-weight: 600;
   color: var(--dvna-muted, #999);
@@ -182,7 +182,7 @@
   box-shadow: 0 0 0 3px rgba(26,26,26,0.1);
 }
 .md-step-label {
-  font-family: var(--font-body, inherit);
+  font-family: 'DM Sans';
   font-size: 9px;
   font-weight: 500;
   letter-spacing: 0.06em;
@@ -223,7 +223,7 @@
 }
 
 .md-item-label {
-  font-family: var(--font-body, inherit);
+  font-family: 'DM Sans';
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.12em;
@@ -231,7 +231,7 @@
   color: var(--dvna-muted, #999);
 }
 .md-item-value {
-  font-family: var(--font-body, inherit);
+  font-family: 'DM Sans';
   font-size: 13px;
   font-weight: 400;
   color: var(--dvna-charcoal, #1a1a1a);
@@ -251,7 +251,7 @@
   gap: 8px;
 }
 .md-seccion-titulo {
-  font-family: var(--font-body, inherit);
+  font-family: 'DM Sans';
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -301,7 +301,7 @@
   border: 1px solid var(--dvna-border, #e8e0d8);
   border-radius: 40px;
   padding: 9px 18px;
-  font-family: var(--font-body, inherit);
+  font-family: 'DM Sans';
   font-size: 12px;
   font-weight: 400;
   color: var(--dvna-charcoal, #1a1a1a);
@@ -338,7 +338,7 @@
   border: 1px solid var(--dvna-border, #e8e0d8);
   padding: 9px 18px;
   border-radius: 40px;
-  font-family: var(--font-body, inherit);
+  font-family: 'DM Sans';
   font-size: 12px;
   font-weight: 400;
   cursor: pointer;
@@ -358,7 +358,7 @@
   border: 1px solid var(--danger, #b83232);
   padding: 9px 18px;
   border-radius: 40px;
-  font-family: var(--font-body, inherit);
+  font-family: 'DM Sans';
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;

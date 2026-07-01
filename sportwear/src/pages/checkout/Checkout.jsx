@@ -152,11 +152,15 @@ const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
         <label className="checkout-label">Dirección de entrega</label>
         <input
           type="text"
-          className="form-control"
+          className={`form-control${erroresPaso.direccion ? " input-error" : ""}`}
           value={direccion}
-          onChange={(e) => setDireccion(e.target.value)}
+          onChange={(e) => {
+            setDireccion(e.target.value);
+            if (erroresPaso.direccion) setErroresPaso(prev => ({ ...prev, direccion: "" }));
+          }}
           placeholder="Cra 70 # 48-15 Apto 201, Medellín"
         />
+        {erroresPaso.direccion && <div className="checkout-error-message">{erroresPaso.direccion}</div>}
       </div>
     </div>
   );
@@ -166,10 +170,18 @@ const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
     <div className="checkout-campos-modal">
       <div className="checkout-campo">
         <label className="checkout-label">Método de pago</label>
-        <select className="form-control" value={metodo} onChange={(e) => setMetodo(e.target.value)}>
+        <select
+          className={`form-control${erroresPaso.metodo ? " input-error" : ""}`}
+          value={metodo}
+          onChange={(e) => {
+            setMetodo(e.target.value);
+            if (erroresPaso.metodo) setErroresPaso(prev => ({ ...prev, metodo: "" }));
+          }}
+        >
           <option value="Transferencia">Tarjeta débito</option>
           <option value="Tarjeta">Tarjeta crédito</option>
         </select>
+        {erroresPaso.metodo && <div className="checkout-error-message">{erroresPaso.metodo}</div>}
       </div>
 
       {permisoCuotas && (
@@ -195,6 +207,10 @@ const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
             </div>
           )}
         </div>
+      )}
+
+      {!metodo && (
+        <div className="checkout-error-message">Selecciona un método de pago antes de continuar.</div>
       )}
     </div>
   );
@@ -230,6 +246,24 @@ const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
       {error && <p className="checkout-error">{error}</p>}
     </div>
   );
+
+  const validarPasoEntrega = () => {
+    if (!direccion.trim()) {
+      setErroresPaso(prev => ({ ...prev, direccion: "La dirección es obligatoria para continuar." }));
+      return false;
+    }
+    setErroresPaso(prev => ({ ...prev, direccion: "" }));
+    return true;
+  };
+
+  const validarPasoPago = () => {
+    if (!metodo.trim()) {
+      setErroresPaso(prev => ({ ...prev, metodo: "Selecciona un método de pago antes de continuar." }));
+      return false;
+    }
+    setErroresPaso(prev => ({ ...prev, metodo: "" }));
+    return true;
+  };
 
   const confirmarDesdeModal = async () => {
     console.log("Confirmando pedido...", { usuario, items, direccion, metodo });
@@ -458,6 +492,7 @@ const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
           pasos={["Productos", "Entrega", "Pago", "Resumen"]}
           onClose={() => setStepModal(false)}
           onGuardar={confirmarDesdeModal}
+          validaciones={[() => true, validarPasoEntrega, validarPasoPago, () => true]}
           labelGuardar="Confirmar pedido"
           guardando={enviando}
         >

@@ -113,8 +113,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
 }
+
+.pedidosventas-actions-left { 
+  display: flex; 
+  align-items: center;
+  gap: 1rem; 
+}
+.pedidosventas-actions-right { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.75rem; 
+}
+
+.print-button-container { display: none; }
 
 .pedidosventas-search-wrapper {
   position: relative;
@@ -516,23 +530,18 @@
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
 }
 
-/* Detail */
-.pedidosventas-detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem 0;
-  border-bottom: 1px solid #f0f0f0;
-}
+  .pedidosventas-form-input.input-error,
+  .pedidosventas-form-select.input-error {
+    border-color: #b83232;
+    box-shadow: 0 0 0 3px rgba(184, 50, 50, 0.08);
+  }
 
-.pedidosventas-detail-item:last-child {
-  border-bottom: none;
-}
-
-.pedidosventas-detail-label {
-  font-size: 0.8rem;
-  color: #666;
-  text-transform: none;
+  .pedidosventas-field-error {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: #b83232;
+    text-transform: none;
 }
 
 .pedidosventas-detail-value {
@@ -647,7 +656,7 @@
   .pedidosventas-action-cell {
     flex-wrap: wrap;
   }
-}
+
 
 @media (max-width: 480px) {
   .pedidosventas-title {

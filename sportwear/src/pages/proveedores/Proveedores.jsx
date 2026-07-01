@@ -27,6 +27,7 @@ export default function Proveedores() {
   const [verDetalle, setVerDetalle] = useState(null);
   const [editar,     setEditar]     = useState(null);
   const [form,       setForm]       = useState(FORM_VACIO);
+  const [errores,    setErrores]    = useState({ nombre: "", nit: "" });
   const [pagina,     setPagina]     = useState(1);
   const FILAS_POR_PAGINA = 10;
 
@@ -36,12 +37,22 @@ export default function Proveedores() {
 
   const abrirRegistrar = () => { setEditar(null); setForm(FORM_VACIO); setModal(true); };
   const abrirEditar    = (p) => { setEditar(p.id_proveedor); setForm({ nombre: p.nombre, nit: p.nit, contacto: p.contacto, telefono: p.telefono, ciudad: p.ciudad, estado: p.estado }); setModal(true); };
-  const guardar        = () => { if (!form.nombre || !form.nit) return; if (editar) { setDatos(prev => prev.map(p => p.id_proveedor === editar ? { ...p, ...form } : p)); } else { const nuevoId = Math.max(...datos.map(p => p.id_proveedor)) + 1; setDatos(prev => [...prev, { ...form, id_proveedor: nuevoId }]); } setModal(false); };
+  const guardar        = () => { if (!form.nombre || !form.nit) return false; if (editar) { setDatos(prev => prev.map(p => p.id_proveedor === editar ? { ...p, ...form } : p)); } else { const nuevoId = Math.max(...datos.map(p => p.id_proveedor)) + 1; setDatos(prev => [...prev, { ...form, id_proveedor: nuevoId }]); } setModal(false); };
   const toggleEstado   = async (id, nuevoEstado) => { setDatos(prev => prev.map(p => p.id_proveedor === id ? { ...p, estado: nuevoEstado } : p)); };
 
+  const validarPasoEmpresa = () => {
+    const e = {};
+    if (!form.nombre.trim()) e.nombre = "El nombre de la empresa es obligatorio";
+    if (!form.nit.trim()) e.nit = "El NIT es obligatorio";
+    setErrores(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validarPasoContacto = () => true;
+
   const PasoEmpresa  = (<div>
-    <div className="ms-form-group"><label className="ms-form-label">Nombre empresa <span className="ms-req">*</span></label><input type="text" className="ms-form-input" placeholder="Ej: Distribuidora ABC" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} /></div>
-    <div className="ms-form-group"><label className="ms-form-label">NIT <span className="ms-req">*</span></label><input type="text" className="ms-form-input" placeholder="Ej: 901.123.456-7" value={form.nit} onChange={e => setForm({ ...form, nit: e.target.value })} /></div>
+    <div className="ms-form-group"><label className="ms-form-label">Nombre empresa <span className="ms-req">*</span></label><input type="text" className={`ms-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Distribuidora ABC" value={form.nombre} onChange={e => { setForm({ ...form, nombre: e.target.value }); if (errores.nombre) setErrores(prev => ({ ...prev, nombre: "" })); }} />{errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}</div>
+    <div className="ms-form-group"><label className="ms-form-label">NIT <span className="ms-req">*</span></label><input type="text" className={`ms-form-input${errores.nit ? " input-error" : ""}`} placeholder="Ej: 901.123.456-7" value={form.nit} onChange={e => { setForm({ ...form, nit: e.target.value }); if (errores.nit) setErrores(prev => ({ ...prev, nit: "" })); }} />{errores.nit && <span className="ms-form-error">{errores.nit}</span>}</div>
     <div className="ms-form-group"><label className="ms-form-label">Ciudad</label><input type="text" className="ms-form-input" placeholder="Ej: Medellín" value={form.ciudad} onChange={e => setForm({ ...form, ciudad: e.target.value })} /></div>
   </div>);
 
@@ -68,14 +79,19 @@ export default function Proveedores() {
   return (
     <div className="proveedores-container">
       <div className="proveedores-actions-bar">
-        <div className="proveedores-search-wrapper">
-          <span className="proveedores-search-icon"><IconSearch /></span>
-          <input type="text" className="proveedores-search-input" placeholder="Buscar proveedor o NIT..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
-          {busqueda && <button className="proveedores-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
+        <div className="proveedores-actions-left">
+          <div className="proveedores-search-wrapper">
+            <span className="proveedores-search-icon"><IconSearch /></span>
+            <input type="text" className="proveedores-search-input" placeholder="Buscar proveedor o NIT..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
+            {busqueda && <button className="proveedores-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
+          </div>
         </div>
-        {tienePerm('Proveedores.crear') && (
-          <button className="proveedores-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo proveedor</button>
-        )}
+        <div className="proveedores-actions-right">
+          {tienePerm('Proveedores.crear') && (
+            <button className="proveedores-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo proveedor</button>
+          )}
+          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+        </div>
       </div>
 
       <div className="tbl-container">
@@ -125,13 +141,11 @@ export default function Proveedores() {
             <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtradosAll.length} registros</span>
           </div>
         )}
-        <div className="print-button-container">
-          <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
-        </div>
+        {/* Print button moved to top actions bar */}
       </div>
 
       {modal && (
-        <ModalSteps titulo={editar ? "Editar proveedor" : "Nuevo proveedor"} pasos={["Datos empresa","Contacto"]} onClose={() => setModal(false)} onGuardar={guardar} labelGuardar={editar ? "Actualizar" : "Registrar"}>
+        <ModalSteps titulo={editar ? "Editar proveedor" : "Nuevo proveedor"} pasos={["Datos empresa","Contacto"]} onClose={() => setModal(false)} onGuardar={guardar} validaciones={[validarPasoEmpresa, validarPasoContacto]} labelGuardar={editar ? "Actualizar" : "Registrar"}>
           {PasoEmpresa}{PasoContacto}
         </ModalSteps>
       )}

@@ -30,6 +30,7 @@ export default function CatProductos() {
   const [editar,     setEditar]     = useState(null);
   const [loading,    setLoading]    = useState(true);
   const [iconPicker, setIconPicker] = useState(false);
+  const [errores,    setErrores]    = useState({ nombre: "" });
    const [form, setForm] = useState({ nombre: "", descripcion: "", estado: "Activo", icono: "tag" });
    const FILAS_POR_PAGINA = 10;
    const [pagina, setPagina] = useState(1);
@@ -59,8 +60,17 @@ export default function CatProductos() {
     setModal(true);
   };
 
+  const validarPasoDatos = () => {
+    if (!form.nombre.trim()) {
+      setErrores({ nombre: "El nombre de la categoría es obligatorio" });
+      return false;
+    }
+    setErrores({ nombre: "" });
+    return true;
+  };
+
   const guardar = async () => {
-    if (!form.nombre) return;
+    if (!validarPasoDatos()) return false;
     try {
       if (editar) await api.put(`/categorias/${editar}`, form);
       else        await api.post("/categorias", form);
@@ -119,11 +129,15 @@ export default function CatProductos() {
         <label className="ms-form-label">Nombre de la categoría <span className="ms-req">*</span></label>
         <input
           type="text"
-          className="ms-form-input"
+          className={`ms-form-input${errores.nombre ? " input-error" : ""}`}
           placeholder="Ej: Ropa Deportiva"
           value={form.nombre}
-          onChange={e => setForm({ ...form, nombre: e.target.value })}
+          onChange={e => {
+            setForm({ ...form, nombre: e.target.value });
+            if (errores.nombre) setErrores({ nombre: "" });
+          }}
         />
+        {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
       </div>
     </div>
   );
@@ -221,6 +235,7 @@ export default function CatProductos() {
           pasos={["Icono", "Datos"]}
           onClose={() => { setModal(false); setIconPicker(false); }}
           onGuardar={guardar}
+          validaciones={[() => true, validarPasoDatos]}
           labelGuardar={editar ? "Actualizar" : "Registrar"}
         >
           {PasoIcono}

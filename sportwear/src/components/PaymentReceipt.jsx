@@ -36,7 +36,7 @@ export default function PaymentReceipt({ pedido, cliente, pago, onClose }) {
   });
 
   return createPortal(
-    <div className="pm-overlay" onClick={onClose}>
+    <div className="pm-overlay">
       <div className="pm-modal pm-modal--receipt" onClick={(e) => e.stopPropagation()}>
         <div className={`pm-accent ${pago.estaCompleto ? "pm-accent--success" : "pm-accent--partial"}`} />
 

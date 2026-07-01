@@ -27,12 +27,13 @@ export default function ModalSteps({
   labelGuardar = "Guardar",
   guardando = false,
   children,
-  onOverlayClick,
   step,
   onStepChange,
   onValidationFail,
+  validaciones = [],
 }) {
   const [paso, setPasoState] = useState(step ?? 0);
+  const [validacionError, setValidacionError] = useState("");
 
   useEffect(() => {
     if (typeof step === 'number') {
@@ -40,9 +41,46 @@ export default function ModalSteps({
     }
   }, [step]);
 
+  useEffect(() => {
+    setValidacionError("");
+  }, [paso]);
+
   const setPaso = (value) => {
     setPasoState(value);
     if (typeof onStepChange === 'function') onStepChange(value);
+  };
+
+  const validarPaso = async (index) => {
+    const validator = Array.isArray(validaciones) ? validaciones[index] : undefined;
+    if (typeof validator !== 'function') {
+      setValidacionError("");
+      return true;
+    }
+
+    const result = await Promise.resolve(validator());
+    if (result === false) {
+      if (typeof onValidationFail === 'function') onValidationFail(index);
+      return false;
+    }
+
+    if (typeof result === 'string' && result.trim()) {
+      setValidacionError(result);
+      if (typeof onValidationFail === 'function') onValidationFail(index, result);
+      return false;
+    }
+
+    setValidacionError("");
+    return true;
+  };
+
+  const handlePaso = async (value) => {
+    if (value > paso) {
+      for (let i = paso; i < value; i += 1) {
+        const puedeAvanzar = await validarPaso(i);
+        if (!puedeAvanzar) return;
+      }
+    }
+    setPaso(value);
   };
 
   // Convierte children a array en cada render para que siempre
@@ -52,14 +90,10 @@ export default function ModalSteps({
   const total = pasos.length;
   const esUltimo = paso === total - 1;
   const esPrimero = paso === 0;
-
-  const handleOverlay = () => {
-    if (onOverlayClick) onOverlayClick();
-    else onClose();
-  };
+  const esMultiPaso = total > 1;
 
   return createPortal(
-    <div className="ms-overlay" onClick={handleOverlay}>
+    <div className="ms-overlay">
       <div className="ms-modal" onClick={(e) => e.stopPropagation()}>
 
         {/* ── Header ── */}
@@ -79,7 +113,7 @@ export default function ModalSteps({
             <button
               key={i}
               className={`ms-step${i === paso ? " active" : ""}${i < paso ? " done" : ""}`}
-              onClick={() => setPaso(i)}
+              onClick={() => handlePaso(i)}
               type="button"
             >
               <span className="ms-step-dot">
@@ -106,6 +140,11 @@ export default function ModalSteps({
         <div className="ms-body">
           {/* Se renderiza el hijo del paso activo con sus props frescas */}
           {arrayHijos[paso]}
+          {validacionError && (
+            <div className="ms-validation-alert" role="alert" style={{ marginTop: 10 }}>
+              {validacionError}
+            </div>
+          )}
         </div>
 
         {/* ── Footer ── */}
@@ -113,10 +152,16 @@ export default function ModalSteps({
           <button
             type="button"
             className="ms-btn-secondary"
-            onClick={esPrimero ? onClose : () => setPaso(p => p - 1)}
-            disabled={guardando}
+            onClick={() => {
+              if (esMultiPaso) {
+                if (!esPrimero) setPaso(p => p - 1);
+              } else {
+                onClose();
+              }
+            }}
+            disabled={guardando || (esMultiPaso && esPrimero)}
           >
-            {esPrimero ? "Cancelar" : <><IconArrowLeft /> Anterior</>}
+            {esMultiPaso ? <><IconArrowLeft /> Anterior</> : "Cancelar"}
           </button>
 
           <div className="ms-footer-right">
@@ -125,7 +170,7 @@ export default function ModalSteps({
                 <button
                   key={i}
                   className={`ms-dot${i === paso ? " active" : ""}`}
-                  onClick={() => setPaso(i)}
+                  onClick={() => handlePaso(i)}
                   type="button"
                 />
               ))}
@@ -136,9 +181,11 @@ export default function ModalSteps({
                 type="button"
                 className="ms-btn-primary"
                 onClick={async () => {
+                  const puedeAvanzar = await validarPaso(paso);
+                  if (!puedeAvanzar) return;
                   const result = await Promise.resolve(onGuardar?.());
                   if (result === false && typeof onValidationFail === 'function') {
-                    onValidationFail();
+                    onValidationFail(paso);
                   }
                 }}
                 disabled={guardando}
@@ -153,7 +200,10 @@ export default function ModalSteps({
               <button
                 type="button"
                 className="ms-btn-primary"
-                onClick={() => setPaso(p => p + 1)}
+                onClick={async () => {
+                  const puedeAvanzar = await validarPaso(paso);
+                  if (puedeAvanzar) setPaso(p => p + 1);
+                }}
               >
                 Siguiente <IconArrowRight />
               </button>

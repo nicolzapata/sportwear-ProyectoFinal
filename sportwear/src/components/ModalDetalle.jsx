@@ -48,7 +48,7 @@ export default function ModalDetalle({
   const esPrimero = paso === 0;
 
   return createPortal(
-    <div className="md-overlay" onClick={onClose}>
+    <div className="md-overlay">
       <div className="md-modal" onClick={(e) => e.stopPropagation()}>
 
         {/* ── Hero ── */}

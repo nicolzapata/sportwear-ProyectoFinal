@@ -21,6 +21,7 @@ export default function PedidosVentas() {
   const [verDetalle,  setVerDetalle]  = useState(null);
   const [abonosModal, setAbonosModal] = useState(null);
   const [formAbono,   setFormAbono]   = useState({ monto: "", metodo: "Efectivo", fecha: "" });
+  const [erroresAbono, setErroresAbono] = useState({ monto: "", fecha: "" });
 
   useEffect(() => { cargar(); }, []);
 
@@ -75,7 +76,13 @@ export default function PedidosVentas() {
   };
 
   const agregarAbono = async () => {
-    if (!formAbono.monto || !abonosModal) return;
+    const e = {};
+    const restante = abonosModal ? abonosModal.total - (abonosModal.total_pagado || 0) : 0;
+    if (!formAbono.monto || Number(formAbono.monto) <= 0) e.monto = "El monto es obligatorio";
+    else if (Number(formAbono.monto) > restante) e.monto = "El monto no puede ser mayor al saldo";
+    if (!formAbono.fecha) e.fecha = "La fecha es obligatoria";
+    setErroresAbono(e);
+    if (Object.keys(e).length > 0 || !abonosModal) return;
     try {
       const { data: nuevo } = await api.post("/pagos", {
         id_venta: abonosModal.id_venta,
@@ -113,11 +120,16 @@ export default function PedidosVentas() {
 
   return (
     <div className="pedidosventas-container">
-      <div className="pedidosventas-actions-bar">
-        <div className="pedidosventas-search-wrapper">
-          <span className="pedidosventas-search-icon"><IconSearch /></span>
-          <input type="text" className="pedidosventas-search-input" placeholder="Buscar por cliente o ID..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
-          {busqueda && <button className="pedidosventas-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
+      <div className="pedidosventas-actions-bar"> 
+        <div className="pedidosventas-actions-left">
+          <div className="pedidosventas-search-wrapper">
+            <span className="pedidosventas-search-icon"><IconSearch /></span>
+            <input type="text" className="pedidosventas-search-input" placeholder="Buscar por cliente o ID..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
+            {busqueda && <button className="pedidosventas-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
+          </div>
+        </div>
+        <div className="pedidosventas-actions-right">
+          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
         </div>
       </div>
 
@@ -197,9 +209,7 @@ export default function PedidosVentas() {
             <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} registros</span>
           </div>
         )}
-        <div className="print-button-container">
-          <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
-        </div>
+        {/* Print button moved to top actions bar */}
       </div>
 
       {verDetalle && (
@@ -246,7 +256,7 @@ export default function PedidosVentas() {
       )}
 
       {abonosModal && (
-        <div className="pedidosventas-modal-overlay" onClick={() => setAbonosModal(null)}>
+        <div className="pedidosventas-modal-overlay">
           <div className="pedidosventas-modal" onClick={(e) => e.stopPropagation()}>
             <div className="pedidosventas-modal-header">
               <h2 className="pedidosventas-modal-title">Gestionar Abonos</h2>
@@ -289,11 +299,25 @@ export default function PedidosVentas() {
                   <div className="pedidosventas-form-row">
                     <div className="pedidosventas-form-group">
                       <label className="pedidosventas-form-label">Monto (COP)</label>
-                      <input type="number" className="pedidosventas-form-input" placeholder={`Máx: ${fmt(abonosModal.total - (abonosModal.total_pagado || 0))}`} value={formAbono.monto} onChange={(e) => setFormAbono({ ...formAbono, monto: e.target.value })} />
+                      <input
+                        type="number"
+                        className={`pedidosventas-form-input${erroresAbono.monto ? " input-error" : ""}`}
+                        placeholder={`Máx: ${fmt(abonosModal.total - (abonosModal.total_pagado || 0))}`}
+                        value={formAbono.monto}
+                        onChange={(e) => {
+                          setFormAbono({ ...formAbono, monto: e.target.value });
+                          if (erroresAbono.monto) setErroresAbono(prev => ({ ...prev, monto: "" }));
+                        }}
+                      />
+                      {erroresAbono.monto && <span className="pedidosventas-field-error">{erroresAbono.monto}</span>}
                     </div>
                     <div className="pedidosventas-form-group">
                       <label className="pedidosventas-form-label">Método</label>
-                      <select className="pedidosventas-form-select" value={formAbono.metodo} onChange={(e) => setFormAbono({ ...formAbono, metodo: e.target.value })}>
+                      <select
+                        className="pedidosventas-form-select"
+                        value={formAbono.metodo}
+                        onChange={(e) => setFormAbono({ ...formAbono, metodo: e.target.value })}
+                      >
                         <option value="Efectivo">Efectivo</option>
                         <option value="Tarjeta">Tarjeta</option>
                         <option value="Transferencia">Transferencia</option>
@@ -303,7 +327,16 @@ export default function PedidosVentas() {
                   <div className="pedidosventas-form-row">
                     <div className="pedidosventas-form-group">
                       <label className="pedidosventas-form-label">Fecha</label>
-                      <input type="date" className="pedidosventas-form-input" value={formAbono.fecha} onChange={(e) => setFormAbono({ ...formAbono, fecha: e.target.value })} />
+                      <input
+                        type="date"
+                        className={`pedidosventas-form-input${erroresAbono.fecha ? " input-error" : ""}`}
+                        value={formAbono.fecha}
+                        onChange={(e) => {
+                          setFormAbono({ ...formAbono, fecha: e.target.value });
+                          if (erroresAbono.fecha) setErroresAbono(prev => ({ ...prev, fecha: "" }));
+                        }}
+                      />
+                      {erroresAbono.fecha && <span className="pedidosventas-field-error">{erroresAbono.fecha}</span>}
                     </div>
                   </div>
                 </div>

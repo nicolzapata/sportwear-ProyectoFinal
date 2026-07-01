@@ -17,6 +17,7 @@ export default function MiCuenta() {
   const [perfil, setPerfil]                 = useState(null);
   const [showModalSteps, setShowModalSteps] = useState(false);
   const [form, setForm]                     = useState({});
+  const [errores, setErrores]               = useState({ nombre: "", documento: "" });
   const [guardando, setGuardando]           = useState(false);
   const [cargando, setCargando]             = useState(true);
   const [barrios, setBarrios]               = useState([]);
@@ -75,10 +76,23 @@ export default function MiCuenta() {
       showToast("✅ Perfil actualizado correctamente");
     } catch (err) {
       alert("Error al guardar: " + (err.response?.data?.message || "Error"));
+      return false;
     } finally {
       setGuardando(false);
     }
   };
+
+  const validarPasoDatos = () => {
+    const e = {};
+    if (!form.nombre.trim()) e.nombre = "El nombre es obligatorio";
+    if (!form.documento.trim()) e.documento = "El documento es obligatorio";
+    setErrores(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validarPasoUbicacion = () => true;
+
+  const validarPasoClasificacion = () => true;
 
   const handlePagoConfirmado = ({ id_venta, cuotaId, estaCompleto, nuevoTotalPagado }) => {
     const actualizarPedido = (p) => {
@@ -155,7 +169,16 @@ export default function MiCuenta() {
     <div>
       <div className="ms-form-group">
         <label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label>
-        <input className="ms-form-input" placeholder="Ej: Juan Pérez" value={form.nombre || ""} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+        <input
+          className={`ms-form-input${errores.nombre ? " input-error" : ""}`}
+          placeholder="Ej: Juan Pérez"
+          value={form.nombre || ""}
+          onChange={(e) => {
+            setForm({ ...form, nombre: e.target.value });
+            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: "" }));
+          }}
+        />
+        {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
       </div>
       <div className="ms-form-row">
         <div className="ms-form-group">
@@ -166,7 +189,16 @@ export default function MiCuenta() {
         </div>
         <div className="ms-form-group">
           <label className="ms-form-label">N° documento <span className="ms-req">*</span></label>
-          <input className="ms-form-input" placeholder="123456789" value={form.documento || ""} onChange={(e) => setForm({ ...form, documento: e.target.value })} />
+          <input
+            className={`ms-form-input${errores.documento ? " input-error" : ""}`}
+            placeholder="123456789"
+            value={form.documento || ""}
+            onChange={(e) => {
+              setForm({ ...form, documento: e.target.value });
+              if (errores.documento) setErrores(prev => ({ ...prev, documento: "" }));
+            }}
+          />
+          {errores.documento && <span className="ms-form-error">{errores.documento}</span>}
         </div>
       </div>
       <div className="ms-form-row">
@@ -382,6 +414,7 @@ export default function MiCuenta() {
           pasos={["Datos personales", "Ubicación"]}
           onClose={() => setShowModalSteps(false)}
           onGuardar={guardarCambios}
+          validaciones={[validarPasoDatos, validarPasoUbicacion]}
           labelGuardar="Actualizar"
           guardando={guardando}
         >

@@ -39,6 +39,7 @@ export default function GestProductos() {
 
   const [formCategoria,    setFormCategoria]    = useState({ nombre: "", icono: "tag" });
   const [editarCategoria,  setEditarCategoria]  = useState(null);
+  const [erroresCategoria, setErroresCategoria] = useState({ nombre: "" });
 
   const mostrarToast = (tipo, mensaje) => {
     setToast({ tipo, mensaje });
@@ -94,6 +95,28 @@ export default function GestProductos() {
     if (!form.precio || Number(form.precio) <= 0) { e.precio = "El precio debe ser mayor a $0."; ok = false; }
     setErrores(e); return ok;
   };
+
+  const validarPasoInfo = () => {
+    const e = { ...ERRORES_INICIALES };
+    let ok = true;
+    if (!form.nombre.trim()) { e.nombre = "El nombre del producto es obligatorio."; ok = false; }
+    else if (form.nombre.trim().length < 3) { e.nombre = "El nombre debe tener al menos 3 caracteres."; ok = false; }
+    setErrores(e);
+    return ok;
+  };
+
+  const validarPasoCategoria = () => {
+    const e = { ...ERRORES_INICIALES };
+    let ok = true;
+    if (!form.id_categoria) { e.id_categoria = "Selecciona una categoría."; ok = false; }
+    if (!form.precio || Number(form.precio) <= 0) { e.precio = "El precio debe ser mayor a $0."; ok = false; }
+    setErrores(e);
+    return ok;
+  };
+
+  const validarPasoEstado = () => true;
+
+  const validarPasoImagenes = () => true;
 
   const guardar = async () => {
     if (!validar()) return;
@@ -164,11 +187,18 @@ export default function GestProductos() {
   };
 
   // ── Categorías ─────────────────────────────────────────────────────────────
-  const abrirRegistrarCategoria = () => { setEditarCategoria(null); setFormCategoria({ nombre: "", icono: "tag" }); setModal(true); };
-  const abrirEditarCategoria    = (c) => { setEditarCategoria(c.id_categoria); setFormCategoria({ nombre: c.nombre, icono: c.icono || "tag" }); setModal(true); };
+  const abrirRegistrarCategoria = () => { setEditarCategoria(null); setFormCategoria({ nombre: "", icono: "tag" }); setErroresCategoria({ nombre: "" }); setModal(true); };
+  const abrirEditarCategoria    = (c) => { setEditarCategoria(c.id_categoria); setFormCategoria({ nombre: c.nombre, icono: c.icono || "tag" }); setErroresCategoria({ nombre: "" }); setModal(true); };
+
+  const validarPasoCategoriaForm = () => {
+    const e = { nombre: "" };
+    if (!formCategoria.nombre?.trim()) { e.nombre = "El nombre de la categoría es obligatorio"; }
+    setErroresCategoria(e);
+    return !e.nombre;
+  };
 
   const guardarCategoria = async () => {
-    if (!formCategoria.nombre?.trim()) return;
+    if (!validarPasoCategoriaForm()) return;
     try {
       if (editarCategoria) await api.put(`/categorias/${editarCategoria}`, formCategoria);
       else                 await api.post("/categorias", formCategoria);
@@ -265,8 +295,17 @@ export default function GestProductos() {
     <div>
       <div className="gestproductos-form-group">
         <label className="gestproductos-form-label">Nombre de la categoría <span className="gestproductos-required">*</span></label>
-        <input type="text" className="gestproductos-form-input" placeholder="Ej: Ropa Deportiva" value={formCategoria.nombre}
-          onChange={e => setFormCategoria({ ...formCategoria, nombre: e.target.value })} />
+        <input
+          type="text"
+          className={`gestproductos-form-input${erroresCategoria.nombre ? " input-error" : ""}`}
+          placeholder="Ej: Ropa Deportiva"
+          value={formCategoria.nombre}
+          onChange={e => {
+            setFormCategoria({ ...formCategoria, nombre: e.target.value });
+            if (erroresCategoria.nombre) setErroresCategoria({ nombre: "" });
+          }}
+        />
+        {erroresCategoria.nombre && <p className="gestproductos-field-error">{erroresCategoria.nombre}</p>}
       </div>
     </div>
   );
@@ -492,7 +531,7 @@ export default function GestProductos() {
         <ModalSteps
           titulo={editar ? "Editar producto" : "Nuevo producto"}
           pasos={["Info y variantes", "Categoría y precio", "Estado", "Imágenes"]}
-          onClose={cerrarModal} onGuardar={guardar} labelGuardar={editar ? "Actualizar" : "Registrar"}
+          onClose={cerrarModal} onGuardar={guardar} validaciones={[validarPasoInfo, validarPasoCategoria, validarPasoEstado, validarPasoImagenes]} labelGuardar={editar ? "Actualizar" : "Registrar"}
         >
           {PasoInfo}{PasoCategoria}{PasoEstado}{PasoImagenes}
         </ModalSteps>
@@ -502,7 +541,7 @@ export default function GestProductos() {
         <ModalSteps
           titulo={editarCategoria ? "Editar categoría" : "Nueva categoría"}
           pasos={["Datos"]}
-          onClose={() => setModal(false)} onGuardar={guardarCategoria} labelGuardar={editarCategoria ? "Actualizar" : "Registrar"}
+          onClose={() => setModal(false)} onGuardar={guardarCategoria} validaciones={[validarPasoCategoriaForm]} labelGuardar={editarCategoria ? "Actualizar" : "Registrar"}
         >
           {PasoCategoriaForm}
         </ModalSteps>

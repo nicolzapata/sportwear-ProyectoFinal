@@ -112,6 +112,20 @@
   margin-bottom: 1rem;
 }
 
+.clientes-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.clientes-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.print-button-container { display: none; }
+
 .clientes-search-wrapper {
   position: relative;
   width: 320px;

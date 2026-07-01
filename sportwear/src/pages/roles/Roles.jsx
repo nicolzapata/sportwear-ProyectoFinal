@@ -278,7 +278,7 @@ function RolModal({ titulo, form, setForm, errores, setErrores, modulosDisponibl
   };
 
   return createPortal(
-    <div className="roles-modal-overlay" onClick={onClose}>
+    <div className="roles-modal-overlay">
       <div className="roles-modal roles-form-modal" onClick={e => e.stopPropagation()}>
         <div className="roles-modal-accent" />
         <div className="roles-modal-header">

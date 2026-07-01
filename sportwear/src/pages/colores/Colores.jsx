@@ -4,6 +4,8 @@ import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import ModalSteps from "../../components/ModalSteps";
 import StatusToggle from "../../components/StatusToggle";
+import ConfirmModal from "../../components/ConfirmModal";
+import Toast from "../../components/Toast";
 import './Colores.css';
 import { IconEdit, IconPalette, IconPrint, IconSearch, IconTrash, IconX } from "../../components/Icons";
 
@@ -24,6 +26,14 @@ export default function Colores() {
   const [loading,  setLoading]  = useState(true);
   const [tab,      setTab]      = useState("muestra");
   const [form, setForm] = useState({ nombre: "", codigo_hex: "#000000", estado: "Activo" });
+  const [errores, setErrores] = useState({ nombre: "", codigo_hex: "" });
+  const [toast, setToast] = useState(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3500);
+  };
   const FILAS_POR_PAGINA = 10;
 
   const cargar = async () => {
@@ -44,24 +54,59 @@ export default function Colores() {
   const abrirEditar    = (c) => { setEditar(c.id_color); setForm({ nombre: c.nombre, codigo_hex: c.codigo_hex, estado: c.estado }); setModal(true); };
 
   const guardar = async () => {
-    if (!form.nombre) return;
+    if (!form.nombre?.trim()) return false;
     try {
       if (editar) await api.put(`/colores/${editar}`, form);
       else        await api.post("/colores", form);
       setModal(false); cargar();
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error(err); return false; }
+  };
+
+  const validarPasoColor = () => {
+    if (!form.codigo_hex) {
+      setErrores(prev => ({ ...prev, codigo_hex: "Selecciona un color válido" }));
+      return false;
+    }
+    setErrores(prev => ({ ...prev, codigo_hex: "" }));
+    return true;
+  };
+
+  const validarPasoDatos = () => {
+    if (!form.nombre.trim()) {
+      setErrores(prev => ({ ...prev, nombre: "El nombre del color es obligatorio" }));
+      return false;
+    }
+    setErrores(prev => ({ ...prev, nombre: "" }));
+    return true;
+  };
+
+  const validarPasoCompleto = () => {
+    const colorValido = validarPasoColor();
+    const nombreValido = validarPasoDatos();
+    return colorValido && nombreValido;
   };
 
   const eliminarColor = async (id) => {
-    if (!window.confirm("¿Eliminar este color? Se eliminarán las variantes asociadas.")) return;
-    try { await api.delete(`/colores/${id}`); cargar(); } catch (err) { console.error(err); }
+    setPendingDeleteId(id);
+  };
+
+  const confirmarEliminarColor = async () => {
+    if (!pendingDeleteId) return;
+    try {
+      await api.delete(`/colores/${pendingDeleteId}`);
+      setPendingDeleteId(null);
+      cargar();
+    } catch (err) {
+      setPendingDeleteId(null);
+      showToast("error", err.response?.data?.message || "Error al eliminar color");
+    }
   };
 
   const toggleEstado = async (id, nuevoEstado) => {
     try {
       await api.patch(`/colores/${id}/estado`);
       setDatos(prev => prev.map(c => c.id_color === id ? { ...c, estado: nuevoEstado } : c));
-    } catch { alert("Error al cambiar estado"); }
+    } catch { showToast("error", "Error al cambiar estado"); }
   };
 
   if (loading) return (
@@ -76,9 +121,18 @@ export default function Colores() {
       <div className="ms-form-group">
         <label className="ms-form-label">Color HEX <span className="ms-req">*</span></label>
         <div className="colores-color-picker-wrapper">
-          <input type="color" className="colores-color-picker" value={form.codigo_hex} onChange={e => setForm({ ...form, codigo_hex: e.target.value })} />
+          <input
+            type="color"
+            className={`colores-color-picker${errores.codigo_hex ? " input-error" : ""}`}
+            value={form.codigo_hex}
+            onChange={e => {
+              setForm({ ...form, codigo_hex: e.target.value });
+              if (errores.codigo_hex) setErrores(prev => ({ ...prev, codigo_hex: "" }));
+            }}
+          />
           <span className="colores-color-value">{form.codigo_hex}</span>
         </div>
+        {errores.codigo_hex && <span className="ms-form-error">{errores.codigo_hex}</span>}
       </div>
       <div className="colores-preview" style={{ marginTop: 8 }}>
         <div className="colores-preview-label">Vista previa</div>
@@ -93,9 +147,26 @@ export default function Colores() {
     <div>
       <div className="ms-form-group">
         <label className="ms-form-label">Nombre del color <span className="ms-req">*</span></label>
-        <input type="text" className="ms-form-input" placeholder="Ej: Rojo Intenso" value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} />
+        <input
+          type="text"
+          className={`ms-form-input${errores.nombre ? " input-error" : ""}`}
+          placeholder="Ej: Rojo Intenso"
+          value={form.nombre}
+          onChange={e => {
+            setForm({ ...form, nombre: e.target.value });
+            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: "" }));
+          }}
+        />
+        {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
       </div>
     </div>
+  );
+
+  const PasoColorYDatos = (
+    <>
+      {PasoColor}
+      {PasoDatos}
+    </>
   );
 
   return (
@@ -112,9 +183,14 @@ export default function Colores() {
             <button className={`colores-tab-btn${tab === 'lista' ? ' active' : ''}`} onClick={() => setTab('lista')}>Lista</button>
           </div>
         </div>
-        {tienePerm('Colores.crear') && (
-          <button className="colores-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo color</button>
-        )}
+        <div className="colores-actions-right">
+          {tienePerm('Colores.crear') && (
+            <button className="colores-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo color</button>
+          )}
+          {tab === 'lista' && (
+            <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+          )}
+        </div>
       </div>
 
       {tab === 'muestra' && (
@@ -180,18 +256,27 @@ export default function Colores() {
               <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtradosAll.length} registros</span>
             </div>
           )}
-          <div className="print-button-container">
-            <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
-          </div>
+          {/* Print button moved to top action bar */}
         </div>
       )}
 
       {modal && (
-        <ModalSteps titulo={editar ? "Editar color" : "Nuevo color"} pasos={["Seleccionar color", "Nombre"]} onClose={() => setModal(false)} onGuardar={guardar} labelGuardar={editar ? "Actualizar" : "Registrar"}>
-          {PasoColor}
-          {PasoDatos}
+        <ModalSteps titulo={editar ? "Editar color" : "Nuevo color"} pasos={["Color y nombre"]} onClose={() => setModal(false)} onGuardar={guardar} validaciones={[validarPasoCompleto]} labelGuardar={editar ? "Actualizar" : "Registrar"}>
+          {PasoColorYDatos}
         </ModalSteps>
       )}
+
+      {pendingDeleteId && (
+        <ConfirmModal
+          title="Eliminar color"
+          message="¿Eliminar este color? Se eliminarán las variantes asociadas."
+          onCancel={() => setPendingDeleteId(null)}
+          onConfirm={confirmarEliminarColor}
+          confirmLabel="Sí, eliminar"
+        />
+      )}
+
+      <Toast toast={toast} />
     </div>
   );
 }

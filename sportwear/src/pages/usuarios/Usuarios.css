@@ -22,6 +22,10 @@
   gap: 1rem;
 }
 
+.usuarios-actions-right { display: flex; align-items: center; gap: 0.75rem; }
+
+.print-button-container { display: none; }
+
 /* Filter toggle - matching colores tabs style */
 .usuarios-filter-toggle {
   display: flex;

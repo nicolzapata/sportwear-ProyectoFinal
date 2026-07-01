@@ -73,7 +73,7 @@ export default function OrderDetailModal({ pedido, onClose }) {
     f ? new Date(f).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
   return createPortal(
-    <div className="od-overlay" onClick={onClose}>
+    <div className="od-overlay">
       <div className="od-modal" onClick={(e) => e.stopPropagation()}>
         <div className="od-accent" />
 

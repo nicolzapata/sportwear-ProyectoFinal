@@ -4,7 +4,7 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: var(--font-body);
+  font-family: 'DM Sans';
 }
 
 /* Header */
@@ -115,6 +115,11 @@
   align-items: center;
   margin-bottom: 1rem;
 }
+
+.pagosabonos-actions-left { display: flex; align-items: center; gap: 1rem; }
+.pagosabonos-actions-right { display: flex; align-items: center; gap: 0.75rem; }
+
+.print-button-container { display: none; }
 
 .pagosabonos-search-wrapper {
   position: relative;
@@ -265,6 +270,7 @@
 .pagosabonos-modal-title {
   font-size: 1.2rem;
   font-weight: 500;
+  font-family: 'DM Sans';
   color: #1a1a1a;
   margin: 0;
   text-transform: none;
@@ -334,6 +340,7 @@
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   font-size: 0.9rem;
+  font-family: "DM Sans";
   transition: all 0.2s ease;
   background: white;
 }
@@ -345,24 +352,21 @@
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
 }
 
-/* Detail */
-.pagosabonos-detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.8rem 0;
-  border-bottom: 1px solid #f0f0f0;
-}
+  .pagosabonos-form-input.input-error,
+  .pagosabonos-form-select.input-error {
+    border-color: #b83232;
+    box-shadow: 0 0 0 3px rgba(184, 50, 50, 0.08);
+  }
 
-.pagosabonos-detail-item:last-child {
-  border-bottom: none;
-}
-
-.pagosabonos-detail-label {
-  font-size: 0.8rem;
-  color: #666;
+  .pagosabonos-field-error {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: #b83232;
+  
   text-transform: none;
-}
+  
+
 
 .pagosabonos-detail-value {
   font-weight: 500;

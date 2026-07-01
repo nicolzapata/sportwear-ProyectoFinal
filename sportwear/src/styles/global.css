@@ -101,6 +101,8 @@ body { font-family:var(--font-body); background:var(--off-white); color:var(--te
 .form-label { display:block; font-size:12px; font-weight:600; color:var(--text); margin-bottom:7px; }
 .form-control { width:100%; padding:10px 14px; background:var(--white); border:1.5px solid var(--border); border-radius:var(--r-md); color:var(--text); font-family:var(--font-body); font-size:14px; transition:border-color 0.2s,box-shadow 0.2s; outline:none; -webkit-appearance:none; }
 .form-control:focus { border-color:var(--primary-dark); box-shadow:0 0 0 3px rgba(245,230,66,0.2); }
+.form-control.input-error { border-color: #b83232; box-shadow: 0 0 0 3px rgba(184,50,50,0.08); }
+.form-control.input-error:focus { border-color: #b83232; box-shadow: 0 0 0 3px rgba(184,50,50,0.12); }
 .form-control::placeholder { color:var(--muted); }
 select.form-control { cursor:pointer; }
 .form-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; }

@@ -1,13 +1,13 @@
 // src/router/AppRouter.jsx
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { AuthProvider }  from "../context/AuthContext";
 import { CartProvider }  from "../context/CartContext";
 import Layout            from "../components/Layout";
 import PublicLayout      from "../components/PublicLayout";
 import ProtectedRoute    from "../components/ProtectedRoute";
+import { useAuth }       from "../context/AuthContext";
 import RestablecerContrasena from "../pages/accesos/RestablecerContrasena";
 
-// Páginas públicas
 import Login               from "../pages/accesos/Login";
 import Registro            from "../pages/accesos/Registro";
 import RecuperarContrasena from "../pages/accesos/RecuperarContrasena";
@@ -18,7 +18,6 @@ import Checkout            from "../pages/checkout/Checkout";
 import SobreNosotros       from "../pages/sobre-nosotros/SobreNosotros";
 import MiCuenta            from "../pages/clientes/MiCuenta";
 
-// Páginas protegidas
 import Dashboard     from "../pages/dashboard/Dashboard";
 import Roles         from "../pages/roles/Roles";
 import Usuarios      from "../pages/usuarios/Usuarios";
@@ -28,6 +27,25 @@ import Proveedores   from "../pages/proveedores/Proveedores";
 import Compras       from "../pages/compras/Compras";
 import PedidosVentas from "../pages/pedidosVentas/PedidosVentas";
 import PagosAbonos   from "../pages/pagosAbonos/PagosAbonos";
+
+const MODULOS_CLIENTE = ['dashboard', 'catalogo', 'categorias'];
+
+const normalizeModulo = (value) =>
+  value?.toString?.().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+
+const tieneModulosAdmin = (modulos = []) => {
+  const normalizados = modulos.map(normalizeModulo).filter(Boolean);
+  return normalizados.some(m => !MODULOS_CLIENTE.includes(m));
+};
+
+// Wrapper que decide en qué layout renderizar /mi-cuenta
+function MiCuentaRoute() {
+  const { usuario } = useAuth();
+  if (usuario?.rol === 'Cliente' && tieneModulosAdmin(usuario?.modulos || [])) {
+    return <Layout />;
+  }
+  return <PublicLayout />;
+}
 
 const P = ({ k, children }) => (
   <ProtectedRoute requiredKey={k}>{children}</ProtectedRoute>
@@ -54,7 +72,11 @@ export default function AppRouter() {
               <Route path="/carrito"         element={<Carrito />} />
               <Route path="/checkout"        element={<Checkout />} />
               <Route path="/sobre-nosotros"  element={<SobreNosotros />} />
-              <Route path="/mi-cuenta"       element={<MiCuenta />} />
+            </Route>
+
+            {/* /mi-cuenta — layout condicional según módulos del usuario */}
+            <Route element={<MiCuentaRoute />}>
+              <Route path="/mi-cuenta" element={<MiCuenta />} />
             </Route>
 
             {/* Protegidas — admin/empleados */}

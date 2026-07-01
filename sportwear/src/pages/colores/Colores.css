@@ -562,8 +562,8 @@
 
 /* Print button */
 .print-button-container {
-  margin-top: 1rem;
-  text-align: right;
+  /* kept for backwards compat; top action placement preferred */
+  display: none;
 }
 
 .btn-print {

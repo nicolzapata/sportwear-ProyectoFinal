@@ -29,13 +29,22 @@ export default function Compras() {
   const [modal,      setModal]      = useState(false);
   const [verDetalle, setVerDetalle] = useState(null);
   const [form,       setForm]       = useState({ proveedor: "", producto: "", cantidad: 1, total: "", estado: "Pendiente", fecha: "" });
+  const [errores,    setErrores]    = useState({ proveedor: "", producto: "", cantidad: "", total: "", fecha: "" });
 
   const filtradosAll = datos.filter(c => c.proveedor?.toLowerCase().includes(busqueda.toLowerCase()) || String(c.id_compra).includes(busqueda));
   const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
   const filtrados    = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
   const guardar = () => {
-    if (!form.proveedor || !form.producto) return;
+    const e = {};
+    if (!form.proveedor.trim()) e.proveedor = "El proveedor es obligatorio";
+    if (!form.producto.trim())  e.producto  = "El producto es obligatorio";
+    if (!form.cantidad || Number(form.cantidad) <= 0) e.cantidad = "La cantidad debe ser mayor a 0";
+    if (!form.total || Number(form.total) <= 0) e.total = "El total debe ser mayor a 0";
+    if (!form.fecha) e.fecha = "La fecha es obligatoria";
+    setErrores(e);
+    if (Object.keys(e).length > 0) return;
+
     const nuevoId = Math.max(...datos.map(c => c.id_compra)) + 1;
     setDatos(prev => [...prev, { ...form, id_compra: nuevoId, cantidad: Number(form.cantidad), total: Number(form.total) }]);
     setModal(false);
@@ -63,16 +72,23 @@ export default function Compras() {
   return (
     <div className="compras-container">
       <div className="compras-actions-bar">
-        <div className="compras-search-wrapper">
-          <span className="compras-search-icon"><IconSearch /></span>
-          <input type="text" className="compras-search-input" placeholder="Buscar por proveedor o ID..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
-          {busqueda && <button className="compras-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
+        <div className="compras-actions-left"> 
+          <div className="compras-search-wrapper">
+            <span className="compras-search-icon"><IconSearch /></span>
+            <input type="text" className="compras-search-input" placeholder="Buscar por proveedor o ID..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
+            {busqueda && <button className="compras-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
+          </div>
         </div>
-        {tienePerm('Compras.crear') && (
-          <button className="compras-btn-primary" onClick={() => { setForm({ proveedor: "", producto: "", cantidad: 1, total: "", estado: "Pendiente", fecha: "" }); setModal(true); }}>
-            <span>+</span> Nueva compra
+        <div className="compras-actions-right">
+          {tienePerm('Compras.crear') && (
+            <button className="compras-btn-primary" onClick={() => { setForm({ proveedor: "", producto: "", cantidad: 1, total: "", estado: "Pendiente", fecha: "" }); setModal(true); }}>
+              <span>+</span> Nueva compra
+            </button>
+          )}
+          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla">
+            <IconPrint />
           </button>
-        )}
+        </div>
       </div>
 
       <div className="compras-results-count">{filtradosAll.length} compra{filtradosAll.length !== 1 ? 's' : ''} encontrada{filtradosAll.length !== 1 ? 's' : ''}</div>
@@ -125,13 +141,10 @@ export default function Compras() {
             <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtradosAll.length} registros</span>
           </div>
         )}
-        <div className="print-button-container">
-          <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
-        </div>
       </div>
 
       {modal && (
-        <div className="compras-modal-overlay" onClick={() => setModal(false)}>
+        <div className="compras-modal-overlay">
           <div className="compras-modal" onClick={(e) => e.stopPropagation()}>
             <div className="compras-modal-header">
               <h2 className="compras-modal-title">Nueva compra</h2>
@@ -141,33 +154,77 @@ export default function Compras() {
               <div className="compras-form-row">
                 <div className="compras-form-group">
                   <label className="compras-form-label">Proveedor</label>
-                  <select className="compras-form-select" value={form.proveedor} onChange={(e) => setForm({ ...form, proveedor: e.target.value })}>
+                  <select
+                    className={`compras-form-select${errores.proveedor ? " input-error" : ""}`}
+                    value={form.proveedor}
+                    onChange={(e) => {
+                      setForm({ ...form, proveedor: e.target.value });
+                      if (errores.proveedor) setErrores(prev => ({ ...prev, proveedor: "" }));
+                    }}
+                  >
                     <option value="">Seleccionar proveedor...</option>
                     {PROVEEDORES_DEMO.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
+                  {errores.proveedor && <span className="compras-field-error">{errores.proveedor}</span>}
                 </div>
                 <div className="compras-form-group">
                   <label className="compras-form-label">Producto</label>
-                  <select className="compras-form-select" value={form.producto} onChange={(e) => setForm({ ...form, producto: e.target.value })}>
+                  <select
+                    className={`compras-form-select${errores.producto ? " input-error" : ""}`}
+                    value={form.producto}
+                    onChange={(e) => {
+                      setForm({ ...form, producto: e.target.value });
+                      if (errores.producto) setErrores(prev => ({ ...prev, producto: "" }));
+                    }}
+                  >
                     <option value="">Seleccionar producto...</option>
                     {PRODUCTOS_DEMO.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
+                  {errores.producto && <span className="compras-field-error">{errores.producto}</span>}
                 </div>
               </div>
               <div className="compras-form-row">
                 <div className="compras-form-group">
                   <label className="compras-form-label">Cantidad</label>
-                  <input type="number" min="1" className="compras-form-input" value={form.cantidad} onChange={(e) => setForm({ ...form, cantidad: e.target.value })} />
+                  <input
+                    type="number"
+                    min="1"
+                    className={`compras-form-input${errores.cantidad ? " input-error" : ""}`}
+                    value={form.cantidad}
+                    onChange={(e) => {
+                      setForm({ ...form, cantidad: e.target.value });
+                      if (errores.cantidad) setErrores(prev => ({ ...prev, cantidad: "" }));
+                    }}
+                  />
+                  {errores.cantidad && <span className="compras-field-error">{errores.cantidad}</span>}
                 </div>
                 <div className="compras-form-group">
                   <label className="compras-form-label">Total (COP)</label>
-                  <input type="number" className="compras-form-input" value={form.total} onChange={(e) => setForm({ ...form, total: e.target.value })} />
+                  <input
+                    type="number"
+                    className={`compras-form-input${errores.total ? " input-error" : ""}`}
+                    value={form.total}
+                    onChange={(e) => {
+                      setForm({ ...form, total: e.target.value });
+                      if (errores.total) setErrores(prev => ({ ...prev, total: "" }));
+                    }}
+                  />
+                  {errores.total && <span className="compras-field-error">{errores.total}</span>}
                 </div>
               </div>
               <div className="compras-form-row">
                 <div className="compras-form-group">
                   <label className="compras-form-label">Fecha</label>
-                  <input type="date" className="compras-form-input" value={form.fecha} onChange={(e) => setForm({ ...form, fecha: e.target.value })} />
+                  <input
+                    type="date"
+                    className={`compras-form-input${errores.fecha ? " input-error" : ""}`}
+                    value={form.fecha}
+                    onChange={(e) => {
+                      setForm({ ...form, fecha: e.target.value });
+                      if (errores.fecha) setErrores(prev => ({ ...prev, fecha: "" }));
+                    }}
+                  />
+                  {errores.fecha && <span className="compras-field-error">{errores.fecha}</span>}
                 </div>
                 <div className="compras-form-group">
                   <label className="compras-form-label">Estado</label>
