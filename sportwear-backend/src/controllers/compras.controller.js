@@ -28,6 +28,16 @@ const crearCompra = async (req, res) => {
   }
 };
 
+// ── NUEVO: edición completa de una compra ──
+const actualizarCompra = async (req, res) => {
+  try {
+    const data = await comprasService.actualizarCompra(req.params.id, req.body);
+    res.json(data);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
 const cambiarEstado = async (req, res) => {
   try {
     const data = await comprasService.cambiarEstado(req.params.id, req.body.estado);
@@ -46,4 +56,4 @@ const anularCompra = async (req, res) => {
   }
 };
 
-module.exports = { getCompras, getCompraById, crearCompra, cambiarEstado, anularCompra };
+module.exports = { getCompras, getCompraById, crearCompra, actualizarCompra, cambiarEstado, anularCompra };

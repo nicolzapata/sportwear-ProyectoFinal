@@ -1,87 +1,240 @@
 // src/pages/compras/Compras.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import './Compras.css';
-import { IconCart, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
-import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
+import { IconEdit, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
-const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
+const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;
 
-const COMPRAS_DEMO = [
-  { id_compra: 1, proveedor: "Distribuidora Textil S.A.", producto: "Camiseta Básica", cantidad: 50, total: 1250000, fecha: "2026-03-10T00:00:00", estado: "Recibido" },
-  { id_compra: 2, proveedor: "Confecciones del Valle", producto: "Leggins Deportivos", cantidad: 30, total: 900000, fecha: "2026-03-15T00:00:00", estado: "Pendiente" },
-  { id_compra: 3, proveedor: "Importaciones Moda & Co.", producto: "Chaqueta Impermeable", cantidad: 20, total: 2400000, fecha: "2026-03-20T00:00:00", estado: "En Tránsito" },
-  { id_compra: 4, proveedor: "Accesorios Premium S.A.S.", producto: "Bolso Cuero Sintético", cantidad: 15, total: 1800000, fecha: "2026-03-25T00:00:00", estado: "Pendiente" },
-  { id_compra: 5, proveedor: "Telas y Más Ltda.", producto: "Vestido Casual", cantidad: 25, total: 750000, fecha: "2026-03-28T00:00:00", estado: "Anulado" },
-];
-const PROVEEDORES_DEMO = ["Distribuidora Textil S.A.", "Confecciones del Valle", "Importaciones Moda & Co.", "Accesorios Premium S.A.S.", "Telas y Más Ltda."];
-const PRODUCTOS_DEMO   = ["Camiseta Básica", "Leggins Deportivos", "Chaqueta Impermeable", "Bolso Cuero Sintético", "Vestido Casual", "Enterizo Floral"];
+const nuevoItem = () => ({ id_producto: "", cantidad: 1, precio_unitario: "", descuento_linea: 0 });
+
+const formInicial = () => ({
+  id_proveedor: "",
+  numero_orden: "",
+  descuento: 0,
+  impuesto: 0,
+  estado: "Pendiente",
+  fecha: new Date().toISOString().split("T")[0],
+  observaciones: "",
+  items: [nuevoItem()],
+});
 
 export default function Compras() {
   const { usuario } = useAuth();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
 
-  const [datos,      setDatos]      = useState(COMPRAS_DEMO);
-  const [busqueda,   setBusqueda]   = useState("");
-  const [pagina,     setPagina]     = useState(1);
-  const [modal,      setModal]      = useState(false);
+  const [compras, setCompras] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
+  const [productos, setProductos] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+
+  const [busqueda, setBusqueda] = useState("");
+  const [pagina, setPagina] = useState(1);
+  const [modal, setModal] = useState(false);
+  const [guardando, setGuardando] = useState(false);
   const [verDetalle, setVerDetalle] = useState(null);
-  const [form,       setForm]       = useState({ proveedor: "", producto: "", cantidad: 1, total: "", estado: "Pendiente", fecha: "" });
-  const [errores,    setErrores]    = useState({ proveedor: "", producto: "", cantidad: "", total: "", fecha: "" });
+  const [modoEdicion, setModoEdicion] = useState(false);
+  const [estadoEditado, setEstadoEditado] = useState("");
+  const [guardandoEstado, setGuardandoEstado] = useState(false);
+  const [form, setForm] = useState(formInicial());
+  const [errores, setErrores] = useState({});
 
-  const filtradosAll = datos.filter(c => c.proveedor?.toLowerCase().includes(busqueda.toLowerCase()) || String(c.id_compra).includes(busqueda));
-  const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
-  const filtrados    = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+  useEffect(() => {
+    cargarDatos();
+  }, []);
 
-  const guardar = () => {
+  const cargarDatos = async () => {
+    setCargando(true);
+    setError("");
+    try {
+      const [comprasRes, proveedoresRes, productosRes] = await Promise.all([
+        api.get("/compras"),
+        api.get("/proveedores"),
+        api.get("/productos"),
+      ]);
+      setCompras(comprasRes.data || []);
+      setProveedores(proveedoresRes.data || []);
+      setProductos((productosRes.data || []).filter((p) => p.estado === "Activo"));
+    } catch (err) {
+      setError(err.response?.data?.message || "No se pudo cargar la información de compras. Verifica tu conexión o tus permisos.");
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const filtradosAll = compras.filter((c) =>
+    c.proveedor?.toLowerCase().includes(busqueda.toLowerCase()) ||
+    c.nombre_comercial?.toLowerCase().includes(busqueda.toLowerCase()) ||
+    String(c.id_compra).includes(busqueda) ||
+    c.numero_orden?.toLowerCase().includes(busqueda.toLowerCase())
+  );
+  const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA) || 1;
+  const filtrados = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+
+  // ── Manejo de líneas de producto dentro del formulario ──
+  const actualizarItem = (index, campo, valor) => {
+    setForm((prev) => {
+      const items = [...prev.items];
+      items[index] = { ...items[index], [campo]: valor };
+      return { ...prev, items };
+    });
+  };
+  const agregarItem = () => setForm((prev) => ({ ...prev, items: [...prev.items, nuevoItem()] }));
+  const quitarItem = (index) =>
+    setForm((prev) => ({
+      ...prev,
+      items: prev.items.length > 1 ? prev.items.filter((_, i) => i !== index) : prev.items,
+    }));
+
+  const subtotal = form.items.reduce((acc, it) => {
+    const cant = Number(it.cantidad) || 0;
+    const precio = Number(it.precio_unitario) || 0;
+    const desc = Number(it.descuento_linea) || 0;
+    return acc + (cant * precio - desc);
+  }, 0);
+  const totalCompra = subtotal - (Number(form.descuento) || 0) + (Number(form.impuesto) || 0);
+
+  const validar = () => {
     const e = {};
-    if (!form.proveedor.trim()) e.proveedor = "El proveedor es obligatorio";
-    if (!form.producto.trim())  e.producto  = "El producto es obligatorio";
-    if (!form.cantidad || Number(form.cantidad) <= 0) e.cantidad = "La cantidad debe ser mayor a 0";
-    if (!form.total || Number(form.total) <= 0) e.total = "El total debe ser mayor a 0";
+    if (!form.id_proveedor) e.id_proveedor = "El proveedor es obligatorio";
     if (!form.fecha) e.fecha = "La fecha es obligatoria";
+    form.items.forEach((it, i) => {
+      if (!it.id_producto) e[`item_${i}_producto`] = "Selecciona un producto";
+      if (!it.cantidad || Number(it.cantidad) <= 0) e[`item_${i}_cantidad`] = "Cantidad inválida";
+      if (!it.precio_unitario || Number(it.precio_unitario) <= 0) e[`item_${i}_precio`] = "Precio inválido";
+    });
     setErrores(e);
-    if (Object.keys(e).length > 0) return;
+    return Object.keys(e).length === 0;
+  };
 
-    const nuevoId = Math.max(...datos.map(c => c.id_compra)) + 1;
-    setDatos(prev => [...prev, { ...form, id_compra: nuevoId, cantidad: Number(form.cantidad), total: Number(form.total) }]);
-    setModal(false);
+  const guardar = async () => {
+    if (!validar()) return;
+    setGuardando(true);
+    try {
+      const payload = {
+        id_proveedor: Number(form.id_proveedor),
+        numero_orden: form.numero_orden || null,
+        descuento: Number(form.descuento) || 0,
+        impuesto: Number(form.impuesto) || 0,
+        estado: form.estado,
+        fecha: form.fecha,
+        observaciones: form.observaciones || null,
+        items: form.items.map((it) => ({
+          id_producto: Number(it.id_producto),
+          cantidad: Number(it.cantidad),
+          precio_unitario: Number(it.precio_unitario),
+          descuento_linea: Number(it.descuento_linea) || 0,
+        })),
+      };
+      await api.post("/compras", payload);
+      setModal(false);
+      setForm(formInicial());
+      cargarDatos();
+    } catch (err) {
+      alert(err.response?.data?.message || "Error al registrar la compra");
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const abrirDetalle = (c) => {
+    setVerDetalle(c);
+    setEstadoEditado(c.estado);
+    setModoEdicion(false);
+  };
+
+  const abrirEdicion = (c) => {
+    setVerDetalle(c);
+    setEstadoEditado(c.estado);
+    setModoEdicion(true);
+  };
+
+  const cerrarDetalle = () => {
+    setVerDetalle(null);
+    setModoEdicion(false);
+  };
+
+  const guardarEstado = async () => {
+    setGuardandoEstado(true);
+    try {
+      const res = await api.patch(`/compras/${verDetalle.id_compra}/estado`, { estado: estadoEditado });
+      setCompras((prev) => prev.map((c) => (c.id_compra === verDetalle.id_compra ? { ...c, estado: res.data.estado } : c)));
+      setVerDetalle((prev) => ({ ...prev, estado: res.data.estado }));
+      setModoEdicion(false);
+    } catch (err) {
+      alert(err.response?.data?.message || "Error al actualizar el estado de la compra");
+    } finally {
+      setGuardandoEstado(false);
+    }
   };
 
   const anularCompra = async (id) => {
+    if (!window.confirm("¿Anular esta compra? Esta acción no se puede deshacer.")) return;
     try {
       await api.patch(`/compras/${id}/anular`);
-      setDatos(prev => prev.map(c => c.id_compra === id ? { ...c, estado: "Anulado" } : c));
+      setCompras((prev) => prev.map((c) => (c.id_compra === id ? { ...c, estado: "Anulado" } : c)));
     } catch (err) {
       alert(err.response?.data?.message || "Error al anular la compra");
     }
   };
 
   const getEstadoBadge = (estado) => {
-    switch(estado) {
-      case "Recibido":    return "compras-badge-active";
-      case "Pendiente":   return "compras-badge-pending";
-      case "En Tránsito": return "compras-badge-info";
-      case "Anulado":     return "compras-badge-inactive";
-      default:            return "compras-badge-info";
+    switch (estado) {
+      case "Recibido":
+      case "Pagado":
+        return "compras-badge-active";
+      case "Pendiente":
+        return "compras-badge-pending";
+      case "En Tránsito":
+      case "Confirmado":
+        return "compras-badge-info";
+      case "Anulado":
+        return "compras-badge-inactive";
+      default:
+        return "compras-badge-info";
     }
   };
 
+  if (cargando) {
+    return (
+      <div className="compras-loading-container">
+        <div className="compras-loading-spinner" />
+        <span className="compras-loading-text">Cargando compras...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="compras-container">
+      {error && <div className="compras-error-banner">{error}</div>}
+
       <div className="compras-actions-bar">
-        <div className="compras-actions-left"> 
+        <div className="compras-actions-left">
           <div className="compras-search-wrapper">
             <span className="compras-search-icon"><IconSearch /></span>
-            <input type="text" className="compras-search-input" placeholder="Buscar por proveedor o ID..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
-            {busqueda && <button className="compras-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
+            <input
+              type="text"
+              className="compras-search-input"
+              placeholder="Buscar por proveedor, N° orden o ID..."
+              value={busqueda}
+              onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
+            />
+            {busqueda && (
+              <button className="compras-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}>
+                <IconX />
+              </button>
+            )}
           </div>
         </div>
         <div className="compras-actions-right">
           {tienePerm('Compras.crear') && (
-            <button className="compras-btn-primary" onClick={() => { setForm({ proveedor: "", producto: "", cantidad: 1, total: "", estado: "Pendiente", fecha: "" }); setModal(true); }}>
+            <button
+              className="compras-btn-primary"
+              onClick={() => { setForm(formInicial()); setErrores({}); setModal(true); }}
+            >
               <span>+</span> Nueva compra
             </button>
           )}
@@ -91,15 +244,17 @@ export default function Compras() {
         </div>
       </div>
 
-      <div className="compras-results-count">{filtradosAll.length} compra{filtradosAll.length !== 1 ? 's' : ''} encontrada{filtradosAll.length !== 1 ? 's' : ''}</div>
+      <div className="compras-results-count">
+        {filtradosAll.length} compra{filtradosAll.length !== 1 ? 's' : ''} encontrada{filtradosAll.length !== 1 ? 's' : ''}
+      </div>
 
       <div className="tbl-container">
         <table className="tbl">
           <thead className="tbl-header">
             <tr>
               <th className="tbl-th">Proveedor</th>
-              <th className="tbl-th">Producto</th>
-              <th className="tbl-th">Cant.</th>
+              <th className="tbl-th">N° Orden</th>
+              <th className="tbl-th">Productos</th>
               <th className="tbl-th">Total</th>
               <th className="tbl-th">Fecha</th>
               <th className="tbl-th">Estado</th>
@@ -110,41 +265,54 @@ export default function Compras() {
             {filtrados.map((c) => (
               <tr key={c.id_compra} className="tbl-row">
                 <td className="tbl-td"><span className="compras-proveedor-name">{c.proveedor}</span></td>
-                <td className="tbl-td compras-producto-cell">{c.producto}</td>
-                <td className="tbl-td compras-cantidad-cell">{c.cantidad}</td>
+                <td className="tbl-td">{c.numero_orden || "—"}</td>
+                <td className="tbl-td">{c.items?.length || 0} producto{c.items?.length !== 1 ? 's' : ''}</td>
                 <td className="tbl-td compras-total-cell">{fmt(c.total)}</td>
                 <td className="tbl-td compras-fecha-cell">{c.fecha?.toString().split("T")[0]}</td>
                 <td className="tbl-td"><span className={`compras-badge ${getEstadoBadge(c.estado)}`}>{c.estado}</span></td>
                 <td className="tbl-td">
                   <div className="compras-action-cell">
-                    <button className="compras-action-btn compras-view-btn" onClick={() => setVerDetalle(c)} title="Ver detalles"><IconEye /></button>
+                    <button className="compras-action-btn compras-view-btn" onClick={() => abrirDetalle(c)} title="Ver detalles">
+                      <IconEye />
+                    </button>
+                    {tienePerm('Compras.editar') && c.estado !== "Anulado" && (
+                      <button className="compras-action-btn compras-edit-btn" onClick={() => abrirEdicion(c)} title="Editar estado">
+                        <IconEdit />
+                      </button>
+                    )}
                     {tienePerm('Compras.anular') && c.estado !== "Anulado" && (
-                      <button className="compras-action-btn compras-cancel-btn" onClick={() => anularCompra(c.id_compra)} title="Anular compra"><IconX /></button>
+                      <button className="compras-action-btn compras-cancel-btn" onClick={() => anularCompra(c.id_compra)} title="Anular compra">
+                        <IconX />
+                      </button>
                     )}
                   </div>
                 </td>
               </tr>
             ))}
             {filtradosAll.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>No hay compras que coincidan con la búsqueda.</td></tr>
+              <tr>
+                <td colSpan={7} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
+                  No hay compras que coincidan con la búsqueda.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>
 
         {totalPaginas > 1 && (
           <div className="paginador">
-            <button className="paginador-btn" onClick={() => setPagina(p => Math.max(p - 1, 1))} disabled={pagina === 1}>‹</button>
-            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
+            <button className="paginador-btn" onClick={() => setPagina((p) => Math.max(p - 1, 1))} disabled={pagina === 1}>‹</button>
+            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((n) => (
               <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
-            <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
+            <button className="paginador-btn" onClick={() => setPagina((p) => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
             <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtradosAll.length} registros</span>
           </div>
         )}
       </div>
 
       {modal && (
-        <div className="compras-modal-overlay">
+        <div className="compras-modal-overlay" onClick={() => !guardando && setModal(false)}>
           <div className="compras-modal" onClick={(e) => e.stopPropagation()}>
             <div className="compras-modal-header">
               <h2 className="compras-modal-title">Nueva compra</h2>
@@ -155,63 +323,35 @@ export default function Compras() {
                 <div className="compras-form-group">
                   <label className="compras-form-label">Proveedor</label>
                   <select
-                    className={`compras-form-select${errores.proveedor ? " input-error" : ""}`}
-                    value={form.proveedor}
-                    onChange={(e) => {
-                      setForm({ ...form, proveedor: e.target.value });
-                      if (errores.proveedor) setErrores(prev => ({ ...prev, proveedor: "" }));
-                    }}
+                    className={`compras-form-select${errores.id_proveedor ? " input-error" : ""}`}
+                    value={form.id_proveedor}
+                    onChange={(e) => { setForm({ ...form, id_proveedor: e.target.value }); setErrores((prev) => ({ ...prev, id_proveedor: "" })); }}
                   >
                     <option value="">Seleccionar proveedor...</option>
-                    {PROVEEDORES_DEMO.map(p => <option key={p} value={p}>{p}</option>)}
+                    {proveedores.map((p) => (
+                      <option key={p.id_proveedor} value={p.id_proveedor}>
+                        {p.nombre_comercial || p.razon_social}
+                      </option>
+                    ))}
                   </select>
-                  {errores.proveedor && <span className="compras-field-error">{errores.proveedor}</span>}
+                  {errores.id_proveedor && <span className="compras-field-error">{errores.id_proveedor}</span>}
+                  {proveedores.length === 0 && (
+                    <span className="compras-field-hint">
+                      No hay proveedores disponibles. Verifica que tu rol tenga el permiso "Proveedores.ver".
+                    </span>
+                  )}
                 </div>
                 <div className="compras-form-group">
-                  <label className="compras-form-label">Producto</label>
-                  <select
-                    className={`compras-form-select${errores.producto ? " input-error" : ""}`}
-                    value={form.producto}
-                    onChange={(e) => {
-                      setForm({ ...form, producto: e.target.value });
-                      if (errores.producto) setErrores(prev => ({ ...prev, producto: "" }));
-                    }}
-                  >
-                    <option value="">Seleccionar producto...</option>
-                    {PRODUCTOS_DEMO.map(p => <option key={p} value={p}>{p}</option>)}
-                  </select>
-                  {errores.producto && <span className="compras-field-error">{errores.producto}</span>}
+                  <label className="compras-form-label">N° de orden (opcional)</label>
+                  <input
+                    type="text"
+                    className="compras-form-input"
+                    value={form.numero_orden}
+                    onChange={(e) => setForm({ ...form, numero_orden: e.target.value })}
+                  />
                 </div>
               </div>
-              <div className="compras-form-row">
-                <div className="compras-form-group">
-                  <label className="compras-form-label">Cantidad</label>
-                  <input
-                    type="number"
-                    min="1"
-                    className={`compras-form-input${errores.cantidad ? " input-error" : ""}`}
-                    value={form.cantidad}
-                    onChange={(e) => {
-                      setForm({ ...form, cantidad: e.target.value });
-                      if (errores.cantidad) setErrores(prev => ({ ...prev, cantidad: "" }));
-                    }}
-                  />
-                  {errores.cantidad && <span className="compras-field-error">{errores.cantidad}</span>}
-                </div>
-                <div className="compras-form-group">
-                  <label className="compras-form-label">Total (COP)</label>
-                  <input
-                    type="number"
-                    className={`compras-form-input${errores.total ? " input-error" : ""}`}
-                    value={form.total}
-                    onChange={(e) => {
-                      setForm({ ...form, total: e.target.value });
-                      if (errores.total) setErrores(prev => ({ ...prev, total: "" }));
-                    }}
-                  />
-                  {errores.total && <span className="compras-field-error">{errores.total}</span>}
-                </div>
-              </div>
+
               <div className="compras-form-row">
                 <div className="compras-form-group">
                   <label className="compras-form-label">Fecha</label>
@@ -219,10 +359,7 @@ export default function Compras() {
                     type="date"
                     className={`compras-form-input${errores.fecha ? " input-error" : ""}`}
                     value={form.fecha}
-                    onChange={(e) => {
-                      setForm({ ...form, fecha: e.target.value });
-                      if (errores.fecha) setErrores(prev => ({ ...prev, fecha: "" }));
-                    }}
+                    onChange={(e) => { setForm({ ...form, fecha: e.target.value }); setErrores((prev) => ({ ...prev, fecha: "" })); }}
                   />
                   {errores.fecha && <span className="compras-field-error">{errores.fecha}</span>}
                 </div>
@@ -235,38 +372,236 @@ export default function Compras() {
                   </select>
                 </div>
               </div>
+
+              <div className="compras-items-section">
+                <div className="compras-items-header">
+                  <label className="compras-form-label">Productos de la compra</label>
+                  <button type="button" className="compras-btn-add-item" onClick={agregarItem}>+ Agregar producto</button>
+                </div>
+
+                <div className="compras-item-titulos">
+                  <span>Producto</span>
+                  <span>Cantidad</span>
+                  <span>Precio unitario</span>
+                  <span title="Descuento aplicado solo a este producto, no a toda la compra">
+                    Descuento producto <span className="compras-item-titulo-ayuda">ⓘ</span>
+                  </span>
+                  <span className="compras-item-titulos-subtotal">Subtotal</span>
+                  <span></span>
+                </div>
+
+                {form.items.map((item, i) => {
+                  const cant = Number(item.cantidad) || 0;
+                  const precio = Number(item.precio_unitario) || 0;
+                  const desc = Number(item.descuento_linea) || 0;
+                  const lineaTotal = cant * precio - desc;
+                  return (
+                    <div className="compras-item-row" key={i}>
+                      <div className="compras-item-field compras-item-field-producto">
+                        <select
+                          className={`compras-form-select${errores[`item_${i}_producto`] ? " input-error" : ""}`}
+                          value={item.id_producto}
+                          onChange={(e) => actualizarItem(i, "id_producto", e.target.value)}
+                        >
+                          <option value="">Producto...</option>
+                          {productos.map((p) => (
+                            <option key={p.id_producto} value={p.id_producto}>{p.nombre}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="compras-item-field">
+                        <input
+                          type="number"
+                          min="1"
+                          placeholder="Cant."
+                          className={`compras-form-input${errores[`item_${i}_cantidad`] ? " input-error" : ""}`}
+                          value={item.cantidad}
+                          onChange={(e) => actualizarItem(i, "cantidad", e.target.value)}
+                        />
+                      </div>
+                      <div className="compras-item-field">
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="Precio unit."
+                          className={`compras-form-input${errores[`item_${i}_precio`] ? " input-error" : ""}`}
+                          value={item.precio_unitario}
+                          onChange={(e) => actualizarItem(i, "precio_unitario", e.target.value)}
+                        />
+                      </div>
+                      <div className="compras-item-field">
+                        <input
+                          type="number"
+                          min="0"
+                          placeholder="Descuento (opcional)"
+                          className="compras-form-input"
+                          value={item.descuento_linea}
+                          onChange={(e) => actualizarItem(i, "descuento_linea", e.target.value)}
+                        />
+                      </div>
+                      <div className="compras-item-subtotal">{fmt(lineaTotal)}</div>
+                      <button
+                        type="button"
+                        className="compras-item-remove"
+                        onClick={() => quitarItem(i)}
+                        disabled={form.items.length === 1}
+                        title="Quitar producto"
+                      >
+                        <IconX />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="compras-form-row">
+                <div className="compras-form-group">
+                  <label className="compras-form-label">Descuento general (COP)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="compras-form-input"
+                    value={form.descuento}
+                    onChange={(e) => setForm({ ...form, descuento: e.target.value })}
+                  />
+                </div>
+                <div className="compras-form-group">
+                  <label className="compras-form-label">Impuesto (COP)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    className="compras-form-input"
+                    value={form.impuesto}
+                    onChange={(e) => setForm({ ...form, impuesto: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="compras-form-group">
+                <label className="compras-form-label">Observaciones (opcional)</label>
+                <textarea
+                  className="compras-form-input compras-form-textarea"
+                  rows={2}
+                  value={form.observaciones}
+                  onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
+                />
+              </div>
+
+              <div className="compras-total-resumen">
+                <span>Subtotal: {fmt(subtotal)}</span>
+                <span className="compras-total-final">Total: {fmt(totalCompra)}</span>
+              </div>
             </div>
             <div className="compras-modal-footer">
-              <button className="compras-btn-secondary" onClick={() => setModal(false)}>Cancelar</button>
-              <button className="compras-btn-primary" onClick={guardar}>Registrar</button>
+              <button className="compras-btn-secondary" onClick={() => setModal(false)} disabled={guardando}>Cancelar</button>
+              <button className="compras-btn-primary" onClick={guardar} disabled={guardando}>
+                {guardando ? "Guardando..." : "Registrar compra"}
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {verDetalle && (
-        <ModalDetalle
-          titulo="Detalle de compra" subtitulo={`C-${String(verDetalle.id_compra).padStart(3, "0")}`}
-          avatar={<IconCart />}
-          badge={<span className={`compras-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>}
-          pasos={["Información", "Pago"]} onClose={() => setVerDetalle(null)}
-        >
-          <DetalleSeccion titulo="Información">
-            <DetalleGrid>
-              <DetalleItem label="ID" value={`C-${String(verDetalle.id_compra).padStart(3, "0")}`} />
-              <DetalleItem label="Proveedor" value={verDetalle.proveedor} />
-              <DetalleItem label="Producto"  value={verDetalle.producto} />
-              <DetalleItem label="Cantidad"  value={verDetalle.cantidad} />
-              <DetalleItem label="Fecha"     value={verDetalle.fecha?.toString().split("T")[0]} />
-            </DetalleGrid>
-          </DetalleSeccion>
-          <DetalleSeccion titulo="Pago">
-            <DetalleGrid>
-              <DetalleItem label="Total"  value={fmt(verDetalle.total)} />
-              <DetalleItem label="Estado" value={verDetalle.estado} />
-            </DetalleGrid>
-          </DetalleSeccion>
-        </ModalDetalle>
+        <div className="compras-modal-overlay" onClick={() => !guardandoEstado && cerrarDetalle()}>
+          <div className="compras-modal compras-modal-factura" onClick={(e) => e.stopPropagation()}>
+            <div className="compras-modal-header">
+              <div>
+                <h2 className="compras-modal-title">
+                  C-{String(verDetalle.id_compra).padStart(3, "0")}
+                </h2>
+                <p className="compras-modal-subtitulo">Detalle de compra</p>
+              </div>
+              <button className="compras-modal-close" onClick={cerrarDetalle}><IconX /></button>
+            </div>
+
+            <div className="compras-modal-body compras-factura-body">
+
+              {modoEdicion && (
+                <div className="compras-edicion-banner">
+                  <IconEdit /> Estás editando el estado de esta compra
+                </div>
+              )}
+
+              <div className="compras-factura-seccion">
+                <h3 className="compras-factura-titulo">Información</h3>
+                <div className="compras-detalle-info-grid">
+                  <div><span className="compras-detalle-info-label">Proveedor</span><span className="compras-detalle-info-valor">{verDetalle.proveedor}</span></div>
+                  <div><span className="compras-detalle-info-label">N° Orden</span><span className="compras-detalle-info-valor">{verDetalle.numero_orden || "—"}</span></div>
+                  <div><span className="compras-detalle-info-label">Fecha</span><span className="compras-detalle-info-valor">{verDetalle.fecha?.toString().split("T")[0]}</span></div>
+                  <div>
+                    <span className="compras-detalle-info-label">Estado</span>
+                    {modoEdicion ? (
+                      <select
+                        className="compras-form-select compras-detalle-estado-select"
+                        value={estadoEditado}
+                        onChange={(e) => setEstadoEditado(e.target.value)}
+                      >
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="En Tránsito">En Tránsito</option>
+                        <option value="Recibido">Recibido</option>
+                      </select>
+                    ) : (
+                      <span className={`compras-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>
+                    )}
+                  </div>
+                </div>
+                {verDetalle.observaciones && (
+                  <div className="compras-detalle-observaciones">
+                    <span className="compras-detalle-info-label">Observaciones</span>
+                    <p>{verDetalle.observaciones}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="compras-factura-seccion">
+                <h3 className="compras-factura-titulo">Productos</h3>
+                {(verDetalle.items || []).map((it, i) => (
+                  <div key={i} className="compras-detalle-item-linea">
+                    <span>{it.producto} {it.talla ? `(${it.talla})` : ""} × {it.cantidad}</span>
+                    <span>{fmt(it.cantidad * it.precio_unitario - (it.descuento_linea || 0))}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="compras-factura-seccion">
+                <h3 className="compras-factura-titulo">Pago</h3>
+                <div className="compras-total-resumen compras-total-resumen-detalle">
+                  <span>Subtotal: {fmt(verDetalle.subtotal)}</span>
+                  <span>Descuento: {fmt(verDetalle.descuento)}</span>
+                  <span>Impuesto: {fmt(verDetalle.impuesto)}</span>
+                  <span className="compras-total-final">Total: {fmt(verDetalle.total)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="compras-modal-footer">
+              {modoEdicion ? (
+                <>
+                  <button
+                    className="compras-btn-secondary"
+                    onClick={() => { setModoEdicion(false); setEstadoEditado(verDetalle.estado); }}
+                    disabled={guardandoEstado}
+                  >
+                    Cancelar
+                  </button>
+                  <button className="compras-btn-primary" onClick={guardarEstado} disabled={guardandoEstado}>
+                    {guardandoEstado ? "Guardando..." : "Guardar cambios"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="compras-btn-secondary" onClick={cerrarDetalle}>Cerrar</button>
+                  {tienePerm('Compras.editar') && verDetalle.estado !== "Anulado" && (
+                    <button className="compras-btn-primary" onClick={() => setModoEdicion(true)}>
+                      <IconEdit /> Editar estado
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

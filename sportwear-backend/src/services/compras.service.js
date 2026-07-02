@@ -12,9 +12,10 @@ const getCompras = async () => {
   let detalles = [];
   if (ids.length) {
     const det = await pool.query(`
-      SELECT dc.*, pr.nombre AS producto, pr.talla
+      SELECT dc.*, pr.nombre AS producto, v.talla AS talla
       FROM "DetalleCompra" dc
       JOIN "Productos" pr ON dc.id_producto = pr.id_producto
+      LEFT JOIN "ProductoVariantes" v ON dc.id_variante = v.id_variante
       WHERE dc.id_compra = ANY($1::int[])
     `, [ids]);
     detalles = det.rows;
@@ -31,9 +32,10 @@ const getCompraById = async (id) => {
   `, [id]);
   if (!cab.rows.length) throw { status: 404, message: 'No encontrada' };
   const det = await pool.query(`
-    SELECT dc.*, pr.nombre AS producto, pr.talla
+    SELECT dc.*, pr.nombre AS producto, v.talla AS talla
     FROM "DetalleCompra" dc
     JOIN "Productos" pr ON dc.id_producto = pr.id_producto
+    LEFT JOIN "ProductoVariantes" v ON dc.id_variante = v.id_variante
     WHERE dc.id_compra = $1
   `, [id]);
   return { ...cab.rows[0], items: det.rows };
@@ -59,10 +61,11 @@ const crearCompra = async (datos) => {
 
     const id_compra = compra.rows[0].id_compra;
     for (const item of items) {
+      const subtotalLinea = item.cantidad * item.precio_unitario - (item.descuento_linea || 0);
       await client.query(`
-        INSERT INTO "DetalleCompra" (id_compra, id_producto, cantidad, precio_unitario, descuento_linea)
-        VALUES ($1,$2,$3,$4,$5)
-      `, [id_compra, item.id_producto, item.cantidad, item.precio_unitario, item.descuento_linea || 0]);
+        INSERT INTO "DetalleCompra" (id_compra, id_producto, cantidad, precio_unitario, descuento_linea, subtotal)
+        VALUES ($1,$2,$3,$4,$5,$6)
+      `, [id_compra, item.id_producto, item.cantidad, item.precio_unitario, item.descuento_linea || 0, subtotalLinea]);
     }
     await client.query('COMMIT');
     return { ...compra.rows[0], items };

@@ -4,7 +4,11 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: 'DM Sans';
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.compras-container * {
+  font-family: 'DM Sans', system-ui, sans-serif;
 }
 
 /* Header */
@@ -93,7 +97,7 @@
   color: #888;
   margin-bottom: 0.2rem;
   display: block;
-  
+
   letter-spacing: 0.3px;
 }
 
@@ -200,6 +204,12 @@
   border: 1px solid var(--brown);
 }
 
+.compras-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .btn-print {
   background: white;
   color: #333;
@@ -242,6 +252,11 @@
   background: #fafafa;
 }
 
+.compras-btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Results */
 .compras-results-count {
   font-size: 0.8rem;
@@ -250,7 +265,116 @@
   padding-left: 0.5rem;
 }
 
+/* Modal más ancho, formato "factura" (compartido con Nueva compra) */
+.compras-modal-factura {
+  max-width: 820px;
+}
 
+.compras-modal-subtitulo {
+  font-size: 0.78rem;
+  color: #888;
+  margin: 2px 0 0;
+  font-weight: 300;
+}
+
+.compras-factura-body {
+  padding: 1.5rem;
+}
+
+.compras-factura-seccion {
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px dashed #e5e5e5;
+}
+.compras-factura-seccion:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.compras-factura-titulo {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--brown, #b49780);
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.compras-detalle-info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.compras-detalle-info-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.compras-detalle-info-label {
+  font-size: 0.7rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.compras-detalle-info-valor {
+  font-size: 0.9rem;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+.compras-detalle-estado-select {
+  max-width: 180px;
+}
+
+.compras-detalle-observaciones {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0;
+}
+.compras-detalle-observaciones p {
+  margin: 0.3rem 0 0;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.compras-total-resumen-detalle {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+}
+
+/* ── Banner de modo edición ── */
+.compras-edicion-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fff4e0;
+  border: 1px solid #f0d9a8;
+  color: #7a5500;
+  padding: 0.7rem 1rem;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-bottom: 1.2rem;
+}
+
+@media (max-width: 640px) {
+  .compras-detalle-info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.compras-error-banner {
+  background: #fdecea;
+  border: 1px solid #f0b8b3;
+  color: #b83232;
+  padding: 0.9rem 1.2rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
 
 /* Modal */
 .compras-modal-overlay {
@@ -265,13 +389,14 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1.5rem;
 }
 
 .compras-modal {
   background: white;
   border-radius: 32px;
   width: 90%;
-  max-width: 600px;
+  max-width: 820px; /* ← ancho igualado al modal de Proveedores */
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
@@ -292,12 +417,13 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  border-radius: 32px 32px 0 0;
 }
 
 .compras-modal-title {
   font-size: 1.2rem;
   font-weight: 500;
-  font-family: 'DM Sans';
+  font-family: 'DM Sans', system-ui, sans-serif;
   color: #1a1a1a;
   margin: 0;
   text-transform: none;
@@ -337,6 +463,7 @@
   position: sticky;
   bottom: 0;
   z-index: 10;
+  border-radius: 0 0 32px 32px;
 }
 
 /* Form */
@@ -367,9 +494,10 @@
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   font-size: 0.9rem;
-  font-family: "DM Sans";
+  font-family: 'DM Sans', system-ui, sans-serif;
   transition: all 0.2s ease;
   background: white;
+  box-sizing: border-box;
 }
 
 .compras-form-input:focus,
@@ -379,21 +507,28 @@
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
 }
 
-  .compras-form-input.input-error,
-  .compras-form-select.input-error {
-    border-color: #b83232;
-    box-shadow: 0 0 0 3px rgba(184, 50, 50, 0.08);
-  }
+.compras-form-input.input-error,
+.compras-form-select.input-error {
+  border-color: #b83232;
+  box-shadow: 0 0 0 3px rgba(184, 50, 50, 0.08);
+}
 
-  .compras-field-error {
-    display: block;
-    margin-top: 6px;
-    font-size: 0.75rem;
-    color: #b83232;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.8rem 0;
-    border-bottom: 1px solid #f0f0f0;
+.compras-field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #b83232;
+}
+
+.compras-field-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: #7a5500;
+}
+
+.compras-form-textarea {
+  resize: vertical;
 }
 
 .compras-detail-item:last-child {
@@ -415,6 +550,135 @@
 .compras-detail-currency {
   font-weight: 600;
   color: #1a1a1a;
+}
+
+/* ── Sección de productos dentro del modal ── */
+.compras-items-section {
+  margin-bottom: 1.2rem;
+}
+
+.compras-items-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.compras-btn-add-item {
+  background: none;
+  border: 1px dashed var(--brown, #b49780);
+  color: var(--brown, #b49780);
+  border-radius: 40px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.compras-btn-add-item:hover {
+  background: rgba(180, 151, 128, 0.08);
+}
+
+.compras-item-titulos {
+  display: grid;
+  grid-template-columns: 2fr 0.8fr 1fr 1fr 1fr auto;
+  gap: 0.5rem;
+  padding: 0 0.6rem;
+  margin-bottom: 0.4rem;
+}
+.compras-item-titulos span {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.compras-item-titulos-subtotal {
+  text-align: right;
+}
+.compras-item-titulo-ayuda {
+  cursor: help;
+  color: #b49780;
+  font-weight: 700;
+}
+
+.compras-item-row {
+  display: grid;
+  grid-template-columns: 2fr 0.8fr 1fr 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding: 0.7rem 0.6rem;
+  background: #fafafa;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+}
+
+.compras-item-field .compras-form-input,
+.compras-item-field .compras-form-select {
+  padding: 0.65rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.compras-item-subtotal {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.compras-item-remove {
+  background: none;
+  border: 1px solid #e0e0e0;
+  color: #b83232;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+.compras-item-remove:hover:not(:disabled) {
+  background: #fdecea;
+  border-color: #f0b8b3;
+}
+.compras-item-remove:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Resumen de totales ── */
+.compras-total-resumen {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.5rem;
+  padding: 0.9rem 0.2rem 0.2rem;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #555;
+}
+.compras-total-final {
+  font-weight: 700;
+  color: #1a1a1a;
+  font-size: 1rem;
+}
+
+/* ── Línea de producto dentro del modal de detalle ── */
+.compras-detalle-item-linea {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.85rem;
+  color: #333;
+}
+.compras-detalle-item-linea:last-child {
+  border-bottom: none;
 }
 
 /* Loading */
@@ -455,6 +719,12 @@
 @media (max-width: 1024px) {
   .compras-container {
     padding: 1.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .compras-modal {
+    max-width: 95%;
   }
 }
 
@@ -506,6 +776,20 @@
   .compras-action-cell {
     flex-wrap: wrap;
   }
+
+  .compras-item-titulos {
+    display: none;
+  }
+
+  .compras-item-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "producto producto"
+      "cant precio"
+      "desc subtotal"
+      "quitar quitar";
+  }
+  .compras-item-field-producto { grid-area: producto; }
 }
 
 @media (max-width: 480px) {

@@ -186,3 +186,62 @@ svg {
 [class*="-search-clear"]:hover {
   color: var(--dvna-charcoal) !important;
 }
+/* ════════════════════════════════════════════════════════
+   ADICIÓN a src/index.css — pegar al final del archivo
+   Sistema unificado de tablas (.tbl) — un solo lugar de verdad
+   para que Compras, Proveedores, Dashboard, MiCuenta, etc.
+   se vean todas iguales, sin depender del orden de carga.
+   ════════════════════════════════════════════════════════ */
+
+table.tbl {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table.tbl thead.tbl-header {
+  background: var(--dvna-pale);
+}
+
+table.tbl th.tbl-th {
+  text-align: left;
+  padding: 12px 16px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--dvna-muted);
+  text-transform: none;
+  border-bottom: 2px solid var(--dvna-border);
+  white-space: nowrap;
+}
+table.tbl th.tbl-th:first-child { padding-left: 20px; }
+table.tbl th.tbl-th:last-child  { padding-right: 20px; }
+
+table.tbl tr.tbl-row {
+  border-bottom: 1px solid var(--dvna-border);
+  transition: background 0.15s ease;
+}
+table.tbl tbody.tbl-body tr.tbl-row:last-child {
+  border-bottom: none;
+}
+table.tbl tr.tbl-row:hover {
+  background: var(--dvna-pale);
+}
+
+table.tbl td.tbl-td {
+  padding: 14px 16px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--dvna-charcoal);
+  vertical-align: middle;
+}
+table.tbl td.tbl-td:first-child { padding-left: 20px; }
+table.tbl td.tbl-td:last-child  { padding-right: 20px; }
+
+@media (max-width: 640px) {
+  table.tbl th.tbl-th,
+  table.tbl td.tbl-td {
+    padding: 10px 10px;
+    font-size: 12px;
+  }
+}
