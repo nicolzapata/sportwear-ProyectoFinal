@@ -115,8 +115,17 @@ const actualizarMiPerfil = async (req, res) => {
   }
 };
 
+const getClientesRolCliente = async (req, res) => {
+  try {
+    const data = await clientesService.getClientesRolCliente();
+    res.json(data);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getClientes, getClientesConVentas, getClienteById, crearCliente,
   actualizarCliente, toggleEstado, togglePermisoPagos, togglePermisoCuotas,
-  getMiPerfil, actualizarMiPerfil, debugClientesVentas,
+  getMiPerfil, actualizarMiPerfil, debugClientesVentas, getClientesRolCliente,
 };

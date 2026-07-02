@@ -10,7 +10,8 @@ export default function StatusToggle({
   onToggle, 
   disabled = false,
   disabledReason = null,
-  showConfirmation = true
+  showConfirmation = true,
+  labels = { activo: "Activo", inactivo: "Inactivo" }
 }) {
   const [loading, setLoading] = useState(false);
   const [pendingEstado, setPendingEstado] = useState(null);
@@ -53,25 +54,25 @@ export default function StatusToggle({
         disabled={disabled || loading}
         role="switch"
         aria-checked={estado === "Activo"}
-        title={disabled && disabledReason ? disabledReason : (estado === "Activo" ? "Click para desactivar" : "Click para activar")}
+        title={disabled && disabledReason ? disabledReason : (estado === "Activo" ? `Click para ${labels.inactivo.toLowerCase()}` : `Click para ${labels.activo.toLowerCase()}`)}
       >
         <span className="status-toggle-track" />
         <span className="status-toggle-thumb">
           {loading ? <span className="status-toggle-spinner" /> : (estado === "Activo" ? <IconCheck /> : <IconX />)}
         </span>
-        <span className="status-toggle-hidden-text">{estado}</span>
+        <span className="status-toggle-hidden-text">{estado === "Activo" ? labels.activo : labels.inactivo}</span>
       </button>
 
       {pendingEstado && (
         <ConfirmModal
-          title={`¿${pendingEstado} este registro?`}
+          title={`¿${pendingEstado === "Activo" ? labels.activo : labels.inactivo} este registro?`}
           message="Esta acción puede afectar otros registros relacionados."
           onCancel={() => setPendingEstado(null)}
           onConfirm={() => {
             setPendingEstado(null);
             handleToggle(pendingEstado);
           }}
-          confirmLabel={`Sí, ${pendingEstado.toLowerCase()}`}
+          confirmLabel={`Sí, ${(pendingEstado === "Activo" ? labels.activo : labels.inactivo).toLowerCase()}`}
         />
       )}
 

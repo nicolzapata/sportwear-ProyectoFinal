@@ -7,7 +7,7 @@ import GestVariantes from "../../components/GestVariantes";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
-import { IconAlertTriangle, IconCheck, IconEdit, IconEye, IconPrint, IconSearch, IconX, IconPalette, IconBox, IconTag } from "../../components/Icons";
+import { IconAlertTriangle, IconCheck, IconEdit, IconEye, IconPrint, IconSearch, IconX, IconBox, IconTag } from "../../components/Icons";
 import "./GestProductos.css";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
@@ -18,23 +18,23 @@ export default function GestProductos() {
   const { usuario } = useAuth();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
 
-  const [datos,             setDatos]             = useState([]);
-  const [categorias,        setCategorias]        = useState([]);
-  const [busqueda,          setBusqueda]          = useState("");
-  const [modal,             setModal]             = useState(false);
-  const [verDetalle,        setVerDetalle]        = useState(null);
-  const [editar,            setEditar]            = useState(null);
-  const [productoId,        setProductoId]        = useState(null);
-  const [loading,           setLoading]           = useState(true);
-  const [guardando,         setGuardando]         = useState(false);
-  const [errores,           setErrores]           = useState(ERRORES_INICIALES);
-  const [toast,             setToast]             = useState(null);
-  const [form,              setForm]              = useState(FORM_VACIO);
-  const [pendingVariantes,  setPendingVariantes]  = useState([]);
-  const [pendingImagenes,   setPendingImagenes]   = useState([]);
-  const [tab,               setTab]               = useState("productos");
-  const [paginaProductos,   setPaginaProductos]   = useState(1);
-  const [paginaCategorias,  setPaginaCategorias]  = useState(1);
+  const [datos,            setDatos]            = useState([]);
+  const [categorias,       setCategorias]       = useState([]);
+  const [busqueda,         setBusqueda]         = useState("");
+  const [modal,            setModal]            = useState(false);
+  const [verDetalle,       setVerDetalle]       = useState(null);
+  const [editar,           setEditar]           = useState(null);
+  const [productoId,       setProductoId]       = useState(null);
+  const [loading,          setLoading]          = useState(true);
+  const [guardando,        setGuardando]        = useState(false);
+  const [errores,          setErrores]          = useState(ERRORES_INICIALES);
+  const [toast,            setToast]            = useState(null);
+  const [form,             setForm]             = useState(FORM_VACIO);
+  const [pendingVariantes, setPendingVariantes] = useState([]);
+  const [pendingImagenes,  setPendingImagenes]  = useState([]);
+  const [tab,              setTab]              = useState("productos");
+  const [paginaProductos,  setPaginaProductos]  = useState(1);
+  const [paginaCategorias, setPaginaCategorias] = useState(1);
   const FILAS_POR_PAGINA = 10;
 
   const [formCategoria,    setFormCategoria]    = useState({ nombre: "", icono: "tag" });
@@ -62,13 +62,14 @@ export default function GestProductos() {
     } catch { mostrarToast("error", "No se pudo cargar."); }
     finally { setLoading(false); }
   };
-// eslint-disable-next-line react-hooks/exhaustive-deps
-    useEffect(() => { cargar(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cargar(); }, []);
+
   const filtradosAll = datos.filter(p =>
     p.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
     p.categoria?.toLowerCase().includes(busqueda.toLowerCase())
   );
-  const filtrados            = filtradosAll.slice((paginaProductos - 1) * FILAS_POR_PAGINA, paginaProductos * FILAS_POR_PAGINA);
+  const filtrados             = filtradosAll.slice((paginaProductos - 1) * FILAS_POR_PAGINA, paginaProductos * FILAS_POR_PAGINA);
   const totalPaginasProductos = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
 
   const categoriasFiltradasAll = categorias.filter(c => c.nombre?.toLowerCase().includes(busqueda.toLowerCase()));
@@ -97,25 +98,20 @@ export default function GestProductos() {
   };
 
   const validarPasoInfo = () => {
-    const e = { ...ERRORES_INICIALES };
-    let ok = true;
+    const e = { ...ERRORES_INICIALES }; let ok = true;
     if (!form.nombre.trim()) { e.nombre = "El nombre del producto es obligatorio."; ok = false; }
     else if (form.nombre.trim().length < 3) { e.nombre = "El nombre debe tener al menos 3 caracteres."; ok = false; }
-    setErrores(e);
-    return ok;
+    setErrores(e); return ok;
   };
 
   const validarPasoCategoria = () => {
-    const e = { ...ERRORES_INICIALES };
-    let ok = true;
+    const e = { ...ERRORES_INICIALES }; let ok = true;
     if (!form.id_categoria) { e.id_categoria = "Selecciona una categoría."; ok = false; }
     if (!form.precio || Number(form.precio) <= 0) { e.precio = "El precio debe ser mayor a $0."; ok = false; }
-    setErrores(e);
-    return ok;
+    setErrores(e); return ok;
   };
 
-  const validarPasoEstado = () => true;
-
+  const validarPasoEstado   = () => true;
   const validarPasoImagenes = () => true;
 
   const guardar = async () => {
@@ -274,17 +270,19 @@ export default function GestProductos() {
           </select>
         </div>
       )}
-      <div className="gestproductos-form-group">
-        <label className="gestproductos-form-label">Publicar en catálogo</label>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
-          <input type="checkbox" id="publicado" checked={!!form.publicado} disabled={form.estado === "Inactivo"}
-            onChange={e => setForm({ ...form, publicado: e.target.checked })}
-            style={{ width: 18, height: 18, cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer" }} />
-          <label htmlFor="publicado" style={{ cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer", fontSize: 13, color: form.estado === "Inactivo" ? "#999" : "inherit" }}>
-            {form.estado === "Inactivo" ? "No puede publicarse si está inactivo" : (form.publicado ? "Visible en catálogo" : "No publicado")}
-          </label>
+      {tienePerm('Productos.publicar') && (
+        <div className="gestproductos-form-group">
+          <label className="gestproductos-form-label">Publicar en catálogo</label>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+            <input type="checkbox" id="publicado" checked={!!form.publicado} disabled={form.estado === "Inactivo"}
+              onChange={e => setForm({ ...form, publicado: e.target.checked })}
+              style={{ width: 18, height: 18, cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer" }} />
+            <label htmlFor="publicado" style={{ cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer", fontSize: 13, color: form.estado === "Inactivo" ? "#999" : "inherit" }}>
+              {form.estado === "Inactivo" ? "No puede publicarse si está inactivo" : (form.publicado ? "Visible en catálogo" : "No publicado")}
+            </label>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 
@@ -295,16 +293,9 @@ export default function GestProductos() {
     <div>
       <div className="gestproductos-form-group">
         <label className="gestproductos-form-label">Nombre de la categoría <span className="gestproductos-required">*</span></label>
-        <input
-          type="text"
-          className={`gestproductos-form-input${erroresCategoria.nombre ? " input-error" : ""}`}
-          placeholder="Ej: Ropa Deportiva"
+        <input type="text" className={`gestproductos-form-input${erroresCategoria.nombre ? " input-error" : ""}`} placeholder="Ej: Ropa Deportiva"
           value={formCategoria.nombre}
-          onChange={e => {
-            setFormCategoria({ ...formCategoria, nombre: e.target.value });
-            if (erroresCategoria.nombre) setErroresCategoria({ nombre: "" });
-          }}
-        />
+          onChange={e => { setFormCategoria({ ...formCategoria, nombre: e.target.value }); if (erroresCategoria.nombre) setErroresCategoria({ nombre: "" }); }} />
         {erroresCategoria.nombre && <p className="gestproductos-field-error">{erroresCategoria.nombre}</p>}
       </div>
     </div>
@@ -315,8 +306,8 @@ export default function GestProductos() {
   const DetalleInfo = p && (
     <DetalleSeccion>
       <DetalleGrid>
-        <DetalleItem label="ID"         value={`#${String(p.id_producto).padStart(3, "0")}`} />
-        <DetalleItem label="Nombre"     value={p.nombre} />
+        <DetalleItem label="ID"          value={`#${String(p.id_producto).padStart(3, "0")}`} />
+        <DetalleItem label="Nombre"      value={p.nombre} />
         <DetalleItem label="Stock total" value={`${p.stock ?? 0} unidades`} />
       </DetalleGrid>
       {p.variantes?.length > 0 && (
@@ -404,7 +395,7 @@ export default function GestProductos() {
                 <th className="tbl-th">Precio</th>
                 <th className="tbl-th">Stock</th>
                 <th className="tbl-th">Variantes</th>
-                {tienePerm('Productos.editar') && <th className="tbl-th">Publicado</th>}
+                {tienePerm('Productos.publicar') && <th className="tbl-th">Publicado</th>}
                 {tienePerm('Productos.estado') && <th className="tbl-th">Estado</th>}
                 <th className="tbl-th">Acciones</th>
               </tr>
@@ -439,12 +430,15 @@ export default function GestProductos() {
                       <span style={{ fontSize: 11, color: "var(--dvna-muted)", fontStyle: "italic" }}>Sin variantes</span>
                     )}
                   </td>
-                  {tienePerm('Productos.editar') && (
+                  {tienePerm('Productos.publicar') && (
                     <td className="tbl-td">
-                      <button className={`gestproductos-toggle-publicado ${p.publicado ? "publicado" : "no-publicado"}`}
-                        disabled={p.estado === "Inactivo"} onClick={() => togglePublicado(p.id_producto)}>
-                        {p.publicado ? "Sí" : "No"}
-                      </button>
+                      <StatusToggle
+                        id={p.id_producto}
+                        estado={p.publicado ? "Activo" : "Inactivo"}
+                        onToggle={(id) => togglePublicado(id)}
+                        showConfirmation={false}
+                        labels={{ activo: "Sí", inactivo: "No" }}
+                      />
                     </td>
                   )}
                   {tienePerm('Productos.estado') && (
@@ -531,7 +525,9 @@ export default function GestProductos() {
         <ModalSteps
           titulo={editar ? "Editar producto" : "Nuevo producto"}
           pasos={["Info y variantes", "Categoría y precio", "Estado", "Imágenes"]}
-          onClose={cerrarModal} onGuardar={guardar} validaciones={[validarPasoInfo, validarPasoCategoria, validarPasoEstado, validarPasoImagenes]} labelGuardar={editar ? "Actualizar" : "Registrar"}
+          onClose={cerrarModal} onGuardar={guardar}
+          validaciones={[validarPasoInfo, validarPasoCategoria, validarPasoEstado, validarPasoImagenes]}
+          labelGuardar={editar ? "Actualizar" : "Registrar"}
         >
           {PasoInfo}{PasoCategoria}{PasoEstado}{PasoImagenes}
         </ModalSteps>
@@ -541,7 +537,9 @@ export default function GestProductos() {
         <ModalSteps
           titulo={editarCategoria ? "Editar categoría" : "Nueva categoría"}
           pasos={["Datos"]}
-          onClose={() => setModal(false)} onGuardar={guardarCategoria} validaciones={[validarPasoCategoriaForm]} labelGuardar={editarCategoria ? "Actualizar" : "Registrar"}
+          onClose={() => setModal(false)} onGuardar={guardarCategoria}
+          validaciones={[validarPasoCategoriaForm]}
+          labelGuardar={editarCategoria ? "Actualizar" : "Registrar"}
         >
           {PasoCategoriaForm}
         </ModalSteps>

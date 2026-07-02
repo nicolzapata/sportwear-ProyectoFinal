@@ -129,5 +129,16 @@ const actualizarMiPerfil = async (id, datos) => {
   if (!result.rows.length) throw { status: 404, message: 'Cliente no encontrado' };
   return result.rows[0];
 };
+const getClientesRolCliente = async () => {
+  const result = await pool.query(`
+    SELECT cl.*, b.nombre AS barrio_nombre, b.comuna, b.zona
+    FROM "Clientes" cl
+    INNER JOIN "Usuarios" u ON cl.id_cliente = u.id_cliente
+    LEFT JOIN "Barrios" b ON cl.id_barrio = b.id_barrio
+    WHERE u.id_rol = 2
+    ORDER BY cl.id_cliente DESC
+  `);
+  return result.rows;
+};
 
-module.exports = { getClientes, getClientesConVentas, getClienteById, crearCliente, actualizarCliente, toggleEstado, togglePermisoPagos, togglePermisoCuotas, actualizarMiPerfil, debugClientesVentas };
+module.exports = { getClientes, getClientesConVentas, getClienteById, crearCliente, actualizarCliente, toggleEstado, togglePermisoPagos, togglePermisoCuotas, actualizarMiPerfil, debugClientesVentas, getClientesRolCliente };

@@ -2,12 +2,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
+import MiCuenta from "../clientes/MiCuenta";
 import {
-  IconCreditCard, IconDollar, IconShoppingCart, IconPrint, IconUsers,
+  IconDollar, IconShoppingCart, IconPrint, IconUsers,
 } from "../../components/Icons";
 import "./Dashboard.css";
 
-/* ── Chart.js lazy loader ── */
 let chartJsLoaded = false;
 let chartJsPromise = null;
 function loadChartJs() {
@@ -22,7 +22,6 @@ function loadChartJs() {
   return chartJsPromise;
 }
 
-/* ── Helpers ── */
 const formatCurrency = (n) =>
   new Intl.NumberFormat("es-CO", {
     style: "currency", currency: "COP",
@@ -35,7 +34,6 @@ const LIGHT    = "#e8e0d8";
 const MUTED    = "#888888";
 const BORDER   = "#e5e5e5";
 
-/* ── Charts ── */
 function SalesBarChart({ data }) {
   const canvasRef = useRef(null);
   const chartRef  = useRef(null);
@@ -152,22 +150,14 @@ function DonutChart({ pagado, pendiente, cancelado }) {
   );
 }
 
-/* ════════════════════════════════════════════
-   DASHBOARD ADMIN
-════════════════════════════════════════════ */
 export default function Dashboard() {
   const { usuario } = useAuth();
 
   const [stats, setStats] = useState({
-    ingresos_hoy: 0,
-    ventas_hoy: 0,
-    bajo_stock: 0,
-    clientes_activos: 0,
-    pedidos_pendientes: 0,
-    ingresos_totales: 0,
-    total_productos: 0,
-    numero_ventas: 0,
-    ticket_promedio: 0,
+    ingresos_hoy: 0, ventas_hoy: 0, bajo_stock: 0,
+    clientes_activos: 0, pedidos_pendientes: 0,
+    ingresos_totales: 0, total_productos: 0,
+    numero_ventas: 0, ticket_promedio: 0,
   });
   const [topProductos,    setTopProductos]    = useState([]);
   const [ventasRecientes, setVentasRecientes] = useState([]);
@@ -175,6 +165,7 @@ export default function Dashboard() {
   const [cargando,        setCargando]        = useState(true);
 
   useEffect(() => {
+    if (usuario?.rol === 'Cliente') return;
     Promise.all([
       api.get("/dashboard"),
       api.get("/dashboard/ventas-mensuales"),
@@ -185,7 +176,10 @@ export default function Dashboard() {
       setVentasMensuales(mensualRes.data || { labels: [], values: [] });
       setCargando(false);
     }).catch(() => setCargando(false));
-  }, []);
+  }, [usuario?.rol]);
+
+  // Early return DESPUÉS de todos los hooks
+  if (usuario?.rol === 'Cliente') return <MiCuenta />;
 
   const getBadgeClass = (estado) => {
     switch (estado) {
@@ -220,7 +214,6 @@ export default function Dashboard() {
         <span className="dashboard-date">{today}</span>
       </div>
 
-      {/* Stats */}
       <div className="stats-grid">
         <div className="stat-card-wrapper">
           <div className="stat-card">
@@ -260,7 +253,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Fila 1: Ventas mensuales + Top productos */}
       <div className="charts-grid">
         <div className="chart-card">
           <div className="chart-header">
@@ -308,7 +300,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Fila 2: Últimas ventas + Balance */}
       <div className="charts-grid-2">
         <div className="chart-card">
           <div className="chart-header">
@@ -338,9 +329,7 @@ export default function Dashboard() {
               </tbody>
             </table>
             <div className="print-button-container">
-              <button className="btn-print" onClick={() => window.print()}>
-                <IconPrint />
-              </button>
+              <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
             </div>
           </div>
         </div>
@@ -378,9 +367,7 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="print-button-container">
-              <button className="btn-print" onClick={() => window.print()}>
-                <IconPrint />
-              </button>
+              <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
             </div>
           </div>
         </div>
