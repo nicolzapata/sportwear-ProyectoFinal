@@ -56,6 +56,15 @@ const actualizarProveedor = async (id, datos) => {
     plazo_pago_dias, condiciones, estado
   } = datos;
 
+  if (!tipo_doc || !numero_doc)
+    throw { status: 400, message: 'El tipo y número de documento son requeridos' };
+  if (!razon_social || !razon_social.trim())
+    throw { status: 400, message: 'La razón social o nombre es requerido' };
+  if (!nombre_contacto || !nombre_contacto.trim())
+    throw { status: 400, message: 'El nombre de contacto es requerido' };
+  if (!ciudad || !ciudad.trim())
+    throw { status: 400, message: 'La ciudad es requerida' };
+
   const result = await pool.query(`
     UPDATE "Proveedores" SET
       tipo_doc=$1, numero_doc=$2, razon_social=$3, nombre_comercial=$4,

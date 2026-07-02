@@ -648,3 +648,159 @@
     font-size: 0.9rem;
   }
 }
+
+/* ── Agregar al final de Proveedores.css ── */
+
+/* Toggle Empresa / Persona natural dentro del modal */
+.proveedores-tipo-toggle {
+  display: flex;
+  gap: 0.5rem;
+  padding: 4px;
+  background: #f5f5f5;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.proveedores-tipo-btn {
+  border: none;
+  background: transparent;
+  padding: 0.5rem 1.2rem;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.proveedores-tipo-btn.active {
+  background: white;
+  color: #1a1a1a;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Banner de error al cargar la lista */
+.proveedores-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #fdecec;
+  border: 1px solid #f3c6c6;
+  color: #a33;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.proveedores-error-banner button {
+  background: none;
+  border: 1px solid #a33;
+  color: #a33;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* Estado de carga de la tabla */
+.proveedores-loading {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+/* Nombre comercial debajo de la razón social en la tabla */
+.proveedores-empresa-sub {
+  font-size: 0.78rem;
+  color: #888;
+  margin-top: 2px;
+}
+
+/* ── Agregar al final de Proveedores.css ── */
+
+/* Toggle Empresa / Persona natural dentro del modal */
+.proveedores-tipo-toggle {
+  display: flex;
+  gap: 0.5rem;
+  padding: 4px;
+  background: #f5f5f5;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.proveedores-tipo-btn {
+  border: none;
+  background: transparent;
+  padding: 0.5rem 1.2rem;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.proveedores-tipo-btn.active {
+  background: white;
+  color: #1a1a1a;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Texto fijo del tipo de proveedor cuando se está editando (no editable) */
+.proveedores-tipo-fijo {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: #f5f5f5;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+/* Fila de dos columnas (ej. Nombres / Apellidos) */
+.proveedores-form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Banner de error al cargar la lista */
+.proveedores-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #fdecec;
+  border: 1px solid #f3c6c6;
+  color: #a33;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.proveedores-error-banner button {
+  background: none;
+  border: 1px solid #a33;
+  color: #a33;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* Estado de carga de la tabla */
+.proveedores-loading {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+/* Nombre comercial debajo de la razón social en la tabla */
+.proveedores-empresa-sub {
+  font-size: 0.78rem;
+  color: #888;
+  margin-top: 2px;
+}

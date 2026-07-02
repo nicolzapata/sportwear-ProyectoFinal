@@ -3,13 +3,14 @@ const router = require('express').Router();
 const {
   getClientes, getClientesConVentas, getClienteById, crearCliente,
   actualizarCliente, toggleEstado, togglePermisoPagos, togglePermisoCuotas,
-  getMiPerfil, actualizarMiPerfil, debugClientesVentas 
+  getMiPerfil, actualizarMiPerfil, debugClientesVentas, getClientesRolCliente
 } = require('../controllers/clientes.controller');
 const { verificarToken, tieneModulo } = require('../middlewares/auth.middleware');
 
 // ── Rutas de perfil propio (cualquier usuario con id_cliente vinculado) ───────
 router.get('/mi-perfil',            verificarToken, getMiPerfil);
 router.put('/mi-perfil',            verificarToken, actualizarMiPerfil);
+router.get('/rol-cliente', verificarToken, tieneModulo('Clientes', 'ver'), getClientesRolCliente);
 
 // ── Rutas administrativas ─────────────────────────────────────────────────────
 router.get('/',                     verificarToken, tieneModulo('Clientes', 'ver'),    getClientes);

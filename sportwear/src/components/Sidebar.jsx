@@ -57,8 +57,12 @@ export default function Sidebar() {
 
   // Si es Cliente con módulos admin, agregar "Mi cuenta" al sidebar
   const esClienteConAdmin = usuario?.rol === 'Cliente' && tieneModulosAdmin(usuario?.modulos || []);
+
   const menuFinal = esClienteConAdmin
-    ? [...menuFiltrado, { key: 'mi-cuenta', path: '/mi-cuenta', label: 'Mi cuenta', module: null }]
+    ? [
+        { key: 'mi-cuenta', path: '/dashboard', label: 'Mi cuenta', module: null },
+        ...menuFiltrado.filter(item => item.path !== '/dashboard')
+      ]
     : menuFiltrado;
 
   const tieneUsuariosModulo = permisosRol.includes('usuarios');

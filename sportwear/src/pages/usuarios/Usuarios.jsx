@@ -37,6 +37,7 @@ export default function Usuarios() {
   const [showPassword,   setShowPassword]   = useState(false);
   const [paginaUsuarios, setPaginaUsuarios] = useState(1);
   const [paginaClientes, setPaginaClientes] = useState(1);
+  const [toast,          setToast]          = useState(null);
 
   const [filterType, setFilterType] = useState(() =>
     tieneUsuarios ? 'usuarios' : 'clientes'
@@ -47,12 +48,7 @@ export default function Usuarios() {
     tipo_doc: "CC", documento: "", telefono: "", ciudad: "Medellín",
     id_barrio: "", direccion: "", permiso_cuotas: true
   });
-  const [toast, setToast] = useState(null);
 
-  const showToast = (type, message) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 3500);
-  };
   const [errores, setErrores] = useState({ nombre: "", documento: "", email: "", contrasena: "" });
 
   const [clienteForm, setClienteForm] = useState({
@@ -61,6 +57,11 @@ export default function Usuarios() {
     permiso_pagos: 1, permiso_cuotas: 1, estado: "Activo"
   });
   const [erroresCliente, setErroresCliente] = useState({ nombre: "", documento: "" });
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   useEffect(() => {
     const promesas = [api.get("/roles"), api.get("/barrios")];
@@ -84,7 +85,7 @@ export default function Usuarios() {
 
   useEffect(() => {
     if (filterType === "clientes" && tieneClientes) {
-      api.get("/clientes/con-ventas").then(r => setClientes(r.data)).catch(console.error);
+      api.get("/clientes/rol-cliente").then(r => setClientes(r.data)).catch(console.error);
     }
   }, [filterType, tieneClientes]);
 
@@ -124,18 +125,21 @@ export default function Usuarios() {
 
   const abrirRegistrar = () => {
     setEditar(null);
+    setErrores({ nombre: "", documento: "", email: "", contrasena: "" });
     setForm({ nombre: "", email: "", contrasena: "", id_rol: roles[0]?.id_rol || 1, estado: "Activo", tipo_doc: "CC", documento: "", telefono: "", ciudad: "Medellín", id_barrio: "", direccion: "", permiso_cuotas: true });
     setModal(true);
   };
 
   const abrirRegistrarCliente = () => {
     setEditar(null);
+    setErroresCliente({ nombre: "", documento: "" });
     setClienteForm({ nombre: "", tipo_doc: "CC", documento: "", telefono: "", email: "", id_barrio: "", direccion: "", tipo_cliente: "Regular", permiso_pagos: 1, permiso_cuotas: 1, estado: "Activo" });
     setModal(true);
   };
 
   const abrirEditar = async (u) => {
     setEditar(u.id_usuario);
+    setErrores({ nombre: "", documento: "", email: "", contrasena: "" });
     setForm({ nombre: u.nombre || "", email: u.email || "", contrasena: "", id_rol: u.id_rol || roles[0]?.id_rol || 1, estado: u.estado || "Activo", tipo_doc: u.tipo_doc || "CC", documento: u.documento || "", telefono: u.telefono || "", ciudad: u.ciudad || "Medellín", id_barrio: u.id_barrio || "", direccion: u.direccion || "", permiso_cuotas: u.permiso_cuotas !== false });
     if (!u.tipo_doc) {
       try {
@@ -148,26 +152,9 @@ export default function Usuarios() {
 
   const abrirEditarCliente = (c) => {
     setEditar(c.id_cliente);
+    setErroresCliente({ nombre: "", documento: "" });
     setClienteForm({ nombre: c.nombre, tipo_doc: c.tipo_doc, documento: c.documento, telefono: c.telefono || "", email: c.email || "", id_barrio: c.id_barrio || "", direccion: c.direccion || "", tipo_cliente: c.tipo_cliente, permiso_pagos: c.permiso_pagos, permiso_cuotas: c.permiso_cuotas || 1, estado: c.estado });
     setModal(true);
-  };
-
-  const guardar = async () => {
-    if (!form.nombre || !form.email) return false;
-    if (!editar) {
-      if (!form.contrasena) { showToast("error", "La contraseña es requerida"); return false; }
-      if (form.contrasena.length < 6) { showToast("error", "Mínimo 6 caracteres"); return false; }
-      if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) { showToast("error", "Debe contener al menos un símbolo"); return false; }
-    } else if (form.contrasena) {
-      if (form.contrasena.length < 6) { showToast("error", "Mínimo 6 caracteres"); return false; }
-      if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) { showToast("error", "Debe contener al menos un símbolo"); return false; }
-    }
-    try {
-      if (!editar) await api.post("/usuarios", form);
-      else         await api.put(`/usuarios/${editar}`, form);
-      cargar();
-      setModal(false);
-    } catch (err) { console.error(err); showToast("error", err.response?.data?.message || "Error al guardar usuario"); return false; }
   };
 
   const validarPasoDocumento = () => {
@@ -189,10 +176,32 @@ export default function Usuarios() {
   };
 
   const validarPasoUbicacion = () => true;
-  const validarPasoRol = () => true;
+  const validarPasoRol       = () => true;
+
+  const guardar = async () => {
+    try {
+      if (!editar) await api.post("/usuarios", form);
+      else         await api.put(`/usuarios/${editar}`, form);
+      cargar();
+      setModal(false);
+    } catch (err) {
+      showToast("error", err.response?.data?.message || "Error al guardar usuario");
+      return false;
+    }
+  };
+
+  const validarPasoClienteDatos = () => {
+    const e = {};
+    if (!clienteForm.nombre.trim()) e.nombre = "El nombre es obligatorio";
+    if (!clienteForm.documento.trim()) e.documento = "El documento es obligatorio";
+    setErroresCliente(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const validarPasoClienteUbicacion    = () => true;
+  const validarPasoClienteClasificacion = () => true;
 
   const guardarCliente = async () => {
-    if (!clienteForm.nombre || !clienteForm.documento) return false;
     try {
       if (editar) {
         const { data } = await api.put(`/clientes/${editar}`, clienteForm);
@@ -207,17 +216,6 @@ export default function Usuarios() {
       return false;
     }
   };
-
-  const validarPasoClienteDatos = () => {
-    const e = {};
-    if (!clienteForm.nombre.trim()) e.nombre = "El nombre es obligatorio";
-    if (!clienteForm.documento.trim()) e.documento = "El documento es obligatorio";
-    setErroresCliente(e);
-    return Object.keys(e).length === 0;
-  };
-
-  const validarPasoClienteUbicacion = () => true;
-  const validarPasoClienteClasificacion = () => true;
 
   const cargar = () => {
     if (tieneUsuarios) api.get("/usuarios").then(r => setUsuarios(r.data)).catch(console.error);
@@ -251,32 +249,50 @@ export default function Usuarios() {
   const PasosDocumento = (
     <div>
       <div className="ms-form-row">
-        <div className="ms-form-group"><label className="ms-form-label">Tipo doc. <span className="ms-req">*</span></label><select className="ms-form-select" value={form.tipo_doc} onChange={e => setForm({ ...form, tipo_doc: e.target.value })}>{TIPOS_DOC.map(t => <option key={t} value={t}>{t}</option>)}</select></div>
-        <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="1001234567" value={form.documento} onChange={e => { setForm({ ...form, documento: e.target.value }); if (errores.documento) setErrores(prev => ({ ...prev, documento: "" })); }} />{errores.documento && <span className="ms-form-error">{errores.documento}</span>}</div>
+        <div className="ms-form-group">
+          <label className="ms-form-label">Tipo doc. <span className="ms-req">*</span></label>
+          <select className="ms-form-select" value={form.tipo_doc} onChange={e => setForm({ ...form, tipo_doc: e.target.value })}>
+            {TIPOS_DOC.map(t => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+        <div className="ms-form-group">
+          <label className="ms-form-label">N° documento <span className="ms-req">*</span></label>
+          <input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="1001234567" value={form.documento}
+            onChange={e => { setForm({ ...form, documento: e.target.value }); if (errores.documento) setErrores(prev => ({ ...prev, documento: "" })); }} />
+          {errores.documento && <span className="ms-form-error">{errores.documento}</span>}
+        </div>
       </div>
-      <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className={`ms-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Nicol Zapata" value={form.nombre} onChange={e => { setForm({ ...form, nombre: e.target.value }); if (errores.nombre) setErrores(prev => ({ ...prev, nombre: "" })); }} />{errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}</div>
+      <div className="ms-form-group">
+        <label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label>
+        <input className={`ms-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Nicol Zapata" value={form.nombre}
+          onChange={e => { setForm({ ...form, nombre: e.target.value }); if (errores.nombre) setErrores(prev => ({ ...prev, nombre: "" })); }} />
+        {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
+      </div>
     </div>
   );
 
   const PasosCuenta = (
     <div>
-      <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className={`ms-form-input${errores.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={form.email} onChange={e => { setForm({ ...form, email: e.target.value }); if (errores.email) setErrores(prev => ({ ...prev, email: "" })); }} />{errores.email && <span className="ms-form-error">{errores.email}</span>}</div>
-      <div className="ms-form-group"><label className="ms-form-label">Teléfono</label><input className="ms-form-input" placeholder="3001234567" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} /></div>
+      <div className="ms-form-group">
+        <label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label>
+        <input type="email" className={`ms-form-input${errores.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={form.email}
+          onChange={e => { setForm({ ...form, email: e.target.value }); if (errores.email) setErrores(prev => ({ ...prev, email: "" })); }} />
+        {errores.email && <span className="ms-form-error">{errores.email}</span>}
+      </div>
+      <div className="ms-form-group">
+        <label className="ms-form-label">Teléfono</label>
+        <input className="ms-form-input" placeholder="3001234567" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} />
+      </div>
       {(!editar || editar === usuario?.id_usuario) && (
         <div className="ms-form-group">
           <label className="ms-form-label">Contraseña {!editar && <span className="ms-req">*</span>}</label>
           <div className="input-wrapper">
             <span className="input-icon"><IconLock /></span>
-            <input
-              type={showPassword ? "text" : "password"}
+            <input type={showPassword ? "text" : "password"}
               className={`ms-form-input${errores.contrasena ? " input-error" : ""}`}
               placeholder={editar ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"}
               value={form.contrasena}
-              onChange={e => {
-                setForm({ ...form, contrasena: e.target.value });
-                if (errores.contrasena) setErrores(prev => ({ ...prev, contrasena: "" }));
-              }}
-            />
+              onChange={e => { setForm({ ...form, contrasena: e.target.value }); if (errores.contrasena) setErrores(prev => ({ ...prev, contrasena: "" })); }} />
             <div className="input-bar" />
             <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <IconEyeOpen /> : <IconEyeClosed />}</span>
           </div>
@@ -296,16 +312,35 @@ export default function Usuarios() {
 
   const PasosRol = (
     <div>
-      <div className="ms-form-group"><label className="ms-form-label">Rol</label><select className="ms-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>{roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}</select></div>
-      <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><select className="ms-form-select" value={form.permiso_cuotas ? 1 : 0} onChange={e => setForm({ ...form, permiso_cuotas: Number(e.target.value) === 1 })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
-      <div className="ms-form-group"><label className="ms-form-label">Estado</label><select className="ms-form-select" value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+      <div className="ms-form-group">
+        <label className="ms-form-label">Rol</label>
+        <select className="ms-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
+          {roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}
+        </select>
+      </div>
+      {Number(form.id_rol) === 2 && (
+        <div className="ms-form-group">
+          <label className="ms-form-label">Pago por cuotas</label>
+          <select className="ms-form-select" value={form.permiso_cuotas ? 1 : 0} onChange={e => setForm({ ...form, permiso_cuotas: Number(e.target.value) === 1 })}>
+            <option value={1}>Permitido</option>
+            <option value={0}>Bloqueado</option>
+          </select>
+        </div>
+      )}
+      <div className="ms-form-group">
+        <label className="ms-form-label">Estado</label>
+        <select className="ms-form-select" value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })}>
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+      </div>
     </div>
   );
 
   const DetalleDocumento = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Tipo doc." value={detalle.tipo_doc} /><DetalleItem label="Documento" value={detalle.documento} /><DetalleItem label="Nombre completo" value={detalle.nombre} full /></DetalleGrid></DetalleSeccion>);
   const DetalleCuenta    = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Correo electrónico" value={detalle.email} /><DetalleItem label="Teléfono" value={detalle.telefono} /></DetalleGrid></DetalleSeccion>);
   const DetalleUbicacion = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Ciudad" value={detalle.ciudad} /><DetalleItem label="Barrio" value={detalle.barrio ? `${detalle.barrio}${detalle.comuna ? ` — ${detalle.comuna}` : ''}` : null} /><DetalleItem label="Dirección" value={detalle.direccion} full /></DetalleGrid></DetalleSeccion>);
-  const DetalleRol       = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} /><DetalleItem label="Pago por cuotas" value={detalle.permiso_cuotas !== false ? "Permitido" : "Bloqueado"} /><DetalleItem label="Estado" value={detalle.estado} /></DetalleGrid></DetalleSeccion>);
+  const DetalleRol       = detalle && (<DetalleSeccion><DetalleGrid><DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} />{Number(detalle.id_rol) === 2 && <DetalleItem label="Pago por cuotas" value={detalle.permiso_cuotas !== false ? "Permitido" : "Bloqueado"} />}<DetalleItem label="Estado" value={detalle.estado} /></DetalleGrid></DetalleSeccion>);
 
   return (
     <div className="usuarios-container">
@@ -325,14 +360,14 @@ export default function Usuarios() {
             </div>
           )}
         </div>
-                <div className="usuarios-actions-right">
 
-        {filterType === 'usuarios' && tienePerm('Usuarios.crear') && (
-          <button className="usuarios-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo usuario</button>
-        )}
-        {filterType === 'clientes' && tienePerm('Clientes.crear') && (
-          <button className="usuarios-btn-primary" onClick={abrirRegistrarCliente}><span>+</span> Nuevo cliente</button>
-        )}
+        <div className="usuarios-actions-right">
+          {filterType === 'usuarios' && tienePerm('Usuarios.crear') && (
+            <button className="usuarios-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo usuario</button>
+          )}
+          {filterType === 'clientes' && tienePerm('Clientes.crear') && (
+            <button className="usuarios-btn-primary" onClick={abrirRegistrarCliente}><span>+</span> Nuevo cliente</button>
+          )}
           <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
         </div>
       </div>
@@ -356,8 +391,6 @@ export default function Usuarios() {
                 <th className="tbl-th">Teléfono</th>
                 <th className="tbl-th">Barrio</th>
                 <th className="tbl-th">Tipo</th>
-                <th className="tbl-th">Compras</th>
-                <th className="tbl-th">Total</th>
                 {tienePerm('Clientes.estado') && <th className="tbl-th">Estado</th>}
                 <th className="tbl-th">Acciones</th>
               </tr>
@@ -397,8 +430,6 @@ export default function Usuarios() {
                   <td className="tbl-td clientes-phone-cell">{c.telefono || '—'}</td>
                   <td className="tbl-td">{c.barrio_nombre ? <div><div className="clientes-barrio-name">{c.barrio_nombre}</div><div className="clientes-comuna-name">{c.comuna}</div></div> : <span className="clientes-empty">—</span>}</td>
                   <td className="tbl-td"><span className={`clientes-tipo-badge ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
-                  <td className="tbl-td">{c.total_compras || 0}</td>
-                  <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
                   {tienePerm('Clientes.estado') && (
                     <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstadoCliente} showConfirmation={true} /></td>
                   )}
@@ -426,18 +457,22 @@ export default function Usuarios() {
             <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} registros</span>
           </div>
         )}
-
-        {/* Print button moved to top actions bar */}
       </div>
 
       {modal && filterType === 'usuarios' && (
-        <ModalSteps titulo={editar ? "Editar usuario" : "Nuevo usuario"} pasos={["Documento", "Cuenta", "Ubicación", "Rol"]} onClose={() => setModal(false)} onGuardar={guardar} validaciones={[validarPasoDocumento, validarPasoCuenta, validarPasoUbicacion, validarPasoRol]} labelGuardar={editar ? "Actualizar" : "Registrar"}>
+        <ModalSteps titulo={editar ? "Editar usuario" : "Nuevo usuario"} pasos={["Documento", "Cuenta", "Ubicación", "Rol"]}
+          onClose={() => setModal(false)} onGuardar={guardar}
+          validaciones={[validarPasoDocumento, validarPasoCuenta, validarPasoUbicacion, validarPasoRol]}
+          labelGuardar={editar ? "Actualizar" : "Registrar"}>
           {PasosDocumento}{PasosCuenta}{PasosUbicacion}{PasosRol}
         </ModalSteps>
       )}
 
       {modal && filterType === 'clientes' && (
-        <ModalSteps titulo={editar ? "Editar cliente" : "Nuevo cliente"} pasos={["Datos personales", "Ubicación", "Clasificación"]} onClose={() => setModal(false)} onGuardar={guardarCliente} validaciones={[validarPasoClienteDatos, validarPasoClienteUbicacion, validarPasoClienteClasificacion]} labelGuardar={editar ? "Actualizar" : "Registrar"}>
+        <ModalSteps titulo={editar ? "Editar cliente" : "Nuevo cliente"} pasos={["Datos personales", "Ubicación", "Clasificación"]}
+          onClose={() => setModal(false)} onGuardar={guardarCliente}
+          validaciones={[validarPasoClienteDatos, validarPasoClienteUbicacion, validarPasoClienteClasificacion]}
+          labelGuardar={editar ? "Actualizar" : "Registrar"}>
           <div>
             <div className="ms-form-row">
               <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.nombre ? " input-error" : ""}`} placeholder="Ej: Juan Pérez" value={clienteForm.nombre} onChange={e => { setClienteForm({ ...clienteForm, nombre: e.target.value }); if (erroresCliente.nombre) setErroresCliente(prev => ({ ...prev, nombre: "" })); }} />{erroresCliente.nombre && <span className="ms-form-error">{erroresCliente.nombre}</span>}</div>
@@ -508,6 +543,7 @@ export default function Usuarios() {
           </DetalleGrid></DetalleSeccion>
         </ModalDetalle>
       )}
+
       <Toast toast={toast} />
     </div>
   );
