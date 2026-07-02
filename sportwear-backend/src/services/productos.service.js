@@ -9,6 +9,7 @@ const getProductos = async (publicado) => {
   const result = await pool.query(`
     SELECT
       p.id_producto,
+      p.codigo,
       p.nombre,
       p.descripcion,
       p.id_categoria,
@@ -57,16 +58,20 @@ const crearProducto = async (datos) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+
+    const { rows: [{ nv }] } = await client.query(`SELECT nextval('productos_codigo_seq') AS nv`);
+    const codigo = `PROD-${String(nv).padStart(4, '0')}`;
+
     const result = await client.query(`
-      INSERT INTO "Productos" (nombre, descripcion, id_categoria, precio, publicado, estado)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id_producto, nombre, descripcion, publicado
-    `, [nombre, descripcion || null, id_categoria, precio || 0,
+      INSERT INTO "Productos" (codigo, nombre, descripcion, id_categoria, precio, publicado, estado)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id_producto, codigo, nombre, descripcion, publicado
+    `, [codigo, nombre, descripcion || null, id_categoria, precio || 0,
         publicado || false, estado || 'Activo']);
 
     const producto = result.rows[0];
     await client.query('COMMIT');
-    return { id_producto: producto.id_producto, nombre: producto.nombre };
+    return { id_producto: producto.id_producto, codigo: producto.codigo, nombre: producto.nombre };
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
@@ -75,6 +80,7 @@ const crearProducto = async (datos) => {
 
 const actualizarProducto = async (id, datos) => {
   const { nombre, descripcion, id_categoria, precio, publicado, estado } = datos;
+  // el código nunca se modifica (regla 03.2.3.2) — no se incluye en el UPDATE
 
   const client = await pool.connect();
   try {
@@ -88,7 +94,7 @@ const actualizarProducto = async (id, datos) => {
         publicado    = COALESCE($5::BOOLEAN,  publicado),
         estado       = COALESCE($6::VARCHAR,  estado)
       WHERE id_producto = $7
-      RETURNING id_producto, nombre, descripcion, publicado
+      RETURNING id_producto, codigo, nombre, descripcion, publicado
     `, [nombre || null, descripcion || null, id_categoria || null,
         precio || null, publicado ?? null, estado || null, id]);
 
