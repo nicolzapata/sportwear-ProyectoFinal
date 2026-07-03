@@ -5,7 +5,6 @@ import './Pedidos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
-import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 
 const FILAS_POR_PAGINA = 10;
 
@@ -189,12 +188,18 @@ export default function Pedidos() {
   const totalPaginas    = Math.ceil(filtrados.length / FILAS_POR_PAGINA) || 1;
   const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
+  const getEstadoBadge = (estado) => {
+    switch (estado) {
+      case "Entregado":      return "pedidos-badge-active";
+      case "Cancelado":      return "pedidos-badge-inactive";
+      case "Enviado":        return "pedidos-badge-info";
+      case "En preparación": return "pedidos-badge-pending";
+      default:                return "pedidos-badge-pending";
+    }
+  };
+
   if (cargando) return <div style={{ padding: 48, color: "var(--muted)" }}>Cargando pedidos...</div>;
   if (errorMsg) return <div style={{ padding: 32, color: "var(--danger)" }}>{errorMsg}</div>;
-
-  const pasosDetalle = verDetalle?.historial?.length > 0
-    ? ["Información", "Productos", "Historial"]
-    : ["Información", "Productos"];
 
   return (
     <div className="pedidos-container">
@@ -283,40 +288,60 @@ export default function Pedidos() {
         )}
       </div>
 
+      {/* ── Modal "ver detalle" — panel único tipo factura ── */}
       {verDetalle && (
-        <ModalDetalle
-          titulo="Detalle de pedido"
-          subtitulo={`P-${String(verDetalle.id_pedido).padStart(3, "0")}`}
-          badge={<span className={`pedidos-badge pedidos-badge-${verDetalle.estado_pedido === 'Entregado' ? 'active' : verDetalle.estado_pedido === 'Cancelado' ? 'inactive' : verDetalle.estado_pedido === 'Enviado' ? 'info' : 'pending'}`}>{verDetalle.estado_pedido}</span>}
-          pasos={pasosDetalle}
-          onClose={() => setVerDetalle(null)}
-        >
-          <DetalleSeccion titulo="Información">
-            <DetalleGrid>
-              <DetalleItem label="Cliente"    value={verDetalle.cliente} />
-              <DetalleItem label="Dirección"  value={verDetalle.direccion_entrega || "—"} />
-              <DetalleItem label="Venta"      value={`V-${String(verDetalle.id_venta).padStart(3, "0")}`} />
-            </DetalleGrid>
-          </DetalleSeccion>
+        <div className="pedidos-modal-overlay" onClick={() => setVerDetalle(null)}>
+          <div className="pedidos-modal pedidos-modal-factura" onClick={(e) => e.stopPropagation()}>
+            <div className="pedidos-modal-header">
+              <div>
+                <h2 className="pedidos-modal-title">P-{String(verDetalle.id_pedido).padStart(3, "0")}</h2>
+                <p className="pedidos-modal-subtitulo">Detalle de pedido</p>
+              </div>
+              <button className="pedidos-modal-close" onClick={() => setVerDetalle(null)}><IconX /></button>
+            </div>
 
-          <DetalleSeccion titulo="Productos">
-            <DetalleGrid>
-              {verDetalle.items?.map((item, idx) => (
-                <DetalleItem key={idx} label={`${item.producto} ${item.talla ? `(${item.talla})` : ''}`} value={`Cant: ${item.cantidad}`} />
-              ))}
-            </DetalleGrid>
-          </DetalleSeccion>
+            <div className="pedidos-modal-body pedidos-factura-body">
+              <div className="pedidos-factura-seccion">
+                <h3 className="pedidos-factura-titulo">Información</h3>
+                <div className="pedidos-detalle-info-grid">
+                  <div><span className="pedidos-detalle-info-label">Cliente</span><span className="pedidos-detalle-info-valor">{verDetalle.cliente}</span></div>
+                  <div><span className="pedidos-detalle-info-label">Dirección</span><span className="pedidos-detalle-info-valor">{verDetalle.direccion_entrega || "—"}</span></div>
+                  <div><span className="pedidos-detalle-info-label">Venta</span><span className="pedidos-detalle-info-valor">V-{String(verDetalle.id_venta).padStart(3, "0")}</span></div>
+                  <div>
+                    <span className="pedidos-detalle-info-label">Estado</span>
+                    <span className={`pedidos-badge ${getEstadoBadge(verDetalle.estado_pedido)}`}>{verDetalle.estado_pedido}</span>
+                  </div>
+                </div>
+              </div>
 
-          {verDetalle.historial?.length > 0 && (
-            <DetalleSeccion titulo="Historial de estados">
-              <DetalleGrid>
-                {verDetalle.historial.map((h, idx) => (
-                  <DetalleItem key={idx} label={h.estado} value={`${h.fecha?.toString().split("T")[0]} ${h.usuario ? '· ' + h.usuario : ''}`} />
+              <div className="pedidos-factura-seccion">
+                <h3 className="pedidos-factura-titulo">Productos</h3>
+                {(verDetalle.items || []).map((item, i) => (
+                  <div key={i} className="pedidos-detalle-item-linea">
+                    <span>{item.producto} {item.talla ? `(${item.talla})` : ""}</span>
+                    <span>Cant: {item.cantidad}</span>
+                  </div>
                 ))}
-              </DetalleGrid>
-            </DetalleSeccion>
-          )}
-        </ModalDetalle>
+              </div>
+
+              {verDetalle.historial?.length > 0 && (
+                <div className="pedidos-factura-seccion">
+                  <h3 className="pedidos-factura-titulo">Historial de estados</h3>
+                  {verDetalle.historial.map((h, i) => (
+                    <div key={i} className="pedidos-detalle-item-linea">
+                      <span>{h.estado}</span>
+                      <span>{h.fecha?.toString().split("T")[0]} {h.usuario ? `· ${h.usuario}` : ""}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="pedidos-modal-footer">
+              <button className="pedidos-btn-secondary" onClick={() => setVerDetalle(null)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

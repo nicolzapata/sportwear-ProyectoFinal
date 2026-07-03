@@ -36,14 +36,23 @@
 }
 .pedidos-action-btn:hover { border-color: #1a1a1a; background: #fafafa; }
 
+/* ── Ancho fijo de la columna "Estado" (5ª columna) para que no empuje
+     el resto de la tabla cuando el texto del estado cambia de largo ── */
+.tbl th:nth-child(5), .tbl td:nth-child(5) {
+  width: 170px;
+  min-width: 170px;
+}
+
 /* ── Dropdown de estado ── */
 .pedidos-estado-dropdown { position: relative; display: inline-block; }
 
 .pedidos-estado-trigger {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;
   border: 1px solid #e0e0e0; background: white; border-radius: 20px;
   padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 500; cursor: pointer;
   transition: all 0.15s ease;
+  min-width: 150px;      /* ancho fijo: evita que la tabla "salte" al cambiar de estado */
+  white-space: nowrap;
 }
 .pedidos-estado-trigger:disabled { cursor: default; opacity: 0.85; }
 .pedidos-estado-trigger:not(:disabled):hover { border-color: #1a1a1a; background: #fafafa; }
@@ -95,7 +104,58 @@
 
 .pedidos-estado-cancelado-msg { padding: 0.6rem; font-size: 0.8rem; color: #757575; text-align: center; }
 
+/* ── Modal "ver detalle" tipo factura (panel único, sin stepper) ── */
+.pedidos-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1.5rem;
+}
+.pedidos-modal {
+  background: white; border-radius: 24px; width: 90%; max-width: 600px;
+  max-height: 90vh; overflow-y: auto; box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+  border: 1px solid #f0f0f0;
+}
+.pedidos-modal-factura { max-width: 650px; }
+.pedidos-modal-header {
+  padding: 1.5rem; border-bottom: 1px solid #f0f0f0; display: flex;
+  justify-content: space-between; align-items: center; background: #fafafa;
+  position: sticky; top: 0; z-index: 10;
+}
+.pedidos-modal-title { font-size: 1.2rem; font-weight: 500; color: #1a1a1a; margin: 0; }
+.pedidos-modal-subtitulo { font-size: 0.78rem; color: #888; margin: 2px 0 0; font-weight: 300; }
+.pedidos-modal-close {
+  background: none; border: 1px solid #e0e0e0; border-radius: 40px;
+  width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #666;
+}
+.pedidos-modal-close:hover { background: #f0f0f0; border-color: #999; }
+.pedidos-modal-body { padding: 1.5rem; }
+.pedidos-factura-body {}
+.pedidos-factura-seccion { padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px dashed #e5e5e5; }
+.pedidos-factura-seccion:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.pedidos-factura-titulo {
+  font-size: 0.95rem; font-weight: 600; color: var(--brown, #b49780); margin: 0 0 1rem 0;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.pedidos-detalle-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.pedidos-detalle-info-grid > div { display: flex; flex-direction: column; gap: 0.3rem; }
+.pedidos-detalle-info-label { font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.pedidos-detalle-info-valor { font-size: 0.9rem; color: #1a1a1a; font-weight: 500; }
+.pedidos-detalle-item-linea {
+  display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem;
+}
+.pedidos-detalle-item-linea:last-child { border-bottom: none; }
+.pedidos-modal-footer {
+  padding: 1.5rem; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end;
+  background: #fafafa; position: sticky; bottom: 0; z-index: 10;
+}
+.pedidos-btn-secondary {
+  background: white; color: #333; border: 1px solid #e0e0e0; padding: 0.7rem 1.6rem;
+  border-radius: 40px; font-size: 0.9rem; font-weight: 500; cursor: pointer;
+}
+.pedidos-btn-secondary:hover { border-color: #1a1a1a; background: #fafafa; }
+
 @media (max-width: 1024px) { .pedidos-container { padding: 1.5rem; } }
+@media (max-width: 640px) { .pedidos-detalle-info-grid { grid-template-columns: 1fr; } }
 @media (max-width: 480px) {
   .pedidos-search-wrapper { width: 100%; }
   .pedidos-actions-bar { flex-direction: column; align-items: stretch; gap: 1rem; }
