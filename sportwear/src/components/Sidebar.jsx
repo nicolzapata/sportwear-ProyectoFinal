@@ -19,8 +19,7 @@ const NAV_ICONS = {
   "/catalogo":   <IconBox />,
   "/proveedores":<IconTruck />,
   "/compras":    <IconCart />,
-  "/pedidos":    <IconTag />,
-  "/ventas":     <IconDollar />,
+  "/pedidos":    <IconDollar />,
   "/pagos":      <IconCreditCard />,
   "/mi-cuenta":  <IconUser />,
 };
@@ -48,6 +47,7 @@ export default function Sidebar() {
     : PERMISOS[usuario?.rol] ?? ["dashboard"];
 
   const itemEsVisible = (item) => {
+    if (item.siempreVisible) return true;
     const modulosItem = item.modules
       ? item.modules.map(normalizeModulo)
       : [normalizeModulo(item.module)];

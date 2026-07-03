@@ -1,6 +1,6 @@
 // src/services/clientes.service.js
 const pool = require('../config/db');
-const { validarCamposNumericos } = require('../../../sportwear/src/utils/validarNumerico');
+const { validarCamposNumericos } = require('../utils/validarNumerico');
 
 const getClientes = async () => {
   const result = await pool.query(`

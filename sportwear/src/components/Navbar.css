@@ -14,6 +14,17 @@
   font-family: var(--font-body);
 }
 
+/* Navbar del catálogo público: fijo de verdad, sin depender de contenedores
+   de scroll ni de que "sticky" resuelva bien su ancestro. Nunca se oculta
+   ni se desplaza al hacer scroll. */
+.navbar--public-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
 /* ── Izquierda: Logo/Marca ── */
 .navbar-left {
   display: flex;

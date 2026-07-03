@@ -15,7 +15,7 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
   const handleLogout = () => { logout(); navigate("/"); };
 
   return (
-    <header className="navbar">
+    <header className="navbar navbar--public-fixed">
 
       {/* ── Izquierda: Logo ── */}
       <div className="navbar-left">

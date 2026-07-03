@@ -22,8 +22,17 @@ const crearProducto = async (req, res) => {
 
 const actualizarProducto = async (req, res) => {
   try {
-    const data = await productosService.actualizarProducto(req.params.id, req.body);
+    const data = await productosService.actualizarProducto(req.params.id, req.body, req.usuario?.id_usuario);
     res.json({ ok: true, ...data });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+const getHistorialPrecios = async (req, res) => {
+  try {
+    const data = await productosService.getHistorialPrecios(req.params.id);
+    res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
   }
@@ -56,4 +65,4 @@ const eliminarProducto = async (req, res) => {
   }
 };
 
-module.exports = { getProductos, crearProducto, actualizarProducto, toggleEstado, togglePublicar, eliminarProducto };
+module.exports = { getProductos, crearProducto, actualizarProducto, toggleEstado, togglePublicar, eliminarProducto, getHistorialPrecios };

@@ -43,7 +43,7 @@ const IconX = () => (
  * 2. idProducto null/undefined → modo local: acumula variantes pendientes y
  *    las emite por `onPendingChange(pendingList)` cada vez que cambian.
  */
-export default function GestVariantes({ idProducto, onPendingChange }) {
+export default function GestVariantes({ idProducto, estadoProducto, onPendingChange }) {
 
   // ── Estado modo conectado ──────────────────────────────────────────────────
   const [variantes,   setVariantes]   = useState([]);
@@ -73,8 +73,7 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
         api.get('/colores'),
       ]);
       setVariantes(vars.data);
-      const sinDuplicados = [...new Map(cols.data.map(c => [c.codigo_hex.toLowerCase(), c])).values()];
-      setColores(sinDuplicados.filter(c => c.estado === 'Activo'));
+      setColores(cols.data.filter(c => c.estado === 'Activo'));
     } catch {
       setError("No se pudieron cargar las variantes.");
     } finally {
@@ -85,8 +84,7 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
   const cargarColores = async () => {
     try {
       const { data } = await api.get('/colores');
-      const sinDuplicados = [...new Map(data.map(c => [c.codigo_hex.toLowerCase(), c])).values()];
-      setColores(sinDuplicados.filter(c => c.estado === 'Activo'));
+      setColores(data.filter(c => c.estado === 'Activo'));
     } catch {
       setError("No se pudieron cargar los colores.");
     } finally {
@@ -166,10 +164,10 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
     
     const { data: todasVariantes } = await api.get(`/variantes?id_producto=${idProducto}`);
     const stockTotal = todasVariantes.reduce((acc, v) => acc + (v.stock || 0), 0);
-    if (stockTotal === 0) {
+    if (stockTotal === 0 && estadoProducto === 'Activo') {
       await api.patch(`/productos/${idProducto}/estado`);
     }
-    
+
     setColoresSel([]); setTallasSel([]); setMatriz({});
     setModoAgregar(false);
     setGuardando(false);
@@ -224,6 +222,17 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
 
   const cancelarEdicion = () => setEditando(null);
 
+  // Atajo: agregar más tallas a un color que ya tiene variantes, sin tener
+  // que volver a buscarlo y marcarlo desde cero en el selector de colores.
+  const agregarTallaAColor = (c) => {
+    setEditando(null);
+    setColoresSel([{ id_color: c.id_color, nombre: c.color_nombre, codigo_hex: c.codigo_hex }]);
+    setTallasSel([]);
+    setMatriz({});
+    setModoAgregar(true);
+    setError("");
+  };
+
   const guardarEdicion = async () => {
     if (!editando) return;
     setGuardando(true);
@@ -238,7 +247,7 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
       if (Number(editando.stock) === 0 && idProducto) {
         const { data: todasVariantes } = await api.get(`/variantes?id_producto=${idProducto}`);
         const stockTotal = todasVariantes.reduce((acc, v) => acc + (v.stock || 0), 0);
-        if (stockTotal === 0) {
+        if (stockTotal === 0 && estadoProducto === 'Activo') {
           await api.patch(`/productos/${idProducto}/estado`);
         }
       }
@@ -271,9 +280,6 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
   ).values()];
   const tallasPendientes = TALLAS.filter(t => pendingVariantes.some(v => v.talla === t));
   const getPending = (id_color, talla) => pendingVariantes.find(v => v.id_color === id_color && v.talla === talla);
-
-  // Color info para el editor de edición individual
-  const colorEditando = editando ? colores.find(c => c.id_color === editando.id_color) : null;
 
   if (loading) return (
     <div className="gv-loading"><div className="gv-spinner" /> Cargando variantes...</div>
@@ -396,6 +402,7 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
                 <th className="gv-th-color">Color</th>
                 {tallasExistentes.map(t => <th key={t} className="gv-th-talla">{t}</th>)}
                 <th className="gv-th-acciones" />
+                <th className="gv-th-acciones" />
               </tr>
             </thead>
             <tbody>
@@ -431,6 +438,11 @@ export default function GestVariantes({ idProducto, onPendingChange }) {
                         </div>
                       ) : null;
                     })}
+                  </td>
+                  <td className="gv-td-del">
+                    <button className="gv-btn-edit" onClick={() => agregarTallaAColor(c)} title={`Agregar otra talla en ${c.color_nombre}`}>
+                      <IconPlus />
+                    </button>
                   </td>
                 </tr>
               ))}

@@ -3,29 +3,51 @@ const pool = require('../config/db');
 
 const getCategorias = async () => {
   const result = await pool.query(
-    `SELECT id_categoria, nombre, estado, icono
-     FROM "Categorias" ORDER BY nombre`
+    `SELECT c.id_categoria, c.nombre, c.descripcion, c.estado, c.icono, c.fecha_creacion,
+            COUNT(p.id_producto) FILTER (WHERE p.estado != 'Eliminado') AS total_productos
+     FROM "Categorias" c
+     LEFT JOIN "Productos" p ON p.id_categoria = c.id_categoria
+     GROUP BY c.id_categoria
+     ORDER BY c.nombre`
   );
   return result.rows;
 };
 
-const crearCategoria = async ({ nombre, icono }) => {
+const getCategoriaById = async (id) => {
+  const result = await pool.query(
+    `SELECT id_categoria, nombre, descripcion, estado, icono, fecha_creacion
+     FROM "Categorias" WHERE id_categoria = $1`,
+    [id]
+  );
+  if (!result.rows.length) throw { status: 404, message: 'No encontrada' };
+
+  const productos = await pool.query(
+    `SELECT id_producto, codigo, nombre, precio, estado
+     FROM "Productos" WHERE id_categoria = $1 AND estado != 'Eliminado'
+     ORDER BY nombre`,
+    [id]
+  );
+  return { ...result.rows[0], productos: productos.rows };
+};
+
+const crearCategoria = async ({ nombre, descripcion, icono }) => {
   if (!nombre) throw { status: 400, message: 'Nombre requerido' };
   const result = await pool.query(
-    `INSERT INTO "Categorias" (nombre, icono) VALUES ($1, $2) RETURNING *`,
-    [nombre, icono || 'tag']
+    `INSERT INTO "Categorias" (nombre, descripcion, icono) VALUES ($1, $2, $3) RETURNING *`,
+    [nombre, descripcion || null, icono || 'tag']
   );
   return result.rows[0];
 };
 
-const actualizarCategoria = async (id, { nombre, estado, icono }) => {
+const actualizarCategoria = async (id, { nombre, descripcion, estado, icono }) => {
   const result = await pool.query(
     `UPDATE "Categorias"
      SET nombre      = COALESCE($1, nombre),
-         estado      = COALESCE($2, estado),
-         icono       = COALESCE($3, icono)
-     WHERE id_categoria = $4 RETURNING *`,
-    [nombre, estado, icono, id]
+         descripcion = COALESCE($2, descripcion),
+         estado      = COALESCE($3, estado),
+         icono       = COALESCE($4, icono)
+     WHERE id_categoria = $5 RETURNING *`,
+    [nombre, descripcion, estado, icono, id]
   );
   if (!result.rows[0]) throw { status: 404, message: 'No encontrada' };
   return result.rows[0];
@@ -53,4 +75,4 @@ const toggleEstado = async (id) => {
   return result.rows[0];
 };
 
-module.exports = { getCategorias, crearCategoria, actualizarCategoria, toggleEstado };
+module.exports = { getCategorias, getCategoriaById, crearCategoria, actualizarCategoria, toggleEstado };

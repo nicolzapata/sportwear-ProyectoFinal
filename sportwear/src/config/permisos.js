@@ -8,9 +8,8 @@ export const MENU_ITEMS = [
   { key: "productos",   path: "/productos",   icon: "👕", label: "Productos",   divider: true, module: "Productos" },
   { key: "proveedores", path: "/proveedores", icon: "🏭", label: "Proveedores", module: "Proveedores" },
   { key: "compras",     path: "/compras",     icon: "📦", label: "Compras", module: "Compras" },
-  { key: "catalogo",    path: "/catalogo",    icon: "📋", label: "Catálogo",    divider: true, module: "Catálogo" },
-  { key: "pedidos",     path: "/pedidos",     icon: "🚚", label: "Pedidos", divider: true, module: "Pedidos" },
-  { key: "ventas",      path: "/ventas",      icon: "💰", label: "Ventas", module: "PedidosVentas" },
+  { key: "catalogo",    path: "/catalogo",    icon: "📋", label: "Catálogo",    divider: true, siempreVisible: true },
+  { key: "pedidos",     path: "/pedidos",     icon: "💰", label: "Pedidos y Ventas", divider: true, module: "PedidosVentas" },
   { key: "pagos",       path: "/pagos",       icon: "💳", label: "Pagos", module: "Pagos" },
   { key: "colores",     path: "/colores",     icon: "🎨", label: "Colores",divider: true, module: "Colores" },
 ];

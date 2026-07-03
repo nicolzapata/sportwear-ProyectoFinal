@@ -101,7 +101,8 @@ export default function Usuarios() {
   const filtrados = filterType === "usuarios"
     ? usuarios.filter(u =>
         u.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
-        u.email?.toLowerCase().includes(busqueda.toLowerCase())
+        u.email?.toLowerCase().includes(busqueda.toLowerCase()) ||
+        String(u.id_usuario).includes(busqueda.trim())
       )
     : clientes.filter(c =>
         c.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -116,7 +117,7 @@ export default function Usuarios() {
   const abrirDetalle = async (u) => {
     setDetalle(u);
     try { const { data } = await api.get(`/usuarios/${u.id_usuario}`); setDetalle(data); }
-    catch { /* usa datos parciales */ }
+    catch { showToast("error", "No se pudo cargar el detalle completo del usuario."); }
   };
 
   const abrirRegistrar = () => {
@@ -372,6 +373,7 @@ export default function Usuarios() {
       <DetalleSeccion><DetalleGrid>
         <DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} />
         <DetalleItem label="Estado" value={detalle.estado} />
+        <DetalleItem label="Fecha de creación" value={detalle.fecha_creacion ? new Date(detalle.fecha_creacion).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : null} />
       </DetalleGrid></DetalleSeccion>
     </>
   );
@@ -382,7 +384,7 @@ export default function Usuarios() {
         <div className="usuarios-actions-left">
           <div className="usuarios-search-wrapper">
             <span className="usuarios-search-icon"><IconSearch /></span>
-            <input type="text" className="usuarios-search-input" placeholder="Buscar por nombre o email..." value={busqueda}
+            <input type="text" className="usuarios-search-input" placeholder={filterType === 'usuarios' ? "Buscar por nombre, email o ID..." : "Buscar por nombre o documento..."} value={busqueda}
               onChange={e => { setBusqueda(e.target.value); setPaginaUsuarios(1); setPaginaClientes(1); }} />
             {busqueda && <button className="usuarios-search-clear" onClick={() => { setBusqueda(""); setPaginaUsuarios(1); setPaginaClientes(1); }}><IconX /></button>}
           </div>
@@ -449,7 +451,9 @@ export default function Usuarios() {
             )}
           </thead>
           <tbody className="tbl-body">
-            {filterType === 'usuarios' ? (
+            {filtradosPagina.length === 0 ? (
+              <tr><td colSpan="100%" className="tbl-td usuarios-empty-row">{busqueda ? `No se encontraron resultados para "${busqueda}".` : "No hay registros para mostrar."}</td></tr>
+            ) : filterType === 'usuarios' ? (
               filtradosPagina.map(u => (
                 <tr key={u.id_usuario} className="tbl-row">
                   <td className="tbl-td"><div className="usuarios-user-info"><div className="usuarios-user-name">{u.nombre}</div></div></td>

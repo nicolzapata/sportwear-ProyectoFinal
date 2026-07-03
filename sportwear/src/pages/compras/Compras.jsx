@@ -3,7 +3,9 @@ import { useState, useEffect } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import './Compras.css';
-import { IconEdit, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
+import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
+import Loader from "../../components/Loader";
+import ExportButtons from "../../components/ExportButtons";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;
@@ -203,14 +205,7 @@ export default function Compras() {
     }
   };
 
-  if (cargando) {
-    return (
-      <div className="compras-loading-container">
-        <div className="compras-loading-spinner" />
-        <span className="compras-loading-text">Cargando compras...</span>
-      </div>
-    );
-  }
+  if (cargando) return <Loader text="Cargando compras..." />;
 
   return (
     <div className="compras-container">
@@ -243,9 +238,19 @@ export default function Compras() {
               <span>+</span> Nueva compra
             </button>
           )}
-          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla">
-            <IconPrint />
-          </button>
+          <ExportButtons
+            datos={filtradosAll}
+            columnas={[
+              { header: "Proveedor", key: "proveedor" },
+              { header: "N° Orden", key: "numero_orden" },
+              { header: "Productos", value: (c) => c.items?.length || 0 },
+              { header: "Total", key: "total" },
+              { header: "Fecha", value: (c) => c.fecha?.toString().split("T")[0] },
+              { header: "Estado", key: "estado" },
+            ]}
+            nombreArchivo="compras"
+            titulo="Compras"
+          />
         </div>
       </div>
 
@@ -333,7 +338,7 @@ export default function Compras() {
                     onChange={(e) => { setForm({ ...form, id_proveedor: e.target.value }); setErrores((prev) => ({ ...prev, id_proveedor: "" })); }}
                   >
                     <option value="">Seleccionar proveedor...</option>
-                    {proveedores.map((p) => (
+                    {proveedores.filter((p) => p.estado === "Activo").map((p) => (
                       <option key={p.id_proveedor} value={p.id_proveedor}>
                         {p.nombre_comercial || p.razon_social}
                       </option>
