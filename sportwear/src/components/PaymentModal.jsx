@@ -244,12 +244,12 @@ function PaymentFormView({ pedido, cliente, onClose, onPagoConfirmado, setPagoRe
       let response;
       if (tipoPago === "cuota" && proximaCuota) {
         response = await api.post(`/pagos/cuota/${proximaCuota.id_pago}`, {
-          metodo: metodo,
+          metodo: "Tarjeta",
           referencia_pago: "PAY-" + Date.now().toString(36).toUpperCase()
         });
       } else {
         response = await api.post(`/pagos/venta/${pedido.id_venta}/total`, {
-          metodo: metodo,
+          metodo: "Tarjeta",
           referencia_pago: "PAY-" + Date.now().toString(36).toUpperCase()
         });
       }

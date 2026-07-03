@@ -15,12 +15,14 @@ const getDetalles = async (id_compra) => {
   let where = '';
   if (id_compra) { where = 'WHERE dc.id_compra=$1'; params.push(id_compra); }
   const result = await pool.query(`
-    SELECT dc.*, p.nombre AS producto, p.talla, cat.nombre AS categoria,
+    SELECT dc.*, p.nombre AS producto, pv.talla, col.nombre AS color, cat.nombre AS categoria,
            c.numero_orden, c.fecha AS fecha_compra, c.estado AS estado_compra,
            pr.razon_social AS proveedor
     FROM "DetalleCompra" dc
     JOIN "Productos"   p   ON dc.id_producto = p.id_producto
     JOIN "Categorias"  cat ON p.id_categoria = cat.id_categoria
+    LEFT JOIN "ProductoVariantes" pv ON dc.id_variante = pv.id_variante
+    LEFT JOIN "Colores" col ON pv.id_color = col.id_color
     JOIN "Compras"     c   ON dc.id_compra   = c.id_compra
     JOIN "Proveedores" pr  ON c.id_proveedor = pr.id_proveedor
     ${where} ORDER BY dc.id_detalle_compra
@@ -30,11 +32,13 @@ const getDetalles = async (id_compra) => {
 
 const getDetalleById = async (id) => {
   const result = await pool.query(`
-    SELECT dc.*, p.nombre AS producto, p.talla, cat.nombre AS categoria,
+    SELECT dc.*, p.nombre AS producto, pv.talla, col.nombre AS color, cat.nombre AS categoria,
            c.numero_orden, c.fecha AS fecha_compra, pr.razon_social AS proveedor
     FROM "DetalleCompra" dc
     JOIN "Productos"   p   ON dc.id_producto = p.id_producto
     JOIN "Categorias"  cat ON p.id_categoria = cat.id_categoria
+    LEFT JOIN "ProductoVariantes" pv ON dc.id_variante = pv.id_variante
+    LEFT JOIN "Colores" col ON pv.id_color = col.id_color
     JOIN "Compras"     c   ON dc.id_compra   = c.id_compra
     JOIN "Proveedores" pr  ON c.id_proveedor = pr.id_proveedor
     WHERE dc.id_detalle_compra=$1
@@ -44,7 +48,7 @@ const getDetalleById = async (id) => {
 };
 
 const crearDetalle = async (datos) => {
-  const { id_compra, id_producto, cantidad, precio_unitario, descuento_linea } = datos;
+  const { id_compra, id_producto, id_variante, cantidad, precio_unitario, descuento_linea } = datos;
   if (!id_compra || !id_producto || !cantidad || !precio_unitario)
     throw { status: 400, message: 'Faltan campos obligatorios' };
 
@@ -55,11 +59,12 @@ const crearDetalle = async (datos) => {
     if (['Anulado', 'Recibido'].includes(compra.rows[0].estado))
       throw { status: 400, message: `Compra en estado "${compra.rows[0].estado}", no se pueden agregar items` };
 
+    const subtotalLinea = cantidad * precio_unitario - (descuento_linea || 0);
     await client.query('BEGIN');
     const result = await client.query(`
-      INSERT INTO "DetalleCompra" (id_compra, id_producto, cantidad, precio_unitario, descuento_linea)
-      VALUES ($1,$2,$3,$4,$5) RETURNING *
-    `, [id_compra, id_producto, cantidad, precio_unitario, descuento_linea || 0]);
+      INSERT INTO "DetalleCompra" (id_compra, id_producto, id_variante, cantidad, precio_unitario, descuento_linea, subtotal)
+      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
+    `, [id_compra, id_producto, id_variante || null, cantidad, precio_unitario, descuento_linea || 0, subtotalLinea]);
     await recalcular(client, id_compra);
     await client.query('COMMIT');
     return result.rows[0];
@@ -82,7 +87,8 @@ const actualizarDetalle = async (id, { cantidad, precio_unitario, descuento_line
 
     await client.query('BEGIN');
     const result = await client.query(`
-      UPDATE "DetalleCompra" SET cantidad=$1, precio_unitario=$2, descuento_linea=$3
+      UPDATE "DetalleCompra" SET cantidad=$1, precio_unitario=$2, descuento_linea=$3,
+        subtotal = ($1::NUMERIC * $2::NUMERIC) - $3::NUMERIC
       WHERE id_detalle_compra=$4 RETURNING *
     `, [cantidad, precio_unitario, descuento_linea || 0, id]);
     await recalcular(client, check.rows[0].id_compra);

@@ -89,13 +89,14 @@ router.get('/mis-items', verificarToken, soloCliente, async (req, res) => {
     }
 
     const result = await pool.query(`
-      SELECT dv.*, p.nombre AS producto, p.talla,
+      SELECT dv.*, p.nombre AS producto, pv.talla,
              cat.nombre AS categoria, col.nombre AS color,
              v.fecha AS fecha_venta, v.estado AS estado_venta
       FROM "DetalleVenta" dv
       JOIN "Productos"  p   ON dv.id_producto = p.id_producto
       JOIN "Categorias" cat ON p.id_categoria = cat.id_categoria
-      LEFT JOIN "Colores" col ON p.id_color  = col.id_color
+      LEFT JOIN "ProductoVariantes" pv ON dv.id_variante = pv.id_variante
+      LEFT JOIN "Colores" col ON pv.id_color  = col.id_color
       JOIN "Ventas"     v   ON dv.id_venta   = v.id_venta
       WHERE v.id_cliente = $1
         ${id_venta ? 'AND dv.id_venta = $2' : ''}

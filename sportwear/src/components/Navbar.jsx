@@ -1,6 +1,7 @@
 // src/components/Navbar.jsx  —  Admin · Estilo ETHKL
 import { useState } from "react";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,
   IconShoppingBag, IconPalette, IconBox, IconTruck,
@@ -31,12 +32,14 @@ const fecha = new Date().toLocaleDateString("es-CO", {
 
 export default function Navbar() {
   const location    = useLocation();
+  const navigate    = useNavigate();
+  const { logout }  = useAuth();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const current     = titulos[location.pathname] || { label: "Admin", icon: <IconBolt /> };
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
+    logout();
+    navigate("/login");
   };
 
   return (

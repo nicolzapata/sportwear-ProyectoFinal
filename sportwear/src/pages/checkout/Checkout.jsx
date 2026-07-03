@@ -101,6 +101,7 @@ export default function Checkout() {
   });
 const [stepModal,     setStepModal]     = useState(() => true);
 const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
+const [erroresPaso, setErroresPaso] = useState({});
 
   useEffect(() => {
     if (!usuario) return;
@@ -266,7 +267,6 @@ const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
   };
 
   const confirmarDesdeModal = async () => {
-    console.log("Confirmando pedido...", { usuario, items, direccion, metodo });
     try {
       await handleConfirmar();
       setStepModal(false);

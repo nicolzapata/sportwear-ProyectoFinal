@@ -581,7 +581,7 @@
 
 .compras-item-titulos {
   display: grid;
-  grid-template-columns: 2fr 0.8fr 1fr 1fr 1fr auto;
+  grid-template-columns: 1.6fr 1.3fr 0.7fr 1fr 1fr 1fr auto;
   gap: 0.5rem;
   padding: 0 0.6rem;
   margin-bottom: 0.4rem;
@@ -604,7 +604,7 @@
 
 .compras-item-row {
   display: grid;
-  grid-template-columns: 2fr 0.8fr 1fr 1fr 1fr auto;
+  grid-template-columns: 1.6fr 1.3fr 0.7fr 1fr 1fr 1fr auto;
   gap: 0.5rem;
   align-items: center;
   margin-bottom: 0.5rem;
@@ -785,11 +785,13 @@
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
       "producto producto"
+      "variante variante"
       "cant precio"
       "desc subtotal"
       "quitar quitar";
   }
   .compras-item-field-producto { grid-area: producto; }
+  .compras-item-field-variante { grid-area: variante; }
 }
 
 @media (max-width: 480px) {

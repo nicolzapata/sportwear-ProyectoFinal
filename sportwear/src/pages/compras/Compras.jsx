@@ -8,7 +8,7 @@ import { IconEdit, IconEye, IconPrint, IconSearch, IconX } from "../../component
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;
 
-const nuevoItem = () => ({ id_producto: "", cantidad: 1, precio_unitario: "", descuento_linea: 0 });
+const nuevoItem = () => ({ id_producto: "", id_variante: "", cantidad: 1, precio_unitario: "", descuento_linea: 0 });
 
 const formInicial = () => ({
   id_proveedor: "",
@@ -79,6 +79,7 @@ export default function Compras() {
     setForm((prev) => {
       const items = [...prev.items];
       items[index] = { ...items[index], [campo]: valor };
+      if (campo === "id_producto") items[index].id_variante = "";
       return { ...prev, items };
     });
   };
@@ -103,6 +104,9 @@ export default function Compras() {
     if (!form.fecha) e.fecha = "La fecha es obligatoria";
     form.items.forEach((it, i) => {
       if (!it.id_producto) e[`item_${i}_producto`] = "Selecciona un producto";
+      const producto = productos.find((p) => String(p.id_producto) === String(it.id_producto));
+      const variantesActivas = (producto?.variantes || []).filter((v) => v.estado === "Activo");
+      if (variantesActivas.length > 0 && !it.id_variante) e[`item_${i}_variante`] = "Selecciona talla y color";
       if (!it.cantidad || Number(it.cantidad) <= 0) e[`item_${i}_cantidad`] = "Cantidad inválida";
       if (!it.precio_unitario || Number(it.precio_unitario) <= 0) e[`item_${i}_precio`] = "Precio inválido";
     });
@@ -124,6 +128,7 @@ export default function Compras() {
         observaciones: form.observaciones || null,
         items: form.items.map((it) => ({
           id_producto: Number(it.id_producto),
+          id_variante: it.id_variante ? Number(it.id_variante) : null,
           cantidad: Number(it.cantidad),
           precio_unitario: Number(it.precio_unitario),
           descuento_linea: Number(it.descuento_linea) || 0,
@@ -381,6 +386,7 @@ export default function Compras() {
 
                 <div className="compras-item-titulos">
                   <span>Producto</span>
+                  <span>Talla / Color</span>
                   <span>Cantidad</span>
                   <span>Precio unitario</span>
                   <span title="Descuento aplicado solo a este producto, no a toda la compra">
@@ -395,6 +401,8 @@ export default function Compras() {
                   const precio = Number(item.precio_unitario) || 0;
                   const desc = Number(item.descuento_linea) || 0;
                   const lineaTotal = cant * precio - desc;
+                  const productoSel = productos.find((p) => String(p.id_producto) === String(item.id_producto));
+                  const variantesActivas = (productoSel?.variantes || []).filter((v) => v.estado === "Activo");
                   return (
                     <div className="compras-item-row" key={i}>
                       <div className="compras-item-field compras-item-field-producto">
@@ -406,6 +414,23 @@ export default function Compras() {
                           <option value="">Producto...</option>
                           {productos.map((p) => (
                             <option key={p.id_producto} value={p.id_producto}>{p.nombre}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="compras-item-field compras-item-field-variante">
+                        <select
+                          className={`compras-form-select${errores[`item_${i}_variante`] ? " input-error" : ""}`}
+                          value={item.id_variante}
+                          onChange={(e) => actualizarItem(i, "id_variante", e.target.value)}
+                          disabled={!item.id_producto || variantesActivas.length === 0}
+                        >
+                          <option value="">
+                            {!item.id_producto ? "Elige un producto" : variantesActivas.length === 0 ? "Sin variantes" : "Talla / color..."}
+                          </option>
+                          {variantesActivas.map((v) => (
+                            <option key={v.id_variante} value={v.id_variante}>
+                              {v.talla} · {v.color_nombre} (stock: {v.stock})
+                            </option>
                           ))}
                         </select>
                       </div>
@@ -558,7 +583,7 @@ export default function Compras() {
                 <h3 className="compras-factura-titulo">Productos</h3>
                 {(verDetalle.items || []).map((it, i) => (
                   <div key={i} className="compras-detalle-item-linea">
-                    <span>{it.producto} {it.talla ? `(${it.talla})` : ""} × {it.cantidad}</span>
+                    <span>{it.producto} {it.talla ? `(${it.talla}${it.color ? " · " + it.color : ""})` : ""} × {it.cantidad}</span>
                     <span>{fmt(it.cantidad * it.precio_unitario - (it.descuento_linea || 0))}</span>
                   </div>
                 ))}
