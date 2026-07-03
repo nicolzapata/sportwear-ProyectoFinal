@@ -6,8 +6,11 @@ import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
+import Loader from "../../components/Loader";
+import ExportButtons from "../../components/ExportButtons";
+import { soloDigitos } from "../../utils/numerico";
 import './Usuarios.css';
-import { IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconPrint, IconSearch, IconX } from "../../components/Icons";
+import { IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconSearch, IconX } from "../../components/Icons";
 
 const TIPOS_DOC = ["CC", "CE", "TI", "NIT", "PP"];
 const FILAS_POR_PAGINA = 10;
@@ -25,6 +28,10 @@ export default function Usuarios() {
   const [usuarios,       setUsuarios]       = useState([]);
   const [clientes,       setClientes]       = useState([]);
   const [roles,          setRoles]          = useState([]);
+  const esRolAdmin = (id_rol) => {
+    const nombre = normalizeM(roles.find(r => r.id_rol === Number(id_rol))?.nombre);
+    return nombre === 'administrador' || nombre === 'admin';
+  };
   const [barrios,        setBarrios]        = useState([]);
   const [busqueda,       setBusqueda]       = useState("");
   const [modal,          setModal]          = useState(false);
@@ -44,7 +51,7 @@ export default function Usuarios() {
   const [form, setForm] = useState({
     nombre: "", email: "", contrasena: "", id_rol: 1, estado: "Activo",
     tipo_doc: "CC", documento: "", telefono: "", ciudad: "Medellín",
-    id_barrio: "", direccion: "", permiso_cuotas: true
+    id_barrio: "", direccion: ""
   });
 
   const [errores, setErrores] = useState({ nombre: "", documento: "", email: "", contrasena: "", telefono: "", direccion: "", id_barrio: "" });
@@ -115,7 +122,7 @@ export default function Usuarios() {
   const abrirRegistrar = () => {
     setEditar(null);
     setErrores({ nombre: "", documento: "", email: "", contrasena: "", telefono: "", direccion: "", id_barrio: "" });
-    setForm({ nombre: "", email: "", contrasena: "", id_rol: roles[0]?.id_rol || 1, estado: "Activo", tipo_doc: "CC", documento: "", telefono: "", ciudad: "Medellín", id_barrio: "", direccion: "", permiso_cuotas: true });
+    setForm({ nombre: "", email: "", contrasena: "", id_rol: roles[0]?.id_rol || 1, estado: "Activo", tipo_doc: "CC", documento: "", telefono: "", ciudad: "Medellín", id_barrio: "", direccion: "" });
     setModal(true);
   };
 
@@ -129,7 +136,7 @@ export default function Usuarios() {
   const abrirEditar = async (u) => {
     setEditar(u.id_usuario);
     setErrores({ nombre: "", documento: "", email: "", contrasena: "", telefono: "", direccion: "", id_barrio: "" });
-    setForm({ nombre: u.nombre || "", email: u.email || "", contrasena: "", id_rol: u.id_rol || roles[0]?.id_rol || 1, estado: u.estado || "Activo", tipo_doc: u.tipo_doc || "CC", documento: u.documento || "", telefono: u.telefono || "", ciudad: u.ciudad || "Medellín", id_barrio: u.id_barrio || "", direccion: u.direccion || "", permiso_cuotas: u.permiso_cuotas !== false });
+    setForm({ nombre: u.nombre || "", email: u.email || "", contrasena: "", id_rol: u.id_rol || roles[0]?.id_rol || 1, estado: u.estado || "Activo", tipo_doc: u.tipo_doc || "CC", documento: u.documento || "", telefono: u.telefono || "", ciudad: u.ciudad || "Medellín", id_barrio: u.id_barrio || "", direccion: u.direccion || "" });
     if (!u.tipo_doc) {
       try {
         const { data } = await api.get(`/usuarios/${u.id_usuario}`);
@@ -207,7 +214,7 @@ export default function Usuarios() {
         showToast("exito", "Cliente actualizado correctamente.");
       } else {
         const { data } = await api.post("/clientes", clienteForm);
-        setClientes(prev => [...prev, { ...data, barrio_nombre: "", comuna: "", ciudad: "Medellín" }]);
+        setClientes(prev => [...prev, { ...data, barrio_nombre: "", ciudad: "Medellín" }]);
         showToast("exito", "Cliente registrado correctamente.");
       }
       setModal(false);
@@ -231,19 +238,14 @@ export default function Usuarios() {
     setClientes(prev => prev.map(c => c.id_cliente === id ? { ...c, estado: nuevoEstado } : c));
   };
 
-  const togglePermisoCuotas = async (id) => {
+  const toggleClientePermisoCuotas = async (id) => {
     try {
-      await api.patch(`/usuarios/${id}/permiso-cuotas`);
-      setUsuarios(prev => prev.map(u => u.id_usuario === id ? { ...u, permiso_cuotas: !u.permiso_cuotas } : u));
+      await api.patch(`/clientes/${id}/permiso-cuotas`);
+      setClientes(prev => prev.map(c => c.id_cliente === id ? { ...c, permiso_cuotas: !c.permiso_cuotas } : c));
     } catch { showToast("error", "Error al cambiar permiso de cuotas"); }
   };
 
-  if (loading) return (
-    <div className="usuarios-loading-container">
-      <div className="usuarios-loading-spinner" />
-      <p className="usuarios-loading-text">Cargando usuarios...</p>
-    </div>
-  );
+  if (loading) return <Loader text="Cargando usuarios..." />;
 
   // ── Paso 1 (combinado): Documento + Cuenta ────────────────────────────────
   const PasosDatosCuenta = (
@@ -258,8 +260,8 @@ export default function Usuarios() {
         <div className="ms-form-group">
           <label className="ms-form-label">N° documento <span className="ms-req">*</span></label>
           <input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="1001234567" value={form.documento}
-            disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined}
-            onChange={e => { setForm({ ...form, documento: e.target.value }); if (errores.documento) setErrores(prev => ({ ...prev, documento: "" })); }} />
+            disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode="numeric"
+            onChange={e => { setForm({ ...form, documento: soloDigitos(e.target.value) }); if (errores.documento) setErrores(prev => ({ ...prev, documento: "" })); }} />
           {errores.documento && <span className="ms-form-error">{errores.documento}</span>}
         </div>
       </div>
@@ -280,8 +282,8 @@ export default function Usuarios() {
         </div>
         <div className="ms-form-group">
           <label className="ms-form-label">Teléfono <span className="ms-req">*</span></label>
-          <input className={`ms-form-input${errores.telefono ? " input-error" : ""}`} placeholder="3001234567" value={form.telefono}
-            onChange={e => { setForm({ ...form, telefono: e.target.value }); if (errores.telefono) setErrores(prev => ({ ...prev, telefono: "" })); }} />
+          <input className={`ms-form-input${errores.telefono ? " input-error" : ""}`} placeholder="3001234567" value={form.telefono} inputMode="numeric"
+            onChange={e => { setForm({ ...form, telefono: soloDigitos(e.target.value) }); if (errores.telefono) setErrores(prev => ({ ...prev, telefono: "" })); }} />
           {errores.telefono && <span className="ms-form-error">{errores.telefono}</span>}
         </div>
       </div>
@@ -313,7 +315,7 @@ export default function Usuarios() {
         <select className={`ms-form-select${errores.id_barrio ? " input-error" : ""}`} value={form.id_barrio}
           onChange={e => { setForm({ ...form, id_barrio: e.target.value }); if (errores.id_barrio) setErrores(prev => ({ ...prev, id_barrio: "" })); }}>
           <option value="">— Selecciona un barrio —</option>
-          {barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} — {b.comuna}</option>)}
+          {barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
         </select>
         {errores.id_barrio && <span className="ms-form-error">{errores.id_barrio}</span>}
       </div>
@@ -330,18 +332,15 @@ export default function Usuarios() {
           {roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}
         </select>
       </div>
-      {Number(form.id_rol) === 2 && (
-        <div className="ms-form-group">
-          <label className="ms-form-label">Pago por cuotas</label>
-          <select className="ms-form-select" value={form.permiso_cuotas ? 1 : 0} onChange={e => setForm({ ...form, permiso_cuotas: Number(e.target.value) === 1 })}>
-            <option value={1}>Permitido</option>
-            <option value={0}>Bloqueado</option>
-          </select>
-        </div>
-      )}
       <div className="ms-form-group">
         <label className="ms-form-label">Estado</label>
-        <select className="ms-form-select" value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })}>
+        <select
+          className="ms-form-select"
+          value={esRolAdmin(form.id_rol) ? "Activo" : form.estado}
+          disabled={esRolAdmin(form.id_rol)}
+          title={esRolAdmin(form.id_rol) ? "Un administrador siempre permanece activo" : undefined}
+          onChange={e => setForm({ ...form, estado: e.target.value })}
+        >
           <option value="Activo">Activo</option>
           <option value="Inactivo">Inactivo</option>
         </select>
@@ -367,12 +366,11 @@ export default function Usuarios() {
     <>
       <DetalleSeccion><DetalleGrid>
         <DetalleItem label="Ciudad" value={detalle.ciudad} />
-        <DetalleItem label="Barrio" value={detalle.barrio ? `${detalle.barrio}${detalle.comuna ? ` — ${detalle.comuna}` : ''}` : null} />
+        <DetalleItem label="Barrio" value={detalle.barrio || null} />
         <DetalleItem label="Dirección" value={detalle.direccion} full />
       </DetalleGrid></DetalleSeccion>
       <DetalleSeccion><DetalleGrid>
         <DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} />
-        {Number(detalle.id_rol) === 2 && <DetalleItem label="Pago por cuotas" value={detalle.permiso_cuotas !== false ? "Permitido" : "Bloqueado"} />}
         <DetalleItem label="Estado" value={detalle.estado} />
       </DetalleGrid></DetalleSeccion>
     </>
@@ -404,7 +402,25 @@ export default function Usuarios() {
           {filterType === 'clientes' && tienePerm('Clientes.crear') && (
             <button className="usuarios-btn-primary" onClick={abrirRegistrarCliente}><span>+</span> Nuevo cliente</button>
           )}
-          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+          <ExportButtons
+            datos={filtrados}
+            columnas={filterType === 'usuarios' ? [
+              { header: "Usuario", key: "nombre" },
+              { header: "Email", key: "email" },
+              { header: "Rol", key: "rol" },
+              { header: "Estado", key: "estado" },
+            ] : [
+              { header: "Cliente", key: "nombre" },
+              { header: "Documento", key: "documento" },
+              { header: "Teléfono", key: "telefono" },
+              { header: "Barrio", key: "barrio_nombre" },
+              { header: "Tipo", key: "tipo_cliente" },
+              { header: "Cuotas", value: (c) => c.permiso_cuotas !== false ? "Sí" : "No" },
+              { header: "Estado", key: "estado" },
+            ]}
+            nombreArchivo={filterType === 'usuarios' ? "usuarios" : "clientes"}
+            titulo={filterType === 'usuarios' ? "Usuarios" : "Clientes"}
+          />
         </div>
       </div>
 
@@ -416,7 +432,6 @@ export default function Usuarios() {
                 <th className="tbl-th">Usuario</th>
                 <th className="tbl-th">Email</th>
                 <th className="tbl-th">Rol</th>
-                <th className="tbl-th">Cuotas</th>
                 {tienePerm('Usuarios.estado') && <th className="tbl-th">Estado</th>}
                 <th className="tbl-th">Acciones</th>
               </tr>
@@ -427,6 +442,7 @@ export default function Usuarios() {
                 <th className="tbl-th">Teléfono</th>
                 <th className="tbl-th">Barrio</th>
                 <th className="tbl-th">Tipo</th>
+                <th className="tbl-th">Cuotas</th>
                 {tienePerm('Clientes.estado') && <th className="tbl-th">Estado</th>}
                 <th className="tbl-th">Acciones</th>
               </tr>
@@ -439,14 +455,17 @@ export default function Usuarios() {
                   <td className="tbl-td"><div className="usuarios-user-info"><div className="usuarios-user-name">{u.nombre}</div></div></td>
                   <td className="tbl-td usuarios-email-cell">{u.email}</td>
                   <td className="tbl-td"><span className="tabla-rol">{u.rol || getRoleName(u.id_rol)}</span></td>
-                  <td className="tbl-td">
-                    {tienePerm('Usuarios.editar')
-                      ? <span className={`tabla-status ${u.permiso_cuotas !== false ? "activo" : "inactivo"}`} onClick={() => togglePermisoCuotas(u.id_usuario)} style={{ cursor: 'pointer' }} title="Click para cambiar">{u.permiso_cuotas !== false ? "Sí" : "No"}</span>
-                      : <span className={`tabla-status ${u.permiso_cuotas !== false ? "activo" : "inactivo"}`}>{u.permiso_cuotas !== false ? "Sí" : "No"}</span>
-                    }
-                  </td>
                   {tienePerm('Usuarios.estado') && (
-                    <td className="tbl-td"><StatusToggle id={u.id_usuario} estado={u.estado} onToggle={toggleEstadoUsuario} showConfirmation={true} /></td>
+                    <td className="tbl-td">
+                      <StatusToggle
+                        id={u.id_usuario}
+                        estado={u.estado}
+                        onToggle={toggleEstadoUsuario}
+                        showConfirmation={true}
+                        disabled={esRolAdmin(u.id_rol)}
+                        disabledReason="Un administrador siempre permanece activo"
+                      />
+                    </td>
                   )}
                   <td className="tbl-td">
                     <div className="usuarios-action-cell">
@@ -464,8 +483,14 @@ export default function Usuarios() {
                   <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
                   <td className="tbl-td"><span className="clientes-doc-badge">{c.tipo_doc} {c.documento}</span></td>
                   <td className="tbl-td clientes-phone-cell">{c.telefono || '—'}</td>
-                  <td className="tbl-td">{c.barrio_nombre ? <div><div className="clientes-barrio-name">{c.barrio_nombre}</div><div className="clientes-comuna-name">{c.comuna}</div></div> : <span className="clientes-empty">—</span>}</td>
+                  <td className="tbl-td">{c.barrio_nombre ? <div className="clientes-barrio-name">{c.barrio_nombre}</div> : <span className="clientes-empty">—</span>}</td>
                   <td className="tbl-td"><span className={`clientes-tipo-badge ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
+                  <td className="tbl-td">
+                    {tienePerm('Clientes.editar')
+                      ? <span className={`tabla-status ${c.permiso_cuotas !== false ? "activo" : "inactivo"}`} onClick={() => toggleClientePermisoCuotas(c.id_cliente)} style={{ cursor: 'pointer' }} title="Click para cambiar">{c.permiso_cuotas !== false ? "Sí" : "No"}</span>
+                      : <span className={`tabla-status ${c.permiso_cuotas !== false ? "activo" : "inactivo"}`}>{c.permiso_cuotas !== false ? "Sí" : "No"}</span>
+                    }
+                  </td>
                   {tienePerm('Clientes.estado') && (
                     <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstadoCliente} showConfirmation={true} /></td>
                   )}
@@ -515,19 +540,19 @@ export default function Usuarios() {
               <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={clienteForm.tipo_doc} disabled={!!editar} onChange={e => setClienteForm({ ...clienteForm, tipo_doc: e.target.value })}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
             </div>
             <div className="ms-form-row">
-              <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={e => { setClienteForm({ ...clienteForm, documento: e.target.value }); if (erroresCliente.documento) setErroresCliente(prev => ({ ...prev, documento: "" })); }} />{erroresCliente.documento && <span className="ms-form-error">{erroresCliente.documento}</span>}</div>
-              <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.telefono ? " input-error" : ""}`} placeholder="3001234567" value={clienteForm.telefono} onChange={e => { setClienteForm({ ...clienteForm, telefono: e.target.value }); if (erroresCliente.telefono) setErroresCliente(prev => ({ ...prev, telefono: "" })); }} />{erroresCliente.telefono && <span className="ms-form-error">{erroresCliente.telefono}</span>}</div>
+              <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode="numeric" onChange={e => { setClienteForm({ ...clienteForm, documento: soloDigitos(e.target.value) }); if (erroresCliente.documento) setErroresCliente(prev => ({ ...prev, documento: "" })); }} />{erroresCliente.documento && <span className="ms-form-error">{erroresCliente.documento}</span>}</div>
+              <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.telefono ? " input-error" : ""}`} placeholder="3001234567" value={clienteForm.telefono} inputMode="numeric" onChange={e => { setClienteForm({ ...clienteForm, telefono: soloDigitos(e.target.value) }); if (erroresCliente.telefono) setErroresCliente(prev => ({ ...prev, telefono: "" })); }} />{erroresCliente.telefono && <span className="ms-form-error">{erroresCliente.telefono}</span>}</div>
             </div>
             <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className={`ms-form-input${erroresCliente.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={clienteForm.email} disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined} onChange={e => { setClienteForm({ ...clienteForm, email: e.target.value }); if (erroresCliente.email) setErroresCliente(prev => ({ ...prev, email: "" })); }} />{erroresCliente.email && <span className="ms-form-error">{erroresCliente.email}</span>}</div>
           </div>
           <div>
             <div className="ms-form-group"><label className="ms-form-label">Ciudad</label><input className="ms-form-input" value="Medellín" disabled style={{ opacity: 0.55 }} /></div>
             <div className="ms-form-group">
-              <label className="ms-form-label">Barrio / Comuna <span className="ms-req">*</span></label>
+              <label className="ms-form-label">Barrio <span className="ms-req">*</span></label>
               <select className={`ms-form-select${erroresCliente.id_barrio ? " input-error" : ""}`} value={clienteForm.id_barrio}
                 onChange={e => { setClienteForm({ ...clienteForm, id_barrio: Number(e.target.value) }); if (erroresCliente.id_barrio) setErroresCliente(prev => ({ ...prev, id_barrio: "" })); }}>
                 <option value="">— Seleccionar —</option>
-                {barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} — {b.comuna}</option>)}
+                {barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
               </select>
               {erroresCliente.id_barrio && <span className="ms-form-error">{erroresCliente.id_barrio}</span>}
             </div>
@@ -578,7 +603,7 @@ export default function Usuarios() {
           <>
             <DetalleSeccion><DetalleGrid>
               <DetalleItem label="Ciudad"             value={clienteDetalle.ciudad} />
-              <DetalleItem label="Barrio"             value={clienteDetalle.barrio_nombre ? `${clienteDetalle.barrio_nombre} (${clienteDetalle.comuna})` : null} />
+              <DetalleItem label="Barrio"             value={clienteDetalle.barrio_nombre || null} />
               <DetalleItem label="Dirección completa" value={clienteDetalle.direccion} full />
             </DetalleGrid></DetalleSeccion>
             <DetalleSeccion><DetalleGrid>

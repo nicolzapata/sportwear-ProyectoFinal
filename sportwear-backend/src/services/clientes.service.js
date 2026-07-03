@@ -1,9 +1,10 @@
 // src/services/clientes.service.js
 const pool = require('../config/db');
+const { validarCamposNumericos } = require('../utils/validarNumerico');
 
 const getClientes = async () => {
   const result = await pool.query(`
-    SELECT cl.*, b.nombre AS barrio_nombre, b.comuna, b.zona
+    SELECT cl.*, b.nombre AS barrio_nombre, b.zona
     FROM "Clientes" cl
     LEFT JOIN "Barrios" b ON cl.id_barrio = b.id_barrio
     ORDER BY cl.id_cliente DESC
@@ -13,13 +14,13 @@ const getClientes = async () => {
 
 const getClientesConVentas = async () => {
   const result = await pool.query(`
-    SELECT cl.*, b.nombre AS barrio_nombre, b.comuna, b.zona,
+    SELECT cl.*, b.nombre AS barrio_nombre, b.zona,
            COUNT(v.id_venta) AS total_compras,
            COALESCE(SUM(v.total::numeric), 0) AS total_gastado
     FROM "Clientes" cl
     LEFT JOIN "Barrios" b ON cl.id_barrio = b.id_barrio
     LEFT JOIN "Ventas" v ON cl.id_cliente = v.id_cliente AND v.estado NOT IN ('Abandonado', 'Pendiente')
-    GROUP BY cl.id_cliente, b.nombre, b.comuna, b.zona
+    GROUP BY cl.id_cliente, b.nombre, b.zona
     HAVING COUNT(v.id_venta) > 0
     ORDER BY total_gastado DESC
   `);
@@ -34,7 +35,7 @@ const debugClientesVentas = async () => {
 
 const getClienteById = async (id) => {
   const result = await pool.query(`
-    SELECT cl.*, b.nombre AS barrio_nombre, b.comuna, b.zona
+    SELECT cl.*, b.nombre AS barrio_nombre, b.zona
     FROM "Clientes" cl
     LEFT JOIN "Barrios" b ON cl.id_barrio = b.id_barrio
     WHERE cl.id_cliente = $1
@@ -46,6 +47,7 @@ const getClienteById = async (id) => {
 const crearCliente = async (datos) => {
   const { nombre, tipo_doc, documento, telefono, email, id_barrio, direccion, tipo_cliente, permiso_pagos, permiso_cuotas, estado } = datos;
   if (!nombre || !documento) throw { status: 400, message: 'Nombre y documento son requeridos' };
+  validarCamposNumericos({ documento, teléfono: telefono });
 
   const result = await pool.query(`
     INSERT INTO "Clientes"
@@ -64,6 +66,7 @@ const crearCliente = async (datos) => {
 const actualizarCliente = async (id, datos) => {
   // La identificación (tipo_doc/documento) y el email no se pueden modificar una vez creados.
   const { nombre, telefono, id_barrio, direccion, tipo_cliente, permiso_pagos, permiso_cuotas, estado } = datos;
+  validarCamposNumericos({ teléfono: telefono });
   const campos = [];
   const valores = [];
   let idx = 1;
@@ -113,6 +116,7 @@ const togglePermisoCuotas = async (id) => {
 
 const actualizarMiPerfil = async (id, datos) => {
   const { nombre, telefono, id_barrio, direccion, ciudad } = datos;
+  validarCamposNumericos({ teléfono: telefono });
   const result = await pool.query(`
     UPDATE "Clientes" SET
       nombre    = COALESCE($1, nombre),
@@ -127,7 +131,7 @@ const actualizarMiPerfil = async (id, datos) => {
 };
 const getClientesRolCliente = async () => {
   const result = await pool.query(`
-    SELECT cl.*, b.nombre AS barrio_nombre, b.comuna, b.zona
+    SELECT cl.*, b.nombre AS barrio_nombre, b.zona
     FROM "Clientes" cl
     INNER JOIN "Usuarios" u ON cl.id_cliente = u.id_cliente
     LEFT JOIN "Barrios" b ON cl.id_barrio = b.id_barrio

@@ -3,9 +3,9 @@ const pool = require('../config/db');
 
 const getBarrios = async () => {
   const result = await pool.query(
-    `SELECT id_barrio, nombre, comuna, zona
+    `SELECT id_barrio, nombre, zona
      FROM "Barrios"
-     ORDER BY comuna, nombre`
+     ORDER BY nombre`
   );
   return result.rows;
 };

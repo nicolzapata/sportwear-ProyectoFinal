@@ -15,7 +15,7 @@ class ClienteModel extends BaseModel {
 
   async findAllConBarrio() {
     const result = await pool.query(
-      `SELECT cl.*, b.nombre AS barrio_nombre, b.comuna, b.zona
+      `SELECT cl.*, b.nombre AS barrio_nombre, b.zona
        FROM "Clientes" cl
        LEFT JOIN "Barrios" b ON cl.id_barrio = b.id_barrio
        ORDER BY cl.id_cliente DESC`
@@ -25,7 +25,7 @@ class ClienteModel extends BaseModel {
 
   async findByIdConBarrio(id) {
     const result = await pool.query(
-      `SELECT cl.*, b.nombre AS barrio_nombre, b.comuna, b.zona
+      `SELECT cl.*, b.nombre AS barrio_nombre, b.zona
        FROM "Clientes" cl
        LEFT JOIN "Barrios" b ON cl.id_barrio = b.id_barrio
        WHERE cl.id_cliente = $1`,

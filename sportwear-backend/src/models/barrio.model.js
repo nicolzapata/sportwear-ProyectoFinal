@@ -1,7 +1,7 @@
 // src/models/barrio.model.js
 // Tabla: Barrios
 // PK: id_barrio
-// Columnas: id_barrio, nombre, comuna, zona
+// Columnas: id_barrio, nombre, zona
 
 const BaseModel = require('./base.model');
 const pool      = require('../config/db');
@@ -13,15 +13,8 @@ class BarrioModel extends BaseModel {
 
   async findAll() {
     const result = await pool.query(
-      `SELECT id_barrio, nombre, comuna, zona
-       FROM "Barrios" ORDER BY comuna ASC, nombre ASC`
-    );
-    return result.rows;
-  }
-
-  async findByComuna(comuna) {
-    const result = await pool.query(
-      `SELECT * FROM "Barrios" WHERE comuna = $1 ORDER BY nombre ASC`, [comuna]
+      `SELECT id_barrio, nombre, zona
+       FROM "Barrios" ORDER BY nombre ASC`
     );
     return result.rows;
   }

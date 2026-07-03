@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
 import logo from "../../assets/LOGO.png";
+import { soloDigitos } from "../../utils/numerico";
 import "./Login.css";
 import "./Registro.css";
 
@@ -75,8 +76,10 @@ export default function Registro() {
       .catch(() => setBarrios([]));
   }, []);
 
+  const CAMPOS_NUMERICOS = ["documento", "telefono"];
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm({ ...form, [name]: CAMPOS_NUMERICOS.includes(name) ? soloDigitos(value) : value });
     setError("");
   };
 
@@ -135,6 +138,7 @@ export default function Registro() {
         <span className="input-icon">{icon}</span>
         <input
           type={type} name={name} placeholder={placeholder}
+          inputMode={CAMPOS_NUMERICOS.includes(name) ? "numeric" : undefined}
           value={form[name]} onChange={handleChange}
           onFocus={onFocus} onBlur={onBlur}
         />
@@ -190,7 +194,7 @@ export default function Registro() {
               <div className="form-group">
                 <label>N° documento <span className="req">*</span></label>
                 <div className="input-wrapper">
-                  <input type="text" name="documento" placeholder="1001234567"
+                  <input type="text" name="documento" placeholder="1001234567" inputMode="numeric"
                     value={form.documento} onChange={handleChange}
                     onFocus={onFocus} onBlur={onBlur}
                     style={{ paddingLeft: "14px" }}/>
@@ -215,7 +219,7 @@ export default function Registro() {
                 <option value="">— Selecciona un barrio —</option>
                 {barrios.map(b => (
                   <option key={b.id_barrio} value={b.id_barrio}>
-                    {b.nombre} — {b.comuna}
+                    {b.nombre}
                   </option>
                 ))}
               </select>

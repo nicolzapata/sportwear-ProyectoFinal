@@ -7,6 +7,8 @@ import ModalSteps from "../../components/ModalSteps";
 import PaymentModal from "../../components/PaymentModal";
 import OrderDetailModal from "../../components/OrderDetailModal";
 import { IconCreditCard, IconShoppingCart } from "../../components/Icons";
+import Loader from "../../components/Loader";
+import { soloDigitos } from "../../utils/numerico";
 import "./MiCuenta.css";
 
 export default function MiCuenta() {
@@ -142,7 +144,7 @@ export default function MiCuenta() {
 
   const getBarrioNombre = (id) => {
     const b = barrios.find((b) => b.id_barrio === id);
-    return b ? `${b.nombre} (${b.comuna})` : null;
+    return b ? b.nombre : null;
   };
 
   const totalCompras  = pedidos.reduce((s, p) => s + Number(p.total || 0), 0);
@@ -183,7 +185,7 @@ export default function MiCuenta() {
       <div className="ms-form-row">
         <div className="ms-form-group">
           <label className="ms-form-label">Tipo documento</label>
-          <select className="ms-form-select" value={form.tipo_doc || "CC"} onChange={(e) => setForm({ ...form, tipo_doc: e.target.value })}>
+          <select className="ms-form-select" value={form.tipo_doc || "CC"} disabled title="El documento no se puede modificar" onChange={(e) => setForm({ ...form, tipo_doc: e.target.value })}>
             {["CC", "CE", "TI", "NIT", "Pasaporte"].map((t) => <option key={t}>{t}</option>)}
           </select>
         </div>
@@ -193,6 +195,8 @@ export default function MiCuenta() {
             className={`ms-form-input${errores.documento ? " input-error" : ""}`}
             placeholder="123456789"
             value={form.documento || ""}
+            disabled
+            title="El documento no se puede modificar"
             onChange={(e) => {
               setForm({ ...form, documento: e.target.value });
               if (errores.documento) setErrores(prev => ({ ...prev, documento: "" }));
@@ -204,7 +208,7 @@ export default function MiCuenta() {
       <div className="ms-form-row">
         <div className="ms-form-group">
           <label className="ms-form-label">Teléfono</label>
-          <input className="ms-form-input" placeholder="3001234567" value={form.telefono || ""} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
+          <input className="ms-form-input" placeholder="3001234567" inputMode="numeric" value={form.telefono || ""} onChange={(e) => setForm({ ...form, telefono: soloDigitos(e.target.value) })} />
         </div>
         <div className="ms-form-group">
           <label className="ms-form-label">Correo electrónico</label>
@@ -229,10 +233,10 @@ export default function MiCuenta() {
           </select>
         </div>
         <div className="ms-form-group">
-          <label className="ms-form-label">Barrio / Comuna</label>
+          <label className="ms-form-label">Barrio</label>
           <select className="ms-form-select" value={form.id_barrio || ""} onChange={(e) => setForm({ ...form, id_barrio: Number(e.target.value) })}>
             <option value="">— Seleccionar —</option>
-            {barFiltrados.map((b) => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} — {b.comuna}</option>)}
+            {barFiltrados.map((b) => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
           </select>
         </div>
       </div>
@@ -243,11 +247,7 @@ export default function MiCuenta() {
     </div>
   );
 
-  if (cargando) return (
-    <div style={{ padding: 48, textAlign: 'center', color: 'var(--dvna-muted, #999)' }}>
-      Cargando tu cuenta...
-    </div>
-  );
+  if (cargando) return <Loader text="Cargando tu cuenta..." />;
 
   return (
     <div className="mi-cuenta">
