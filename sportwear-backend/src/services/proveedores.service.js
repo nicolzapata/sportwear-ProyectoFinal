@@ -48,16 +48,15 @@ const crearProveedor = async (datos) => {
 };
 
 const actualizarProveedor = async (id, datos) => {
+  // El NIT (tipo_doc + numero_doc) es el identificador único del proveedor y no se puede modificar.
   const {
-    tipo_doc, numero_doc, razon_social, nombre_comercial,
+    razon_social, nombre_comercial,
     nombre_contacto, cargo_contacto, telefono_celular, email_contacto,
     ciudad, departamento, pais, direccion,
     banco, tipo_cuenta, numero_cuenta, titular_cuenta,
     plazo_pago_dias, condiciones, estado
   } = datos;
 
-  if (!tipo_doc || !numero_doc)
-    throw { status: 400, message: 'El tipo y número de documento son requeridos' };
   if (!razon_social || !razon_social.trim())
     throw { status: 400, message: 'La razón social o nombre es requerido' };
   if (!nombre_contacto || !nombre_contacto.trim())
@@ -67,14 +66,14 @@ const actualizarProveedor = async (id, datos) => {
 
   const result = await pool.query(`
     UPDATE "Proveedores" SET
-      tipo_doc=$1, numero_doc=$2, razon_social=$3, nombre_comercial=$4,
-      nombre_contacto=$5, cargo_contacto=$6, telefono_celular=$7, email_contacto=$8,
-      ciudad=$9, departamento=$10, pais=$11, direccion=$12,
-      banco=$13, tipo_cuenta=$14, numero_cuenta=$15, titular_cuenta=$16,
-      plazo_pago_dias=$17, condiciones=$18, estado=$19
-    WHERE id_proveedor=$20 RETURNING *
+      razon_social=$1, nombre_comercial=$2,
+      nombre_contacto=$3, cargo_contacto=$4, telefono_celular=$5, email_contacto=$6,
+      ciudad=$7, departamento=$8, pais=$9, direccion=$10,
+      banco=$11, tipo_cuenta=$12, numero_cuenta=$13, titular_cuenta=$14,
+      plazo_pago_dias=$15, condiciones=$16, estado=$17
+    WHERE id_proveedor=$18 RETURNING *
   `, [
-    tipo_doc, numero_doc, razon_social, nombre_comercial,
+    razon_social, nombre_comercial,
     nombre_contacto, cargo_contacto, telefono_celular, email_contacto,
     ciudad, departamento, pais, direccion,
     banco, tipo_cuenta, numero_cuenta, titular_cuenta,
@@ -85,12 +84,23 @@ const actualizarProveedor = async (id, datos) => {
 };
 
 const toggleEstado = async (id) => {
+  const actual = await pool.query(`SELECT estado FROM "Proveedores" WHERE id_proveedor=$1`, [id]);
+  if (!actual.rows.length) throw { status: 404, message: 'No encontrado' };
+
+  if (actual.rows[0].estado === 'Activo') {
+    const pendientes = await pool.query(
+      `SELECT COUNT(*) AS total FROM "Compras" WHERE id_proveedor=$1 AND estado IN ('Pendiente', 'En Tránsito')`,
+      [id]
+    );
+    if (Number(pendientes.rows[0].total) > 0)
+      throw { status: 400, message: 'No se puede inactivar: el proveedor tiene compras pendientes o en tránsito.' };
+  }
+
   const result = await pool.query(`
     UPDATE "Proveedores"
     SET estado = CASE WHEN estado='Activo' THEN 'Inactivo' ELSE 'Activo' END
     WHERE id_proveedor=$1 RETURNING id_proveedor, estado
   `, [id]);
-  if (!result.rows.length) throw { status: 404, message: 'No encontrado' };
   return result.rows[0];
 };
 

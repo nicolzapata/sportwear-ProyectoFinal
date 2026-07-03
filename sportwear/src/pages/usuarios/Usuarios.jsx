@@ -204,9 +204,11 @@ export default function Usuarios() {
       if (editar) {
         const { data } = await api.put(`/clientes/${editar}`, clienteForm);
         setClientes(prev => prev.map(c => c.id_cliente === editar ? { ...c, ...data } : c));
+        showToast("exito", "Cliente actualizado correctamente.");
       } else {
         const { data } = await api.post("/clientes", clienteForm);
         setClientes(prev => [...prev, { ...data, barrio_nombre: "", comuna: "", ciudad: "Medellín" }]);
+        showToast("exito", "Cliente registrado correctamente.");
       }
       setModal(false);
     } catch (err) {
@@ -256,6 +258,7 @@ export default function Usuarios() {
         <div className="ms-form-group">
           <label className="ms-form-label">N° documento <span className="ms-req">*</span></label>
           <input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="1001234567" value={form.documento}
+            disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined}
             onChange={e => { setForm({ ...form, documento: e.target.value }); if (errores.documento) setErrores(prev => ({ ...prev, documento: "" })); }} />
           {errores.documento && <span className="ms-form-error">{errores.documento}</span>}
         </div>
@@ -271,6 +274,7 @@ export default function Usuarios() {
         <div className="ms-form-group">
           <label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label>
           <input type="email" className={`ms-form-input${errores.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={form.email}
+            disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined}
             onChange={e => { setForm({ ...form, email: e.target.value }); if (errores.email) setErrores(prev => ({ ...prev, email: "" })); }} />
           {errores.email && <span className="ms-form-error">{errores.email}</span>}
         </div>
@@ -508,13 +512,13 @@ export default function Usuarios() {
           <div>
             <div className="ms-form-row">
               <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.nombre ? " input-error" : ""}`} placeholder="Ej: Juan Pérez" value={clienteForm.nombre} onChange={e => { setClienteForm({ ...clienteForm, nombre: e.target.value }); if (erroresCliente.nombre) setErroresCliente(prev => ({ ...prev, nombre: "" })); }} />{erroresCliente.nombre && <span className="ms-form-error">{erroresCliente.nombre}</span>}</div>
-              <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={clienteForm.tipo_doc} onChange={e => setClienteForm({ ...clienteForm, tipo_doc: e.target.value })}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
+              <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={clienteForm.tipo_doc} disabled={!!editar} onChange={e => setClienteForm({ ...clienteForm, tipo_doc: e.target.value })}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
             </div>
             <div className="ms-form-row">
-              <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} onChange={e => { setClienteForm({ ...clienteForm, documento: e.target.value }); if (erroresCliente.documento) setErroresCliente(prev => ({ ...prev, documento: "" })); }} />{erroresCliente.documento && <span className="ms-form-error">{erroresCliente.documento}</span>}</div>
+              <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={e => { setClienteForm({ ...clienteForm, documento: e.target.value }); if (erroresCliente.documento) setErroresCliente(prev => ({ ...prev, documento: "" })); }} />{erroresCliente.documento && <span className="ms-form-error">{erroresCliente.documento}</span>}</div>
               <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.telefono ? " input-error" : ""}`} placeholder="3001234567" value={clienteForm.telefono} onChange={e => { setClienteForm({ ...clienteForm, telefono: e.target.value }); if (erroresCliente.telefono) setErroresCliente(prev => ({ ...prev, telefono: "" })); }} />{erroresCliente.telefono && <span className="ms-form-error">{erroresCliente.telefono}</span>}</div>
             </div>
-            <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className={`ms-form-input${erroresCliente.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={clienteForm.email} onChange={e => { setClienteForm({ ...clienteForm, email: e.target.value }); if (erroresCliente.email) setErroresCliente(prev => ({ ...prev, email: "" })); }} />{erroresCliente.email && <span className="ms-form-error">{erroresCliente.email}</span>}</div>
+            <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className={`ms-form-input${erroresCliente.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={clienteForm.email} disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined} onChange={e => { setClienteForm({ ...clienteForm, email: e.target.value }); if (erroresCliente.email) setErroresCliente(prev => ({ ...prev, email: "" })); }} />{erroresCliente.email && <span className="ms-form-error">{erroresCliente.email}</span>}</div>
           </div>
           <div>
             <div className="ms-form-group"><label className="ms-form-label">Ciudad</label><input className="ms-form-input" value="Medellín" disabled style={{ opacity: 0.55 }} /></div>

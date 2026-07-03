@@ -32,13 +32,24 @@ const actualizarCategoria = async (id, { nombre, estado, icono }) => {
 };
 
 const toggleEstado = async (id) => {
+  const actual = await pool.query(`SELECT estado FROM "Categorias" WHERE id_categoria=$1`, [id]);
+  if (!actual.rows.length) throw { status: 404, message: 'No encontrada' };
+
+  if (actual.rows[0].estado === 'Activo') {
+    const productos = await pool.query(
+      `SELECT COUNT(*) AS total FROM "Productos" WHERE id_categoria=$1 AND estado='Activo'`,
+      [id]
+    );
+    if (Number(productos.rows[0].total) > 0)
+      throw { status: 400, message: 'No se puede inactivar: la categoría tiene productos activos asociados.' };
+  }
+
   const result = await pool.query(
     `UPDATE "Categorias"
      SET estado = CASE WHEN estado = 'Activo' THEN 'Inactivo' ELSE 'Activo' END
      WHERE id_categoria = $1 RETURNING id_categoria, estado`,
     [id]
   );
-  if (!result.rows[0]) throw { status: 404, message: 'No encontrada' };
   return result.rows[0];
 };
 

@@ -187,14 +187,20 @@ export default function GestProductos() {
       if (editarCategoria) await api.put(`/categorias/${editarCategoria}`, formCategoria);
       else                 await api.post("/categorias", formCategoria);
       setModal(false); cargar();
-    } catch (err) { console.error(err); }
+      mostrarToast("exito", editarCategoria ? "Categoría actualizada." : "Categoría creada.");
+    } catch (err) {
+      mostrarToast("error", err.response?.data?.message || "No se pudo guardar la categoría.");
+    }
   };
 
   const cambiarEstadoCategoria = async (id, nuevoEstado) => {
     try {
       await api.patch(`/categorias/${id}/estado`);
       setCategorias(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
-    } catch (err) { console.error(err); }
+      mostrarToast("exito", "Estado actualizado.");
+    } catch (err) {
+      mostrarToast("error", err.response?.data?.message || "No se pudo cambiar el estado.");
+    }
   };
 
   const stockBadge = (stock) => {

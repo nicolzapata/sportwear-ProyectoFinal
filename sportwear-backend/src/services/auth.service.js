@@ -47,10 +47,18 @@ const login = async ({ email, contrasena }) => {
   );
 
   if (!authResult.rows[0]) {
-    await pool.query(
-      `UPDATE "Usuarios" SET intentos_fallidos = intentos_fallidos + 1 WHERE id_usuario = $1`,
+    const MAX_INTENTOS = 5;
+    const intentos = await pool.query(
+      `UPDATE "Usuarios" SET intentos_fallidos = intentos_fallidos + 1 WHERE id_usuario = $1 RETURNING intentos_fallidos`,
       [base.id_usuario]
     );
+    if (intentos.rows[0].intentos_fallidos >= MAX_INTENTOS) {
+      await pool.query(
+        `UPDATE "Usuarios" SET bloqueado_hasta = NOW() + INTERVAL '15 minutes' WHERE id_usuario = $1`,
+        [base.id_usuario]
+      );
+      throw { status: 403, message: 'Usuario bloqueado temporalmente por múltiples intentos fallidos. Intenta en 15 minutos.' };
+    }
     throw { status: 401, message: 'Credenciales incorrectas' };
   }
 
@@ -204,25 +212,27 @@ const actualizarUsuario = async (id, datos, usuarioActual) => {
     const { id_cliente } = usuarioExistente.rows[0];
     const esPropioUsuario = String(usuarioActual.id_usuario) === String(id);
 
+    // El correo del usuario y la identificación del cliente no se pueden editar
+    // una vez creados (solo se fijan al registrar), por eso no aparecen en estos UPDATE.
     if (contrasena && esPropioUsuario) {
       await client.query(
-        `UPDATE "Usuarios" SET nombre=$1, email=$2, id_rol=$3, estado=$4, permiso_cuotas=$7,
-         password_hash=crypt($5, gen_salt('bf',12)) WHERE id_usuario=$6`,
-        [nombre, email, id_rol, estado, contrasena, id, permiso_cuotas !== false]
+        `UPDATE "Usuarios" SET nombre=$1, id_rol=$2, estado=$3, permiso_cuotas=$6,
+         password_hash=crypt($4, gen_salt('bf',12)) WHERE id_usuario=$5`,
+        [nombre, id_rol, estado, contrasena, id, permiso_cuotas !== false]
       );
     } else {
       await client.query(
-        `UPDATE "Usuarios" SET nombre=$1, email=$2, id_rol=$3, estado=$4, permiso_cuotas=$5 WHERE id_usuario=$6`,
-        [nombre, email, id_rol, estado, permiso_cuotas !== false, id]
+        `UPDATE "Usuarios" SET nombre=$1, id_rol=$2, estado=$3, permiso_cuotas=$4 WHERE id_usuario=$5`,
+        [nombre, id_rol, estado, permiso_cuotas !== false, id]
       );
     }
 
     if (id_cliente) {
       await client.query(
-        `UPDATE "Clientes" SET nombre=$1, tipo_doc=$2, documento=$3, telefono=$4,
-         ciudad=$5, id_barrio=$6, direccion=$7, tipo_cliente=COALESCE($9, tipo_cliente)
-         WHERE id_cliente=$8`,
-        [nombre, tipo_doc || 'CC', documento || null, telefono || null,
+        `UPDATE "Clientes" SET nombre=$1, telefono=$2,
+         ciudad=$3, id_barrio=$4, direccion=$5, tipo_cliente=COALESCE($7, tipo_cliente)
+         WHERE id_cliente=$6`,
+        [nombre, telefono || null,
          ciudad || 'Medellín', id_barrio || null, direccion || null, id_cliente, tipo_cliente || null]
       );
     } else if (documento) {
@@ -267,7 +277,9 @@ const recuperarContrasena = async (email) => {
     [email]
   );
   const usuario = result.rows[0];
-  if (!usuario) throw { status: 404, message: 'El correo no está registrado.' };
+  // No revelar si el correo existe o no (evita enumeración de cuentas):
+  // si no existe, simplemente no se envía nada y se responde igual desde el controller.
+  if (!usuario) return;
 
   const token  = crypto.randomBytes(32).toString('hex');
   const expira = new Date(Date.now() + 3600 * 1000); // 1 hora

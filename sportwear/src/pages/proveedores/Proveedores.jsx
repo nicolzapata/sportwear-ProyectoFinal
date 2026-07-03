@@ -276,7 +276,7 @@ export default function Proveedores() {
                 <div className="proveedores-form-row-3">
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Tipo de documento <span className="proveedores-req">*</span></label>
-                    <select className="proveedores-form-select" value={form.tipo_doc} onChange={(e) => set("tipo_doc", e.target.value)}>
+                    <select className="proveedores-form-select" value={form.tipo_doc} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={(e) => set("tipo_doc", e.target.value)}>
                       <option value="NIT">NIT</option>
                       <option value="CC">Cédula de ciudadanía</option>
                       <option value="CE">Cédula de extranjería</option>
@@ -289,6 +289,8 @@ export default function Proveedores() {
                       className={`proveedores-form-input${errores.numero_doc ? " input-error" : ""}`}
                       placeholder="Ej: 900123456"
                       value={form.numero_doc}
+                      disabled={!!editar}
+                      title={editar ? "El documento no se puede modificar" : undefined}
                       onChange={(e) => set("numero_doc", e.target.value)}
                     />
                     {errores.numero_doc && <span className="proveedores-field-error">{errores.numero_doc}</span>}

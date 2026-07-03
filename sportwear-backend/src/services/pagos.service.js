@@ -24,9 +24,23 @@ const getPagoById = async (id) => {
   return result.rows[0];
 };
 
+// Suma de abonos/pagos ya confirmados (dinero efectivamente recibido) para una venta.
+const getSaldoPendiente = async (client, id_venta) => {
+  const venta = await client.query(`SELECT total FROM "Ventas" WHERE id_venta=$1`, [id_venta]);
+  if (!venta.rows.length) throw { status: 404, message: 'Venta no encontrada' };
+  const pagado = await client.query(
+    `SELECT COALESCE(SUM(monto), 0) AS total_pagado FROM "PagosAbonos" WHERE id_venta=$1 AND estado='Confirmado'`,
+    [id_venta]
+  );
+  const total = Number(venta.rows[0].total);
+  const totalPagado = Number(pagado.rows[0].total_pagado);
+  return { total, totalPagado, saldo: total - totalPagado };
+};
+
 const crearPago = async (datos) => {
   const { id_venta, monto, tipo, metodo, referencia_pago, estado, fecha } = datos;
   if (!id_venta || !monto) throw { status: 400, message: 'id_venta y monto son requeridos' };
+  if (Number(monto) <= 0) throw { status: 400, message: 'El monto debe ser mayor a cero' };
 
   const check = await pool.query(`
     SELECT c.permiso_pagos, c.nombre AS cliente
@@ -36,6 +50,10 @@ const crearPago = async (datos) => {
   if (!check.rows.length) throw { status: 404, message: 'Venta no encontrada' };
   if (!check.rows[0].permiso_pagos)
     throw { status: 403, message: `El cliente "${check.rows[0].cliente}" tiene los pagos bloqueados.` };
+
+  const { saldo } = await getSaldoPendiente(pool, id_venta);
+  if (Number(monto) > saldo)
+    throw { status: 400, message: `El monto ($${Number(monto).toLocaleString('es-CO')}) supera el saldo pendiente ($${saldo.toLocaleString('es-CO')}).` };
 
   const result = await pool.query(`
     INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, referencia_pago, estado, fecha)
@@ -47,33 +65,80 @@ const crearPago = async (datos) => {
 
 const cambiarEstado = async (id, estado) => {
   if (!estado) throw { status: 400, message: 'Estado requerido' };
-  const result = await pool.query(
-    `UPDATE "PagosAbonos" SET estado=$1 WHERE id_pago=$2 RETURNING *`,
-    [estado, id]
-  );
-  if (!result.rows.length) throw { status: 404, message: 'No encontrado' };
-  return result.rows[0];
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      `UPDATE "PagosAbonos" SET estado=$1 WHERE id_pago=$2 RETURNING *`,
+      [estado, id]
+    );
+    if (!result.rows.length) throw { status: 404, message: 'No encontrado' };
+
+    // Al confirmar un pago, si con este ya se cubre el total de la venta, se marca "Pagado".
+    if (estado === 'Confirmado') {
+      const { id_venta } = result.rows[0];
+      const { total, totalPagado } = await getSaldoPendiente(client, id_venta);
+      if (totalPagado >= total) {
+        await client.query(
+          `UPDATE "Ventas" SET estado='Pagado' WHERE id_venta=$1 AND estado NOT IN ('Anulado', 'Pagado')`,
+          [id_venta]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally { client.release(); }
+};
+
+const marcarVentaPagadaSiCompleta = async (client, id_venta) => {
+  const { total, totalPagado } = await getSaldoPendiente(client, id_venta);
+  if (totalPagado >= total) {
+    await client.query(
+      `UPDATE "Ventas" SET estado='Pagado' WHERE id_venta=$1 AND estado NOT IN ('Anulado', 'Pagado')`,
+      [id_venta]
+    );
+  }
 };
 
 const pagarCuota = async (id_pago, { metodo, referencia_pago }) => {
   const numId = parseInt(id_pago);
-  console.log('🔔 pagarCuota - id_pago:', id_pago, 'parseado:', numId);
-  
-  const result = await pool.query(
-    `UPDATE "PagosAbonos" SET estado='Confirmado', metodo=$1, referencia_pago=$2, fecha=NOW() WHERE id_pago=$3 AND estado='Pendiente' RETURNING *`,
-    [metodo || 'Efectivo', referencia_pago || null, numId]
-  );
-  console.log('🔔 Result rows:', result.rows.length);
-  if (!result.rows.length) throw { status: 404, message: 'Cuota no encontrada o ya pagada' };
-  return result.rows[0];
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      `UPDATE "PagosAbonos" SET estado='Confirmado', metodo=$1, referencia_pago=$2, fecha=NOW() WHERE id_pago=$3 AND estado='Pendiente' RETURNING *`,
+      [metodo || 'Efectivo', referencia_pago || null, numId]
+    );
+    if (!result.rows.length) throw { status: 404, message: 'Cuota no encontrada o ya pagada' };
+    await marcarVentaPagadaSiCompleta(client, result.rows[0].id_venta);
+    await client.query('COMMIT');
+    return result.rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally { client.release(); }
 };
 
 const pagarTotal = async (id_venta, { metodo, referencia_pago }) => {
-  const result = await pool.query(
-    `UPDATE "PagosAbonos" SET estado='Confirmado', metodo=$1, referencia_pago=$2, fecha=NOW() WHERE id_venta=$3 AND estado='Pendiente' RETURNING *`,
-    [metodo || 'Efectivo', referencia_pago || null, id_venta]
-  );
-  return result.rows;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      `UPDATE "PagosAbonos" SET estado='Confirmado', metodo=$1, referencia_pago=$2, fecha=NOW() WHERE id_venta=$3 AND estado='Pendiente' RETURNING *`,
+      [metodo || 'Efectivo', referencia_pago || null, id_venta]
+    );
+    await marcarVentaPagadaSiCompleta(client, id_venta);
+    await client.query('COMMIT');
+    return result.rows;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally { client.release(); }
 };
 
 module.exports = { getPagos, getPagoById, crearPago, cambiarEstado, pagarCuota, pagarTotal };

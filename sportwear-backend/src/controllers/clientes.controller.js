@@ -48,11 +48,9 @@ const crearCliente = async (req, res) => {
 
 const actualizarCliente = async (req, res) => {
   try {
-    console.log('actualizarCliente called with:', req.params.id, req.body);
     const data = await clientesService.actualizarCliente(req.params.id, req.body);
     res.json(data);
   } catch (err) {
-    console.error('Error en actualizarCliente:', err);
     res.status(err.status || 500).json({ message: err.message });
   }
 };

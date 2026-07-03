@@ -62,16 +62,13 @@ const crearCliente = async (datos) => {
 };
 
 const actualizarCliente = async (id, datos) => {
-  console.log('actualizarCliente service called, id:', id, 'datos:', datos);
-  const { nombre, tipo_doc, documento, telefono, email, id_barrio, direccion, tipo_cliente, permiso_pagos, permiso_cuotas, estado } = datos;
+  // La identificación (tipo_doc/documento) y el email no se pueden modificar una vez creados.
+  const { nombre, telefono, id_barrio, direccion, tipo_cliente, permiso_pagos, permiso_cuotas, estado } = datos;
   const campos = [];
   const valores = [];
   let idx = 1;
   if (nombre !== undefined) { campos.push(`nombre = $${idx++}`); valores.push(nombre); }
-  if (tipo_doc !== undefined) { campos.push(`tipo_doc = $${idx++}`); valores.push(tipo_doc); }
-  if (documento !== undefined) { campos.push(`documento = $${idx++}`); valores.push(documento); }
   if (telefono !== undefined) { campos.push(`telefono = $${idx++}`); valores.push(telefono); }
-  if (email !== undefined) { campos.push(`email = $${idx++}`); valores.push(email); }
   if (id_barrio !== undefined) { campos.push(`id_barrio = $${idx++}`); valores.push(id_barrio); }
   if (direccion !== undefined) { campos.push(`direccion = $${idx++}`); valores.push(direccion); }
   if (tipo_cliente !== undefined) { campos.push(`tipo_cliente = $${idx++}`); valores.push(tipo_cliente); }
@@ -81,7 +78,6 @@ const actualizarCliente = async (id, datos) => {
   if (campos.length === 0) return { id_cliente: id };
   valores.push(id);
   const query = `UPDATE "Clientes" SET ${campos.join(', ')} WHERE id_cliente = $${idx} RETURNING *`;
-  console.log('Query:', query, 'Values:', valores);
   const result = await pool.query(query, valores);
   if (!result.rows.length) throw { status: 404, message: 'Cliente no encontrado' };
   return result.rows[0];
