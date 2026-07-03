@@ -1,5 +1,6 @@
 // src/services/pagos.service.js
 const pool = require('../config/db');
+const { enviarCorreo } = require('./mailer.service');
 
 const getPagos = async () => {
   const result = await pool.query(`
@@ -35,6 +36,34 @@ const getSaldoPendiente = async (client, id_venta) => {
   const total = Number(venta.rows[0].total);
   const totalPagado = Number(pagado.rows[0].total_pagado);
   return { total, totalPagado, saldo: total - totalPagado };
+};
+
+const notificarAbono = async (client, id_venta, monto) => {
+  try {
+    const info = await client.query(`
+      SELECT c.nombre, c.email
+      FROM "Ventas" v JOIN "Clientes" c ON v.id_cliente = c.id_cliente
+      WHERE v.id_venta = $1
+    `, [id_venta]);
+    if (!info.rows.length || !info.rows[0].email) return;
+    const { nombre, email } = info.rows[0];
+    const { saldo } = await getSaldoPendiente(client, id_venta);
+
+    enviarCorreo({
+      to: email,
+      subject: `Pago registrado — Pedido V-${String(id_venta).padStart(3, '0')}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto">
+          <h2 style="color:#b49780">DVNA SportWear</h2>
+          <p>Hola ${nombre},</p>
+          <p>Registramos un pago de <strong>$${Number(monto).toLocaleString('es-CO')}</strong> para tu pedido <strong>V-${String(id_venta).padStart(3, '0')}</strong>.</p>
+          <p>Saldo pendiente actual: <strong>$${saldo.toLocaleString('es-CO')}</strong>.</p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error('Error notificando abono:', err.message);
+  }
 };
 
 const crearPago = async (datos) => {
@@ -85,6 +114,7 @@ const cambiarEstado = async (id, estado) => {
           [id_venta]
         );
       }
+      await notificarAbono(client, id_venta, result.rows[0].monto);
     }
 
     await client.query('COMMIT');
@@ -116,6 +146,7 @@ const pagarCuota = async (id_pago, { metodo, referencia_pago }) => {
     );
     if (!result.rows.length) throw { status: 404, message: 'Cuota no encontrada o ya pagada' };
     await marcarVentaPagadaSiCompleta(client, result.rows[0].id_venta);
+    await notificarAbono(client, result.rows[0].id_venta, result.rows[0].monto);
     await client.query('COMMIT');
     return result.rows[0];
   } catch (err) {
@@ -133,6 +164,10 @@ const pagarTotal = async (id_venta, { metodo, referencia_pago }) => {
       [metodo || 'Efectivo', referencia_pago || null, id_venta]
     );
     await marcarVentaPagadaSiCompleta(client, id_venta);
+    if (result.rows.length) {
+      const montoTotal = result.rows.reduce((acc, r) => acc + Number(r.monto), 0);
+      await notificarAbono(client, id_venta, montoTotal);
+    }
     await client.query('COMMIT');
     return result.rows;
   } catch (err) {

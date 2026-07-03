@@ -3,6 +3,7 @@ const pool       = require('../config/db');
 const jwt        = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const crypto     = require('crypto');
+const { enviarCorreo } = require('./mailer.service');
 
 const generarToken = (usuario) => {
   return jwt.sign(
@@ -131,6 +132,25 @@ const registro = async (datos) => {
     );
 
     await client.query('COMMIT');
+
+    // Correo de bienvenida (no bloqueante, no gatea el login).
+    enviarCorreo({
+      to: email,
+      subject: 'Bienvenido a DVNA SportWear',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto">
+          <h2 style="color:#b49780">DVNA SportWear</h2>
+          <p>Hola ${nombre},</p>
+          <p>Tu cuenta fue creada exitosamente con el correo <strong>${email}</strong>.</p>
+          <p>Ya puedes iniciar sesión y comenzar a comprar en nuestro catálogo.</p>
+          <a href="${process.env.FRONTEND_URL}/login"
+             style="display:inline-block;padding:12px 24px;background:#b49780;color:#fff;
+                    border-radius:6px;text-decoration:none;margin:16px 0">
+            Ir a mi cuenta
+          </a>
+        </div>
+      `,
+    });
 
     const token = generarToken({ ...nuevoUsuario.rows[0], rol: 'Cliente', id_cliente, modulos: [], permisos: [] });
     return { token, usuario: nuevoUsuario.rows[0] };

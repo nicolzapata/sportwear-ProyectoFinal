@@ -13,6 +13,7 @@ const OFFICIAL_MODULES = [
   'Proveedores',
   'Compras',
   'PedidosVentas',
+  'Pedidos',
   'Pagos',
   'Catalogo',
 ];

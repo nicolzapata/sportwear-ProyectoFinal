@@ -238,6 +238,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1.5rem;
 }
 
 .pagosabonos-modal {
@@ -253,6 +254,74 @@
 
 .pagosabonos-modal-sm {
   max-width: 450px;
+}
+
+/* Modal ampliado tipo factura, un solo panel sin pasos */
+.pagosabonos-modal-factura {
+  max-width: 650px;
+}
+
+.pagosabonos-factura-body {
+  padding: 1.5rem;
+}
+
+.pagosabonos-factura-seccion {
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px dashed #e5e5e5;
+}
+.pagosabonos-factura-seccion:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.pagosabonos-factura-titulo {
+  font-family: 'DM Sans';
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--brown, #b49780);
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pagosabonos-modal-subtitulo {
+  font-size: 0.78rem;
+  color: #888;
+  margin: 2px 0 0;
+  font-weight: 300;
+}
+
+.pagosabonos-detalle-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.pagosabonos-detalle-info-grid > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.pagosabonos-detalle-info-label {
+  font-size: 0.7rem;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.pagosabonos-detalle-info-valor {
+  font-size: 0.9rem;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+@media (max-width: 640px) {
+  .pagosabonos-detalle-info-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 900px) {
+  .pagosabonos-modal-factura { max-width: 95%; }
 }
 
 .pagosabonos-modal-header {
@@ -352,21 +421,19 @@
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
 }
 
-  .pagosabonos-form-input.input-error,
-  .pagosabonos-form-select.input-error {
-    border-color: #b83232;
-    box-shadow: 0 0 0 3px rgba(184, 50, 50, 0.08);
-  }
+.pagosabonos-form-input.input-error,
+.pagosabonos-form-select.input-error {
+  border-color: #b83232;
+  box-shadow: 0 0 0 3px rgba(184, 50, 50, 0.08);
+}
 
-  .pagosabonos-field-error {
-    display: block;
-    margin-top: 6px;
-    font-size: 0.75rem;
-    color: #b83232;
-  
+.pagosabonos-field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #b83232;
   text-transform: none;
-  
-
+}
 
 .pagosabonos-detail-value {
   font-weight: 500;
@@ -480,7 +547,7 @@
   .pagosabonos-action-cell {
     flex-wrap: wrap;
   }
-}
+
 
 @media (max-width: 480px) {
   .pagosabonos-title {

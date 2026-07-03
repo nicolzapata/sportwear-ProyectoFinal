@@ -4,7 +4,6 @@ import './PagosAbonos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { IconCheck, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
-import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const tipoByCliente = (tipo_cliente) => tipo_cliente === "VIP" ? "Abono" : "Pago completo";
@@ -112,6 +111,17 @@ export default function PagosAbonos() {
     }
   };
 
+  const abrirRegistrarPago = () => {
+    setForm({ id_venta: "", monto: "", tipo: "Pago completo", metodo: "Efectivo", estado: "Pendiente", fecha: "" });
+    setErrores({ id_venta: "", monto: "", fecha: "" });
+    setModal(true);
+  };
+
+  const cerrarModal = () => {
+    if (guardando) return;
+    setModal(false);
+  };
+
   if (cargando) return <div style={{ padding: 48, color: "var(--muted)" }}>Cargando pagos...</div>;
   if (errorMsg) return <div style={{ padding: 32, color: "var(--danger)" }}>{errorMsg}<button onClick={cargar} style={{ marginLeft: 12 }}>Reintentar</button></div>;
 
@@ -127,7 +137,7 @@ export default function PagosAbonos() {
         </div>
         <div className="pagosabonos-actions-right">
           {tienePerm('Pagos.crear') && (
-            <button className="pagosabonos-btn-primary" onClick={() => { setForm({ id_venta: "", monto: "", tipo: "Pago completo", metodo: "Efectivo", estado: "Pendiente", fecha: "" }); setModal(true); }}>
+            <button className="pagosabonos-btn-primary" onClick={abrirRegistrarPago}>
               <span>+</span> Nuevo pago
             </button>
           )}
@@ -193,87 +203,91 @@ export default function PagosAbonos() {
             <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} registros</span>
           </div>
         )}
-        {/* Print button moved to top actions bar */}
       </div>
 
+      {/* ── Modal registrar pago: panel único tipo factura ── */}
       {modal && (
-        <div className="pagosabonos-modal-overlay">
-          <div className="pagosabonos-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="pagosabonos-modal-overlay" onClick={cerrarModal}>
+          <div className="pagosabonos-modal pagosabonos-modal-factura" onClick={(e) => e.stopPropagation()}>
             <div className="pagosabonos-modal-header">
               <h2 className="pagosabonos-modal-title">Registrar pago o abono</h2>
-              <button className="pagosabonos-modal-close" onClick={() => setModal(false)}><IconX /></button>
+              <button className="pagosabonos-modal-close" onClick={cerrarModal}><IconX /></button>
             </div>
-            <div className="pagosabonos-modal-body">
-              <div className="pagosabonos-form-row">
-                <div className="pagosabonos-form-group">
-                  <label className="pagosabonos-form-label">Venta asociada</label>
-                  <select
-                    className={`pagosabonos-form-select${errores.id_venta ? " input-error" : ""}`}
-                    value={form.id_venta}
-                    onChange={(e) => {
-                      handleVentaChange(e.target.value);
-                      if (errores.id_venta) setErrores(prev => ({ ...prev, id_venta: "" }));
-                    }}
-                  >
-                    <option value="">Seleccionar venta...</option>
-                    {ventas.map(v => <option key={v.id_venta} value={v.id_venta}>V-{String(v.id_venta).padStart(3, "0")} — {v.cliente} ({v.tipo_cliente})</option>)}
-                  </select>
-                  {errores.id_venta && <span className="pagosabonos-field-error">{errores.id_venta}</span>}
+            <div className="pagosabonos-modal-body pagosabonos-factura-body">
+              <div className="pagosabonos-factura-seccion">
+                <h3 className="pagosabonos-factura-titulo">Datos del pago</h3>
+
+                <div className="pagosabonos-form-row">
+                  <div className="pagosabonos-form-group">
+                    <label className="pagosabonos-form-label">Venta asociada</label>
+                    <select
+                      className={`pagosabonos-form-select${errores.id_venta ? " input-error" : ""}`}
+                      value={form.id_venta}
+                      onChange={(e) => {
+                        handleVentaChange(e.target.value);
+                        if (errores.id_venta) setErrores(prev => ({ ...prev, id_venta: "" }));
+                      }}
+                    >
+                      <option value="">Seleccionar venta...</option>
+                      {ventas.map(v => <option key={v.id_venta} value={v.id_venta}>V-{String(v.id_venta).padStart(3, "0")} — {v.cliente} ({v.tipo_cliente})</option>)}
+                    </select>
+                    {errores.id_venta && <span className="pagosabonos-field-error">{errores.id_venta}</span>}
+                  </div>
+                  <div className="pagosabonos-form-group">
+                    <label className="pagosabonos-form-label">Monto (COP)</label>
+                    <input
+                      type="number"
+                      className={`pagosabonos-form-input${errores.monto ? " input-error" : ""}`}
+                      placeholder="Ej: 50000"
+                      value={form.monto}
+                      onChange={(e) => {
+                        setForm({ ...form, monto: e.target.value });
+                        if (errores.monto) setErrores(prev => ({ ...prev, monto: "" }));
+                      }}
+                    />
+                    {errores.monto && <span className="pagosabonos-field-error">{errores.monto}</span>}
+                  </div>
                 </div>
-                <div className="pagosabonos-form-group">
-                  <label className="pagosabonos-form-label">Monto (COP)</label>
-                  <input
-                    type="number"
-                    className={`pagosabonos-form-input${errores.monto ? " input-error" : ""}`}
-                    placeholder="Ej: 50000"
-                    value={form.monto}
-                    onChange={(e) => {
-                      setForm({ ...form, monto: e.target.value });
-                      if (errores.monto) setErrores(prev => ({ ...prev, monto: "" }));
-                    }}
-                  />
-                  {errores.monto && <span className="pagosabonos-field-error">{errores.monto}</span>}
+                <div className="pagosabonos-form-row">
+                  <div className="pagosabonos-form-group">
+                    <label className="pagosabonos-form-label">Tipo <small style={{ color: "#888" }}>(auto según cliente)</small></label>
+                    <input className="pagosabonos-form-input" value={form.tipo} readOnly style={{ background: "var(--input-disabled-bg, #f3f4f6)", cursor: "not-allowed" }} />
+                  </div>
+                  <div className="pagosabonos-form-group">
+                    <label className="pagosabonos-form-label">Método</label>
+                    <select className="pagosabonos-form-select" value={form.metodo} onChange={(e) => setForm({ ...form, metodo: e.target.value })}>
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Tarjeta">Tarjeta</option>
+                      <option value="Transferencia">Transferencia</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
-              <div className="pagosabonos-form-row">
-                <div className="pagosabonos-form-group">
-                  <label className="pagosabonos-form-label">Tipo <small style={{ color: "#888" }}>(auto según cliente)</small></label>
-                  <input className="pagosabonos-form-input" value={form.tipo} readOnly style={{ background: "var(--input-disabled-bg, #f3f4f6)", cursor: "not-allowed" }} />
-                </div>
-                <div className="pagosabonos-form-group">
-                  <label className="pagosabonos-form-label">Método</label>
-                  <select className="pagosabonos-form-select" value={form.metodo} onChange={(e) => setForm({ ...form, metodo: e.target.value })}>
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Tarjeta">Tarjeta</option>
-                    <option value="Transferencia">Transferencia</option>
-                  </select>
-                </div>
-              </div>
-              <div className="pagosabonos-form-row">
-                <div className="pagosabonos-form-group">
-                  <label className="pagosabonos-form-label">Fecha</label>
-                  <input
-                    type="date"
-                    className={`pagosabonos-form-input${errores.fecha ? " input-error" : ""}`}
-                    value={form.fecha}
-                    onChange={(e) => {
-                      setForm({ ...form, fecha: e.target.value });
-                      if (errores.fecha) setErrores(prev => ({ ...prev, fecha: "" }));
-                    }}
-                  />
-                  {errores.fecha && <span className="pagosabonos-field-error">{errores.fecha}</span>}
-                </div>
-                <div className="pagosabonos-form-group">
-                  <label className="pagosabonos-form-label">Estado</label>
-                  <select className="pagosabonos-form-select" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
-                    <option value="Pendiente">Pendiente</option>
-                    <option value="Confirmado">Confirmado</option>
-                  </select>
+                <div className="pagosabonos-form-row">
+                  <div className="pagosabonos-form-group">
+                    <label className="pagosabonos-form-label">Fecha</label>
+                    <input
+                      type="date"
+                      className={`pagosabonos-form-input${errores.fecha ? " input-error" : ""}`}
+                      value={form.fecha}
+                      onChange={(e) => {
+                        setForm({ ...form, fecha: e.target.value });
+                        if (errores.fecha) setErrores(prev => ({ ...prev, fecha: "" }));
+                      }}
+                    />
+                    {errores.fecha && <span className="pagosabonos-field-error">{errores.fecha}</span>}
+                  </div>
+                  <div className="pagosabonos-form-group">
+                    <label className="pagosabonos-form-label">Estado</label>
+                    <select className="pagosabonos-form-select" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="Confirmado">Confirmado</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
             <div className="pagosabonos-modal-footer">
-              <button className="pagosabonos-btn-secondary" onClick={() => setModal(false)} disabled={guardando}>Cancelar</button>
+              <button className="pagosabonos-btn-secondary" onClick={cerrarModal} disabled={guardando}>Cancelar</button>
               <button className="pagosabonos-btn-primary" onClick={guardar} disabled={guardando || !form.id_venta || !form.monto}>
                 {guardando ? "Registrando..." : "Registrar"}
               </button>
@@ -282,31 +296,48 @@ export default function PagosAbonos() {
         </div>
       )}
 
+      {/* ── Modal ver detalle: panel único tipo factura ── */}
       {verDetalle && (
-        <ModalDetalle
-          titulo="Detalle del pago"
-          subtitulo={`P-${String(verDetalle.id_pago).padStart(3, "0")}`}
-          badge={<span className={`tabla-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>}
-          pasos={["Información", "Pago"]}
-          onClose={() => setVerDetalle(null)}
-        >
-          <DetalleSeccion titulo="Información">
-            <DetalleGrid>
-              <DetalleItem label="ID"      value={`P-${String(verDetalle.id_pago).padStart(3, "0")}`} />
-              <DetalleItem label="Venta"   value={`V-${String(verDetalle.id_venta).padStart(3, "0")}`} />
-              <DetalleItem label="Cliente" value={verDetalle.cliente} />
-              <DetalleItem label="Tipo"    value={verDetalle.tipo} />
-              <DetalleItem label="Método"  value={verDetalle.metodo} />
-              <DetalleItem label="Fecha"   value={verDetalle.fecha?.toString().split("T")[0]} />
-            </DetalleGrid>
-          </DetalleSeccion>
-          <DetalleSeccion titulo="Pago">
-            <DetalleGrid>
-              <DetalleItem label="Monto"  value={fmt(verDetalle.monto)} />
-              <DetalleItem label="Estado" value={verDetalle.estado} />
-            </DetalleGrid>
-          </DetalleSeccion>
-        </ModalDetalle>
+        <div className="pagosabonos-modal-overlay" onClick={() => setVerDetalle(null)}>
+          <div className="pagosabonos-modal pagosabonos-modal-factura" onClick={(e) => e.stopPropagation()}>
+            <div className="pagosabonos-modal-header">
+              <div>
+                <h2 className="pagosabonos-modal-title">Pago P-{String(verDetalle.id_pago).padStart(3, "0")}</h2>
+                <p className="pagosabonos-modal-subtitulo">Detalle del pago</p>
+              </div>
+              <button className="pagosabonos-modal-close" onClick={() => setVerDetalle(null)}><IconX /></button>
+            </div>
+
+            <div className="pagosabonos-modal-body pagosabonos-factura-body">
+              <div className="pagosabonos-factura-seccion">
+                <h3 className="pagosabonos-factura-titulo">Información</h3>
+                <div className="pagosabonos-detalle-info-grid">
+                  <div><span className="pagosabonos-detalle-info-label">ID</span><span className="pagosabonos-detalle-info-valor">P-{String(verDetalle.id_pago).padStart(3, "0")}</span></div>
+                  <div><span className="pagosabonos-detalle-info-label">Venta</span><span className="pagosabonos-detalle-info-valor">V-{String(verDetalle.id_venta).padStart(3, "0")}</span></div>
+                  <div><span className="pagosabonos-detalle-info-label">Cliente</span><span className="pagosabonos-detalle-info-valor">{verDetalle.cliente}</span></div>
+                  <div><span className="pagosabonos-detalle-info-label">Tipo</span><span className="pagosabonos-detalle-info-valor">{verDetalle.tipo}</span></div>
+                  <div><span className="pagosabonos-detalle-info-label">Método</span><span className="pagosabonos-detalle-info-valor">{verDetalle.metodo}</span></div>
+                  <div><span className="pagosabonos-detalle-info-label">Fecha</span><span className="pagosabonos-detalle-info-valor">{verDetalle.fecha?.toString().split("T")[0]}</span></div>
+                </div>
+              </div>
+
+              <div className="pagosabonos-factura-seccion">
+                <h3 className="pagosabonos-factura-titulo">Pago</h3>
+                <div className="pagosabonos-detalle-info-grid">
+                  <div><span className="pagosabonos-detalle-info-label">Monto</span><span className="pagosabonos-detalle-info-valor">{fmt(verDetalle.monto)}</span></div>
+                  <div>
+                    <span className="pagosabonos-detalle-info-label">Estado</span>
+                    <span className={`tabla-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="pagosabonos-modal-footer">
+              <button className="pagosabonos-btn-secondary" onClick={() => setVerDetalle(null)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

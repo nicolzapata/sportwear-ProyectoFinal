@@ -28,7 +28,6 @@ const crearCompra = async (req, res) => {
   }
 };
 
-// ── NUEVO: edición completa de una compra ──
 const actualizarCompra = async (req, res) => {
   try {
     const data = await comprasService.actualizarCompra(req.params.id, req.body);

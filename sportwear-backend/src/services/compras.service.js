@@ -77,6 +77,56 @@ const crearCompra = async (datos) => {
   } finally { client.release(); }
 };
 
+// ── NUEVO: edición completa de una compra (solo si NO está Recibida ni Anulada) ──
+const actualizarCompra = async (id, datos) => {
+  const { id_proveedor, numero_orden, descuento, impuesto, fecha, observaciones, items } = datos;
+  if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
+  if (!id_proveedor) throw { status: 400, message: 'El proveedor es requerido' };
+
+  const subtotal = items.reduce((a, i) => a + i.cantidad * i.precio_unitario - (i.descuento_linea || 0), 0);
+  const total    = subtotal - (descuento || 0) + (impuesto || 0);
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const actual = await client.query(
+      `SELECT * FROM "Compras" WHERE id_compra=$1 FOR UPDATE`,
+      [id]
+    );
+    if (!actual.rows.length) throw { status: 404, message: 'No encontrada' };
+    const estadoActual = actual.rows[0].estado;
+
+    if (estadoActual === 'Recibido' || estadoActual === 'Anulado') {
+      throw { status: 400, message: `No se puede editar una compra en estado "${estadoActual}".` };
+    }
+
+    // Reemplaza los items dentro de la misma transacción
+    await client.query(`DELETE FROM "DetalleCompra" WHERE id_compra=$1`, [id]);
+
+    for (const item of items) {
+      const subtotalLinea = item.cantidad * item.precio_unitario - (item.descuento_linea || 0);
+      await client.query(`
+        INSERT INTO "DetalleCompra" (id_compra, id_producto, id_variante, cantidad, precio_unitario, descuento_linea, subtotal)
+        VALUES ($1,$2,$3,$4,$5,$6,$7)
+      `, [id, item.id_producto, item.id_variante || null, item.cantidad, item.precio_unitario, item.descuento_linea || 0, subtotalLinea]);
+    }
+
+    const result = await client.query(`
+      UPDATE "Compras"
+      SET id_proveedor=$1, numero_orden=$2, subtotal=$3, descuento=$4, impuesto=$5, total=$6, fecha=$7, observaciones=$8
+      WHERE id_compra=$9 RETURNING *
+    `, [id_proveedor, numero_orden || null, subtotal, descuento || 0, impuesto || 0, total,
+        fecha || actual.rows[0].fecha, observaciones || null, id]);
+
+    await client.query('COMMIT');
+    return { ...result.rows[0], items };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally { client.release(); }
+};
+
 const cambiarEstado = async (id, estado) => {
   if (!estado) throw { status: 400, message: 'Estado requerido' };
 
@@ -122,4 +172,4 @@ const cambiarEstado = async (id, estado) => {
   } finally { client.release(); }
 };
 
-module.exports = { getCompras, getCompraById, crearCompra, cambiarEstado };
+module.exports = { getCompras, getCompraById, crearCompra, actualizarCompra, cambiarEstado };

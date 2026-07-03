@@ -5,7 +5,6 @@ import { useAuth } from "../../context/AuthContext";
 import GaleriaImagenes from "../../components/GaleriaImagenes";
 import GestVariantes from "../../components/GestVariantes";
 import ModalSteps from "../../components/ModalSteps";
-import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
 import { IconAlertTriangle, IconCheck, IconEdit, IconEye, IconPrint, IconSearch, IconX, IconBox, IconTag } from "../../components/Icons";
 import "./GestProductos.css";
@@ -97,8 +96,6 @@ export default function GestProductos() {
     if (!form.precio || Number(form.precio) <= 0) { e.precio = "El precio debe ser mayor a $0."; ok = false; }
     setErrores(e); return ok;
   };
-
-  const validarPasoImagenes = () => true;
 
   const validar = () => validarPasoDatos();
 
@@ -216,70 +213,7 @@ export default function GestProductos() {
     </div>
   );
 
-  // ── Paso 1: datos + variantes (igual que siempre) ────────────────────────────
-  const PasoDatos = (
-    <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-      {errores.general && <div className="gestproductos-error-banner"><IconAlertTriangle /> {errores.general}</div>}
-
-      <div className="gestproductos-form-group">
-        <label className="gestproductos-form-label">Nombre <span className="gestproductos-required">*</span></label>
-        <input className={`gestproductos-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Camiseta Deportiva" value={form.nombre}
-          onChange={e => { setForm({ ...form, nombre: e.target.value }); if (errores.nombre) setErrores(p => ({ ...p, nombre: "" })); }} />
-        {errores.nombre && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.nombre}</p>}
-      </div>
-
-      <div style={{ display: "flex", gap: 12 }}>
-        <div className="gestproductos-form-group" style={{ flex: 1 }}>
-          <label className="gestproductos-form-label">Categoría <span className="gestproductos-required">*</span></label>
-          <select className={`gestproductos-form-select${errores.id_categoria ? " input-error" : ""}`} value={form.id_categoria}
-            onChange={e => { setForm({ ...form, id_categoria: Number(e.target.value) }); if (errores.id_categoria) setErrores(p => ({ ...p, id_categoria: "" })); }}>
-            <option value="">— Seleccionar —</option>
-            {categorias.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>)}
-          </select>
-          {errores.id_categoria && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.id_categoria}</p>}
-        </div>
-
-        <div className="gestproductos-form-group" style={{ flex: 1 }}>
-          <label className="gestproductos-form-label">Precio (COP) <span className="gestproductos-required">*</span></label>
-          <input type="number" min={0} className={`gestproductos-form-input${errores.precio ? " input-error" : ""}`} placeholder="0" value={form.precio}
-            onChange={e => { setForm({ ...form, precio: e.target.value }); if (errores.precio) setErrores(p => ({ ...p, precio: "" })); }} />
-          {errores.precio && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.precio}</p>}
-        </div>
-      </div>
-
-      {editar && (
-        <div className="gestproductos-form-group">
-          <label className="gestproductos-form-label">Estado</label>
-          <select className="gestproductos-form-select" value={form.estado}
-            onChange={e => setForm({ ...form, estado: e.target.value, publicado: e.target.value === "Inactivo" ? false : form.publicado })}>
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
-        </div>
-      )}
-
-      {tienePerm('Productos.publicar') && (
-        <div className="gestproductos-form-group">
-          <label className="gestproductos-form-label">Publicar en catálogo</label>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
-            <input type="checkbox" id="publicado" checked={!!form.publicado} disabled={form.estado === "Inactivo"}
-              onChange={e => setForm({ ...form, publicado: e.target.checked })}
-              style={{ width: 18, height: 18, cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer" }} />
-            <label htmlFor="publicado" style={{ cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer", fontSize: 13, color: form.estado === "Inactivo" ? "#999" : "inherit" }}>
-              {form.estado === "Inactivo" ? "No puede publicarse si está inactivo" : (form.publicado ? "Visible en catálogo" : "No publicado")}
-            </label>
-          </div>
-        </div>
-      )}
-
-      <div style={{ marginTop: 8 }}>
-        <GestVariantes idProducto={editar || productoId} onPendingChange={setPendingVariantes} />
-      </div>
-    </div>
-  );
-
   const coloresPendientes = [...new Map(pendingVariantes.map(v => [v.id_color, { id_color: v.id_color, nombre: v.color_nombre, codigo_hex: v.codigo_hex }])).values()];
-  const PasoImagenes = (<div><GaleriaImagenes tipoReferencia="Producto" idReferencia={productoId} onPendingChange={setPendingImagenes} coloresPendientes={coloresPendientes} /></div>);
 
   const PasoCategoriaForm = (
     <div>
@@ -291,43 +225,6 @@ export default function GestProductos() {
         {erroresCategoria.nombre && <p className="gestproductos-field-error">{erroresCategoria.nombre}</p>}
       </div>
     </div>
-  );
-
-  // ── Detalle producto (consolidado en una sola vista) ─────────────────────────
-  const p = verDetalle;
-  const DetalleUnico = p && (
-    <DetalleSeccion>
-      <DetalleGrid>
-        <DetalleItem label="ID"          value={`#${String(p.id_producto).padStart(3, "0")}`} />
-        <DetalleItem label="Código"      value={p.codigo} />
-        <DetalleItem label="Nombre"      value={p.nombre} />
-        <DetalleItem label="Categoría"   value={p.categoria} />
-        <DetalleItem label="Precio"      value={fmt(p.precio)} />
-        <DetalleItem label="Stock total" value={`${p.stock ?? 0} unidades`} />
-        <DetalleItem label="Estado"      value={p.estado} />
-        <DetalleItem label="Publicado"   value={p.publicado ? "Sí, visible en catálogo" : "No publicado"} />
-      </DetalleGrid>
-
-      {p.variantes?.length > 0 && (
-        <div style={{ marginTop: 12 }}>
-          <p style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase", color: "var(--dvna-muted)", marginBottom: 8 }}>Variantes</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {p.variantes.map(v => (
-              <div key={v.id_variante} style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--dvna-pale)", border: "1px solid var(--dvna-border)", borderRadius: "var(--r)", padding: "4px 10px", fontSize: 11 }}>
-                <span style={{ width: 10, height: 10, borderRadius: "50%", background: v.codigo_hex || "#ccc", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} />
-                <span>{v.color_nombre}</span><span style={{ color: "var(--dvna-muted)" }}>·</span>
-                <span>{v.talla}</span><span style={{ color: "var(--dvna-muted)" }}>·</span>
-                <span style={{ fontWeight: 600 }}>{v.stock} uds</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div style={{ marginTop: 16 }}>
-        <GaleriaImagenes tipoReferencia="Producto" idReferencia={p.id_producto} soloLectura />
-      </div>
-    </DetalleSeccion>
   );
 
   return (
@@ -502,16 +399,92 @@ export default function GestProductos() {
         </div>
       )}
 
+      {/* ── Modal crear/editar producto: panel único tipo factura ── */}
       {modal && tab === 'productos' && (
-        <ModalSteps
-          titulo={editar ? "Editar producto" : "Nuevo producto"}
-          pasos={["Datos del producto", "Imágenes"]}
-          onClose={cerrarModal} onGuardar={guardar}
-          validaciones={[validarPasoDatos, validarPasoImagenes]}
-          labelGuardar={editar ? "Actualizar" : "Registrar"}
-        >
-          {PasoDatos}{PasoImagenes}
-        </ModalSteps>
+        <div className="gestproductos-modal-overlay" onClick={cerrarModal}>
+          <div className="gestproductos-modal gestproductos-modal-factura" onClick={(e) => e.stopPropagation()}>
+            <div className="gestproductos-modal-header">
+              <h2 className="gestproductos-modal-title">{editar ? "Editar producto" : "Nuevo producto"}</h2>
+              <button className="gestproductos-modal-close" onClick={cerrarModal}><IconX /></button>
+            </div>
+
+            <div className="gestproductos-modal-body gestproductos-factura-body">
+              {errores.general && <div className="gestproductos-error-banner"><IconAlertTriangle /> {errores.general}</div>}
+
+              <div className="gestproductos-factura-seccion">
+                <h3 className="gestproductos-factura-titulo">Datos del producto</h3>
+
+                <div className="gestproductos-form-group">
+                  <label className="gestproductos-form-label">Nombre <span className="gestproductos-required">*</span></label>
+                  <input className={`gestproductos-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Camiseta Deportiva" value={form.nombre}
+                    onChange={e => { setForm({ ...form, nombre: e.target.value }); if (errores.nombre) setErrores(p => ({ ...p, nombre: "" })); }} />
+                  {errores.nombre && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.nombre}</p>}
+                </div>
+
+                <div className="gestproductos-form-row">
+                  <div className="gestproductos-form-group">
+                    <label className="gestproductos-form-label">Categoría <span className="gestproductos-required">*</span></label>
+                    <select className={`gestproductos-form-select${errores.id_categoria ? " input-error" : ""}`} value={form.id_categoria}
+                      onChange={e => { setForm({ ...form, id_categoria: Number(e.target.value) }); if (errores.id_categoria) setErrores(p => ({ ...p, id_categoria: "" })); }}>
+                      <option value="">— Seleccionar —</option>
+                      {categorias.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>)}
+                    </select>
+                    {errores.id_categoria && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.id_categoria}</p>}
+                  </div>
+
+                  <div className="gestproductos-form-group">
+                    <label className="gestproductos-form-label">Precio (COP) <span className="gestproductos-required">*</span></label>
+                    <input type="number" min={0} className={`gestproductos-form-input${errores.precio ? " input-error" : ""}`} placeholder="0" value={form.precio}
+                      onChange={e => { setForm({ ...form, precio: e.target.value }); if (errores.precio) setErrores(p => ({ ...p, precio: "" })); }} />
+                    {errores.precio && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.precio}</p>}
+                  </div>
+                </div>
+
+                {editar && (
+                  <div className="gestproductos-form-group">
+                    <label className="gestproductos-form-label">Estado</label>
+                    <select className="gestproductos-form-select" value={form.estado}
+                      onChange={e => setForm({ ...form, estado: e.target.value, publicado: e.target.value === "Inactivo" ? false : form.publicado })}>
+                      <option value="Activo">Activo</option>
+                      <option value="Inactivo">Inactivo</option>
+                    </select>
+                  </div>
+                )}
+
+                {tienePerm('Productos.publicar') && (
+                  <div className="gestproductos-form-group">
+                    <label className="gestproductos-form-label">Publicar en catálogo</label>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+                      <input type="checkbox" id="publicado" checked={!!form.publicado} disabled={form.estado === "Inactivo"}
+                        onChange={e => setForm({ ...form, publicado: e.target.checked })}
+                        style={{ width: 18, height: 18, cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer" }} />
+                      <label htmlFor="publicado" style={{ cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer", fontSize: 13, color: form.estado === "Inactivo" ? "#999" : "inherit" }}>
+                        {form.estado === "Inactivo" ? "No puede publicarse si está inactivo" : (form.publicado ? "Visible en catálogo" : "No publicado")}
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="gestproductos-factura-seccion">
+                <h3 className="gestproductos-factura-titulo">Variantes</h3>
+                <GestVariantes idProducto={editar || productoId} onPendingChange={setPendingVariantes} />
+              </div>
+
+              <div className="gestproductos-factura-seccion">
+                <h3 className="gestproductos-factura-titulo">Imágenes</h3>
+                <GaleriaImagenes tipoReferencia="Producto" idReferencia={productoId} onPendingChange={setPendingImagenes} coloresPendientes={coloresPendientes} />
+              </div>
+            </div>
+
+            <div className="gestproductos-modal-footer">
+              <button className="gestproductos-btn-secondary" onClick={cerrarModal} disabled={guardando}>Cancelar</button>
+              <button className="gestproductos-btn-primary" onClick={guardar} disabled={guardando}>
+                {guardando ? "Guardando..." : (editar ? "Actualizar" : "Registrar")}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {modal && tab === 'categorias' && (
@@ -526,16 +499,67 @@ export default function GestProductos() {
         </ModalSteps>
       )}
 
+      {/* ── Modal ver detalle: panel único tipo factura ── */}
       {verDetalle && (
-        <ModalDetalle
-          titulo="Detalle del producto" subtitulo={verDetalle.nombre}
-          badge={<span className={`tabla-status ${verDetalle.estado === "Activo" ? 'activo' : 'inactivo'}`}>{verDetalle.estado}</span>}
-          pasos={["Detalle"]}
-          onClose={() => setVerDetalle(null)}
-          onEditar={tienePerm('Productos.editar') ? () => { setVerDetalle(null); abrirEditar(verDetalle); } : undefined}
-        >
-          {DetalleUnico}
-        </ModalDetalle>
+        <div className="gestproductos-modal-overlay" onClick={() => setVerDetalle(null)}>
+          <div className="gestproductos-modal gestproductos-modal-factura" onClick={(e) => e.stopPropagation()}>
+            <div className="gestproductos-modal-header">
+              <div>
+                <h2 className="gestproductos-modal-title">{verDetalle.nombre}</h2>
+                <p className="gestproductos-modal-subtitulo">Detalle del producto</p>
+              </div>
+              <button className="gestproductos-modal-close" onClick={() => setVerDetalle(null)}><IconX /></button>
+            </div>
+
+            <div className="gestproductos-modal-body gestproductos-factura-body">
+              <div className="gestproductos-factura-seccion">
+                <h3 className="gestproductos-factura-titulo">Información general</h3>
+                <div className="gestproductos-detalle-info-grid">
+                  <div><span className="gestproductos-detalle-info-label">ID</span><span className="gestproductos-detalle-info-valor">#{String(verDetalle.id_producto).padStart(3, "0")}</span></div>
+                  <div><span className="gestproductos-detalle-info-label">Código</span><span className="gestproductos-detalle-info-valor">{verDetalle.codigo}</span></div>
+                  <div><span className="gestproductos-detalle-info-label">Categoría</span><span className="gestproductos-detalle-info-valor">{verDetalle.categoria}</span></div>
+                  <div><span className="gestproductos-detalle-info-label">Precio</span><span className="gestproductos-detalle-info-valor">{fmt(verDetalle.precio)}</span></div>
+                  <div><span className="gestproductos-detalle-info-label">Stock total</span><span className="gestproductos-detalle-info-valor">{verDetalle.stock ?? 0} unidades</span></div>
+                  <div>
+                    <span className="gestproductos-detalle-info-label">Estado</span>
+                    <span className={`tabla-status${verDetalle.estado === "Activo" ? ' activo' : ' inactivo'}`}>{verDetalle.estado}</span>
+                  </div>
+                  <div><span className="gestproductos-detalle-info-label">Publicado</span><span className="gestproductos-detalle-info-valor">{verDetalle.publicado ? "Sí, visible en catálogo" : "No publicado"}</span></div>
+                </div>
+              </div>
+
+              {verDetalle.variantes?.length > 0 && (
+                <div className="gestproductos-factura-seccion">
+                  <h3 className="gestproductos-factura-titulo">Variantes</h3>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {verDetalle.variantes.map(v => (
+                      <div key={v.id_variante} style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--dvna-pale)", border: "1px solid var(--dvna-border)", borderRadius: "var(--r)", padding: "4px 10px", fontSize: 11 }}>
+                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: v.codigo_hex || "#ccc", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} />
+                        <span>{v.color_nombre}</span><span style={{ color: "var(--dvna-muted)" }}>·</span>
+                        <span>{v.talla}</span><span style={{ color: "var(--dvna-muted)" }}>·</span>
+                        <span style={{ fontWeight: 600 }}>{v.stock} uds</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="gestproductos-factura-seccion">
+                <h3 className="gestproductos-factura-titulo">Imágenes</h3>
+                <GaleriaImagenes tipoReferencia="Producto" idReferencia={verDetalle.id_producto} soloLectura />
+              </div>
+            </div>
+
+            <div className="gestproductos-modal-footer">
+              <button className="gestproductos-btn-secondary" onClick={() => setVerDetalle(null)}>Cerrar</button>
+              {tienePerm('Productos.editar') && (
+                <button className="gestproductos-btn-primary" onClick={() => { setVerDetalle(null); abrirEditar(verDetalle); }}>
+                  <IconEdit /> Editar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
