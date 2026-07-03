@@ -1,5 +1,18 @@
 /* src/pages/pagos/PagosAbonos.css */
 
+.pagosabonos-container,
+.pagosabonos-container * {
+  --font-display: 'DM Sans', system-ui, sans-serif;
+}
+.pagosabonos-container h1,
+.pagosabonos-container h2,
+.pagosabonos-container h3,
+.pagosabonos-container h4 {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  text-transform: none;
+  font-weight: 400;
+}
+
 .pagosabonos-container {
   max-width: 1400px;
   margin: 0 auto;
@@ -93,7 +106,6 @@
   color: #888;
   margin-bottom: 0.2rem;
   display: block;
-  
   letter-spacing: 0.3px;
 }
 
@@ -113,6 +125,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
@@ -222,8 +235,6 @@
   margin-bottom: 1rem;
   padding-left: 0.5rem;
 }
-
-
 
 /* Modal */
 .pagosabonos-modal-overlay {
@@ -474,7 +485,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* Responsive */
+/* Responsive — TODO agrupado correctamente dentro de la media query */
 @media (max-width: 1200px) {
   .pagosabonos-stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -487,16 +498,13 @@
   }
 }
 
-
-
 @media (max-width: 480px) {
-   .pagosabonos-title { font-size: 1.6rem; }
-   .pagosabonos-stat-value { font-size: 1.5rem; }
-   .pagosabonos-stat-value-currency { font-size: 1rem; }
-   .pagosabonos-table-th, .pagosabonos-table-td { padding: 0.8rem 0.5rem; font-size: 0.8rem; }
-   .pagosabonos-monto-cell { font-size: 0.85rem; }
-   .pagosabonos-action-btn { width: 32px; height: 32px; font-size: 0.9rem; }
- }
+  .pagosabonos-title { font-size: 1.6rem; }
+  .pagosabonos-stat-value { font-size: 1.5rem; }
+  .pagosabonos-stat-value-currency { font-size: 1rem; }
+  .pagosabonos-table-th, .pagosabonos-table-td { padding: 0.8rem 0.5rem; font-size: 0.8rem; }
+  .pagosabonos-monto-cell { font-size: 0.85rem; }
+  .pagosabonos-action-btn { width: 32px; height: 32px; font-size: 0.9rem; }
 
   .pagosabonos-header {
     flex-direction: column;
@@ -546,41 +554,5 @@
 
   .pagosabonos-action-cell {
     flex-wrap: wrap;
-  }
-
-
-@media (max-width: 480px) {
-  .pagosabonos-title {
-    font-size: 1.6rem;
-  }
-
-  .pagosabonos-stat-value {
-    font-size: 1.5rem;
-  }
-
-  .pagosabonos-stat-value-currency {
-    font-size: 1rem;
-  }
-
-  .pagosabonos-table-th,
-  .pagosabonos-table-td {
-    padding: 0.8rem 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .pagosabonos-cliente-avatar {
-    width: 28px;
-    height: 28px;
-    font-size: 0.75rem;
-  }
-
-  .pagosabonos-monto-cell {
-    font-size: 0.85rem;
-  }
-
-  .pagosabonos-action-btn {
-    width: 32px;
-    height: 32px;
-    font-size: 0.9rem;
   }
 }
