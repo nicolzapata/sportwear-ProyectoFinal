@@ -19,7 +19,8 @@ const NAV_ICONS = {
   "/catalogo":   <IconBox />,
   "/proveedores":<IconTruck />,
   "/compras":    <IconCart />,
-  "/pedidos":    <IconDollar />,
+  "/pedidos":    <IconTag />,
+  "/ventas":     <IconDollar />,
   "/pagos":      <IconCreditCard />,
   "/mi-cuenta":  <IconUser />,
 };

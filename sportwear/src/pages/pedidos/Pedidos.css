@@ -1,0 +1,102 @@
+/* src/pages/pedidos/Pedidos.css */
+.pedidos-container { max-width: 1400px; margin: 0 auto; padding: 2rem; font-family: var(--font-body); }
+
+.pedidos-actions-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.pedidos-actions-left { display: flex; align-items: center; gap: 1rem; }
+.pedidos-actions-right { display: flex; align-items: center; gap: 0.75rem; }
+
+.pedidos-search-wrapper { position: relative; width: 320px; }
+.pedidos-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999; }
+.pedidos-search-input {
+  width: 100%; padding: 0.8rem 1rem 0.8rem 2.5rem;
+  border: 1px solid #e0e0e0; border-radius: 40px; font-size: 0.9rem; background: white;
+}
+.pedidos-search-clear {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: #999; cursor: pointer;
+  width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%;
+}
+.pedidos-search-clear:hover { background: #f0f0f0; color: #333; }
+
+.pedidos-results-count { font-size: 0.8rem; color: #666; margin-bottom: 1rem; padding-left: 0.5rem; }
+
+.pedidos-producto-cell { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.pedidos-badge { display: inline-flex; align-items: center; font-size: 0.8rem; font-weight: 400; }
+.pedidos-badge-active   { color: #2e7d32; }
+.pedidos-badge-pending  { color: #ff8c42; }
+.pedidos-badge-inactive { color: #757575; }
+.pedidos-badge-info     { color: #1976d2; }
+
+.pedidos-action-cell { display: flex; gap: 0.4rem; align-items: center; }
+.pedidos-action-btn {
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid #eaeaea; background: white;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; color: #555;
+  transition: all 0.2s ease;
+}
+.pedidos-action-btn:hover { border-color: #1a1a1a; background: #fafafa; }
+
+/* ── Dropdown de estado ── */
+.pedidos-estado-dropdown { position: relative; display: inline-block; }
+
+.pedidos-estado-trigger {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid #e0e0e0; background: white; border-radius: 20px;
+  padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 500; cursor: pointer;
+  transition: all 0.15s ease;
+}
+.pedidos-estado-trigger:disabled { cursor: default; opacity: 0.85; }
+.pedidos-estado-trigger:not(:disabled):hover { border-color: #1a1a1a; background: #fafafa; }
+
+.pedidos-estado-trigger.pedidos-badge-active   { border-color: #bfe0c4; color: #2e7d32; background: #f0f9f1; }
+.pedidos-estado-trigger.pedidos-badge-pending  { border-color: #ffd7b5; color: #b96422; background: #fff6ee; }
+.pedidos-estado-trigger.pedidos-badge-info     { border-color: #bcd8f2; color: #1976d2; background: #eff6fd; }
+.pedidos-estado-trigger.pedidos-badge-inactive { border-color: #ddd; color: #757575; background: #f7f7f7; }
+
+/* El panel se posiciona con `style` inline (position: fixed, top/left) desde JS,
+   así que aquí solo van estilos visuales, no de posición. */
+.pedidos-estado-panel {
+  z-index: 999;
+  background: white; border: 1px solid #eaeaea; border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+  padding: 0.4rem;
+  display: flex; flex-direction: column; gap: 2px;
+  animation: pedidos-panel-in 0.12s ease;
+}
+@keyframes pedidos-panel-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pedidos-estado-item {
+  display: flex; align-items: center; gap: 10px;
+  border: none; background: none; text-align: left;
+  padding: 0.55rem 0.6rem; border-radius: 8px; font-size: 0.82rem; color: #999;
+  cursor: not-allowed; width: 100%;
+}
+.pedidos-estado-item.done    { color: #2e7d32; }
+.pedidos-estado-item.current { color: #1a1a1a; font-weight: 600; background: #f5f5f5; }
+.pedidos-estado-item.clickable { color: #1a1a1a; cursor: pointer; }
+.pedidos-estado-item.clickable:hover { background: #f0f0f0; }
+
+.pedidos-estado-dot {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid #ddd; color: white;
+}
+.pedidos-estado-item.done .pedidos-estado-dot    { background: #2e7d32; border-color: #2e7d32; }
+.pedidos-estado-item.current .pedidos-estado-dot { background: #1a1a1a; border-color: #1a1a1a; }
+
+.pedidos-estado-divider { height: 1px; background: #eee; margin: 4px 2px; }
+
+.pedidos-estado-item-cancelar { color: #b83232; }
+.pedidos-estado-item-cancelar.clickable:hover { background: #fbeaea; }
+.pedidos-estado-item-cancelar .pedidos-estado-dot { border-color: #e0b3b3; }
+
+.pedidos-estado-cancelado-msg { padding: 0.6rem; font-size: 0.8rem; color: #757575; text-align: center; }
+
+@media (max-width: 1024px) { .pedidos-container { padding: 1.5rem; } }
+@media (max-width: 480px) {
+  .pedidos-search-wrapper { width: 100%; }
+  .pedidos-actions-bar { flex-direction: column; align-items: stretch; gap: 1rem; }
+}

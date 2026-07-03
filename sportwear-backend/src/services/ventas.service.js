@@ -41,6 +41,17 @@ const getVentaById = async (id) => {
   return { ...cab.rows[0], items: det.rows };
 };
 
+// ── NUEVO: crea la fila de seguimiento en "Pedidos" para una venta ──
+// Se llama dentro de la misma transacción que crea la Venta, usando el mismo `client`.
+const crearPedidoParaVenta = async (client, id_venta, estadoVenta) => {
+  const estadoPedido = estadoVenta === 'Anulado' ? 'Cancelado' : 'Pendiente';
+  await client.query(`
+    INSERT INTO "Pedidos" (id_venta, estado_pedido, fecha_actualizacion)
+    VALUES ($1, $2, now())
+    ON CONFLICT (id_venta) DO NOTHING
+  `, [id_venta, estadoPedido]);
+};
+
 const crearVenta = async (datos) => {
   const { id_cliente, descuento, impuesto, estado, fecha, observaciones, items, tipo_pago, num_cuotas, metodo_pago } = datos;
   if (!id_cliente) throw { status: 400, message: 'El cliente es requerido' };
@@ -112,6 +123,9 @@ const crearVenta = async (datos) => {
           estado === 'Pagado' ? 'Confirmado' : 'Pendiente', new Date()]);
     }
 
+    // ── NUEVO: crear el Pedido asociado a esta Venta ──
+    await crearPedidoParaVenta(client, id_venta, estado || 'Pendiente');
+
     await client.query('COMMIT');
     return { ...venta.rows[0], items };
   } catch (err) {
@@ -129,6 +143,15 @@ const cambiarEstado = async (id, estado) => {
     [estado, id]
   );
   if (!result.rows.length) throw { status: 404, message: 'No encontrada' };
+
+  // ── NUEVO: si la venta se anula, el pedido también se cancela ──
+  if (estado === 'Anulado') {
+    await pool.query(`
+      UPDATE "Pedidos" SET estado_pedido='Cancelado', fecha_actualizacion=now()
+      WHERE id_venta=$1 AND estado_pedido NOT IN ('Entregado','Cancelado')
+    `, [id]);
+  }
+
   return result.rows[0];
 };
 
@@ -200,6 +223,9 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
       `, [id_venta, total, metodo_pago || 'Efectivo', new Date()]);
     }
 
+    // ── NUEVO: crear el Pedido asociado a esta Venta (checkout de cliente) ──
+    await crearPedidoParaVenta(client, id_venta, estado || 'Confirmado');
+
     await client.query('COMMIT');
     
     const abonosRes = await client.query(
@@ -252,6 +278,8 @@ const crearCarritoAbandonado = async ({ total, items, id_cliente }) => {
         subtotalLinea,
       ]);
     }
+
+    // Nota: NO se crea Pedido para carritos abandonados (no son un pedido real todavía)
 
     await client.query('COMMIT');
     return { ...venta.rows[0], items };
