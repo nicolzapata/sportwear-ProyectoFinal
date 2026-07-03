@@ -1,18 +1,12 @@
 /* ── Dashboard.css — DVNA Rediseño ── */
 
-.dashboard,
-.dashboard * {
-  --font-display: 'DM Sans', system-ui, sans-serif;
-  --font-body:    'DM Sans', system-ui, sans-serif;
-}
-
 .dashboard h1,
 .dashboard h2,
 .dashboard h3,
 .dashboard h4,
 .dashboard h5,
 .dashboard h6 {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-display);
   text-transform: none;
   font-weight: 400;
   color: var(--dvna-charcoal);
@@ -38,7 +32,7 @@
   border-bottom: 1px solid var(--dvna-border);
 }
 .dashboard-title {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 34px;
   font-weight: 300;
   color: var(--dvna-charcoal);
@@ -47,7 +41,7 @@
   text-transform: none;
 }
 .dashboard-subtitle {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 10px;
   font-weight: 300;
   color: var(--dvna-muted);
@@ -56,7 +50,7 @@
   margin: 0;
 }
 .dashboard-date {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 300;
   color: var(--dvna-muted);
@@ -122,12 +116,12 @@
 
 .stat-content { display: flex; flex-direction: column; gap: 4px; min-width: 0; align-items: center; text-align: center; }
 .stat-label {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 10px; font-weight: 400; letter-spacing: 0.04em;
   text-transform: none; color: var(--dvna-muted);
 }
 .stat-value {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 30px; font-weight: 300; color: var(--dvna-charcoal);
   line-height: 1; text-transform: none; letter-spacing: -0.01em;
 }
@@ -165,12 +159,12 @@
   border-bottom: 1px solid var(--dvna-border); flex-shrink: 0;
 }
 .chart-title {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 18px; font-weight: 400; color: var(--dvna-charcoal);
   margin: 0 0 2px; text-transform: none; letter-spacing: -0.01em;
 }
 .chart-subtitle {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 10px; font-weight: 300; color: var(--dvna-muted);
   letter-spacing: 0.02em; text-transform: none; margin: 0;
 }
@@ -183,14 +177,14 @@
   width: 20px; height: 20px; border-radius: 50%;
   background: var(--dvna-pale); border: 0.5px solid var(--dvna-border);
   display: flex; align-items: center; justify-content: center;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 9px; font-weight: 600; color: var(--dvna-muted); flex-shrink: 0;
 }
 .top-product-rank.gold {
   background: rgba(138,95,0,0.12); border-color: rgba(138,95,0,0.3); color: #7a5500;
 }
-.top-product-name { font-family: 'DM Sans', system-ui, sans-serif; font-size: 12px; color: var(--dvna-charcoal); flex: 1; }
-.top-product-count { font-family: 'DM Sans', system-ui, sans-serif; font-size: 11px; color: var(--dvna-muted); }
+.top-product-name { font-family: var(--font-body); font-size: 12px; color: var(--dvna-charcoal); flex: 1; }
+.top-product-count { font-family: var(--font-body); font-size: 11px; color: var(--dvna-muted); }
 .progress-bar { height: 2px; background: var(--dvna-light); border-radius: 2px; overflow: hidden; }
 .progress-bar-fill { height: 100%; background: var(--dvna-circle); border-radius: 2px; transition: width 0.8s ease; }
 
@@ -209,9 +203,9 @@
 .donut-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; justify-content: center; }
 .donut-container { position: relative; width: 130px; height: 130px; }
 .donut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
-.donut-value { font-family: 'DM Sans', system-ui, sans-serif; font-size: 22px; font-weight: 300; color: var(--dvna-charcoal); line-height: 1; text-transform: none; }
-.donut-label { font-family: 'DM Sans', system-ui, sans-serif; font-size: 9px; font-weight: 400; color: var(--dvna-muted); letter-spacing: 0.04em; text-transform: none; }
-.donut-legend { display: flex; gap: 14px; font-family: 'DM Sans', system-ui, sans-serif; font-size: 10px; color: var(--dvna-muted); }
+.donut-value { font-family: var(--font-body); font-size: 22px; font-weight: 300; color: var(--dvna-charcoal); line-height: 1; text-transform: none; }
+.donut-label { font-family: var(--font-body); font-size: 9px; font-weight: 400; color: var(--dvna-muted); letter-spacing: 0.04em; text-transform: none; }
+.donut-legend { display: flex; gap: 14px; font-family: var(--font-body); font-size: 10px; color: var(--dvna-muted); }
 .donut-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
 
 /* ── Bottom stats ── */
@@ -223,19 +217,17 @@
 }
 .stat-mini-icon { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; color: var(--dvna-circle); flex-shrink: 0; }
 .stat-mini-icon svg { width: 18px; height: 18px; stroke: currentColor; }
-.stat-mini-label { font-family: 'DM Sans', system-ui, sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0.04em; text-transform: none; color: var(--dvna-muted); display: block; margin-bottom: 3px; }
-.stat-mini-value { font-family: 'DM Sans', system-ui, sans-serif; font-size: 20px; font-weight: 300; color: var(--dvna-charcoal); display: block; line-height: 1; text-transform: none; }
+.stat-mini-label { font-family: var(--font-body); font-size: 10px; font-weight: 400; letter-spacing: 0.04em; text-transform: none; color: var(--dvna-muted); display: block; margin-bottom: 3px; }
+.stat-mini-value { font-family: var(--font-body); font-size: 20px; font-weight: 300; color: var(--dvna-charcoal); display: block; line-height: 1; text-transform: none; }
 
 /* ── Tabla (usada en últimas ventas del dashboard) ── */
 .dashboard thead th {
-  font-family: 'DM Sans', system-ui, sans-serif !important;
+  font-family: var(--font-body) !important;
   font-size: 9px !important; font-weight: 500 !important;
   letter-spacing: 0.06em !important; text-transform: none !important;
   color: var(--dvna-muted) !important; background: var(--dvna-pale) !important;
   border-bottom: 1px solid var(--dvna-border) !important; white-space: nowrap;
 }
-.tbl-container { overflow-x: auto; margin: 0 -22px; padding: 0 22px; }
-.tbl { width: 100%; min-width: 500px; border-collapse: collapse; }
 .tbl-td {
   font-size: 12px; padding: 12px 8px; vertical-align: middle;
   border-bottom: 0.5px solid var(--dvna-border);
@@ -245,17 +237,14 @@
 .tbl-td:last-child  { padding-right: 0; }
 
 /* ── Badges ── */
-.tabla-badge { font-family: 'DM Sans', system-ui, sans-serif; font-size: 9px; font-weight: 600; letter-spacing: 0.04em; text-transform: none; }
-.tabla-badge.exito     { color: #3a6648; }
-.tabla-badge.pendiente { color: #7a5500; }
-.tabla-badge.error     { color: #b83232; }
+/* .tabla-badge vive ahora en index.css (sistema global de tablas) */
 
 /* ── Loading / Error ── */
 .dashboard-loading,
 .dashboard-error {
   display: flex; flex-direction: column; align-items: center;
   justify-content: center; padding: 80px 0; gap: 12px;
-  color: var(--dvna-muted); font-family: 'DM Sans', system-ui, sans-serif; font-size: 13px;
+  color: var(--dvna-muted); font-family: var(--font-body); font-size: 13px;
 }
 
 /* ── Print button ── */

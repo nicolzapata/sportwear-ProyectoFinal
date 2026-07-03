@@ -96,7 +96,7 @@
 }
 
 .checkout-item-nombre {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 18px;
   font-weight: 500;
   color: var(--text);
@@ -116,7 +116,7 @@
 }
 
 .checkout-item-precio {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'DM Sans';
   font-size: 18px;
   font-weight: 500;
   color: var(--text);
@@ -198,7 +198,7 @@
 }
 
 .checkout-total span:last-child {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'DM Sans';
   font-size: 28px;
   font-weight: 500;
   color: var(--text);
@@ -439,7 +439,7 @@
 }
 
 .cal-cuota-monto {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'DM Sans';
   font-size: 15px;
   font-weight: 500;
   color: var(--text);

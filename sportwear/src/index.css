@@ -36,7 +36,7 @@
   --warning:     #7a5500;
 
   /* Tipografía */
-  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-display: 'DM Sans'
   --font-body:    'Jost', sans-serif;
 
   /* Radios y sombras */
@@ -193,6 +193,12 @@ svg {
    se vean todas iguales, sin depender del orden de carga.
    ════════════════════════════════════════════════════════ */
 
+.tbl-container {
+  overflow-x: auto;
+  margin: 0 -22px;
+  padding: 0 22px;
+}
+
 table.tbl {
   width: 100%;
   border-collapse: collapse;
@@ -244,4 +250,82 @@ table.tbl td.tbl-td:last-child  { padding-right: 20px; }
     padding: 10px 10px;
     font-size: 12px;
   }
+}
+
+/* ════════════════════════════════════════════════════════
+   Paginador — un solo lugar de verdad, usado por Usuarios,
+   Proveedores, Compras, GestProductos, PagosAbonos, PedidosVentas,
+   Colores, etc. (antes solo vivía en Usuarios.css por accidente).
+   ════════════════════════════════════════════════════════ */
+
+.paginador {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 16px;
+  flex-wrap: wrap;
+}
+.paginador-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--dvna-border);
+  background: var(--dvna-white);
+  color: var(--dvna-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: var(--font-body);
+  transition: all 0.15s;
+}
+.paginador-btn:hover:not(:disabled) {
+  background: var(--brown);
+  color: #fff;
+  border-color: var(--brown);
+}
+.paginador-btn-active {
+  background: var(--brown) !important;
+  color: #fff !important;
+  border-color: var(--brown) !important;
+  font-weight: 600;
+}
+.paginador-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.paginador-info {
+  margin-left: 8px;
+  font-size: 12px;
+  font-family: var(--font-body);
+  color: var(--dvna-muted);
+}
+
+/* ════════════════════════════════════════════════════════
+   Textos de estado en tablas — usados por Usuarios, Proveedores,
+   GestProductos, PagosAbonos, etc.
+   ════════════════════════════════════════════════════════ */
+
+.tabla-status {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 400;
+}
+.tabla-status.activo    { color: var(--success); text-shadow: 0 0 0 1px var(--success); }
+.tabla-status.inactivo  { color: var(--danger);  text-shadow: 0 0 0 1px var(--danger); }
+.tabla-status.pendiente { color: var(--warning); text-shadow: 0 0 0 1px var(--warning); }
+
+.tabla-badge {
+  font-family: var(--font-body);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.tabla-badge.exito     { color: var(--success); }
+.tabla-badge.pendiente { color: var(--warning); }
+.tabla-badge.error     { color: var(--danger); }
+
+.tabla-ciudad {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--dvna-charcoal);
 }

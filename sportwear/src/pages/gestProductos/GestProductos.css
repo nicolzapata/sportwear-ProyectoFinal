@@ -374,8 +374,8 @@
 /* Input con error */
 .gestproductos-form-input.input-error,
 .gestproductos-form-select.input-error {
-  border-color: var(--danger);
-  background: #fff5f5;
+  border-color: #b83232;
+  box-shadow: 0 0 0 3px rgba(184, 50, 50, 0.08);
 }
 
 .gestproductos-form-input.input-error:focus,
@@ -811,15 +811,7 @@
   color: var(--dvna-charcoal);
 }
 
-/* Status text - plain with outline */
-.tabla-status {
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-.tabla-status.activo { color: var(--success); text-shadow: 0 0 0 1px var(--success); }
-.tabla-status.inactivo { color: var(--danger); text-shadow: 0 0 0 1px var(--danger); }
-.tabla-status.pendiente { color: var(--warning); text-shadow: 0 0 0 1px var(--warning); }
+/* .tabla-status vive ahora en index.css (sistema global de tablas) */
 
 /* Categoria text - plain with outline */
 .tabla-categoria {

@@ -110,7 +110,7 @@
 }
 
 .carrito-item-nombre {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'DM Sans';
   font-size: 20px;
   font-weight: 500;
   color: var(--text);
@@ -173,7 +173,7 @@
 
 /* Precio */
 .carrito-item-precio {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'DM Sans';
   font-size: 20px;
   font-weight: 500;
   color: var(--text);
@@ -288,7 +288,7 @@
 }
 
 .carrito-resumen-total span:last-child {
-  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-family: 'DM Sans';
   font-size: 28px;
   font-weight: 500;
   color: var(--text);

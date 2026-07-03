@@ -169,8 +169,6 @@
   color: var(--dvna-muted) !important; background: var(--dvna-pale) !important;
   border-bottom: 1px solid var(--dvna-border) !important; white-space: nowrap;
 }
-.tbl-container { overflow-x: auto; margin: 0 -22px; padding: 0 22px; }
-.tbl { width: 100%; min-width: 500px; border-collapse: collapse; }
 .tbl-td {
   font-size: 12px; padding: 12px 8px; vertical-align: middle;
   border-bottom: 0.5px solid var(--dvna-border);
