@@ -22,7 +22,8 @@ const titulos = {
   "/catalogo":      { label: "Catálogo",          icon: <IconBox /> },
   "/proveedores":   { label: "Proveedores",       icon: <IconTruck /> },
   "/compras":       { label: "Compras",          icon: <IconShoppingBag /> },
-  "/pedidos":       { label: "Pedidos y Ventas",  icon: <IconDollar /> },
+  "/pedidos":       { label: "Pedidos",           icon: <IconTag /> },
+  "/ventas":        { label: "Ventas",            icon: <IconDollar /> },
   "/pagos":         { label: "Pagos y Abonos",    icon: <IconCreditCard /> },
 };
 
