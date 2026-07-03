@@ -1,15 +1,32 @@
-// src/utils/numerico.js
-// Helpers para restringir campos a solo números en toda la app.
+// src/utils/exportar.js
+const filasPlanas = (datos, columnas) =>
+  datos.map((fila) => columnas.map((c) => (typeof c.value === "function" ? c.value(fila) : fila[c.key] ?? "")));
 
-// Deja solo dígitos (para documentos, teléfonos, NIT, cuentas, etc. — sin signo ni decimales).
-export const soloDigitos = (valor) => (valor ?? "").toString().replace(/\D/g, "");
+export async function exportarExcel(datos, columnas, nombreArchivo = "exportacion") {
+  const XLSX = await import("xlsx");
+  const filas = [columnas.map((c) => c.header), ...filasPlanas(datos, columnas)];
+  const hoja = XLSX.utils.aoa_to_sheet(filas);
+  const libro = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(libro, hoja, "Datos");
+  XLSX.writeFile(libro, `${nombreArchivo}.xlsx`);
+}
 
-// Deja solo dígitos y un único punto decimal (para precios, montos, cantidades con decimales).
-export const soloDecimal = (valor) => {
-  const limpio = (valor ?? "").toString().replace(/[^\d.]/g, "");
-  const partes = limpio.split(".");
-  return partes.length > 2 ? `${partes[0]}.${partes.slice(1).join("")}` : limpio;
-};
-
-// Handler listo para usar en onChange de un <input>: aplica soloDigitos al valor.
-export const onChangeSoloDigitos = (setter, campo) => (e) => setter(campo, soloDigitos(e.target.value));
+export async function exportarPDF(datos, columnas, nombreArchivo = "exportacion", titulo = "") {
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+  ]);
+  const doc = new jsPDF({ orientation: columnas.length > 5 ? "landscape" : "portrait" });
+  if (titulo) {
+    doc.setFontSize(14);
+    doc.text(titulo, 14, 15);
+  }
+  autoTable(doc, {
+    startY: titulo ? 22 : 12,
+    head: [columnas.map((c) => c.header)],
+    body: filasPlanas(datos, columnas),
+    styles: { fontSize: 8 },
+    headStyles: { fillColor: [26, 26, 26] },
+  });
+  doc.save(`${nombreArchivo}.pdf`);
+}

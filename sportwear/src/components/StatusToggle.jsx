@@ -21,6 +21,10 @@ export default function StatusToggle({
     setLoading(true);
     try {
       await onToggle(id, nuevoEstado);
+      setToast({
+        type: "exito",
+        message: `Estado cambiado a "${nuevoEstado === "Activo" ? labels.activo : labels.inactivo}" correctamente.`
+      });
     } catch (err) {
       console.error("Error cambiando estado:", err);
       setToast({

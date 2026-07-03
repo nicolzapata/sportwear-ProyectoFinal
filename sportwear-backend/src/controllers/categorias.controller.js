@@ -10,6 +10,15 @@ const getCategorias = async (req, res) => {
   }
 };
 
+const getCategoriaById = async (req, res) => {
+  try {
+    const data = await categoriasService.getCategoriaById(req.params.id);
+    res.json(data);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
 const crearCategoria = async (req, res) => {
   try {
     const data = await categoriasService.crearCategoria(req.body);
@@ -37,4 +46,4 @@ const toggleEstado = async (req, res) => {
   }
 };
 
-module.exports = { getCategorias, crearCategoria, actualizarCategoria, toggleEstado };
+module.exports = { getCategorias, getCategoriaById, crearCategoria, actualizarCategoria, toggleEstado };

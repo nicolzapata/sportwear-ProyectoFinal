@@ -7,7 +7,9 @@ import GestVariantes from "../../components/GestVariantes";
 import ModalSteps from "../../components/ModalSteps";
 import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
-import { IconAlertTriangle, IconCheck, IconEdit, IconEye, IconPrint, IconSearch, IconX, IconBox, IconTag, IconTrash } from "../../components/Icons";
+import Loader from "../../components/Loader";
+import ExportButtons from "../../components/ExportButtons";
+import { IconAlertTriangle, IconCheck, IconEdit, IconEye, IconSearch, IconX, IconBox, IconTag, IconTrash } from "../../components/Icons";
 import "./GestProductos.css";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
@@ -41,6 +43,8 @@ export default function GestProductos() {
   const [editarCategoria,  setEditarCategoria]  = useState(null);
   const [erroresCategoria, setErroresCategoria] = useState({ nombre: "" });
   const [eliminarId,       setEliminarId]       = useState(null);
+  const [ordenCategorias,  setOrdenCategorias]  = useState("nombre");
+  const [verDetalleCategoria, setVerDetalleCategoria] = useState(null);
 
   const mostrarToast = (tipo, mensaje) => {
     setToast({ tipo, mensaje });
@@ -68,12 +72,18 @@ export default function GestProductos() {
 
   const filtradosAll = datos.filter(p =>
     p.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.categoria?.toLowerCase().includes(busqueda.toLowerCase())
+    p.categoria?.toLowerCase().includes(busqueda.toLowerCase()) ||
+    p.codigo?.toLowerCase().includes(busqueda.toLowerCase())
   );
   const filtrados             = filtradosAll.slice((paginaProductos - 1) * FILAS_POR_PAGINA, paginaProductos * FILAS_POR_PAGINA);
   const totalPaginasProductos = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
 
-  const categoriasFiltradasAll = categorias.filter(c => c.nombre?.toLowerCase().includes(busqueda.toLowerCase()));
+  const categoriasFiltradasAll = categorias
+    .filter(c => c.nombre?.toLowerCase().includes(busqueda.toLowerCase()))
+    .slice()
+    .sort((a, b) => ordenCategorias === "fecha"
+      ? new Date(b.fecha_creacion || 0) - new Date(a.fecha_creacion || 0)
+      : a.nombre.localeCompare(b.nombre));
   const categoriasFiltradas    = categoriasFiltradasAll.slice((paginaCategorias - 1) * FILAS_POR_PAGINA, paginaCategorias * FILAS_POR_PAGINA);
   const totalPaginasCategorias = Math.ceil(categoriasFiltradasAll.length / FILAS_POR_PAGINA);
 
@@ -103,6 +113,10 @@ export default function GestProductos() {
 
   const guardar = async () => {
     if (!validar()) return;
+    if (!editar) {
+      if (pendingImagenes.length === 0) { setErrores(p => ({ ...p, general: "Agrega al menos una imagen del producto." })); return; }
+      if (pendingVariantes.length === 0) { setErrores(p => ({ ...p, general: "Agrega al menos una talla disponible." })); return; }
+    }
     setGuardando(true);
     try {
       const payload = { nombre: form.nombre, descripcion: form.descripcion || null, id_categoria: Number(form.id_categoria), precio: Number(form.precio), publicado: !!form.publicado, estado: form.estado };
@@ -179,11 +193,12 @@ export default function GestProductos() {
     if (guardando) return;
     setModal(false); setErrores(ERRORES_INICIALES); setProductoId(null);
     setPendingVariantes([]); setPendingImagenes([]);
+    cargar();
   };
 
   // ── Categorías ─────────────────────────────────────────────────────────────
-  const abrirRegistrarCategoria = () => { setEditarCategoria(null); setFormCategoria({ nombre: "", icono: "tag" }); setErroresCategoria({ nombre: "" }); setModal(true); };
-  const abrirEditarCategoria    = (c) => { setEditarCategoria(c.id_categoria); setFormCategoria({ nombre: c.nombre, icono: c.icono || "tag" }); setErroresCategoria({ nombre: "" }); setModal(true); };
+  const abrirRegistrarCategoria = () => { setEditarCategoria(null); setFormCategoria({ nombre: "", descripcion: "", icono: "tag" }); setErroresCategoria({ nombre: "" }); setModal(true); };
+  const abrirEditarCategoria    = (c) => { setEditarCategoria(c.id_categoria); setFormCategoria({ nombre: c.nombre, descripcion: c.descripcion || "", icono: c.icono || "tag" }); setErroresCategoria({ nombre: "" }); setModal(true); };
 
   const validarPasoCategoriaForm = () => {
     const e = { nombre: "" };
@@ -204,6 +219,24 @@ export default function GestProductos() {
     }
   };
 
+  const abrirDetalle = async (p) => {
+    setVerDetalle({ ...p, historialPrecios: [] });
+    try {
+      const { data } = await api.get(`/productos/${p.id_producto}/historial-precios`);
+      setVerDetalle(prev => prev && prev.id_producto === p.id_producto ? { ...prev, historialPrecios: data } : prev);
+    } catch { /* el detalle base ya se muestra sin el historial */ }
+  };
+
+  const abrirDetalleCategoria = async (c) => {
+    setVerDetalleCategoria({ ...c, productos: [] });
+    try {
+      const { data } = await api.get(`/categorias/${c.id_categoria}`);
+      setVerDetalleCategoria(data);
+    } catch {
+      mostrarToast("error", "No se pudo cargar el detalle de la categoría.");
+    }
+  };
+
   const cambiarEstadoCategoria = async (id, nuevoEstado) => {
     try {
       await api.patch(`/categorias/${id}/estado`);
@@ -220,12 +253,7 @@ export default function GestProductos() {
     return <span className="tabla-stock normal">{stock} uds</span>;
   };
 
-  if (loading) return (
-    <div className="gestproductos-loading-container">
-      <div className="gestproductos-loading-spinner" />
-      <p className="gestproductos-loading-text">Cargando productos...</p>
-    </div>
-  );
+  if (loading) return <Loader text="Cargando productos..." />;
 
   const coloresPendientes = [...new Map(pendingVariantes.map(v => [v.id_color, { id_color: v.id_color, nombre: v.color_nombre, codigo_hex: v.codigo_hex }])).values()];
 
@@ -237,6 +265,12 @@ export default function GestProductos() {
           value={formCategoria.nombre}
           onChange={e => { setFormCategoria({ ...formCategoria, nombre: e.target.value }); if (erroresCategoria.nombre) setErroresCategoria({ nombre: "" }); }} />
         {erroresCategoria.nombre && <p className="gestproductos-field-error">{erroresCategoria.nombre}</p>}
+      </div>
+      <div className="gestproductos-form-group">
+        <label className="gestproductos-form-label">Descripción</label>
+        <textarea className="gestproductos-form-input" rows={3} placeholder="Descripción breve de la categoría (opcional)"
+          value={formCategoria.descripcion || ""}
+          onChange={e => setFormCategoria({ ...formCategoria, descripcion: e.target.value })} />
       </div>
     </div>
   );
@@ -254,7 +288,7 @@ export default function GestProductos() {
         <div className="gestproductos-actions-left">
           <div className="gestproductos-search-wrapper">
             <span className="gestproductos-search-icon"><IconSearch /></span>
-            <input className="gestproductos-search-input" placeholder="Buscar por nombre o categoría..." value={busqueda}
+            <input className="gestproductos-search-input" placeholder={tab === 'productos' ? "Buscar por nombre, código o categoría..." : "Buscar categoría por nombre..."} value={busqueda}
               onChange={(e) => { setBusqueda(e.target.value); setPaginaProductos(1); setPaginaCategorias(1); }} />
             {busqueda && <button className="gestproductos-search-clear" onClick={() => { setBusqueda(""); setPaginaProductos(1); setPaginaCategorias(1); }}><IconX /></button>}
           </div>
@@ -270,8 +304,30 @@ export default function GestProductos() {
           {tab === 'categorias' && tienePerm('Categorias.crear') && (
             <button className="gestproductos-btn-primary" onClick={abrirRegistrarCategoria}><span>+</span> Nueva categoría</button>
           )}
-          {tab === 'productos' && (
-            <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
+          {tab === 'productos' ? (
+            <ExportButtons
+              datos={filtradosAll}
+              columnas={[
+                { header: "Producto", key: "nombre" },
+                { header: "Categoría", key: "categoria" },
+                { header: "Precio", key: "precio" },
+                { header: "Stock", key: "stock" },
+                { header: "Publicado", value: (p) => p.publicado ? "Sí" : "No" },
+                { header: "Estado", key: "estado" },
+              ]}
+              nombreArchivo="productos"
+              titulo="Productos"
+            />
+          ) : (
+            <ExportButtons
+              datos={categoriasFiltradasAll}
+              columnas={[
+                { header: "Nombre", key: "nombre" },
+                { header: "Estado", key: "estado" },
+              ]}
+              nombreArchivo="categorias"
+              titulo="Categorías"
+            />
           )}
         </div>
       </div>
@@ -340,7 +396,7 @@ export default function GestProductos() {
                   )}
                   <td className="tbl-td">
                     <div className="gestproductos-action-cell">
-                      <button className="gestproductos-action-btn gestproductos-view-btn" onClick={() => setVerDetalle(p)}><IconEye /></button>
+                      <button className="gestproductos-action-btn gestproductos-view-btn" onClick={() => abrirDetalle(p)}><IconEye /></button>
                       {tienePerm('Productos.editar') && (
                         <button className="gestproductos-action-btn gestproductos-edit-btn" onClick={() => abrirEditar(p)}><IconEdit /></button>
                       )}
@@ -367,17 +423,25 @@ export default function GestProductos() {
         </div>
       ) : (
         <div className="gestproductos-table-container">
+          <div className="gestproductos-orden-bar">
+            <label className="gestproductos-form-label" htmlFor="ordenCategorias">Ordenar por</label>
+            <select id="ordenCategorias" className="gestproductos-form-select" value={ordenCategorias} onChange={e => setOrdenCategorias(e.target.value)}>
+              <option value="nombre">Nombre (A-Z)</option>
+              <option value="fecha">Más recientes primero</option>
+            </select>
+          </div>
           <table className="tbl">
             <thead className="tbl-header">
               <tr>
                 <th className="tbl-th">Nombre</th>
+                <th className="tbl-th">Productos</th>
                 {tienePerm('Categorias.estado') && <th className="tbl-th">Estado</th>}
                 <th className="tbl-th">Acciones</th>
               </tr>
             </thead>
             <tbody className="tbl-body">
               {categoriasFiltradas.length === 0 ? (
-                <tr><td colSpan={3} className="gestproductos-empty-row">No se encontraron categorías.</td></tr>
+                <tr><td colSpan={4} className="gestproductos-empty-row">No se encontraron categorías.</td></tr>
               ) : categoriasFiltradas.map((c) => (
                 <tr key={c.id_categoria} className="tbl-row">
                   <td className="tbl-td">
@@ -386,6 +450,7 @@ export default function GestProductos() {
                       <span className="catproductos-categoria-name">{c.nombre}</span>
                     </div>
                   </td>
+                  <td className="tbl-td">{c.total_productos ?? 0}</td>
                   {tienePerm('Categorias.estado') && (
                     <td className="tbl-td">
                       <StatusToggle id={c.id_categoria} estado={c.estado} onToggle={cambiarEstadoCategoria} showConfirmation={true} />
@@ -393,6 +458,7 @@ export default function GestProductos() {
                   )}
                   <td className="tbl-td">
                     <div className="catproductos-action-cell">
+                      <button className="catproductos-action-btn catproductos-view-btn" onClick={() => abrirDetalleCategoria(c)} title="Ver detalle"><IconEye /></button>
                       {tienePerm('Categorias.editar') && (
                         <button className="catproductos-action-btn catproductos-edit-btn" onClick={() => abrirEditarCategoria(c)} title="Editar"><IconEdit /></button>
                       )}
@@ -485,7 +551,7 @@ export default function GestProductos() {
 
               <div className="gestproductos-factura-seccion">
                 <h3 className="gestproductos-factura-titulo">Variantes</h3>
-                <GestVariantes idProducto={editar || productoId} onPendingChange={setPendingVariantes} />
+                <GestVariantes idProducto={editar || productoId} estadoProducto={form.estado} onPendingChange={setPendingVariantes} />
               </div>
 
               <div className="gestproductos-factura-seccion">
@@ -565,6 +631,20 @@ export default function GestProductos() {
                 <h3 className="gestproductos-factura-titulo">Imágenes</h3>
                 <GaleriaImagenes tipoReferencia="Producto" idReferencia={verDetalle.id_producto} soloLectura />
               </div>
+
+              {verDetalle.historialPrecios?.length > 0 && (
+                <div className="gestproductos-factura-seccion">
+                  <h3 className="gestproductos-factura-titulo">Historial de precios</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {verDetalle.historialPrecios.map(h => (
+                      <div key={h.id_historial} style={{ display: "flex", justifyContent: "space-between", gap: 10, background: "var(--dvna-pale)", border: "1px solid var(--dvna-border)", borderRadius: "var(--r)", padding: "8px 12px", fontSize: 12 }}>
+                        <span>{new Date(h.fecha).toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "numeric" })} {h.usuario ? `· ${h.usuario}` : ""}</span>
+                        <span>{fmt(h.precio_anterior)} <span style={{ color: "var(--dvna-muted)" }}>→</span> <b>{fmt(h.precio_nuevo)}</b></span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="gestproductos-modal-footer">
@@ -577,6 +657,70 @@ export default function GestProductos() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Modal ver detalle de categoría ── */}
+      {verDetalleCategoria && (
+        <div className="gestproductos-modal-overlay" onClick={() => setVerDetalleCategoria(null)}>
+          <div className="gestproductos-modal gestproductos-modal-factura" onClick={(e) => e.stopPropagation()}>
+            <div className="gestproductos-modal-header">
+              <div>
+                <h2 className="gestproductos-modal-title">{verDetalleCategoria.nombre}</h2>
+                <p className="gestproductos-modal-subtitulo">Detalle de la categoría</p>
+              </div>
+              <button className="gestproductos-modal-close" onClick={() => setVerDetalleCategoria(null)}><IconX /></button>
+            </div>
+
+            <div className="gestproductos-modal-body gestproductos-factura-body">
+              <div className="gestproductos-factura-seccion">
+                <h3 className="gestproductos-factura-titulo">Información general</h3>
+                <div className="gestproductos-detalle-info-grid">
+                  <div><span className="gestproductos-detalle-info-label">Descripción</span><span className="gestproductos-detalle-info-valor">{verDetalleCategoria.descripcion || "Sin descripción"}</span></div>
+                  <div><span className="gestproductos-detalle-info-label">Fecha de creación</span><span className="gestproductos-detalle-info-valor">{verDetalleCategoria.fecha_creacion ? new Date(verDetalleCategoria.fecha_creacion).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : "—"}</span></div>
+                  <div>
+                    <span className="gestproductos-detalle-info-label">Estado</span>
+                    <span className={`tabla-status${verDetalleCategoria.estado === "Activo" ? ' activo' : ' inactivo'}`}>{verDetalleCategoria.estado}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="gestproductos-factura-seccion">
+                <h3 className="gestproductos-factura-titulo">Productos en esta categoría ({verDetalleCategoria.productos?.length ?? 0})</h3>
+                {verDetalleCategoria.productos?.length > 0 ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {verDetalleCategoria.productos.map(p => (
+                      <div key={p.id_producto} style={{ display: "flex", justifyContent: "space-between", gap: 10, background: "var(--dvna-pale)", border: "1px solid var(--dvna-border)", borderRadius: "var(--r)", padding: "8px 12px", fontSize: 13 }}>
+                        <span>{p.nombre} <span style={{ color: "var(--dvna-muted)" }}>· {p.codigo}</span></span>
+                        <span style={{ fontWeight: 600 }}>{fmt(p.precio)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: "var(--dvna-muted)", fontSize: 13 }}>Esta categoría todavía no tiene productos.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="gestproductos-modal-footer">
+              <button className="gestproductos-btn-secondary" onClick={() => setVerDetalleCategoria(null)}>Cerrar</button>
+              {tienePerm('Categorias.editar') && (
+                <button className="gestproductos-btn-primary" onClick={() => { setVerDetalleCategoria(null); abrirEditarCategoria(verDetalleCategoria); }}>
+                  <IconEdit /> Editar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {eliminarId && (
+        <ConfirmModal
+          title="Eliminar producto"
+          message="¿Seguro que deseas eliminar este producto? Dejará de mostrarse en el catálogo y en la gestión de productos. No se puede eliminar si tiene pedidos pendientes."
+          confirmLabel="Sí, eliminar"
+          onConfirm={confirmarEliminar}
+          onCancel={() => setEliminarId(null)}
+        />
       )}
 
       {eliminarId && (

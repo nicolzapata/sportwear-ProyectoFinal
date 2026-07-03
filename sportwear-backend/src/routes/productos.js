@@ -1,11 +1,12 @@
 // src/routes/productos.js
 const router = require('express').Router();
 const {
-  getProductos, crearProducto, actualizarProducto, toggleEstado, togglePublicar, eliminarProducto
+  getProductos, crearProducto, actualizarProducto, toggleEstado, togglePublicar, eliminarProducto, getHistorialPrecios
 } = require('../controllers/productos.controller');
 const { verificarToken, tieneModulo } = require('../middlewares/auth.middleware');
 
 router.get('/', getProductos); // público
+router.get('/:id/historial-precios', verificarToken, tieneModulo('Productos', 'ver'), getHistorialPrecios);
 router.post('/',              verificarToken, tieneModulo('Productos', 'crear'),    crearProducto);
 router.put('/:id',            verificarToken, tieneModulo('Productos', 'editar'),   actualizarProducto);
 router.patch('/:id/estado',   verificarToken, tieneModulo('Productos', 'estado'),   toggleEstado);

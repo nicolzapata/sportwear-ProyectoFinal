@@ -114,13 +114,19 @@ const crearProducto = async (datos) => {
   } finally { client.release(); }
 };
 
-const actualizarProducto = async (id, datos) => {
+const actualizarProducto = async (id, datos, id_usuario) => {
   const { nombre, descripcion, id_categoria, precio, publicado, estado } = datos;
   // el código nunca se modifica (regla 03.2.3.2) — no se incluye en el UPDATE
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+
+    const actual = await client.query(`SELECT precio FROM "Productos" WHERE id_producto = $1`, [id]);
+    if (!actual.rows.length) throw { status: 404, message: 'No encontrado' };
+    const precioAnterior = Number(actual.rows[0].precio);
+    const precioNuevo = precio !== undefined && precio !== null ? Number(precio) : precioAnterior;
+
     const result = await client.query(`
       UPDATE "Productos" SET
         nombre       = COALESCE($1::VARCHAR,  nombre),
@@ -135,12 +141,31 @@ const actualizarProducto = async (id, datos) => {
         precio || null, publicado ?? null, estado || null, id]);
 
     if (!result.rows[0]) throw { status: 404, message: 'No encontrado' };
+
+    if (precioNuevo !== precioAnterior) {
+      await client.query(`
+        INSERT INTO "HistorialPrecios" (id_producto, precio_anterior, precio_nuevo, id_usuario)
+        VALUES ($1, $2, $3, $4)
+      `, [id, precioAnterior, precioNuevo, id_usuario || null]);
+    }
+
     await client.query('COMMIT');
     return { id_producto: result.rows[0].id_producto, nombre: result.rows[0].nombre };
   } catch (err) {
     await client.query('ROLLBACK');
     throw err;
   } finally { client.release(); }
+};
+
+const getHistorialPrecios = async (id_producto) => {
+  const result = await pool.query(`
+    SELECT h.id_historial, h.precio_anterior, h.precio_nuevo, h.fecha, u.nombre AS usuario
+    FROM "HistorialPrecios" h
+    LEFT JOIN "Usuarios" u ON h.id_usuario = u.id_usuario
+    WHERE h.id_producto = $1
+    ORDER BY h.fecha DESC
+  `, [id_producto]);
+  return result.rows;
 };
 
 const toggleEstado = async (id) => {
@@ -182,4 +207,4 @@ const eliminarProducto = async (id) => {
   return result.rows[0];
 };
 
-module.exports = { getProductos, crearProducto, actualizarProducto, toggleEstado, togglePublicar, eliminarProducto };
+module.exports = { getProductos, crearProducto, actualizarProducto, toggleEstado, togglePublicar, eliminarProducto, getHistorialPrecios };

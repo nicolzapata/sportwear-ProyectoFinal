@@ -7,7 +7,8 @@
 }
 
 .public-layout-main {
-  padding-top: 0;
+  /* Compensa el navbar público, que ahora es position:fixed (ver .navbar--public-fixed) */
+  padding-top: 64px;
 }
 
 .public-layout-container {

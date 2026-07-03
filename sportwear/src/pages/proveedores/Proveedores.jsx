@@ -3,8 +3,12 @@ import { useState, useEffect } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import StatusToggle from "../../components/StatusToggle";
+import ConfirmModal from "../../components/ConfirmModal";
+import Loader from "../../components/Loader";
+import ExportButtons from "../../components/ExportButtons";
+import { soloDigitos } from "../../utils/numerico";
 import './Proveedores.css';
-import { IconEdit, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
+import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
 const FILAS_POR_PAGINA = 10;
 
@@ -46,6 +50,7 @@ export default function Proveedores() {
   const [form, setForm] = useState(FORM_VACIO);
   const [errores, setErrores] = useState({});
   const [pagina, setPagina] = useState(1);
+  const [confirmarGuardar, setConfirmarGuardar] = useState(false);
 
   useEffect(() => {
     cargarProveedores();
@@ -112,6 +117,8 @@ export default function Proveedores() {
     if (errores[campo]) setErrores((prev) => ({ ...prev, [campo]: "" }));
   };
 
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
   const validar = () => {
     const e = {};
     if (!form.tipo_doc) e.tipo_doc = "Selecciona un tipo de documento";
@@ -119,12 +126,22 @@ export default function Proveedores() {
     if (!form.razon_social.trim()) e.razon_social = "La razón social es obligatoria";
     if (!form.nombre_contacto.trim()) e.nombre_contacto = "La persona de contacto es obligatoria";
     if (!form.ciudad.trim()) e.ciudad = "La ciudad es obligatoria";
+    if (!form.telefono_celular.trim()) e.telefono_celular = "El teléfono es obligatorio";
+    if (!form.direccion.trim()) e.direccion = "La dirección es obligatoria";
+    if (!form.email_contacto.trim()) e.email_contacto = "El correo es obligatorio";
+    else if (!EMAIL_REGEX.test(form.email_contacto)) e.email_contacto = "El correo no tiene un formato válido";
     setErrores(e);
     return Object.keys(e).length === 0;
   };
 
-  const guardar = async () => {
+  const pedirConfirmacion = () => {
     if (!validar()) return;
+    if (editar) { setConfirmarGuardar(true); return; }
+    guardar();
+  };
+
+  const guardar = async () => {
+    setConfirmarGuardar(false);
     setGuardando(true);
     try {
       const payload = { ...form, plazo_pago_dias: Number(form.plazo_pago_dias) || 30 };
@@ -156,12 +173,7 @@ export default function Proveedores() {
 
 
   if (cargando) {
-    return (
-      <div className="proveedores-loading-container">
-        <div className="proveedores-loading-spinner" />
-        <span className="proveedores-loading-text">Cargando proveedores...</span>
-      </div>
-    );
+    return <Loader text="Cargando proveedores..." />;
   }
 
   return (
@@ -192,7 +204,21 @@ export default function Proveedores() {
               <span>+</span> Nuevo proveedor
             </button>
           )}
-          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+          <ExportButtons
+            datos={filtradosAll}
+            columnas={[
+              { header: "Empresa", value: (p) => p.nombre_comercial || p.razon_social },
+              { header: "Documento", value: (p) => `${p.tipo_doc} ${p.numero_doc}` },
+              { header: "Contacto", key: "nombre_contacto" },
+              { header: "Teléfono", key: "telefono_celular" },
+              { header: "Email", key: "email_contacto" },
+              { header: "Ciudad", key: "ciudad" },
+              { header: "Compras", key: "total_compras" },
+              { header: "Estado", key: "estado" },
+            ]}
+            nombreArchivo="proveedores"
+            titulo="Proveedores"
+          />
         </div>
       </div>
 
@@ -208,7 +234,9 @@ export default function Proveedores() {
               <th className="tbl-th">Documento</th>
               <th className="tbl-th">Contacto</th>
               <th className="tbl-th">Teléfono</th>
+              <th className="tbl-th">Email</th>
               <th className="tbl-th">Ciudad</th>
+              <th className="tbl-th">Compras</th>
               {tienePerm('Proveedores.estado') && <th className="tbl-th">Estado</th>}
               <th className="tbl-th">Acciones</th>
             </tr>
@@ -223,7 +251,9 @@ export default function Proveedores() {
                 <td className="tbl-td"><code className="proveedores-nit-code">{p.tipo_doc} {p.numero_doc}</code></td>
                 <td className="tbl-td proveedores-contacto-cell">{p.nombre_contacto || "—"}</td>
                 <td className="tbl-td proveedores-telefono-cell">{p.telefono_celular || "—"}</td>
+                <td className="tbl-td proveedores-telefono-cell">{p.email_contacto || "—"}</td>
                 <td className="tbl-td"><span className="tabla-ciudad">{p.ciudad || "—"}</span></td>
+                <td className="tbl-td">{p.total_compras ?? 0}</td>
                 {tienePerm('Proveedores.estado') && (
                   <td className="tbl-td"><StatusToggle id={p.id_proveedor} estado={p.estado} onToggle={() => toggleEstado(p.id_proveedor)} /></td>
                 )}
@@ -239,7 +269,7 @@ export default function Proveedores() {
             ))}
             {filtradosAll.length === 0 && (
               <tr>
-                <td colSpan={7} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
+                <td colSpan={9} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
                   No hay proveedores registrados todavía.
                 </td>
               </tr>
@@ -286,12 +316,13 @@ export default function Proveedores() {
                     <label className="proveedores-form-label">Número de documento <span className="proveedores-req">*</span></label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       className={`proveedores-form-input${errores.numero_doc ? " input-error" : ""}`}
                       placeholder="Ej: 900123456"
                       value={form.numero_doc}
                       disabled={!!editar}
                       title={editar ? "El documento no se puede modificar" : undefined}
-                      onChange={(e) => set("numero_doc", e.target.value)}
+                      onChange={(e) => set("numero_doc", soloDigitos(e.target.value))}
                     />
                     {errores.numero_doc && <span className="proveedores-field-error">{errores.numero_doc}</span>}
                   </div>
@@ -338,8 +369,9 @@ export default function Proveedores() {
                     <input type="text" className="proveedores-form-input" placeholder="Ej: Antioquia" value={form.departamento} onChange={(e) => set("departamento", e.target.value)} />
                   </div>
                   <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Dirección</label>
-                    <input type="text" className="proveedores-form-input" value={form.direccion} onChange={(e) => set("direccion", e.target.value)} />
+                    <label className="proveedores-form-label">Dirección <span className="proveedores-req">*</span></label>
+                    <input type="text" className={`proveedores-form-input${errores.direccion ? " input-error" : ""}`} value={form.direccion} onChange={(e) => set("direccion", e.target.value)} />
+                    {errores.direccion && <span className="proveedores-field-error">{errores.direccion}</span>}
                   </div>
                 </div>
               </div>
@@ -364,15 +396,17 @@ export default function Proveedores() {
                     <input type="text" className="proveedores-form-input" value={form.cargo_contacto} onChange={(e) => set("cargo_contacto", e.target.value)} />
                   </div>
                   <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Teléfono celular</label>
-                    <input type="text" className="proveedores-form-input" placeholder="Ej: 3001234567" value={form.telefono_celular} onChange={(e) => set("telefono_celular", e.target.value)} />
+                    <label className="proveedores-form-label">Teléfono celular <span className="proveedores-req">*</span></label>
+                    <input type="text" inputMode="numeric" className={`proveedores-form-input${errores.telefono_celular ? " input-error" : ""}`} placeholder="Ej: 3001234567" value={form.telefono_celular} onChange={(e) => set("telefono_celular", soloDigitos(e.target.value))} />
+                    {errores.telefono_celular && <span className="proveedores-field-error">{errores.telefono_celular}</span>}
                   </div>
                 </div>
 
                 <div className="proveedores-form-row">
                   <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Correo de contacto</label>
-                    <input type="email" className="proveedores-form-input" placeholder="contacto@empresa.com" value={form.email_contacto} onChange={(e) => set("email_contacto", e.target.value)} />
+                    <label className="proveedores-form-label">Correo de contacto <span className="proveedores-req">*</span></label>
+                    <input type="email" className={`proveedores-form-input${errores.email_contacto ? " input-error" : ""}`} placeholder="contacto@empresa.com" value={form.email_contacto} onChange={(e) => set("email_contacto", e.target.value)} />
+                    {errores.email_contacto && <span className="proveedores-field-error">{errores.email_contacto}</span>}
                   </div>
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Estado</label>
@@ -402,7 +436,7 @@ export default function Proveedores() {
                   </div>
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Número de cuenta</label>
-                    <input type="text" className="proveedores-form-input" value={form.numero_cuenta} onChange={(e) => set("numero_cuenta", e.target.value)} />
+                    <input type="text" inputMode="numeric" className="proveedores-form-input" value={form.numero_cuenta} onChange={(e) => set("numero_cuenta", soloDigitos(e.target.value))} />
                   </div>
                 </div>
 
@@ -426,12 +460,22 @@ export default function Proveedores() {
 
             <div className="proveedores-modal-footer">
               <button className="proveedores-btn-secondary" onClick={() => setModal(false)} disabled={guardando}>Cancelar</button>
-              <button className="proveedores-btn-primary" onClick={guardar} disabled={guardando}>
+              <button className="proveedores-btn-primary" onClick={pedirConfirmacion} disabled={guardando}>
                 {guardando ? "Guardando..." : editar ? "Actualizar" : "Registrar proveedor"}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {confirmarGuardar && (
+        <ConfirmModal
+          title="¿Guardar los cambios del proveedor?"
+          message="Se actualizará la información de este proveedor."
+          onCancel={() => setConfirmarGuardar(false)}
+          onConfirm={guardar}
+          confirmLabel="Sí, guardar"
+        />
       )}
 
       {verDetalle && (
@@ -457,6 +501,8 @@ export default function Proveedores() {
                     <span className="proveedores-detalle-info-label">Estado</span>
                     <span className={`tabla-status${verDetalle.estado === "Activo" ? ' activo' : ' inactivo'}`}>{verDetalle.estado}</span>
                   </div>
+                  <div><span className="proveedores-detalle-info-label">Compras realizadas</span><span className="proveedores-detalle-info-valor">{verDetalle.total_compras ?? 0}</span></div>
+                  <div><span className="proveedores-detalle-info-label">Última actualización</span><span className="proveedores-detalle-info-valor">{verDetalle.fecha_actualizacion ? new Date(verDetalle.fecha_actualizacion).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : "—"}</span></div>
                 </div>
                 <div className="proveedores-detalle-info-grid" style={{ marginTop: "1rem" }}>
                   <div><span className="proveedores-detalle-info-label">Razón social</span><span className="proveedores-detalle-info-valor">{verDetalle.razon_social}</span></div>

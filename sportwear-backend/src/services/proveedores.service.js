@@ -1,8 +1,17 @@
 // src/services/proveedores.service.js
 const pool = require('../config/db');
+const { validarCamposNumericos } = require('../utils/validarNumerico');
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const getProveedores = async () => {
-  const result = await pool.query(`SELECT * FROM "Proveedores" ORDER BY id_proveedor DESC`);
+  const result = await pool.query(`
+    SELECT p.*, COALESCE(COUNT(c.id_compra), 0) AS total_compras
+    FROM "Proveedores" p
+    LEFT JOIN "Compras" c ON c.id_proveedor = p.id_proveedor
+    GROUP BY p.id_proveedor
+    ORDER BY p.id_proveedor DESC
+  `);
   return result.rows;
 };
 
@@ -27,6 +36,13 @@ const crearProveedor = async (datos) => {
     throw { status: 400, message: 'La persona de contacto es requerida' };
   if (!ciudad)
     throw { status: 400, message: 'La ciudad es requerida' };
+  if (!telefono_celular)
+    throw { status: 400, message: 'El teléfono es requerido' };
+  if (!direccion)
+    throw { status: 400, message: 'La dirección es requerida' };
+  if (!email_contacto || !EMAIL_REGEX.test(email_contacto))
+    throw { status: 400, message: 'El correo electrónico es requerido y debe tener un formato válido' };
+  validarCamposNumericos({ 'número de documento': numero_doc, teléfono: telefono_celular, 'número de cuenta': numero_cuenta });
 
   const result = await pool.query(`
     INSERT INTO "Proveedores" (
@@ -63,6 +79,13 @@ const actualizarProveedor = async (id, datos) => {
     throw { status: 400, message: 'El nombre de contacto es requerido' };
   if (!ciudad || !ciudad.trim())
     throw { status: 400, message: 'La ciudad es requerida' };
+  if (!telefono_celular)
+    throw { status: 400, message: 'El teléfono es requerido' };
+  if (!direccion || !direccion.trim())
+    throw { status: 400, message: 'La dirección es requerida' };
+  if (!email_contacto || !EMAIL_REGEX.test(email_contacto))
+    throw { status: 400, message: 'El correo electrónico es requerido y debe tener un formato válido' };
+  validarCamposNumericos({ teléfono: telefono_celular, 'número de cuenta': numero_cuenta });
 
   const result = await pool.query(`
     UPDATE "Proveedores" SET
@@ -70,7 +93,7 @@ const actualizarProveedor = async (id, datos) => {
       nombre_contacto=$3, cargo_contacto=$4, telefono_celular=$5, email_contacto=$6,
       ciudad=$7, departamento=$8, pais=$9, direccion=$10,
       banco=$11, tipo_cuenta=$12, numero_cuenta=$13, titular_cuenta=$14,
-      plazo_pago_dias=$15, condiciones=$16, estado=$17
+      plazo_pago_dias=$15, condiciones=$16, estado=$17, fecha_actualizacion=now()
     WHERE id_proveedor=$18 RETURNING *
   `, [
     razon_social, nombre_comercial,
