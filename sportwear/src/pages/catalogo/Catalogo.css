@@ -194,6 +194,77 @@ html, body {
   margin: 0 auto;
 }
 
+/* ── Vista de lista ── */
+.catalog-grid.list-view {
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+.catalog-grid.list-view .catalog-card {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+.catalog-grid.list-view .catalog-card-img {
+  width: 160px;
+  flex-shrink: 0;
+  aspect-ratio: auto;
+}
+.catalog-grid.list-view .catalog-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ── Barra de filtros del catálogo ── */
+.catalog-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  max-width: 1400px;
+  margin: 0 auto 20px;
+  padding: 0 4px;
+}
+.catalog-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.catalog-toolbar label {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.catalog-toolbar input[type="number"],
+.catalog-toolbar select {
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm, 6px);
+  padding: 5px 8px;
+  font-size: 13px;
+  width: 100px;
+}
+.catalog-view-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm, 6px);
+  overflow: hidden;
+  margin-left: auto;
+}
+.catalog-view-toggle button {
+  border: none;
+  background: var(--warm-white);
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--muted);
+}
+.catalog-view-toggle button.active {
+  background: var(--charcoal, #1a1a1a);
+  color: #fff;
+}
+
 /* ── Product card ── */
 .catalog-card {
   background: var(--warm-white);

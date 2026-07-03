@@ -1,10 +1,46 @@
 // src/services/productos.service.js
 const pool = require('../config/db');
 
-const getProductos = async (publicado) => {
-  const whereClause = publicado !== undefined
-    ? `WHERE p.publicado = ${publicado === '1' || publicado === 'true' ? 'true' : 'false'}`
-    : '';
+const getProductos = async (opciones = {}) => {
+  // Compatibilidad con el uso anterior: getProductos('true'|'false')
+  const filtros = typeof opciones === 'string' || opciones === undefined
+    ? { publicado: opciones }
+    : opciones;
+  const { publicado, id_categoria, q, precio_min, precio_max, talla, color } = filtros;
+
+  const condiciones = [`p.estado != 'Eliminado'`];
+  const params = [];
+
+  if (publicado !== undefined) {
+    params.push(publicado === '1' || publicado === 'true');
+    condiciones.push(`p.publicado = $${params.length}`);
+  }
+  if (id_categoria) {
+    params.push(id_categoria);
+    condiciones.push(`p.id_categoria = $${params.length}`);
+  }
+  if (q) {
+    params.push(`%${q}%`);
+    condiciones.push(`(p.nombre ILIKE $${params.length} OR p.codigo ILIKE $${params.length})`);
+  }
+  if (precio_min) {
+    params.push(Number(precio_min));
+    condiciones.push(`p.precio >= $${params.length}`);
+  }
+  if (precio_max) {
+    params.push(Number(precio_max));
+    condiciones.push(`p.precio <= $${params.length}`);
+  }
+  if (talla) {
+    params.push(talla);
+    condiciones.push(`EXISTS (SELECT 1 FROM "ProductoVariantes" v WHERE v.id_producto=p.id_producto AND v.talla=$${params.length})`);
+  }
+  if (color) {
+    params.push(color);
+    condiciones.push(`EXISTS (SELECT 1 FROM "ProductoVariantes" v JOIN "Colores" col ON v.id_color=col.id_color WHERE v.id_producto=p.id_producto AND col.nombre=$${params.length})`);
+  }
+
+  const whereClause = `WHERE ${condiciones.join(' AND ')}`;
 
   const result = await pool.query(`
     SELECT
@@ -47,7 +83,7 @@ const getProductos = async (publicado) => {
     LEFT JOIN "Categorias" c ON p.id_categoria = c.id_categoria
     ${whereClause}
     ORDER BY p.fecha_creacion DESC
-  `);
+  `, params);
   return result.rows;
 };
 
@@ -126,4 +162,24 @@ const togglePublicar = async (id) => {
   return { id_producto: result.rows[0].id_producto, publicado: result.rows[0].publicado };
 };
 
-module.exports = { getProductos, crearProducto, actualizarProducto, toggleEstado, togglePublicar };
+// Eliminación lógica: conserva el registro (historial de ventas/compras intacto),
+// solo deja de mostrarse en el catálogo y en la gestión de productos.
+const eliminarProducto = async (id) => {
+  const pendientes = await pool.query(`
+    SELECT COUNT(*) AS total
+    FROM "DetalleVenta" dv
+    JOIN "Ventas" v ON dv.id_venta = v.id_venta
+    WHERE dv.id_producto = $1 AND v.estado = 'Pendiente'
+  `, [id]);
+  if (Number(pendientes.rows[0].total) > 0)
+    throw { status: 400, message: 'No se puede eliminar: el producto tiene pedidos pendientes.' };
+
+  const result = await pool.query(`
+    UPDATE "Productos" SET estado='Eliminado', publicado=false
+    WHERE id_producto=$1 RETURNING id_producto
+  `, [id]);
+  if (!result.rows[0]) throw { status: 404, message: 'No encontrado' };
+  return result.rows[0];
+};
+
+module.exports = { getProductos, crearProducto, actualizarProducto, toggleEstado, togglePublicar, eliminarProducto };

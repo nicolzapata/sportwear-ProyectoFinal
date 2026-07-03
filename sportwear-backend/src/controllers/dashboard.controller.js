@@ -19,4 +19,13 @@ const getVentasMensuales = async (req, res) => {
   }
 };
 
-module.exports = { getResumen, getVentasMensuales };
+const getComprasMensuales = async (req, res) => {
+  try {
+    const data = await dashboardService.getComprasMensuales();
+    res.json(data);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+module.exports = { getResumen, getVentasMensuales, getComprasMensuales };

@@ -7,7 +7,8 @@ import GestVariantes from "../../components/GestVariantes";
 import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
-import { IconAlertTriangle, IconCheck, IconEdit, IconEye, IconPrint, IconSearch, IconX, IconBox, IconTag } from "../../components/Icons";
+import ConfirmModal from "../../components/ConfirmModal";
+import { IconAlertTriangle, IconCheck, IconEdit, IconEye, IconPrint, IconSearch, IconX, IconBox, IconTag, IconTrash } from "../../components/Icons";
 import "./GestProductos.css";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
@@ -40,6 +41,7 @@ export default function GestProductos() {
   const [formCategoria,    setFormCategoria]    = useState({ nombre: "", icono: "tag" });
   const [editarCategoria,  setEditarCategoria]  = useState(null);
   const [erroresCategoria, setErroresCategoria] = useState({ nombre: "" });
+  const [eliminarId,       setEliminarId]       = useState(null);
 
   const mostrarToast = (tipo, mensaje) => {
     setToast({ tipo, mensaje });
@@ -162,6 +164,18 @@ export default function GestProductos() {
       await api.patch(`/productos/${id}/publicar`);
       cargar();
     } catch (err) { console.error(err); }
+  };
+
+  const confirmarEliminar = async () => {
+    const id = eliminarId;
+    setEliminarId(null);
+    try {
+      await api.delete(`/productos/${id}`);
+      setDatos(prev => prev.filter(p => p.id_producto !== id));
+      mostrarToast("exito", "Producto eliminado.");
+    } catch (err) {
+      mostrarToast("error", err.response?.data?.message || "No se pudo eliminar el producto.");
+    }
   };
 
   const cerrarModal = () => {
@@ -433,6 +447,9 @@ export default function GestProductos() {
                       {tienePerm('Productos.editar') && (
                         <button className="gestproductos-action-btn gestproductos-edit-btn" onClick={() => abrirEditar(p)}><IconEdit /></button>
                       )}
+                      {tienePerm('Productos.eliminar') && (
+                        <button className="gestproductos-action-btn gestproductos-delete-btn" title="Eliminar producto" onClick={() => setEliminarId(p.id_producto)}><IconTrash /></button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -536,6 +553,16 @@ export default function GestProductos() {
         >
           {DetalleUnico}
         </ModalDetalle>
+      )}
+
+      {eliminarId && (
+        <ConfirmModal
+          title="Eliminar producto"
+          message="¿Seguro que deseas eliminar este producto? Dejará de mostrarse en el catálogo y en la gestión de productos. No se puede eliminar si tiene pedidos pendientes."
+          confirmLabel="Sí, eliminar"
+          onConfirm={confirmarEliminar}
+          onCancel={() => setEliminarId(null)}
+        />
       )}
     </div>
   );

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import './PagosAbonos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import { IconCheck, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
+import { IconCheck, IconEye, IconPrint, IconSearch, IconX, IconSettings } from "../../components/Icons";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
@@ -26,7 +26,34 @@ export default function PagosAbonos() {
   const [form, setForm] = useState({ id_venta: "", monto: "", tipo: "Pago completo", metodo: "Efectivo", estado: "Pendiente", fecha: "" });
   const [errores, setErrores] = useState({ id_venta: "", monto: "", fecha: "" });
 
-  useEffect(() => { cargar(); }, []);
+  const [metodosPago,    setMetodosPago]    = useState([]);
+  const [modalMetodos,   setModalMetodos]   = useState(false);
+  const [nuevoMetodo,    setNuevoMetodo]    = useState("");
+
+  useEffect(() => { cargar(); cargarMetodos(); }, []);
+
+  const cargarMetodos = async () => {
+    try {
+      const { data } = await api.get("/metodos-pago");
+      setMetodosPago(data);
+    } catch (err) { console.error("Error cargando métodos de pago:", err); }
+  };
+
+  const crearMetodo = async () => {
+    if (!nuevoMetodo.trim()) return;
+    try {
+      await api.post("/metodos-pago", { nombre: nuevoMetodo.trim() });
+      setNuevoMetodo("");
+      cargarMetodos();
+    } catch (err) { alert(err.response?.data?.message ?? "Error al crear el método de pago."); }
+  };
+
+  const toggleMetodoEstado = async (id) => {
+    try {
+      await api.patch(`/metodos-pago/${id}/estado`);
+      cargarMetodos();
+    } catch (err) { alert(err.response?.data?.message ?? "Error al cambiar el estado del método."); }
+  };
 
   const cargar = async () => {
     setCargando(true);
@@ -126,8 +153,11 @@ export default function PagosAbonos() {
           </div>
         </div>
         <div className="pagosabonos-actions-right">
+          {tienePerm('Pagos.editar') && (
+            <button className="btn-print" onClick={() => setModalMetodos(true)} title="Gestionar métodos de pago"><IconSettings /></button>
+          )}
           {tienePerm('Pagos.crear') && (
-            <button className="pagosabonos-btn-primary" onClick={() => { setForm({ id_venta: "", monto: "", tipo: "Pago completo", metodo: "Efectivo", estado: "Pendiente", fecha: "" }); setModal(true); }}>
+            <button className="pagosabonos-btn-primary" onClick={() => { setForm({ id_venta: "", monto: "", tipo: "Pago completo", metodo: metodosPago[0]?.nombre || "Efectivo", estado: "Pendiente", fecha: "" }); setModal(true); }}>
               <span>+</span> Nuevo pago
             </button>
           )}
@@ -243,9 +273,9 @@ export default function PagosAbonos() {
                 <div className="pagosabonos-form-group">
                   <label className="pagosabonos-form-label">Método</label>
                   <select className="pagosabonos-form-select" value={form.metodo} onChange={(e) => setForm({ ...form, metodo: e.target.value })}>
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Tarjeta">Tarjeta</option>
-                    <option value="Transferencia">Transferencia</option>
+                    {metodosPago.filter(m => m.estado === "Activo").map(m => (
+                      <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -307,6 +337,55 @@ export default function PagosAbonos() {
             </DetalleGrid>
           </DetalleSeccion>
         </ModalDetalle>
+      )}
+
+      {modalMetodos && (
+        <div className="pagosabonos-modal-overlay" onClick={() => setModalMetodos(false)}>
+          <div className="pagosabonos-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="pagosabonos-modal-header">
+              <h2 className="pagosabonos-modal-title">Métodos de pago</h2>
+              <button className="pagosabonos-modal-close" onClick={() => setModalMetodos(false)}><IconX /></button>
+            </div>
+            <div className="pagosabonos-modal-body">
+              <div className="pagosabonos-form-row">
+                <div className="pagosabonos-form-group" style={{ flex: 1 }}>
+                  <label className="pagosabonos-form-label">Nuevo método</label>
+                  <input
+                    className="pagosabonos-form-input"
+                    placeholder="Ej: Nequi"
+                    value={nuevoMetodo}
+                    onChange={(e) => setNuevoMetodo(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") crearMetodo(); }}
+                  />
+                </div>
+                <button className="pagosabonos-btn-primary" style={{ alignSelf: "flex-end", marginBottom: 2 }} onClick={crearMetodo}>
+                  Agregar
+                </button>
+              </div>
+
+              <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
+                {metodosPago.length === 0 && (
+                  <p style={{ color: "var(--muted)", fontSize: 13 }}>No hay métodos de pago registrados.</p>
+                )}
+                {metodosPago.map((m) => (
+                  <div key={m.id_metodo} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 12px", border: "1px solid var(--border, #e5e5e5)", borderRadius: 8 }}>
+                    <span>{m.nombre}</span>
+                    <button
+                      className={`tabla-status ${m.estado === "Activo" ? "activo" : "inactivo"}`}
+                      style={{ cursor: "pointer", border: "none" }}
+                      onClick={() => toggleMetodoEstado(m.id_metodo)}
+                    >
+                      {m.estado}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="pagosabonos-modal-footer">
+              <button className="pagosabonos-btn-secondary" onClick={() => setModalMetodos(false)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

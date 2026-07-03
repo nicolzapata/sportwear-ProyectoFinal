@@ -169,6 +169,12 @@
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
+.gestproductos-delete-btn:hover {
+  border-color: #b83232;
+  background: rgba(184, 50, 50, 0.08);
+  color: #b83232;
+}
+
 /* Modal */
 .gestproductos-modal-overlay {
   position: fixed;

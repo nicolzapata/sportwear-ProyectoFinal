@@ -69,6 +69,26 @@ function ReceiptView({ pedido, cliente, pago, onClose }) {
     year: "numeric", month: "long", day: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
+  const [descargando, setDescargando] = useState(false);
+
+  const descargarPDF = async () => {
+    setDescargando(true);
+    try {
+      const res = await api.get(`/ventas/${pedido.id_venta}/comprobante`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `comprobante-venta-${pedido.id_venta}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert("No se pudo descargar el comprobante en PDF.");
+    } finally {
+      setDescargando(false);
+    }
+  };
 
   return (
     <>
@@ -197,6 +217,9 @@ function ReceiptView({ pedido, cliente, pago, onClose }) {
       <div className="pm-footer">
         <button className="pm-btn-secondary" onClick={() => window.print()}>
           <IconPrint /> Imprimir
+        </button>
+        <button className="pm-btn-secondary" onClick={descargarPDF} disabled={descargando}>
+          {descargando ? "Generando..." : "Descargar PDF"}
         </button>
         <button className="pm-btn-primary" onClick={onClose}>
           Cerrar

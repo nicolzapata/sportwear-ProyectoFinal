@@ -1,5 +1,7 @@
 // src/components/OrderDetailModal.jsx
+import { useState } from "react";
 import { createPortal } from "react-dom";
+import api from "../services/api";
 import "./OrderDetailModal.css";
 
 const fmt = (n) =>
@@ -65,6 +67,26 @@ export default function OrderDetailModal({ pedido, onClose }) {
   const totalPedido = Number(pedido.total || 0);
   const progreso = totalPedido > 0 ? Math.min((totalPagado / totalPedido) * 100, 100) : 0;
   const esCuotas = pedido.tipo_pago === "cuotas";
+  const [descargando, setDescargando] = useState(false);
+
+  const descargarComprobante = async () => {
+    setDescargando(true);
+    try {
+      const res = await api.get(`/ventas/${pedido.id_venta}/comprobante`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: "application/pdf" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `comprobante-venta-${pedido.id_venta}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      alert("No se pudo descargar el comprobante en PDF.");
+    } finally {
+      setDescargando(false);
+    }
+  };
 
   const cuotasPagadas   = pedido.abonos?.filter((a) => a.estado === "Confirmado") || [];
   const cuotasPendientes = pedido.abonos?.filter((a) => a.estado === "Pendiente") || [];
@@ -171,7 +193,7 @@ export default function OrderDetailModal({ pedido, onClose }) {
             <div className="od-section">
               <h3 className="od-section-title"><IconHistory /> Historial de pagos</h3>
               <div className="od-timeline">
-                {cuotasPagadas.map((abono, idx) => (
+                {cuotasPagadas.map((abono) => (
                   <div key={abono.id_pago} className="od-timeline-item od-timeline-item--done">
                     <div className="od-timeline-dot od-timeline-dot--done" />
                     <div className="od-timeline-content">
@@ -245,6 +267,9 @@ export default function OrderDetailModal({ pedido, onClose }) {
 
         {/* Footer */}
         <div className="od-footer">
+          <button className="od-btn-close" onClick={descargarComprobante} disabled={descargando}>
+            {descargando ? "Generando..." : "Descargar comprobante"}
+          </button>
           <button className="od-btn-close" onClick={onClose}>Cerrar</button>
         </div>
       </div>
