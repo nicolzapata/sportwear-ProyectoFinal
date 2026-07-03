@@ -3,7 +3,9 @@ import { useState, useEffect } from "react";
 import './PagosAbonos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import { IconCheck, IconEye, IconPrint, IconSearch, IconX, IconSettings } from "../../components/Icons";
+import { IconCheck, IconEye, IconSearch, IconX, IconSettings } from "../../components/Icons";
+import Loader from "../../components/Loader";
+import ExportButtons from "../../components/ExportButtons";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const tipoByCliente = (tipo_cliente) => tipo_cliente === "VIP" ? "Abono" : "Pago completo";
@@ -149,7 +151,7 @@ export default function PagosAbonos() {
     setModal(false);
   };
 
-  if (cargando) return <div style={{ padding: 48, color: "var(--muted)" }}>Cargando pagos...</div>;
+  if (cargando) return <Loader text="Cargando pagos..." />;
   if (errorMsg) return <div style={{ padding: 32, color: "var(--danger)" }}>{errorMsg}<button onClick={cargar} style={{ marginLeft: 12 }}>Reintentar</button></div>;
 
   return (
@@ -171,7 +173,20 @@ export default function PagosAbonos() {
               <span>+</span> Nuevo pago
             </button>
           )}
-          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+          <ExportButtons
+            datos={filtrados}
+            columnas={[
+              { header: "Venta", value: (p) => `V-${String(p.id_venta).padStart(3, "0")}` },
+              { header: "Cliente", key: "cliente" },
+              { header: "Monto", key: "monto" },
+              { header: "Tipo", key: "tipo" },
+              { header: "Método", key: "metodo" },
+              { header: "Fecha", value: (p) => p.fecha?.toString().split("T")[0] },
+              { header: "Estado", key: "estado" },
+            ]}
+            nombreArchivo="pagos"
+            titulo="Pagos y Abonos"
+          />
         </div>
       </div>
 

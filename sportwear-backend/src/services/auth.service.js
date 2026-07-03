@@ -4,6 +4,8 @@ const jwt        = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const crypto     = require('crypto');
 const { enviarCorreo } = require('./mailer.service');
+const { esRolProtegido } = require('../utils/rolesProtegidos');
+const { validarCamposNumericos } = require('../utils/validarNumerico');
 
 const generarToken = (usuario) => {
   return jwt.sign(
@@ -168,9 +170,11 @@ const registro = async (datos) => {
  * y lo vincula vía id_cliente, manteniendo ambas tablas sincronizadas.
  */
 const crearUsuario = async ({
-  nombre, email, contrasena, id_rol, permiso_cuotas,
+  nombre, email, contrasena, id_rol,
   tipo_doc, documento, telefono, ciudad, id_barrio, direccion, tipo_cliente,
 }) => {
+  validarCamposNumericos({ documento, teléfono: telefono });
+
   const emailExiste = await pool.query(`SELECT id_usuario FROM "Usuarios" WHERE email = $1`, [email]);
   if (emailExiste.rows.length > 0)
     throw { status: 409, message: 'El email ya está registrado' };
@@ -202,10 +206,10 @@ const crearUsuario = async ({
     }
 
     const result = await client.query(
-      `INSERT INTO "Usuarios" (nombre, email, password_hash, id_rol, permiso_cuotas, id_cliente)
-       VALUES ($1, $2, crypt($3, gen_salt('bf',12)), $4, $5, $6)
+      `INSERT INTO "Usuarios" (nombre, email, password_hash, id_rol, id_cliente)
+       VALUES ($1, $2, crypt($3, gen_salt('bf',12)), $4, $5)
        RETURNING id_usuario, nombre, email`,
-      [nombre, email, contrasena, id_rol, permiso_cuotas !== false, id_cliente]
+      [nombre, email, contrasena, id_rol, id_cliente]
     );
 
     await client.query('COMMIT');
@@ -219,7 +223,8 @@ const crearUsuario = async ({
 };
 
 const actualizarUsuario = async (id, datos, usuarioActual) => {
-  const { nombre, email, id_rol, estado, contrasena, tipo_doc, documento, telefono, ciudad, id_barrio, direccion, permiso_cuotas, tipo_cliente } = datos;
+  const { nombre, email, id_rol, estado, contrasena, tipo_doc, documento, telefono, ciudad, id_barrio, direccion, tipo_cliente } = datos;
+  validarCamposNumericos({ teléfono: telefono });
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -232,18 +237,22 @@ const actualizarUsuario = async (id, datos, usuarioActual) => {
     const { id_cliente } = usuarioExistente.rows[0];
     const esPropioUsuario = String(usuarioActual.id_usuario) === String(id);
 
+    // Un usuario con rol Administrador siempre permanece Activo: no se puede desactivar.
+    const rolRes = await client.query(`SELECT nombre FROM "Roles" WHERE id_rol = $1`, [id_rol]);
+    const estadoFinal = esRolProtegido(rolRes.rows[0]?.nombre) ? 'Activo' : estado;
+
     // El correo del usuario y la identificación del cliente no se pueden editar
     // una vez creados (solo se fijan al registrar), por eso no aparecen en estos UPDATE.
     if (contrasena && esPropioUsuario) {
       await client.query(
-        `UPDATE "Usuarios" SET nombre=$1, id_rol=$2, estado=$3, permiso_cuotas=$6,
+        `UPDATE "Usuarios" SET nombre=$1, id_rol=$2, estado=$3,
          password_hash=crypt($4, gen_salt('bf',12)) WHERE id_usuario=$5`,
-        [nombre, id_rol, estado, contrasena, id, permiso_cuotas !== false]
+        [nombre, id_rol, estadoFinal, contrasena, id]
       );
     } else {
       await client.query(
-        `UPDATE "Usuarios" SET nombre=$1, id_rol=$2, estado=$3, permiso_cuotas=$4 WHERE id_usuario=$5`,
-        [nombre, id_rol, estado, permiso_cuotas !== false, id]
+        `UPDATE "Usuarios" SET nombre=$1, id_rol=$2, estado=$3 WHERE id_usuario=$4`,
+        [nombre, id_rol, estadoFinal, id]
       );
     }
 
