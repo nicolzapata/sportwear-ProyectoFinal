@@ -1,5 +1,6 @@
 // src/controllers/ventas.controller.js
 const ventasService = require('../services/ventas.service');
+const { generarComprobanteVentaPDF } = require('../services/pdf.service');
 
 const getVentas = async (req, res) => {
   try {
@@ -74,4 +75,17 @@ const getMisPedidos = async (req, res) => {
   }
 };
 
-module.exports = { getVentas, getVentaById, crearVenta, cambiarEstado, crearMiPedido, crearCarritoAbandonado, getMisPedidos };
+const getComprobantePDF = async (req, res) => {
+  try {
+    const venta = await ventasService.getVentaById(req.params.id);
+    const esAdmin = req.usuario.rol === 'Admin';
+    if (!esAdmin && venta.id_cliente !== req.usuario.id_cliente) {
+      return res.status(403).json({ message: 'No tienes permiso sobre este comprobante.' });
+    }
+    generarComprobanteVentaPDF(res, { venta, items: venta.items });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+module.exports = { getVentas, getVentaById, crearVenta, cambiarEstado, crearMiPedido, crearCarritoAbandonado, getMisPedidos, getComprobantePDF };

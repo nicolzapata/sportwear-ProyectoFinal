@@ -7,6 +7,19 @@ import api from "../../services/api";
 import "./Catalogo.css";
 import { IconBox, IconSearch } from "../../components/Icons";
 
+const IconGrid = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+    <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+  </svg>
+);
+const IconList = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
+    <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+  </svg>
+);
+
 const fmt = (n) =>
   Number(n || 0).toLocaleString("es-CO", {
     style: "currency", currency: "COP", minimumFractionDigits: 0,
@@ -306,6 +319,12 @@ export default function Catalogo() {
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState("");
 
+  const [vista,        setVista]        = useState("grid"); // 'grid' | 'list'
+  const [precioMin,     setPrecioMin]     = useState("");
+  const [precioMax,     setPrecioMax]     = useState("");
+  const [filtroTalla,   setFiltroTalla]   = useState("");
+  const [filtroColor,   setFiltroColor]   = useState("");
+
   const cargar = async () => {
     try {
       const { data } = await api.get("/productos?publicado=1");
@@ -326,11 +345,27 @@ export default function Catalogo() {
     setCategorias(categorias);
   }, [datos, setCategorias]);
 
+  const tallasDisponibles = [...new Set(
+    datos.flatMap(p => (p.variantes || []).map(v => v.talla)).filter(Boolean)
+  )].sort();
+  const coloresDisponibles = [...new Map(
+    datos.flatMap(p => (p.variantes || []))
+      .filter(v => v.id_color && v.color_nombre)
+      .map(v => [v.id_color, { id_color: v.id_color, nombre: v.color_nombre }])
+  ).values()];
+
   const filtrados = datos.filter((p) => {
-    const matchBusqueda  = p.nombre?.toLowerCase().includes(busqueda.toLowerCase());
+    const matchBusqueda  = p.nombre?.toLowerCase().includes(busqueda.toLowerCase())
+      || p.codigo?.toLowerCase().includes(busqueda.toLowerCase());
     const matchCategoria = filtroCategoria === "Todos" || p.categoria === filtroCategoria;
-    return matchBusqueda && matchCategoria;
+    const matchPrecioMin = !precioMin || Number(p.precio) >= Number(precioMin);
+    const matchPrecioMax = !precioMax || Number(p.precio) <= Number(precioMax);
+    const matchTalla     = !filtroTalla || (p.variantes || []).some(v => v.talla === filtroTalla);
+    const matchColor      = !filtroColor || (p.variantes || []).some(v => String(v.id_color) === filtroColor);
+    return matchBusqueda && matchCategoria && matchPrecioMin && matchPrecioMax && matchTalla && matchColor;
   });
+
+  const hayFiltroAvanzado = precioMin || precioMax || filtroTalla || filtroColor;
 
   const handleTogglePublicado = async (p) => {
     try {
@@ -355,13 +390,17 @@ export default function Catalogo() {
     </div>
   );
 
-  const hayFiltroActivo = busqueda.trim() !== "" || filtroCategoria !== "Todos";
+  const hayFiltroActivo = busqueda.trim() !== "" || filtroCategoria !== "Todos" || hayFiltroAvanzado;
 
   const limpiarFiltros = () => {
     if (setBusqueda && setFiltroCategoria) {
       setBusqueda("");
       setFiltroCategoria("Todos");
     }
+    setPrecioMin("");
+    setPrecioMax("");
+    setFiltroTalla("");
+    setFiltroColor("");
   };
 
   return (
@@ -409,6 +448,44 @@ export default function Catalogo() {
 
       {/* ── Catálogo ── */}
       <div className="Catalogo-enter">
+        <div className="catalog-toolbar">
+          <div className="catalog-toolbar-group">
+            <label>Precio</label>
+            <input type="number" min="0" placeholder="Mín" value={precioMin} onChange={(e) => setPrecioMin(e.target.value)} />
+            <span>–</span>
+            <input type="number" min="0" placeholder="Máx" value={precioMax} onChange={(e) => setPrecioMax(e.target.value)} />
+          </div>
+          {tallasDisponibles.length > 0 && (
+            <div className="catalog-toolbar-group">
+              <label>Talla</label>
+              <select value={filtroTalla} onChange={(e) => setFiltroTalla(e.target.value)}>
+                <option value="">Todas</option>
+                {tallasDisponibles.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+          )}
+          {coloresDisponibles.length > 0 && (
+            <div className="catalog-toolbar-group">
+              <label>Color</label>
+              <select value={filtroColor} onChange={(e) => setFiltroColor(e.target.value)}>
+                <option value="">Todos</option>
+                {coloresDisponibles.map(c => <option key={c.id_color} value={String(c.id_color)}>{c.nombre}</option>)}
+              </select>
+            </div>
+          )}
+          <span style={{ fontSize: 12, color: "var(--muted)" }}>
+            {filtrados.length} producto{filtrados.length !== 1 ? "s" : ""}
+          </span>
+          <div className="catalog-view-toggle">
+            <button className={vista === "grid" ? "active" : ""} onClick={() => setVista("grid")} title="Vista de cuadrícula">
+              <IconGrid />
+            </button>
+            <button className={vista === "list" ? "active" : ""} onClick={() => setVista("list")} title="Vista de lista">
+              <IconList />
+            </button>
+          </div>
+        </div>
+
         {filtrados.length === 0 && hayFiltroActivo && (
           <div style={{ padding: 48, textAlign: "center", color: "var(--muted)" }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}><IconSearch /></div>
@@ -420,7 +497,7 @@ export default function Catalogo() {
         )}
 
         {filtrados.length > 0 && (
-          <div className="catalog-grid">
+          <div className={`catalog-grid${vista === "list" ? " list-view" : ""}`}>
             {filtrados.map((p) => (
               <ProductCard
                 key={p.id_producto}

@@ -9,10 +9,9 @@ const {
 } = require('../middlewares/auth.middleware');
 
 router.get('/',             verificarToken, tieneAlgunModulo('Pagos', 'PedidosVentas'), getPagos);
-router.get('/:id',          verificarToken, tieneAlgunModulo('Pagos', 'PedidosVentas'), getPagoById);
-router.post('/',            verificarToken, tieneModulo('Pagos', 'crear'),  crearPago);
-router.patch('/:id/estado', verificarToken, tieneModulo('Pagos', 'estado'), cambiarEstado);
 
+// Rutas de cliente y con segmento fijo: deben ir ANTES de '/:id' para que Express
+// no las confunda con un id (ej. GET /mis-pagos no debe matchear GET /:id).
 router.get('/mis-pagos', verificarToken, soloCliente, async (req, res) => {
   try {
     const result = await pool.query(
@@ -29,5 +28,9 @@ router.get('/mis-pagos', verificarToken, soloCliente, async (req, res) => {
 
 router.post('/cuota/:id',       verificarToken, soloCliente, pagarCuota);
 router.post('/venta/:id/total', verificarToken, soloCliente, pagarTotal);
+
+router.get('/:id',          verificarToken, tieneAlgunModulo('Pagos', 'PedidosVentas'), getPagoById);
+router.post('/',            verificarToken, tieneModulo('Pagos', 'crear'),  crearPago);
+router.patch('/:id/estado', verificarToken, tieneModulo('Pagos', 'estado'), cambiarEstado);
 
 module.exports = router;

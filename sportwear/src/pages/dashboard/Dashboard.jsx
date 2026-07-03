@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 import MiCuenta from "../clientes/MiCuenta";
 import {
-  IconDollar, IconShoppingCart, IconPrint, IconUsers,
+  IconDollar, IconShoppingCart, IconPrint, IconUsers, IconAlertTriangle,
 } from "../../components/Icons";
 import "./Dashboard.css";
 
@@ -159,9 +159,12 @@ export default function Dashboard() {
     ingresos_totales: 0, total_productos: 0,
     numero_ventas: 0, ticket_promedio: 0,
   });
-  const [topProductos,    setTopProductos]    = useState([]);
-  const [ventasRecientes, setVentasRecientes] = useState([]);
-  const [ventasMensuales, setVentasMensuales] = useState(null);
+  const [topProductos,       setTopProductos]       = useState([]);
+  const [ventasRecientes,    setVentasRecientes]    = useState([]);
+  const [ventasMensuales,    setVentasMensuales]    = useState(null);
+  const [comprasMensuales,   setComprasMensuales]   = useState(null);
+  const [clientesRecientes,  setClientesRecientes]  = useState([]);
+  const [productosBajoStock, setProductosBajoStock] = useState([]);
   const [cargando,        setCargando]        = useState(true);
 
   useEffect(() => {
@@ -169,11 +172,15 @@ export default function Dashboard() {
     Promise.all([
       api.get("/dashboard"),
       api.get("/dashboard/ventas-mensuales"),
-    ]).then(([resumenRes, mensualRes]) => {
+      api.get("/dashboard/compras-mensuales"),
+    ]).then(([resumenRes, mensualRes, comprasRes]) => {
       setStats(resumenRes.data?.stats || {});
       setTopProductos(resumenRes.data?.topProductos || []);
       setVentasRecientes(resumenRes.data?.ventasRecientes || []);
+      setClientesRecientes(resumenRes.data?.clientesRecientes || []);
+      setProductosBajoStock(resumenRes.data?.productosBajoStock || []);
       setVentasMensuales(mensualRes.data || { labels: [], values: [] });
+      setComprasMensuales(comprasRes.data || { labels: [], values: [] });
       setCargando(false);
     }).catch(() => setCargando(false));
   }, [usuario?.rol]);
@@ -248,6 +255,24 @@ export default function Dashboard() {
             <div className="stat-content">
               <span className="stat-label">Ingresos totales</span>
               <span className="stat-value">{formatCurrency(stats.ingresos_totales)}</span>
+            </div>
+          </div>
+        </div>
+        <div className="stat-card-wrapper">
+          <div className="stat-card">
+            <div className="stat-card-accent" />
+            <div className="stat-content">
+              <span className="stat-label">Pedidos pendientes</span>
+              <span className="stat-value">{stats.pedidos_pendientes ?? 0}</span>
+            </div>
+          </div>
+        </div>
+        <div className="stat-card-wrapper">
+          <div className="stat-card">
+            <div className="stat-card-accent success" />
+            <div className="stat-content">
+              <span className="stat-label">Compras totales</span>
+              <span className="stat-value">{formatCurrency(stats.compras_monto_total)}</span>
             </div>
           </div>
         </div>
@@ -370,6 +395,78 @@ export default function Dashboard() {
               <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="charts-grid-2">
+        <div className="chart-card">
+          <div className="chart-header">
+            <div>
+              <h3 className="chart-title">Compras mensuales</h3>
+              <p className="chart-subtitle">Acumulado por mes — año actual</p>
+            </div>
+          </div>
+          <SalesBarChart key={`compras-${comprasMensuales?.labels?.join()}`} data={comprasMensuales || { labels: [], values: [] }} />
+        </div>
+
+        <div className="chart-card">
+          <div className="chart-header">
+            <div>
+              <h3 className="chart-title">Clientes recientes</h3>
+              <p className="chart-subtitle">Últimos registrados</p>
+            </div>
+          </div>
+          <div className="top-products">
+            {clientesRecientes.length === 0 ? (
+              <p style={{ fontSize: 13, color: MUTED, fontStyle: "italic" }}>Sin datos aún.</p>
+            ) : clientesRecientes.map((cliente) => (
+              <div key={cliente.id_cliente} className="top-product">
+                <div className="top-product-info">
+                  <span className="top-product-name">{cliente.nombre}</span>
+                  <span className="top-product-count">
+                    {cliente.fecha_creacion ? new Date(cliente.fecha_creacion).toLocaleDateString("es-CO") : "—"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="chart-card">
+        <div className="chart-header">
+          <div>
+            <h3 className="chart-title">Productos con bajo stock</h3>
+            <p className="chart-subtitle">Variantes con menos de 5 unidades disponibles</p>
+          </div>
+        </div>
+        <div className="tbl-container">
+          <table className="tbl">
+            <thead className="tbl-header">
+              <tr>
+                <th className="tbl-th">Producto</th>
+                <th className="tbl-th">Talla</th>
+                <th className="tbl-th">Color</th>
+                <th className="tbl-th">Stock</th>
+              </tr>
+            </thead>
+            <tbody>
+              {productosBajoStock.length === 0 ? (
+                <tr><td className="tbl-td" colSpan={4} style={{ textAlign: "center", color: MUTED }}>Sin productos en alerta.</td></tr>
+              ) : productosBajoStock.map((p, i) => (
+                <tr key={i} className="tbl-row">
+                  <td className="tbl-td">{p.nombre}</td>
+                  <td className="tbl-td">{p.talla || "—"}</td>
+                  <td className="tbl-td">{p.color || "—"}</td>
+                  <td className="tbl-td">
+                    <span className="tabla-badge" style={{ color: p.stock === 0 ? "#b83232" : "#7a5500" }}>
+                      <IconAlertTriangle /> {p.stock} {p.stock === 0 ? "(agotado)" : ""}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
