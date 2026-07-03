@@ -4,7 +4,7 @@ const make    = require('../controllers/crudFactory');
 const pool    = require('../config/db');
 const { crearUsuario, actualizarUsuario } = require('../controllers/auth.controller');
 const { verificarToken, tieneModulo } = require('../middlewares/auth.middleware');
-const { esRolProtegido } = require('../utils/rolesProtegidos');
+const { esRolProtegido } = require('../../../sportwear/src/utils/rolesProtegidos');
 
 const ctrl = make('Usuarios', ['nombre','email','id_rol','estado'], 'id_usuario');
 
