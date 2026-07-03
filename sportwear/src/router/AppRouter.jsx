@@ -25,6 +25,7 @@ import GestProductos from "../pages/gestProductos/GestProductos";
 import Colores       from "../pages/colores/Colores";
 import Proveedores   from "../pages/proveedores/Proveedores";
 import Compras       from "../pages/compras/Compras";
+import Pedidos       from "../pages/pedidos/Pedidos";
 import PedidosVentas from "../pages/pedidosVentas/PedidosVentas";
 import PagosAbonos   from "../pages/pagosAbonos/PagosAbonos";
 
@@ -88,7 +89,8 @@ export default function AppRouter() {
               <Route path="/colores"     element={<P k="colores">     <Colores />       </P>} />
               <Route path="/proveedores" element={<P k="proveedores"> <Proveedores />   </P>} />
               <Route path="/compras"     element={<P k="compras">     <Compras />       </P>} />
-              <Route path="/pedidos"     element={<P k="pedidos">     <PedidosVentas /> </P>} />
+              <Route path="/pedidos"     element={<P k="pedidos">     <Pedidos />       </P>} />
+              <Route path="/ventas"      element={<P k="ventas">      <PedidosVentas /> </P>} />
               <Route path="/pagos"       element={<P k="pagos">       <PagosAbonos />   </P>} />
             </Route>
 
