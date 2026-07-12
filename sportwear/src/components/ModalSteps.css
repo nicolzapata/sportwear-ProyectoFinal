@@ -295,6 +295,11 @@
 }
 .ms-req { color: var(--dvna-circle, #b49780); }
 
+.ms-form-input::placeholder {
+  color: var(--dvna-muted, #999);
+  opacity: 1;
+}
+
 .ms-form-input,
 .ms-form-select {
   font-family: 'DM Sans';

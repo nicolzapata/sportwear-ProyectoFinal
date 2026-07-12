@@ -351,6 +351,11 @@
   letter-spacing: normal;
 }
 
+.gestproductos-form-input::placeholder {
+  color: var(--dvna-muted, #999);
+  opacity: 1;
+}
+
 .gestproductos-form-input,
 .gestproductos-form-select {
   width: 100%;

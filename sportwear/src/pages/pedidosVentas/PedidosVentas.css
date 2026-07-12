@@ -377,6 +377,9 @@
   display: block; font-size: 0.75rem; font-weight: 500; color: #555;
   margin-bottom: 0.3rem; text-transform: none; letter-spacing: normal;
 }
+.pedidosventas-form-input::placeholder {
+  color: #999; opacity: 1;
+}
 .pedidosventas-form-input, .pedidosventas-form-select {
   width: 100%; padding: 0.8rem 1rem; border: 1px solid #e0e0e0; border-radius: 12px;
   font-size: 0.9rem; transition: all 0.2s ease; background: white; font-family: inherit;

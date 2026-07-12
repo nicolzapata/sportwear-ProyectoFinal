@@ -355,6 +355,11 @@
   letter-spacing: normal;
 }
 
+.proveedores-form-input::placeholder {
+  color: #999;
+  opacity: 1;
+}
+
 .proveedores-form-input,
 .proveedores-form-select {
   width: 100%;

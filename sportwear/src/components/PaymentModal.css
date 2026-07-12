@@ -288,6 +288,11 @@
   background: var(--dvna-white);
 }
 
+.pm-field input::placeholder {
+  color: var(--dvna-muted, #999);
+  opacity: 1;
+}
+
 .pm-field input:focus {
   border-color: var(--dvna-circle);
 }

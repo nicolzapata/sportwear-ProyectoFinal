@@ -487,6 +487,11 @@
   letter-spacing: normal;
 }
 
+.compras-form-input::placeholder {
+  color: #999;
+  opacity: 1;
+}
+
 .compras-form-input,
 .compras-form-select {
   width: 100%;

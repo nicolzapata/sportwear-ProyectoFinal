@@ -218,7 +218,7 @@
   padding-left: 14px;
   box-shadow: 0 0 0 1000px var(--dvna-pale) inset;
 }
-.form-group input::placeholder { color: #ccc; font-weight: 300; }
+.form-group input::placeholder { color: #999; font-weight: 300; -webkit-text-fill-color: #999; }
 
 .form-group input:focus,
 .form-group select:focus {

@@ -766,7 +766,7 @@
   padding: 10px 14px; outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-.ms-form-input::placeholder { color: var(--dvna-mid); }
+.ms-form-input::placeholder { color: var(--dvna-muted, #999); }
 .ms-form-input:focus {
   border-color: var(--dvna-circle);
   box-shadow: 0 0 0 3px rgba(180,151,128,0.1);

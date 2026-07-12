@@ -413,6 +413,11 @@
   letter-spacing: normal;
 }
 
+.pagosabonos-form-input::placeholder {
+  color: #999;
+  opacity: 1;
+}
+
 .pagosabonos-form-input,
 .pagosabonos-form-select {
   width: 100%;

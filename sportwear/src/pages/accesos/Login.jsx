@@ -153,11 +153,11 @@ if (esCliente) {
         {/* Logo */}
         <div className="card-logo">
           <div className="brand-logo-ring">
-            <img src={logo} alt="DVNA" onError={(e) => {
+            <img src={logo} alt="SportWear" onError={(e) => {
               e.target.style.display = "none";
               e.target.nextSibling.style.display = "block";
             }}/>
-            <span className="logo-fallback" style={{ display: "none" }}>DVNA</span>
+            <span className="logo-fallback" style={{ display: "none" }}>SportWear</span>
           </div>
           <p className="card-brand-name">SPORT<span>WEAR</span></p>
         </div>
