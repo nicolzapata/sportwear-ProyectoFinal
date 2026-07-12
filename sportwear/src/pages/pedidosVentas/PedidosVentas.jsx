@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import './PedidosVentas.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import { IconDollar, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
+import ExportButtons from "../../components/ExportButtons";
+import { IconDollar, IconEye, IconSearch, IconX } from "../../components/Icons";
 
 const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;
@@ -260,7 +261,22 @@ export default function PedidosVentas() {
               <span>+</span> Nueva venta
             </button>
           )}
-          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+          <ExportButtons
+            datos={filtrados}
+            columnas={[
+              { header: "Cliente", key: "cliente" },
+              { header: "Producto", value: (v) => v.items?.map((i) => i.producto).filter(Boolean).join(', ') || '-' },
+              { header: "Cantidad", value: (v) => v.items?.reduce((sum, i) => sum + i.cantidad, 0) || 0 },
+              { header: "Total", value: (v) => fmt(v.total) },
+              { header: "Tipo", value: (v) => (v.tipo_pago === 'cuotas' ? `Cuotas (${v.num_cuotas})` : 'Completo') },
+              { header: "Abonado", value: (v) => fmt(v.total_pagado || 0) },
+              { header: "Saldo", value: (v) => fmt(v.total - (v.total_pagado || 0)) },
+              { header: "Fecha", value: (v) => v.fecha?.toString().split("T")[0] || "—" },
+              { header: "Estado", key: "estado" },
+            ]}
+            nombreArchivo="pedidos_ventas"
+            titulo="Pedidos y Ventas"
+          />
         </div>
       </div>
 

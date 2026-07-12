@@ -6,8 +6,9 @@ import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
+import ExportButtons from "../../components/ExportButtons";
 import "./Clientes.css";
-import { IconEdit, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
+import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
 const FORM_VACIO = { nombre: "", tipo_doc: "CC", documento: "", telefono: "", email: "", id_barrio: "", direccion: "", tipo_cliente: "Regular", permiso_pagos: 1, permiso_cuotas: 1, estado: "Activo" };
 const FILAS_POR_PAGINA = 10;
@@ -181,7 +182,21 @@ export default function Clientes() {
             {tienePerm('Clientes.crear') && (
               <button className="clientes-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo cliente</button>
             )}
-            <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+            <ExportButtons
+              datos={filtradosAll}
+              columnas={[
+                { header: "Cliente", key: "nombre" },
+                { header: "Documento", value: (c) => `${c.tipo_doc} ${c.documento}` },
+                { header: "Teléfono", value: (c) => c.telefono || "—" },
+                { header: "Barrio", value: (c) => (c.barrio_nombre ? `${c.barrio_nombre} (${c.comuna})` : "—") },
+                { header: "Tipo", key: "tipo_cliente" },
+                { header: "Compras", value: (c) => c.total_compras || 0 },
+                { header: "Total gastado", value: (c) => `$${Number(c.total_gastado || 0).toLocaleString("es-CO")}` },
+                ...(tienePerm('Clientes.estado') ? [{ header: "Estado", key: "estado" }] : []),
+              ]}
+              nombreArchivo="clientes"
+              titulo="Clientes"
+            />
           </div>
       </div>
 

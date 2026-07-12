@@ -6,8 +6,9 @@ import ModalSteps from "../../components/ModalSteps";
 import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
 import Toast from "../../components/Toast";
+import ExportButtons from "../../components/ExportButtons";
 import './Colores.css';
-import { IconEdit, IconPalette, IconPrint, IconSearch, IconTrash, IconX } from "../../components/Icons";
+import { IconEdit, IconPalette, IconSearch, IconTrash, IconX } from "../../components/Icons";
 
 const getBrightness = (hex) => {
   const r = parseInt(hex.substring(1,3),16), g = parseInt(hex.substring(3,5),16), b = parseInt(hex.substring(5,7),16);
@@ -188,7 +189,16 @@ export default function Colores() {
             <button className="colores-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo color</button>
           )}
           {tab === 'lista' && (
-            <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+            <ExportButtons
+              datos={filtradosAll}
+              columnas={[
+                { header: "Nombre", key: "nombre" },
+                { header: "HEX", key: "codigo_hex" },
+                ...(tienePerm('Colores.estado') ? [{ header: "Estado", key: "estado" }] : []),
+              ]}
+              nombreArchivo="colores"
+              titulo="Colores"
+            />
           )}
         </div>
       </div>

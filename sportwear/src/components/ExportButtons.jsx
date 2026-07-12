@@ -22,7 +22,7 @@ export default function ExportButtons({ datos, columnas, nombreArchivo = "export
     setAbierto(false);
     setExportando(true);
     try {
-      if (formato === "excel") await exportarExcel(datos, columnas, nombreArchivo);
+      if (formato === "excel") await exportarExcel(datos, columnas, nombreArchivo, titulo);
       else await exportarPDF(datos, columnas, nombreArchivo, titulo);
     } catch {
       alert("No se pudo generar el archivo de exportación.");

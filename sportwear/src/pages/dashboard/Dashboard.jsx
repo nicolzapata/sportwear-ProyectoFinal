@@ -3,8 +3,9 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 import MiCuenta from "../clientes/MiCuenta";
+import ExportButtons from "../../components/ExportButtons";
 import {
-  IconDollar, IconShoppingCart, IconPrint, IconUsers, IconAlertTriangle,
+  IconDollar, IconShoppingCart, IconUsers, IconAlertTriangle,
 } from "../../components/Icons";
 import "./Dashboard.css";
 
@@ -354,7 +355,17 @@ export default function Dashboard() {
               </tbody>
             </table>
             <div className="print-button-container">
-              <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
+              <ExportButtons
+                datos={ventasRecientes}
+                columnas={[
+                  { header: "Cliente", key: "cliente" },
+                  { header: "Producto", key: "producto" },
+                  { header: "Total", value: (v) => formatCurrency(v.total) },
+                  { header: "Estado", key: "estado" },
+                ]}
+                nombreArchivo="ultimas_ventas"
+                titulo="Últimas ventas"
+              />
             </div>
           </div>
         </div>
@@ -390,9 +401,6 @@ export default function Dashboard() {
                   <span className="stat-mini-value">{formatCurrency(stats.ticket_promedio)}</span>
                 </div>
               </div>
-            </div>
-            <div className="print-button-container">
-              <button className="btn-print" onClick={() => window.print()}><IconPrint /></button>
             </div>
           </div>
         </div>

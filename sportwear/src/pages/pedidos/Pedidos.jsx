@@ -4,7 +4,8 @@ import { createPortal } from "react-dom";
 import './Pedidos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import { IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
+import ExportButtons from "../../components/ExportButtons";
+import { IconEye, IconSearch, IconX } from "../../components/Icons";
 
 const FILAS_POR_PAGINA = 10;
 
@@ -222,7 +223,18 @@ export default function Pedidos() {
           </div>
         </div>
         <div className="pedidos-actions-right">
-          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+          <ExportButtons
+            datos={filtrados}
+            columnas={[
+              { header: "Cliente", key: "cliente" },
+              { header: "Productos", value: (p) => p.items?.map((i) => i.producto).filter(Boolean).join(', ') || '-' },
+              { header: "Dirección", value: (p) => p.direccion_entrega || "—" },
+              { header: "Actualizado", value: (p) => p.fecha_actualizacion?.toString().split("T")[0] || "—" },
+              { header: "Estado", key: "estado_pedido" },
+            ]}
+            nombreArchivo="pedidos"
+            titulo="Pedidos"
+          />
         </div>
       </div>
 
