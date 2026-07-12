@@ -6,7 +6,7 @@ import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento } from "../../utils/numerico";
 import './Proveedores.css';
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
@@ -123,6 +123,10 @@ export default function Proveedores() {
     const e = {};
     if (!form.tipo_doc) e.tipo_doc = "Selecciona un tipo de documento";
     if (!form.numero_doc.trim()) e.numero_doc = "El número de documento es obligatorio";
+    else {
+      const errorLongitud = validarNumeroDocumento(form.tipo_doc, form.numero_doc);
+      if (errorLongitud) e.numero_doc = errorLongitud;
+    }
     if (!form.razon_social.trim()) e.razon_social = "La razón social es obligatoria";
     if (!form.nombre_contacto.trim()) e.nombre_contacto = "La persona de contacto es obligatoria";
     if (!form.ciudad.trim()) e.ciudad = "La ciudad es obligatoria";
@@ -319,6 +323,7 @@ export default function Proveedores() {
                       inputMode="numeric"
                       className={`proveedores-form-input${errores.numero_doc ? " input-error" : ""}`}
                       placeholder="Ej: 900123456"
+                      maxLength={maxLongitudDocumento(form.tipo_doc)}
                       value={form.numero_doc}
                       disabled={!!editar}
                       title={editar ? "El documento no se puede modificar" : undefined}

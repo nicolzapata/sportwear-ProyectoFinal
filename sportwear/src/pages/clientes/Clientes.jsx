@@ -7,7 +7,7 @@ import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../co
 import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
 import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento } from "../../utils/numerico";
 import "./Clientes.css";
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
@@ -94,6 +94,10 @@ export default function Clientes() {
     const e = {};
     if (!form.nombre.trim()) e.nombre = "El nombre es obligatorio";
     if (!form.documento.trim()) e.documento = "El documento es obligatorio";
+    else {
+      const errorLongitud = validarNumeroDocumento(form.tipo_doc, form.documento);
+      if (errorLongitud) e.documento = errorLongitud;
+    }
     setErrores(e);
     return Object.keys(e).length === 0;
   };
@@ -120,7 +124,7 @@ export default function Clientes() {
     <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className={`ms-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Juan Pérez" value={form.nombre} onChange={e => { setForm({ ...form, nombre: e.target.value }); if (errores.nombre) setErrores(prev => ({ ...prev, nombre: "" })); }} />{errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}</div>
     <div className="ms-form-row">
       <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={form.tipo_doc} onChange={e => setForm({ ...form, tipo_doc: e.target.value })}>{["CC","CE","TI","NIT","Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
-      <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="123456789" value={form.documento} onChange={e => { setForm({ ...form, documento: e.target.value }); if (errores.documento) setErrores(prev => ({ ...prev, documento: "" })); }} />{errores.documento && <span className="ms-form-error">{errores.documento}</span>}</div>
+      <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="123456789" inputMode={form.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(form.tipo_doc)} value={form.documento} onChange={e => { setForm({ ...form, documento: form.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value) }); if (errores.documento) setErrores(prev => ({ ...prev, documento: "" })); }} />{errores.documento && <span className="ms-form-error">{errores.documento}</span>}</div>
     </div>
     <div className="ms-form-row">
       <div className="ms-form-group"><label className="ms-form-label">Teléfono</label><input className="ms-form-input" inputMode="numeric" placeholder="3001234567" value={form.telefono} onChange={e => setForm({ ...form, telefono: soloDigitos(e.target.value) })} /></div>

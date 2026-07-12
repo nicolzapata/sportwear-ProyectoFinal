@@ -8,7 +8,7 @@ import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento } from "../../utils/numerico";
 import './Usuarios.css';
 import { IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconSearch, IconX } from "../../components/Icons";
 
@@ -158,6 +158,10 @@ export default function Usuarios() {
   const validarPasoDatosCuenta = () => {
     const e = {};
     if (!form.documento.trim()) e.documento = "El documento es obligatorio";
+    else {
+      const errorLongitud = validarNumeroDocumento(form.tipo_doc, form.documento);
+      if (errorLongitud) e.documento = errorLongitud;
+    }
     if (!form.nombre.trim()) e.nombre = "El nombre es obligatorio";
     if (!form.email.trim()) e.email = "El correo electrónico es obligatorio";
     if (!form.telefono.trim()) e.telefono = "El teléfono es obligatorio";
@@ -193,6 +197,10 @@ export default function Usuarios() {
     const e = {};
     if (!clienteForm.nombre.trim()) e.nombre = "El nombre es obligatorio";
     if (!clienteForm.documento.trim()) e.documento = "El documento es obligatorio";
+    else {
+      const errorLongitud = validarNumeroDocumento(clienteForm.tipo_doc, clienteForm.documento);
+      if (errorLongitud) e.documento = errorLongitud;
+    }
     if (!clienteForm.telefono.trim()) e.telefono = "El teléfono es obligatorio";
     if (!clienteForm.email.trim()) e.email = "El correo electrónico es obligatorio";
     setErroresCliente(prev => ({ ...prev, ...e, ...(!e.nombre && { nombre: "" }), ...(!e.documento && { documento: "" }), ...(!e.telefono && { telefono: "" }), ...(!e.email && { email: "" }) }));
@@ -262,6 +270,7 @@ export default function Usuarios() {
           <label className="ms-form-label">N° documento <span className="ms-req">*</span></label>
           <input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="1001234567" value={form.documento}
             disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode={form.tipo_doc === "PP" ? "text" : "numeric"}
+            maxLength={maxLongitudDocumento(form.tipo_doc)}
             onChange={e => { setForm({ ...form, documento: form.tipo_doc === "PP" ? e.target.value : soloDigitos(e.target.value) }); if (errores.documento) setErrores(prev => ({ ...prev, documento: "" })); }} />
           {errores.documento && <span className="ms-form-error">{errores.documento}</span>}
         </div>
@@ -544,7 +553,7 @@ export default function Usuarios() {
               <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={clienteForm.tipo_doc} disabled={!!editar} onChange={e => setClienteForm({ ...clienteForm, tipo_doc: e.target.value })}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
             </div>
             <div className="ms-form-row">
-              <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode={clienteForm.tipo_doc === "Pasaporte" ? "text" : "numeric"} onChange={e => { setClienteForm({ ...clienteForm, documento: clienteForm.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value) }); if (erroresCliente.documento) setErroresCliente(prev => ({ ...prev, documento: "" })); }} />{erroresCliente.documento && <span className="ms-form-error">{erroresCliente.documento}</span>}</div>
+              <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode={clienteForm.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(clienteForm.tipo_doc)} onChange={e => { setClienteForm({ ...clienteForm, documento: clienteForm.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value) }); if (erroresCliente.documento) setErroresCliente(prev => ({ ...prev, documento: "" })); }} />{erroresCliente.documento && <span className="ms-form-error">{erroresCliente.documento}</span>}</div>
               <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.telefono ? " input-error" : ""}`} placeholder="3001234567" value={clienteForm.telefono} inputMode="numeric" onChange={e => { setClienteForm({ ...clienteForm, telefono: soloDigitos(e.target.value) }); if (erroresCliente.telefono) setErroresCliente(prev => ({ ...prev, telefono: "" })); }} />{erroresCliente.telefono && <span className="ms-form-error">{erroresCliente.telefono}</span>}</div>
             </div>
             <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className={`ms-form-input${erroresCliente.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={clienteForm.email} disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined} onChange={e => { setClienteForm({ ...clienteForm, email: e.target.value }); if (erroresCliente.email) setErroresCliente(prev => ({ ...prev, email: "" })); }} />{erroresCliente.email && <span className="ms-form-error">{erroresCliente.email}</span>}</div>

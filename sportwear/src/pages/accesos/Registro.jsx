@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
 import logo from "../../assets/LOGO.png";
-import { soloDigitos } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento } from "../../utils/numerico";
 import "./Login.css";
 import "./Registro.css";
 
@@ -124,6 +124,10 @@ export default function Registro() {
     const e = {};
     if (!form.nombre.trim()) e.nombre = "El nombre es obligatorio.";
     if (!form.documento.trim()) e.documento = "El documento es obligatorio.";
+    else {
+      const errorLongitud = validarNumeroDocumento(form.tipo_doc, form.documento);
+      if (errorLongitud) e.documento = errorLongitud;
+    }
     if (!form.telefono.trim()) e.telefono = "El teléfono es obligatorio.";
     else if (form.telefono.length !== 10) e.telefono = "El teléfono debe tener 10 dígitos.";
     if (!form.email.trim()) e.email = "El correo es obligatorio.";
@@ -214,6 +218,7 @@ export default function Registro() {
                 <label>N° documento <span className="req">*</span></label>
                 <div className="input-wrapper">
                   <input type="text" name="documento" placeholder="1001234567" inputMode={form.tipo_doc === "PP" ? "text" : "numeric"}
+                    maxLength={maxLongitudDocumento(form.tipo_doc)}
                     value={form.documento} onChange={handleChange}
                     onFocus={onFocus} onBlur={onBlur}
                     style={{ paddingLeft: "14px" }}/>
