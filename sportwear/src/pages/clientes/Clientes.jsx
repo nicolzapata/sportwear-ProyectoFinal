@@ -7,6 +7,7 @@ import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../co
 import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
 import ExportButtons from "../../components/ExportButtons";
+import { soloDigitos } from "../../utils/numerico";
 import "./Clientes.css";
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
@@ -122,7 +123,7 @@ export default function Clientes() {
       <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="123456789" value={form.documento} onChange={e => { setForm({ ...form, documento: e.target.value }); if (errores.documento) setErrores(prev => ({ ...prev, documento: "" })); }} />{errores.documento && <span className="ms-form-error">{errores.documento}</span>}</div>
     </div>
     <div className="ms-form-row">
-      <div className="ms-form-group"><label className="ms-form-label">Teléfono</label><input className="ms-form-input" placeholder="3001234567" value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} /></div>
+      <div className="ms-form-group"><label className="ms-form-label">Teléfono</label><input className="ms-form-input" inputMode="numeric" placeholder="3001234567" value={form.telefono} onChange={e => setForm({ ...form, telefono: soloDigitos(e.target.value) })} /></div>
       <div className="ms-form-group"><label className="ms-form-label">Correo electrónico</label><input type="email" className="ms-form-input" placeholder="ejemplo@correo.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
     </div>
   </div>);

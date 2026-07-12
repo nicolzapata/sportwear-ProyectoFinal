@@ -12,6 +12,7 @@ import "./Login.css";
 import "./Registro.css";
 
 const TIPOS_DOC = ["CC", "CE", "TI", "NIT", "PP"];
+const CAMPOS_NUMERICOS = ["documento", "telefono"];
 
 const IconUser = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
@@ -55,6 +56,26 @@ const IconEyeClosed = () => (
   </svg>
 );
 
+// Declarado fuera de Registro: si viviera dentro del componente se recrearía
+// en cada render y React remontaría el <input> en cada tecla, perdiendo el foco.
+const Field = ({ icon, name, type = "text", placeholder, required, label, value, onChange, onFocus, onBlur, error, maxLength }) => (
+  <div className="form-group">
+    <label>{icon} {label} {required && <span className="req">*</span>}</label>
+    <div className="input-wrapper">
+      <span className="input-icon">{icon}</span>
+      <input
+        type={type} name={name} placeholder={placeholder}
+        inputMode={CAMPOS_NUMERICOS.includes(name) ? "numeric" : undefined}
+        maxLength={maxLength}
+        value={value} onChange={onChange}
+        onFocus={onFocus} onBlur={onBlur}
+      />
+      <div className="input-bar" />
+    </div>
+    {error && <span className="field-error">{error}</span>}
+  </div>
+);
+
 export default function Registro() {
   const navigate = useNavigate();
 
@@ -65,6 +86,7 @@ export default function Registro() {
   });
   const [barrios, setBarrios] = useState([]);
   const [error, setError]     = useState("");
+  const [errores, setErrores] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -76,10 +98,16 @@ export default function Registro() {
       .catch(() => setBarrios([]));
   }, []);
 
-  const CAMPOS_NUMERICOS = ["documento", "telefono"];
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: CAMPOS_NUMERICOS.includes(name) ? soloDigitos(value) : value });
+    const esDocumentoPasaporte = name === "documento" && form.tipo_doc === "PP";
+    let nuevoValor = value;
+    if (CAMPOS_NUMERICOS.includes(name) && !esDocumentoPasaporte) {
+      nuevoValor = soloDigitos(value);
+      if (name === "telefono") nuevoValor = nuevoValor.slice(0, 10);
+    }
+    setForm({ ...form, [name]: nuevoValor });
+    if (errores[name]) setErrores(prev => ({ ...prev, [name]: "" }));
     setError("");
   };
 
@@ -92,34 +120,40 @@ export default function Registro() {
     if (bar) bar.style.transform = "scaleX(0)";
   };
 
-   const validar = () => {
-     if (!form.nombre || !form.documento || !form.email || !form.contrasena)
-       return "Nombre, documento, email y contraseña son obligatorios.";
-     if (form.contrasena !== form.confirmar)
-       return "Las contraseñas no coinciden.";
-     if (form.contrasena.length < 6)
-       return "La contraseña debe tener al menos 6 caracteres.";
-     // Validar al menos un carácter especial (símbolo)
-     if (!/[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]+/.test(form.contrasena))
-       return "La contraseña debe contener al menos un signo (símbolo).";
-     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-       return "El correo electrónico no es válido.";
-     return null;
-   };
+  const validarCampos = () => {
+    const e = {};
+    if (!form.nombre.trim()) e.nombre = "El nombre es obligatorio.";
+    if (!form.documento.trim()) e.documento = "El documento es obligatorio.";
+    if (!form.telefono.trim()) e.telefono = "El teléfono es obligatorio.";
+    else if (form.telefono.length !== 10) e.telefono = "El teléfono debe tener 10 dígitos.";
+    if (!form.email.trim()) e.email = "El correo es obligatorio.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "El correo electrónico no es válido.";
+    if (!form.ciudad.trim()) e.ciudad = "La ciudad es obligatoria.";
+    if (!form.id_barrio) e.id_barrio = "Selecciona un barrio.";
+    if (!form.direccion.trim()) e.direccion = "La dirección es obligatoria.";
+    if (!form.contrasena) e.contrasena = "La contraseña es obligatoria.";
+    else if (form.contrasena.length < 6) e.contrasena = "Debe tener al menos 6 caracteres.";
+    // eslint-disable-next-line no-useless-escape
+    else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(form.contrasena)) e.contrasena = "Debe contener al menos un signo (símbolo).";
+    if (!form.confirmar) e.confirmar = "Confirma tu contraseña.";
+    else if (form.contrasena !== form.confirmar) e.confirmar = "Las contraseñas no coinciden.";
+    return e;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const err = validar();
-    if (err) { setError(err); return; }
+    const erroresCampos = validarCampos();
+    setErrores(erroresCampos);
+    if (Object.keys(erroresCampos).length > 0) return;
     setLoading(true);
     try {
       await api.post("/auth/registro", {
         nombre: form.nombre, tipo_doc: form.tipo_doc,
-        documento: form.documento, telefono: form.telefono || null,
+        documento: form.documento, telefono: form.telefono,
         email: form.email, contrasena: form.contrasena,
-        ciudad: form.ciudad || "Medellín",
-        id_barrio: form.id_barrio || null,
-        direccion: form.direccion || null,
+        ciudad: form.ciudad,
+        id_barrio: form.id_barrio,
+        direccion: form.direccion,
       });
       setSuccess(true);
       setTimeout(() => navigate("/login"), 2000);
@@ -129,23 +163,6 @@ export default function Registro() {
       setLoading(false);
     }
   };
-
-  // Helper campo con icono
-  const Field = ({ icon, name, type = "text", placeholder, required, label }) => (
-    <div className="form-group">
-      <label>{icon} {label} {required && <span className="req">*</span>}</label>
-      <div className="input-wrapper">
-        <span className="input-icon">{icon}</span>
-        <input
-          type={type} name={name} placeholder={placeholder}
-          inputMode={CAMPOS_NUMERICOS.includes(name) ? "numeric" : undefined}
-          value={form[name]} onChange={handleChange}
-          onFocus={onFocus} onBlur={onBlur}
-        />
-        <div className="input-bar" />
-      </div>
-    </div>
-  );
 
   return (
     <div className="login-page registro-page">
@@ -181,7 +198,9 @@ export default function Registro() {
           <form onSubmit={handleSubmit}>
 
             <Field icon={<IconUser />} name="nombre" label="Nombre completo"
-              placeholder="Ana Sofía López" required />
+              placeholder="Ana Sofía López" required
+              value={form.nombre} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+              error={errores.nombre} />
 
             <div className="registro-row">
               <div className="form-group">
@@ -194,39 +213,51 @@ export default function Registro() {
               <div className="form-group">
                 <label>N° documento <span className="req">*</span></label>
                 <div className="input-wrapper">
-                  <input type="text" name="documento" placeholder="1001234567" inputMode="numeric"
+                  <input type="text" name="documento" placeholder="1001234567" inputMode={form.tipo_doc === "PP" ? "text" : "numeric"}
                     value={form.documento} onChange={handleChange}
                     onFocus={onFocus} onBlur={onBlur}
                     style={{ paddingLeft: "14px" }}/>
                   <div className="input-bar" />
                 </div>
+                {errores.documento && <span className="field-error">{errores.documento}</span>}
               </div>
             </div>
 
             <Field icon={<IconMail />} name="email" type="email" label="Correo electrónico"
-              placeholder="correo@ejemplo.com" required />
+              placeholder="correo@ejemplo.com" required
+              value={form.email} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+              error={errores.email} />
 
-            <Field icon={<IconPhone />} name="telefono" label="Teléfono"
-              placeholder="3001234567" />
+            <Field icon={<IconPhone />} name="telefono" label="Teléfono" required maxLength={10}
+              placeholder="3001234567"
+              value={form.telefono} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+              error={errores.telefono} />
 
-            <Field icon={<IconLocation />} name="ciudad" label="Ciudad"
-              placeholder="Medellín" />
+            <div className="registro-row">
+              <Field icon={<IconLocation />} name="ciudad" label="Ciudad" required
+                placeholder="Medellín"
+                value={form.ciudad} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+                error={errores.ciudad} />
 
-            <div className="form-group">
-              <label><IconLocation /> Barrio</label>
-              <select name="id_barrio" className="form-control"
-                value={form.id_barrio} onChange={handleChange}>
-                <option value="">— Selecciona un barrio —</option>
-                {barrios.map(b => (
-                  <option key={b.id_barrio} value={b.id_barrio}>
-                    {b.nombre}
-                  </option>
-                ))}
-              </select>
+              <div className="form-group">
+                <label><IconLocation /> Barrio <span className="req">*</span></label>
+                <select name="id_barrio" className="form-control"
+                  value={form.id_barrio} onChange={handleChange}>
+                  <option value="">— Selecciona un barrio —</option>
+                  {barrios.map(b => (
+                    <option key={b.id_barrio} value={b.id_barrio}>
+                      {b.nombre}
+                    </option>
+                  ))}
+                </select>
+                {errores.id_barrio && <span className="field-error">{errores.id_barrio}</span>}
+              </div>
             </div>
 
-            <Field icon={<IconLocation />} name="direccion" label="Dirección"
-              placeholder="Cra 43A # 10-20 Apto 301" />
+            <Field icon={<IconLocation />} name="direccion" label="Dirección" required
+              placeholder="Cra 43A # 10-20 Apto 301"
+              value={form.direccion} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+              error={errores.direccion} />
 
             <div className="registro-row">
               <div className="form-group">
@@ -246,6 +277,7 @@ export default function Registro() {
                     {showPassword ? <IconEyeOpen /> : <IconEyeClosed />}
                   </span>
                 </div>
+                {errores.contrasena && <span className="field-error">{errores.contrasena}</span>}
               </div>
               <div className="form-group">
                 <label><IconLock /> Confirmar <span className="req">*</span></label>
@@ -264,6 +296,7 @@ export default function Registro() {
                     {showConfirmPassword ? <IconEyeOpen /> : <IconEyeClosed />}
                   </span>
                 </div>
+                {errores.confirmar && <span className="field-error">{errores.confirmar}</span>}
               </div>
             </div>
 
