@@ -6,7 +6,7 @@ import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, LONGITUD_TELEFONO } from "../../utils/numerico";
 import './Proveedores.css';
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
@@ -129,7 +129,6 @@ export default function Proveedores() {
   const validarCampoRazonSocial = (v) => (!v.trim() ? "La razón social es obligatoria" : "");
   const validarCampoNombreContacto = (v) => (!v.trim() ? "La persona de contacto es obligatoria" : "");
   const validarCampoCiudad = (v) => (!v.trim() ? "La ciudad es obligatoria" : "");
-  const validarCampoTelefono = (v) => (!v.trim() ? "El teléfono es obligatorio" : "");
   const validarCampoDireccion = (v) => (!v.trim() ? "La dirección es obligatoria" : "");
   const validarCampoEmail = (v) => {
     if (!v.trim()) return "El correo es obligatorio";
@@ -148,7 +147,8 @@ export default function Proveedores() {
     if (!form.razon_social.trim()) e.razon_social = "La razón social es obligatoria";
     if (!form.nombre_contacto.trim()) e.nombre_contacto = "La persona de contacto es obligatoria";
     if (!form.ciudad.trim()) e.ciudad = "La ciudad es obligatoria";
-    if (!form.telefono_celular.trim()) e.telefono_celular = "El teléfono es obligatorio";
+    const errorTelefono = validarTelefono(form.telefono_celular);
+    if (errorTelefono) e.telefono_celular = errorTelefono;
     if (!form.direccion.trim()) e.direccion = "La dirección es obligatoria";
     if (!form.email_contacto.trim()) e.email_contacto = "El correo es obligatorio";
     else if (!EMAIL_REGEX.test(form.email_contacto)) e.email_contacto = "El correo no tiene un formato válido";
@@ -471,13 +471,14 @@ export default function Proveedores() {
                       inputMode="numeric"
                       className={`proveedores-form-input${errores.telefono_celular ? " input-error" : ""}`}
                       placeholder="Ej: 3001234567"
+                      maxLength={LONGITUD_TELEFONO}
                       value={form.telefono_celular}
                       onChange={(e) => {
                         const valor = soloDigitos(e.target.value);
                         setForm((prev) => ({ ...prev, telefono_celular: valor }));
-                        if (errores.telefono_celular) setErrores((prev) => ({ ...prev, telefono_celular: validarCampoTelefono(valor) }));
+                        if (errores.telefono_celular) setErrores((prev) => ({ ...prev, telefono_celular: validarTelefono(valor) }));
                       }}
-                      onBlur={() => setErrores((prev) => ({ ...prev, telefono_celular: validarCampoTelefono(form.telefono_celular) }))}
+                      onBlur={() => setErrores((prev) => ({ ...prev, telefono_celular: validarTelefono(form.telefono_celular) }))}
                     />
                     {errores.telefono_celular && <span className="proveedores-field-error">{errores.telefono_celular}</span>}
                   </div>

@@ -41,3 +41,16 @@ export const validarNumeroDocumento = (tipoDoc, numeroDoc) => {
   }
   return "";
 };
+
+// Longitud exacta que debe tener un teléfono colombiano (celular a 10 dígitos).
+export const LONGITUD_TELEFONO = 10;
+
+// Valida que el teléfono sea obligatorio y tenga exactamente 10 dígitos.
+// Devuelve un mensaje de error o "" si es válido. Usado en todos los formularios
+// con campo de teléfono para que la regla sea idéntica en toda la app.
+export const validarTelefono = (telefono) => {
+  const valor = (telefono ?? "").toString().trim();
+  if (!valor) return "El teléfono es obligatorio.";
+  if (valor.length !== LONGITUD_TELEFONO) return `El teléfono debe tener ${LONGITUD_TELEFONO} dígitos.`;
+  return "";
+};

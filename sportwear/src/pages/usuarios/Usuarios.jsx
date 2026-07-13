@@ -8,7 +8,7 @@ import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, LONGITUD_TELEFONO } from "../../utils/numerico";
 import './Usuarios.css';
 import { IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconSearch, IconX } from "../../components/Icons";
 
@@ -164,7 +164,8 @@ export default function Usuarios() {
     }
     if (!form.nombre.trim()) e.nombre = "El nombre es obligatorio";
     if (!form.email.trim()) e.email = "El correo electrónico es obligatorio";
-    if (!form.telefono.trim()) e.telefono = "El teléfono es obligatorio";
+    const errorTelefono = validarTelefono(form.telefono);
+    if (errorTelefono) e.telefono = errorTelefono;
     if (!editar && !form.contrasena) e.contrasena = "La contraseña es obligatoria";
     if (form.contrasena && form.contrasena.length < 6) e.contrasena = "La contraseña debe tener al menos 6 caracteres";
     if (form.contrasena && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) e.contrasena = "La contraseña debe contener un símbolo";
@@ -210,7 +211,8 @@ export default function Usuarios() {
       const errorLongitud = validarNumeroDocumento(clienteForm.tipo_doc, clienteForm.documento);
       if (errorLongitud) e.documento = errorLongitud;
     }
-    if (!clienteForm.telefono.trim()) e.telefono = "El teléfono es obligatorio";
+    const errorTelefonoCliente = validarTelefono(clienteForm.telefono);
+    if (errorTelefonoCliente) e.telefono = errorTelefonoCliente;
     if (!clienteForm.email.trim()) e.email = "El correo electrónico es obligatorio";
     setErroresCliente(prev => ({ ...prev, ...e, ...(!e.nombre && { nombre: "" }), ...(!e.documento && { documento: "" }), ...(!e.telefono && { telefono: "" }), ...(!e.email && { email: "" }) }));
     return Object.keys(e).length === 0;
@@ -330,13 +332,13 @@ export default function Usuarios() {
         </div>
         <div className="ms-form-group">
           <label className="ms-form-label">Teléfono <span className="ms-req">*</span></label>
-          <input className={`ms-form-input${errores.telefono ? " input-error" : ""}`} placeholder="3001234567" value={form.telefono} inputMode="numeric"
+          <input className={`ms-form-input${errores.telefono ? " input-error" : ""}`} placeholder="3001234567" value={form.telefono} inputMode="numeric" maxLength={LONGITUD_TELEFONO}
             onChange={e => {
               const telefono = soloDigitos(e.target.value);
               setForm({ ...form, telefono });
-              if (errores.telefono) setErrores(prev => ({ ...prev, telefono: telefono.trim() ? "" : prev.telefono }));
+              if (errores.telefono) setErrores(prev => ({ ...prev, telefono: validarTelefono(telefono) }));
             }}
-            onBlur={() => setErrores(prev => ({ ...prev, telefono: form.telefono.trim() ? "" : "El teléfono es obligatorio" }))} />
+            onBlur={() => setErrores(prev => ({ ...prev, telefono: validarTelefono(form.telefono) }))} />
           {errores.telefono && <span className="ms-form-error">{errores.telefono}</span>}
         </div>
       </div>
@@ -634,9 +636,9 @@ export default function Usuarios() {
                   const msg = !clienteForm.documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(clienteForm.tipo_doc, clienteForm.documento);
                   setErroresCliente(prev => ({ ...prev, documento: msg }));
                 }} />{erroresCliente.documento && <span className="ms-form-error">{erroresCliente.documento}</span>}</div>
-              <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.telefono ? " input-error" : ""}`} placeholder="3001234567" value={clienteForm.telefono} inputMode="numeric"
-                onChange={e => { const telefono = soloDigitos(e.target.value); setClienteForm({ ...clienteForm, telefono }); if (erroresCliente.telefono) setErroresCliente(prev => ({ ...prev, telefono: telefono.trim() ? "" : prev.telefono })); }}
-                onBlur={() => setErroresCliente(prev => ({ ...prev, telefono: clienteForm.telefono.trim() ? "" : "El teléfono es obligatorio" }))} />{erroresCliente.telefono && <span className="ms-form-error">{erroresCliente.telefono}</span>}</div>
+              <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.telefono ? " input-error" : ""}`} placeholder="3001234567" value={clienteForm.telefono} inputMode="numeric" maxLength={LONGITUD_TELEFONO}
+                onChange={e => { const telefono = soloDigitos(e.target.value); setClienteForm({ ...clienteForm, telefono }); if (erroresCliente.telefono) setErroresCliente(prev => ({ ...prev, telefono: validarTelefono(telefono) })); }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, telefono: validarTelefono(clienteForm.telefono) }))} />{erroresCliente.telefono && <span className="ms-form-error">{erroresCliente.telefono}</span>}</div>
             </div>
             <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className={`ms-form-input${erroresCliente.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={clienteForm.email} disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined}
                 onChange={e => { const email = e.target.value; setClienteForm({ ...clienteForm, email }); if (erroresCliente.email) setErroresCliente(prev => ({ ...prev, email: email.trim() ? "" : prev.email })); }}

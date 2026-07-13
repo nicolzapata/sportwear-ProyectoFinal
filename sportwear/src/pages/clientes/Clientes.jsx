@@ -7,7 +7,7 @@ import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../co
 import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
 import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, LONGITUD_TELEFONO } from "../../utils/numerico";
 import "./Clientes.css";
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
@@ -102,6 +102,8 @@ export default function Clientes() {
     if (eNombre) e.nombre = eNombre;
     const eDocumento = errorDocumento(form.tipo_doc, form.documento);
     if (eDocumento) e.documento = eDocumento;
+    const eTelefono = validarTelefono(form.telefono);
+    if (eTelefono) e.telefono = eTelefono;
     setErrores(e);
     return Object.keys(e).length === 0;
   };
@@ -131,7 +133,7 @@ export default function Clientes() {
       <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="123456789" inputMode={form.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(form.tipo_doc)} value={form.documento} onChange={e => { const documento = form.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value); setForm({ ...form, documento }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(form.tipo_doc, documento) })); }} onBlur={() => setErrores(prev => ({ ...prev, documento: errorDocumento(form.tipo_doc, form.documento) }))} />{errores.documento && <span className="ms-form-error">{errores.documento}</span>}</div>
     </div>
     <div className="ms-form-row">
-      <div className="ms-form-group"><label className="ms-form-label">Teléfono</label><input className="ms-form-input" inputMode="numeric" placeholder="3001234567" value={form.telefono} onChange={e => setForm({ ...form, telefono: soloDigitos(e.target.value) })} /></div>
+      <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${errores.telefono ? " input-error" : ""}`} inputMode="numeric" maxLength={LONGITUD_TELEFONO} placeholder="3001234567" value={form.telefono} onChange={e => { const telefono = soloDigitos(e.target.value); setForm({ ...form, telefono }); if (errores.telefono) setErrores(prev => ({ ...prev, telefono: validarTelefono(telefono) })); }} onBlur={() => setErrores(prev => ({ ...prev, telefono: validarTelefono(form.telefono) }))} />{errores.telefono && <span className="ms-form-error">{errores.telefono}</span>}</div>
       <div className="ms-form-group"><label className="ms-form-label">Correo electrónico</label><input type="email" className="ms-form-input" placeholder="ejemplo@correo.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
     </div>
   </div>);

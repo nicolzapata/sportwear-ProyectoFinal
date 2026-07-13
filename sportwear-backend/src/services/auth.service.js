@@ -330,24 +330,30 @@ const recuperarContrasena = async (email) => {
 
   const enlace = `${process.env.FRONTEND_URL}/restablecer-contrasena?token=${token}`;
 
-  await transporter.sendMail({
-    from:    `"DVNA SportWear" <${process.env.EMAIL_USER}>`,
-    to:      email,
-    subject: 'Recuperación de contraseña — DVNA SportWear',
-    html: `
-      <div style="font-family:sans-serif;max-width:480px;margin:auto">
-        <h2 style="color:#b49780">DVNA SportWear</h2>
-        <p>Recibimos una solicitud para restablecer tu contraseña.</p>
-        <p>Haz clic en el botón para continuar. El enlace expira en <strong>1 hora</strong>.</p>
-        <a href="${enlace}"
-           style="display:inline-block;padding:12px 24px;background:#b49780;color:#fff;
-                  border-radius:6px;text-decoration:none;margin:16px 0">
-          Restablecer contraseña
-        </a>
-        <p style="color:#999;font-size:12px">Si no solicitaste esto, ignora este mensaje.</p>
-      </div>
-    `,
-  });
+  try {
+    await transporter.sendMail({
+      from:    `"DVNA SportWear" <${process.env.EMAIL_USER}>`,
+      to:      email,
+      subject: 'Recuperación de contraseña — DVNA SportWear',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto">
+          <h2 style="color:#b49780">DVNA SportWear</h2>
+          <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+          <p>Haz clic en el botón para continuar. El enlace expira en <strong>1 hora</strong>.</p>
+          <a href="${enlace}"
+             style="display:inline-block;padding:12px 24px;background:#b49780;color:#fff;
+                    border-radius:6px;text-decoration:none;margin:16px 0">
+            Restablecer contraseña
+          </a>
+          <p style="color:#999;font-size:12px">Si no solicitaste esto, ignora este mensaje.</p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    // No se debe filtrar el error crudo del proveedor SMTP (credenciales, host, etc.) al usuario.
+    console.error('Error enviando correo de recuperación:', err.message);
+    throw { status: 500, message: 'No se pudo enviar el correo de recuperación. Intenta más tarde.' };
+  }
 };
 
 const restablecerContrasena = async (token, contrasena) => {

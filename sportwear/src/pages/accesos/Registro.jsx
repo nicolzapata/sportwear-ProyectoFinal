@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
 import logo from "../../assets/LOGO.png";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, LONGITUD_TELEFONO } from "../../utils/numerico";
 import "./Login.css";
 import "./Registro.css";
 
@@ -108,8 +108,8 @@ export default function Registro() {
       const errorLongitud = validarNumeroDocumento(formValue.tipo_doc, formValue.documento);
       if (errorLongitud) e.documento = errorLongitud;
     }
-    if (!formValue.telefono.trim()) e.telefono = "El teléfono es obligatorio.";
-    else if (formValue.telefono.length !== 10) e.telefono = "El teléfono debe tener 10 dígitos.";
+    const errorTelefono = validarTelefono(formValue.telefono);
+    if (errorTelefono) e.telefono = errorTelefono;
     if (!formValue.email.trim()) e.email = "El correo es obligatorio.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValue.email)) e.email = "El correo electrónico no es válido.";
     if (!formValue.ciudad.trim()) e.ciudad = "La ciudad es obligatoria.";
@@ -149,7 +149,7 @@ export default function Registro() {
     let nuevoValor = value;
     if (CAMPOS_NUMERICOS.includes(name) && !esDocumentoPasaporte) {
       nuevoValor = soloDigitos(value);
-      if (name === "telefono") nuevoValor = nuevoValor.slice(0, 10);
+      if (name === "telefono") nuevoValor = nuevoValor.slice(0, LONGITUD_TELEFONO);
     }
     const nuevoForm = { ...form, [name]: nuevoValor };
     setForm(nuevoForm);
@@ -264,7 +264,7 @@ export default function Registro() {
               value={form.email} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
               error={errores.email} />
 
-            <Field icon={<IconPhone />} name="telefono" label="Teléfono" required maxLength={10}
+            <Field icon={<IconPhone />} name="telefono" label="Teléfono" required maxLength={LONGITUD_TELEFONO}
               placeholder="3001234567"
               value={form.telefono} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
               error={errores.telefono} />

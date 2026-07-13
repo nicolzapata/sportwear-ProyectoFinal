@@ -8,7 +8,7 @@ import PaymentModal from "../../components/PaymentModal";
 import OrderDetailModal from "../../components/OrderDetailModal";
 import { IconCreditCard, IconShoppingCart } from "../../components/Icons";
 import Loader from "../../components/Loader";
-import { soloDigitos } from "../../utils/numerico";
+import { soloDigitos, validarTelefono, LONGITUD_TELEFONO } from "../../utils/numerico";
 import "./MiCuenta.css";
 
 export default function MiCuenta() {
@@ -88,6 +88,8 @@ export default function MiCuenta() {
     const e = {};
     if (!form.nombre.trim()) e.nombre = "El nombre es obligatorio";
     if (!form.documento.trim()) e.documento = "El documento es obligatorio";
+    const eTelefono = validarTelefono(form.telefono);
+    if (eTelefono) e.telefono = eTelefono;
     setErrores(e);
     return Object.keys(e).length === 0;
   };
@@ -209,8 +211,21 @@ export default function MiCuenta() {
       </div>
       <div className="ms-form-row">
         <div className="ms-form-group">
-          <label className="ms-form-label">Teléfono</label>
-          <input className="ms-form-input" placeholder="3001234567" inputMode="numeric" value={form.telefono || ""} onChange={(e) => setForm({ ...form, telefono: soloDigitos(e.target.value) })} />
+          <label className="ms-form-label">Teléfono <span className="ms-req">*</span></label>
+          <input
+            className={`ms-form-input${errores.telefono ? " input-error" : ""}`}
+            placeholder="3001234567"
+            inputMode="numeric"
+            maxLength={LONGITUD_TELEFONO}
+            value={form.telefono || ""}
+            onChange={(e) => {
+              const telefono = soloDigitos(e.target.value);
+              setForm({ ...form, telefono });
+              if (errores.telefono) setErrores(prev => ({ ...prev, telefono: validarTelefono(telefono) }));
+            }}
+            onBlur={() => setErrores(prev => ({ ...prev, telefono: validarTelefono(form.telefono) }))}
+          />
+          {errores.telefono && <span className="ms-form-error">{errores.telefono}</span>}
         </div>
         <div className="ms-form-group">
           <label className="ms-form-label">Correo electrónico</label>
