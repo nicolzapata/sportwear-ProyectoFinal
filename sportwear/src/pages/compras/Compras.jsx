@@ -116,6 +116,16 @@ export default function Compras() {
     return Object.keys(e).length === 0;
   };
 
+  // ── Validaciones puntuales (en tiempo real, por campo) ──
+  const errorItemProducto = (idProducto) => (!idProducto ? "Selecciona un producto" : "");
+  const errorItemVariante = (idProducto, idVariante) => {
+    const producto = productos.find((p) => String(p.id_producto) === String(idProducto));
+    const variantesActivas = (producto?.variantes || []).filter((v) => v.estado === "Activo");
+    return variantesActivas.length > 0 && !idVariante ? "Selecciona talla y color" : "";
+  };
+  const errorItemCantidad = (cantidad) => (!cantidad || Number(cantidad) <= 0 ? "Cantidad inválida" : "");
+  const errorItemPrecio = (precio) => (!precio || Number(precio) <= 0 ? "Precio inválido" : "");
+
   const guardar = async () => {
     if (!validar()) return;
     setGuardando(true);
@@ -335,7 +345,12 @@ export default function Compras() {
                   <select
                     className={`compras-form-select${errores.id_proveedor ? " input-error" : ""}`}
                     value={form.id_proveedor}
-                    onChange={(e) => { setForm({ ...form, id_proveedor: e.target.value }); setErrores((prev) => ({ ...prev, id_proveedor: "" })); }}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      setForm({ ...form, id_proveedor: valor });
+                      if (errores.id_proveedor) setErrores((prev) => ({ ...prev, id_proveedor: valor ? "" : prev.id_proveedor }));
+                    }}
+                    onBlur={() => setErrores((prev) => ({ ...prev, id_proveedor: form.id_proveedor ? "" : "El proveedor es obligatorio" }))}
                   >
                     <option value="">Seleccionar proveedor...</option>
                     {proveedores.filter((p) => p.estado === "Activo").map((p) => (
@@ -369,7 +384,12 @@ export default function Compras() {
                     type="date"
                     className={`compras-form-input${errores.fecha ? " input-error" : ""}`}
                     value={form.fecha}
-                    onChange={(e) => { setForm({ ...form, fecha: e.target.value }); setErrores((prev) => ({ ...prev, fecha: "" })); }}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      setForm({ ...form, fecha: valor });
+                      if (errores.fecha) setErrores((prev) => ({ ...prev, fecha: valor ? "" : prev.fecha }));
+                    }}
+                    onBlur={() => setErrores((prev) => ({ ...prev, fecha: form.fecha ? "" : "La fecha es obligatoria" }))}
                   />
                   {errores.fecha && <span className="compras-field-error">{errores.fecha}</span>}
                 </div>
@@ -414,7 +434,14 @@ export default function Compras() {
                         <select
                           className={`compras-form-select${errores[`item_${i}_producto`] ? " input-error" : ""}`}
                           value={item.id_producto}
-                          onChange={(e) => actualizarItem(i, "id_producto", e.target.value)}
+                          onChange={(e) => {
+                            const valor = e.target.value;
+                            actualizarItem(i, "id_producto", valor);
+                            if (errores[`item_${i}_producto`]) {
+                              setErrores((prev) => ({ ...prev, [`item_${i}_producto`]: errorItemProducto(valor) }));
+                            }
+                          }}
+                          onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_producto`]: errorItemProducto(item.id_producto) }))}
                         >
                           <option value="">Producto...</option>
                           {productos.map((p) => (
@@ -426,7 +453,14 @@ export default function Compras() {
                         <select
                           className={`compras-form-select${errores[`item_${i}_variante`] ? " input-error" : ""}`}
                           value={item.id_variante}
-                          onChange={(e) => actualizarItem(i, "id_variante", e.target.value)}
+                          onChange={(e) => {
+                            const valor = e.target.value;
+                            actualizarItem(i, "id_variante", valor);
+                            if (errores[`item_${i}_variante`]) {
+                              setErrores((prev) => ({ ...prev, [`item_${i}_variante`]: errorItemVariante(item.id_producto, valor) }));
+                            }
+                          }}
+                          onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_variante`]: errorItemVariante(item.id_producto, item.id_variante) }))}
                           disabled={!item.id_producto || variantesActivas.length === 0}
                         >
                           <option value="">
@@ -446,7 +480,14 @@ export default function Compras() {
                           placeholder="Cant."
                           className={`compras-form-input${errores[`item_${i}_cantidad`] ? " input-error" : ""}`}
                           value={item.cantidad}
-                          onChange={(e) => actualizarItem(i, "cantidad", e.target.value)}
+                          onChange={(e) => {
+                            const valor = e.target.value;
+                            actualizarItem(i, "cantidad", valor);
+                            if (errores[`item_${i}_cantidad`]) {
+                              setErrores((prev) => ({ ...prev, [`item_${i}_cantidad`]: errorItemCantidad(valor) }));
+                            }
+                          }}
+                          onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_cantidad`]: errorItemCantidad(item.cantidad) }))}
                         />
                       </div>
                       <div className="compras-item-field">
@@ -456,7 +497,14 @@ export default function Compras() {
                           placeholder="Precio unit."
                           className={`compras-form-input${errores[`item_${i}_precio`] ? " input-error" : ""}`}
                           value={item.precio_unitario}
-                          onChange={(e) => actualizarItem(i, "precio_unitario", e.target.value)}
+                          onChange={(e) => {
+                            const valor = e.target.value;
+                            actualizarItem(i, "precio_unitario", valor);
+                            if (errores[`item_${i}_precio`]) {
+                              setErrores((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(valor) }));
+                            }
+                          }}
+                          onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(item.precio_unitario) }))}
                         />
                       </div>
                       <div className="compras-item-field">

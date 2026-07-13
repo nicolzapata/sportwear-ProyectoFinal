@@ -119,6 +119,24 @@ export default function Proveedores() {
 
   const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+  // Validadores por campo: misma condición y mismo texto que validar(), para
+  // poder reutilizarlos en onBlur/onChange y mostrar errores en tiempo real.
+  const validarCampoNumeroDoc = (tipoDoc, numeroDoc) => {
+    if (!numeroDoc.trim()) return "El número de documento es obligatorio";
+    const errorLongitud = validarNumeroDocumento(tipoDoc, numeroDoc);
+    return errorLongitud || "";
+  };
+  const validarCampoRazonSocial = (v) => (!v.trim() ? "La razón social es obligatoria" : "");
+  const validarCampoNombreContacto = (v) => (!v.trim() ? "La persona de contacto es obligatoria" : "");
+  const validarCampoCiudad = (v) => (!v.trim() ? "La ciudad es obligatoria" : "");
+  const validarCampoTelefono = (v) => (!v.trim() ? "El teléfono es obligatorio" : "");
+  const validarCampoDireccion = (v) => (!v.trim() ? "La dirección es obligatoria" : "");
+  const validarCampoEmail = (v) => {
+    if (!v.trim()) return "El correo es obligatorio";
+    if (!EMAIL_REGEX.test(v)) return "El correo no tiene un formato válido";
+    return "";
+  };
+
   const validar = () => {
     const e = {};
     if (!form.tipo_doc) e.tipo_doc = "Selecciona un tipo de documento";
@@ -310,7 +328,21 @@ export default function Proveedores() {
                 <div className="proveedores-form-row-3">
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Tipo de documento <span className="proveedores-req">*</span></label>
-                    <select className="proveedores-form-select" value={form.tipo_doc} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={(e) => set("tipo_doc", e.target.value)}>
+                    <select
+                      className="proveedores-form-select"
+                      value={form.tipo_doc}
+                      disabled={!!editar}
+                      title={editar ? "El documento no se puede modificar" : undefined}
+                      onChange={(e) => {
+                        const tipo = e.target.value;
+                        setForm((prev) => ({ ...prev, tipo_doc: tipo }));
+                        // El número de documento depende del tipo (longitud válida por tipo):
+                        // si ya había un error visible, se revalida contra el nuevo tipo.
+                        if (errores.numero_doc) {
+                          setErrores((prev) => ({ ...prev, numero_doc: validarCampoNumeroDoc(tipo, form.numero_doc) }));
+                        }
+                      }}
+                    >
                       <option value="NIT">NIT</option>
                       <option value="CC">Cédula de ciudadanía</option>
                       <option value="CE">Cédula de extranjería</option>
@@ -327,7 +359,14 @@ export default function Proveedores() {
                       value={form.numero_doc}
                       disabled={!!editar}
                       title={editar ? "El documento no se puede modificar" : undefined}
-                      onChange={(e) => set("numero_doc", soloDigitos(e.target.value))}
+                      onChange={(e) => {
+                        const valor = soloDigitos(e.target.value);
+                        setForm((prev) => ({ ...prev, numero_doc: valor }));
+                        if (errores.numero_doc) {
+                          setErrores((prev) => ({ ...prev, numero_doc: validarCampoNumeroDoc(form.tipo_doc, valor) }));
+                        }
+                      }}
+                      onBlur={() => setErrores((prev) => ({ ...prev, numero_doc: validarCampoNumeroDoc(form.tipo_doc, form.numero_doc) }))}
                     />
                     {errores.numero_doc && <span className="proveedores-field-error">{errores.numero_doc}</span>}
                   </div>
@@ -338,7 +377,12 @@ export default function Proveedores() {
                       className={`proveedores-form-input${errores.ciudad ? " input-error" : ""}`}
                       placeholder="Ej: Medellín"
                       value={form.ciudad}
-                      onChange={(e) => set("ciudad", e.target.value)}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setForm((prev) => ({ ...prev, ciudad: valor }));
+                        if (errores.ciudad) setErrores((prev) => ({ ...prev, ciudad: validarCampoCiudad(valor) }));
+                      }}
+                      onBlur={() => setErrores((prev) => ({ ...prev, ciudad: validarCampoCiudad(form.ciudad) }))}
                     />
                     {errores.ciudad && <span className="proveedores-field-error">{errores.ciudad}</span>}
                   </div>
@@ -352,7 +396,12 @@ export default function Proveedores() {
                       className={`proveedores-form-input${errores.razon_social ? " input-error" : ""}`}
                       placeholder="Ej: Distribuidora Textil S.A."
                       value={form.razon_social}
-                      onChange={(e) => set("razon_social", e.target.value)}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setForm((prev) => ({ ...prev, razon_social: valor }));
+                        if (errores.razon_social) setErrores((prev) => ({ ...prev, razon_social: validarCampoRazonSocial(valor) }));
+                      }}
+                      onBlur={() => setErrores((prev) => ({ ...prev, razon_social: validarCampoRazonSocial(form.razon_social) }))}
                     />
                     {errores.razon_social && <span className="proveedores-field-error">{errores.razon_social}</span>}
                   </div>
@@ -375,7 +424,17 @@ export default function Proveedores() {
                   </div>
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Dirección <span className="proveedores-req">*</span></label>
-                    <input type="text" className={`proveedores-form-input${errores.direccion ? " input-error" : ""}`} value={form.direccion} onChange={(e) => set("direccion", e.target.value)} />
+                    <input
+                      type="text"
+                      className={`proveedores-form-input${errores.direccion ? " input-error" : ""}`}
+                      value={form.direccion}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setForm((prev) => ({ ...prev, direccion: valor }));
+                        if (errores.direccion) setErrores((prev) => ({ ...prev, direccion: validarCampoDireccion(valor) }));
+                      }}
+                      onBlur={() => setErrores((prev) => ({ ...prev, direccion: validarCampoDireccion(form.direccion) }))}
+                    />
                     {errores.direccion && <span className="proveedores-field-error">{errores.direccion}</span>}
                   </div>
                 </div>
@@ -392,7 +451,12 @@ export default function Proveedores() {
                       className={`proveedores-form-input${errores.nombre_contacto ? " input-error" : ""}`}
                       placeholder="Ej: Juan Pérez"
                       value={form.nombre_contacto}
-                      onChange={(e) => set("nombre_contacto", e.target.value)}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setForm((prev) => ({ ...prev, nombre_contacto: valor }));
+                        if (errores.nombre_contacto) setErrores((prev) => ({ ...prev, nombre_contacto: validarCampoNombreContacto(valor) }));
+                      }}
+                      onBlur={() => setErrores((prev) => ({ ...prev, nombre_contacto: validarCampoNombreContacto(form.nombre_contacto) }))}
                     />
                     {errores.nombre_contacto && <span className="proveedores-field-error">{errores.nombre_contacto}</span>}
                   </div>
@@ -402,7 +466,19 @@ export default function Proveedores() {
                   </div>
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Teléfono celular <span className="proveedores-req">*</span></label>
-                    <input type="text" inputMode="numeric" className={`proveedores-form-input${errores.telefono_celular ? " input-error" : ""}`} placeholder="Ej: 3001234567" value={form.telefono_celular} onChange={(e) => set("telefono_celular", soloDigitos(e.target.value))} />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className={`proveedores-form-input${errores.telefono_celular ? " input-error" : ""}`}
+                      placeholder="Ej: 3001234567"
+                      value={form.telefono_celular}
+                      onChange={(e) => {
+                        const valor = soloDigitos(e.target.value);
+                        setForm((prev) => ({ ...prev, telefono_celular: valor }));
+                        if (errores.telefono_celular) setErrores((prev) => ({ ...prev, telefono_celular: validarCampoTelefono(valor) }));
+                      }}
+                      onBlur={() => setErrores((prev) => ({ ...prev, telefono_celular: validarCampoTelefono(form.telefono_celular) }))}
+                    />
                     {errores.telefono_celular && <span className="proveedores-field-error">{errores.telefono_celular}</span>}
                   </div>
                 </div>
@@ -410,7 +486,18 @@ export default function Proveedores() {
                 <div className="proveedores-form-row">
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Correo de contacto <span className="proveedores-req">*</span></label>
-                    <input type="email" className={`proveedores-form-input${errores.email_contacto ? " input-error" : ""}`} placeholder="contacto@empresa.com" value={form.email_contacto} onChange={(e) => set("email_contacto", e.target.value)} />
+                    <input
+                      type="email"
+                      className={`proveedores-form-input${errores.email_contacto ? " input-error" : ""}`}
+                      placeholder="contacto@empresa.com"
+                      value={form.email_contacto}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setForm((prev) => ({ ...prev, email_contacto: valor }));
+                        if (errores.email_contacto) setErrores((prev) => ({ ...prev, email_contacto: validarCampoEmail(valor) }));
+                      }}
+                      onBlur={() => setErrores((prev) => ({ ...prev, email_contacto: validarCampoEmail(form.email_contacto) }))}
+                    />
                     {errores.email_contacto && <span className="proveedores-field-error">{errores.email_contacto}</span>}
                   </div>
                   <div className="proveedores-form-group">

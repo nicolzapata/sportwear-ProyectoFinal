@@ -176,9 +176,11 @@ export default function MiCuenta() {
           placeholder="Ej: Juan Pérez"
           value={form.nombre || ""}
           onChange={(e) => {
-            setForm({ ...form, nombre: e.target.value });
-            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: "" }));
+            const nombre = e.target.value;
+            setForm({ ...form, nombre });
+            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: nombre.trim() ? "" : prev.nombre }));
           }}
+          onBlur={() => setErrores(prev => ({ ...prev, nombre: form.nombre?.trim() ? "" : "El nombre es obligatorio" }))}
         />
         {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
       </div>

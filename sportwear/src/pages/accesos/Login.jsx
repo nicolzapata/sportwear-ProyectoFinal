@@ -44,18 +44,20 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [tocado, setTocado] = useState({ email: false, contrasena: false });
   const [showPassword, setShowPassword] = useState(false);
 
 const handleChange = (e) => {
   const { name, value } = e.target;
-  setForm({ ...form, [name]: value });
+  const nuevoForm = { ...form, [name]: value };
+  setForm(nuevoForm);
   setError("");
-  
-  // Clear individual field errors when user types
-  if (name === "email") {
-    setEmailError("");
-  } else if (name === "contrasena") {
-    setPasswordError("");
+
+  // Validación en tiempo real: solo una vez que el campo ya fue visitado (tocado).
+  if (name === "email" && tocado.email) {
+    setEmailError(validateEmail(nuevoForm.email));
+  } else if (name === "contrasena" && tocado.contrasena) {
+    setPasswordError(validatePassword(nuevoForm.contrasena));
   }
 };
 
@@ -91,7 +93,8 @@ const handleSubmit = async (e) => {
   
   setEmailError(emailErrorMsg);
   setPasswordError(passwordErrorMsg);
-  
+  setTocado({ email: true, contrasena: true });
+
   if (emailErrorMsg || passwordErrorMsg) {
     return;
   }
@@ -144,6 +147,15 @@ if (esCliente) {
   const onBlur = (e) => {
     const bar = e.target.parentElement.querySelector(".input-bar");
     if (bar) bar.style.transform = "scaleX(0)";
+
+    const { name } = e.target;
+    if (name === "email") {
+      setTocado(prev => ({ ...prev, email: true }));
+      setEmailError(validateEmail(form.email));
+    } else if (name === "contrasena") {
+      setTocado(prev => ({ ...prev, contrasena: true }));
+      setPasswordError(validatePassword(form.contrasena));
+    }
   };
 
   return (

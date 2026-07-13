@@ -133,9 +133,11 @@ export default function CatProductos() {
           placeholder="Ej: Ropa Deportiva"
           value={form.nombre}
           onChange={e => {
-            setForm({ ...form, nombre: e.target.value });
-            if (errores.nombre) setErrores({ nombre: "" });
+            const nombre = e.target.value;
+            setForm({ ...form, nombre });
+            if (errores.nombre) setErrores({ nombre: nombre.trim() ? "" : errores.nombre });
           }}
+          onBlur={() => setErrores({ nombre: form.nombre.trim() ? "" : "El nombre de la categoría es obligatorio" })}
         />
         {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
       </div>

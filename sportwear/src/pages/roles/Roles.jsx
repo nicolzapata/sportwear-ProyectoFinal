@@ -293,7 +293,8 @@ function RolModal({ titulo, form, setForm, errores, setErrores, modulosDisponibl
           <div className="ms-form-group">
             <label className="ms-form-label">Nombre del rol <span className="ms-req">*</span></label>
             <input type="text" className={`ms-form-input${errores.nombre ? ' error' : ''}`} placeholder="Ej: Vendedor" value={form.nombre}
-              onChange={e => { setForm(prev => ({ ...prev, nombre: e.target.value })); if (errores.nombre) setErrores(prev => ({ ...prev, nombre: '' })); }} />
+              onChange={e => { const nombre = e.target.value; setForm(prev => ({ ...prev, nombre })); if (errores.nombre) setErrores(prev => ({ ...prev, nombre: nombre.trim() ? '' : prev.nombre })); }}
+              onBlur={() => setErrores(prev => ({ ...prev, nombre: form.nombre.trim() ? '' : 'El nombre es obligatorio' }))} />
             {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
           </div>
 

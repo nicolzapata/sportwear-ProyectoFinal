@@ -87,6 +87,7 @@ export default function Registro() {
   const [barrios, setBarrios] = useState([]);
   const [error, setError]     = useState("");
   const [errores, setErrores] = useState({});
+  const [tocado, setTocado]   = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -98,6 +99,50 @@ export default function Registro() {
       .catch(() => setBarrios([]));
   }, []);
 
+  // Calcula TODOS los errores del formulario a partir de un estado dado, sin tocar el state.
+  const calcularErrores = (formValue) => {
+    const e = {};
+    if (!formValue.nombre.trim()) e.nombre = "El nombre es obligatorio.";
+    if (!formValue.documento.trim()) e.documento = "El documento es obligatorio.";
+    else {
+      const errorLongitud = validarNumeroDocumento(formValue.tipo_doc, formValue.documento);
+      if (errorLongitud) e.documento = errorLongitud;
+    }
+    if (!formValue.telefono.trim()) e.telefono = "El teléfono es obligatorio.";
+    else if (formValue.telefono.length !== 10) e.telefono = "El teléfono debe tener 10 dígitos.";
+    if (!formValue.email.trim()) e.email = "El correo es obligatorio.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValue.email)) e.email = "El correo electrónico no es válido.";
+    if (!formValue.ciudad.trim()) e.ciudad = "La ciudad es obligatoria.";
+    if (!formValue.id_barrio) e.id_barrio = "Selecciona un barrio.";
+    if (!formValue.direccion.trim()) e.direccion = "La dirección es obligatoria.";
+    if (!formValue.contrasena) e.contrasena = "La contraseña es obligatoria.";
+    else if (formValue.contrasena.length < 6) e.contrasena = "Debe tener al menos 6 caracteres.";
+    // eslint-disable-next-line no-useless-escape
+    else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(formValue.contrasena)) e.contrasena = "Debe contener al menos un signo (símbolo).";
+    if (!formValue.confirmar) e.confirmar = "Confirma tu contraseña.";
+    else if (formValue.contrasena !== formValue.confirmar) e.confirmar = "Las contraseñas no coinciden.";
+    return e;
+  };
+
+  // Aplica al state de errores solo los campos marcados como "tocados" (validación en tiempo real
+  // sin adelantarse a mostrar "obligatorio" en campos que el usuario ni siquiera ha visitado).
+  const aplicarErrores = (erroresCalculados, tocadoActual) => {
+    setErrores(prev => {
+      const next = { ...prev };
+      Object.keys(tocadoActual).forEach(campo => {
+        if (tocadoActual[campo]) next[campo] = erroresCalculados[campo] || "";
+      });
+      return next;
+    });
+  };
+
+  // Marca un campo como tocado y revalida en el acto (se usa en onChange y onBlur).
+  const validarCampo = (nombreCampo, formValue = form) => {
+    const nuevoTocado = tocado[nombreCampo] ? tocado : { ...tocado, [nombreCampo]: true };
+    if (nuevoTocado !== tocado) setTocado(nuevoTocado);
+    aplicarErrores(calcularErrores(formValue), nuevoTocado);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     const esDocumentoPasaporte = name === "documento" && form.tipo_doc === "PP";
@@ -106,9 +151,10 @@ export default function Registro() {
       nuevoValor = soloDigitos(value);
       if (name === "telefono") nuevoValor = nuevoValor.slice(0, 10);
     }
-    setForm({ ...form, [name]: nuevoValor });
-    if (errores[name]) setErrores(prev => ({ ...prev, [name]: "" }));
+    const nuevoForm = { ...form, [name]: nuevoValor };
+    setForm(nuevoForm);
     setError("");
+    validarCampo(name, nuevoForm);
   };
 
   const onFocus = (e) => {
@@ -118,36 +164,14 @@ export default function Registro() {
   const onBlur = (e) => {
     const bar = e.target.parentElement.querySelector(".input-bar");
     if (bar) bar.style.transform = "scaleX(0)";
-  };
-
-  const validarCampos = () => {
-    const e = {};
-    if (!form.nombre.trim()) e.nombre = "El nombre es obligatorio.";
-    if (!form.documento.trim()) e.documento = "El documento es obligatorio.";
-    else {
-      const errorLongitud = validarNumeroDocumento(form.tipo_doc, form.documento);
-      if (errorLongitud) e.documento = errorLongitud;
-    }
-    if (!form.telefono.trim()) e.telefono = "El teléfono es obligatorio.";
-    else if (form.telefono.length !== 10) e.telefono = "El teléfono debe tener 10 dígitos.";
-    if (!form.email.trim()) e.email = "El correo es obligatorio.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = "El correo electrónico no es válido.";
-    if (!form.ciudad.trim()) e.ciudad = "La ciudad es obligatoria.";
-    if (!form.id_barrio) e.id_barrio = "Selecciona un barrio.";
-    if (!form.direccion.trim()) e.direccion = "La dirección es obligatoria.";
-    if (!form.contrasena) e.contrasena = "La contraseña es obligatoria.";
-    else if (form.contrasena.length < 6) e.contrasena = "Debe tener al menos 6 caracteres.";
-    // eslint-disable-next-line no-useless-escape
-    else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(form.contrasena)) e.contrasena = "Debe contener al menos un signo (símbolo).";
-    if (!form.confirmar) e.confirmar = "Confirma tu contraseña.";
-    else if (form.contrasena !== form.confirmar) e.confirmar = "Las contraseñas no coinciden.";
-    return e;
+    if (e.target.name) validarCampo(e.target.name);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const erroresCampos = validarCampos();
+    const erroresCampos = calcularErrores(form);
     setErrores(erroresCampos);
+    setTocado(Object.fromEntries(Object.keys(form).map((campo) => [campo, true])));
     if (Object.keys(erroresCampos).length > 0) return;
     setLoading(true);
     try {
@@ -162,7 +186,14 @@ export default function Registro() {
       setSuccess(true);
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
-      setError(err.response?.data?.message || "Error al crear la cuenta.");
+      const mensaje = err.response?.data?.message || "Error al crear la cuenta.";
+      if (err.response?.status === 409) {
+        // El backend ya rechaza correos duplicados; lo mostramos junto al campo, no como banner genérico.
+        setErrores(prev => ({ ...prev, email: mensaje }));
+        setTocado(prev => ({ ...prev, email: true }));
+      } else {
+        setError(mensaje);
+      }
     } finally {
       setLoading(false);
     }
@@ -210,7 +241,7 @@ export default function Registro() {
               <div className="form-group">
                 <label>Tipo doc <span className="req">*</span></label>
                 <select name="tipo_doc" className="form-control"
-                  value={form.tipo_doc} onChange={handleChange}>
+                  value={form.tipo_doc} onChange={handleChange} onBlur={onBlur}>
                   {TIPOS_DOC.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
@@ -247,7 +278,7 @@ export default function Registro() {
               <div className="form-group">
                 <label><IconLocation /> Barrio <span className="req">*</span></label>
                 <select name="id_barrio" className="form-control"
-                  value={form.id_barrio} onChange={handleChange}>
+                  value={form.id_barrio} onChange={handleChange} onBlur={onBlur}>
                   <option value="">— Selecciona un barrio —</option>
                   {barrios.map(b => (
                     <option key={b.id_barrio} value={b.id_barrio}>

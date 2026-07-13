@@ -114,13 +114,52 @@ export default function PedidosVentas() {
     cargarDatosVenta();
   };
 
+  // ── Validaciones por campo (reutilizadas por validarVenta y por onBlur/onChange en tiempo real) ──
+  const validarCampoCliente = (idCliente) => (!idCliente ? "El cliente es obligatorio" : "");
+  const validarCampoFecha = (fecha) => (!fecha ? "La fecha es obligatoria" : "");
+  const validarCampoNumCuotas = (numCuotas, tipoPago) =>
+    (tipoPago === "cuotas" && (!numCuotas || Number(numCuotas) < 2))
+      ? "Indica el número de cuotas (mínimo 2)"
+      : "";
+
+  const validarCampoItemProducto = (it) => (!it.id_producto ? "Selecciona un producto" : "");
+  const validarCampoItemVariante = (it) => {
+    const producto = productos.find((p) => String(p.id_producto) === String(it.id_producto));
+    const variantesActivas = (producto?.variantes || []).filter((v) => v.estado === "Activo");
+    return (variantesActivas.length > 0 && !it.id_variante) ? "Selecciona talla y color" : "";
+  };
+  const validarCampoItemCantidad = (it) => (!it.cantidad || Number(it.cantidad) <= 0) ? "Cantidad inválida" : "";
+  const validarCampoItemPrecio = (it) => (!it.precio_unitario || Number(it.precio_unitario) <= 0) ? "Precio inválido" : "";
+
+  const CAMPO_A_ERROR_ITEM = {
+    id_producto: { key: "producto", validar: validarCampoItemProducto },
+    id_variante: { key: "variante", validar: validarCampoItemVariante },
+    cantidad: { key: "cantidad", validar: validarCampoItemCantidad },
+    precio_unitario: { key: "precio", validar: validarCampoItemPrecio },
+  };
+
   const actualizarItemVenta = (index, campo, valor) => {
+    const nuevoItem = { ...formVenta.items[index], [campo]: valor };
+    if (campo === "id_producto") nuevoItem.id_variante = "";
     setFormVenta((prev) => {
       const items = [...prev.items];
-      items[index] = { ...items[index], [campo]: valor };
-      if (campo === "id_producto") items[index].id_variante = "";
+      items[index] = nuevoItem;
       return { ...prev, items };
     });
+    const info = CAMPO_A_ERROR_ITEM[campo];
+    if (info || campo === "id_producto") {
+      setErroresVenta((prev) => {
+        const next = { ...prev };
+        if (info && prev[`item_${index}_${info.key}`]) {
+          next[`item_${index}_${info.key}`] = info.validar(nuevoItem);
+        }
+        // Cambiar de producto también puede resolver/afectar un error de variante ya mostrado
+        if (campo === "id_producto" && prev[`item_${index}_variante`]) {
+          next[`item_${index}_variante`] = validarCampoItemVariante(nuevoItem);
+        }
+        return next;
+      });
+    }
   };
   const agregarItemVenta = () => setFormVenta((prev) => ({ ...prev, items: [...prev.items, nuevoItem()] }));
   const quitarItemVenta = (index) =>
@@ -139,18 +178,21 @@ export default function PedidosVentas() {
 
   const validarVenta = () => {
     const e = {};
-    if (!formVenta.id_cliente) e.id_cliente = "El cliente es obligatorio";
-    if (!formVenta.fecha) e.fecha = "La fecha es obligatoria";
-    if (formVenta.tipo_pago === "cuotas" && (!formVenta.num_cuotas || Number(formVenta.num_cuotas) < 2)) {
-      e.num_cuotas = "Indica el número de cuotas (mínimo 2)";
-    }
+    const errCliente = validarCampoCliente(formVenta.id_cliente);
+    if (errCliente) e.id_cliente = errCliente;
+    const errFecha = validarCampoFecha(formVenta.fecha);
+    if (errFecha) e.fecha = errFecha;
+    const errCuotas = validarCampoNumCuotas(formVenta.num_cuotas, formVenta.tipo_pago);
+    if (errCuotas) e.num_cuotas = errCuotas;
     formVenta.items.forEach((it, i) => {
-      if (!it.id_producto) e[`item_${i}_producto`] = "Selecciona un producto";
-      const producto = productos.find((p) => String(p.id_producto) === String(it.id_producto));
-      const variantesActivas = (producto?.variantes || []).filter((v) => v.estado === "Activo");
-      if (variantesActivas.length > 0 && !it.id_variante) e[`item_${i}_variante`] = "Selecciona talla y color";
-      if (!it.cantidad || Number(it.cantidad) <= 0) e[`item_${i}_cantidad`] = "Cantidad inválida";
-      if (!it.precio_unitario || Number(it.precio_unitario) <= 0) e[`item_${i}_precio`] = "Precio inválido";
+      const errProducto = validarCampoItemProducto(it);
+      if (errProducto) e[`item_${i}_producto`] = errProducto;
+      const errVariante = validarCampoItemVariante(it);
+      if (errVariante) e[`item_${i}_variante`] = errVariante;
+      const errCantidad = validarCampoItemCantidad(it);
+      if (errCantidad) e[`item_${i}_cantidad`] = errCantidad;
+      const errPrecio = validarCampoItemPrecio(it);
+      if (errPrecio) e[`item_${i}_precio`] = errPrecio;
     });
     setErroresVenta(e);
     return Object.keys(e).length === 0;
@@ -537,7 +579,12 @@ export default function PedidosVentas() {
                   <select
                     className={`pedidosventas-form-select${erroresVenta.id_cliente ? " input-error" : ""}`}
                     value={formVenta.id_cliente}
-                    onChange={(e) => { setFormVenta({ ...formVenta, id_cliente: e.target.value }); setErroresVenta((prev) => ({ ...prev, id_cliente: "" })); }}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormVenta({ ...formVenta, id_cliente: value });
+                      setErroresVenta((prev) => (prev.id_cliente ? { ...prev, id_cliente: validarCampoCliente(value) } : prev));
+                    }}
+                    onBlur={() => setErroresVenta((prev) => ({ ...prev, id_cliente: validarCampoCliente(formVenta.id_cliente) }))}
                   >
                     <option value="">Seleccionar cliente...</option>
                     {clientes.map((c) => (
@@ -561,7 +608,12 @@ export default function PedidosVentas() {
                     type="date"
                     className={`pedidosventas-form-input${erroresVenta.fecha ? " input-error" : ""}`}
                     value={formVenta.fecha}
-                    onChange={(e) => { setFormVenta({ ...formVenta, fecha: e.target.value }); setErroresVenta((prev) => ({ ...prev, fecha: "" })); }}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormVenta({ ...formVenta, fecha: value });
+                      setErroresVenta((prev) => (prev.fecha ? { ...prev, fecha: validarCampoFecha(value) } : prev));
+                    }}
+                    onBlur={() => setErroresVenta((prev) => ({ ...prev, fecha: validarCampoFecha(formVenta.fecha) }))}
                   />
                   {erroresVenta.fecha && <span className="pedidosventas-field-error">{erroresVenta.fecha}</span>}
                 </div>
@@ -573,7 +625,11 @@ export default function PedidosVentas() {
                   <select
                     className="pedidosventas-form-select"
                     value={formVenta.tipo_pago}
-                    onChange={(e) => setFormVenta({ ...formVenta, tipo_pago: e.target.value, num_cuotas: "" })}
+                    onChange={(e) => {
+                      const tipo_pago = e.target.value;
+                      setFormVenta({ ...formVenta, tipo_pago, num_cuotas: "" });
+                      setErroresVenta((prev) => (prev.num_cuotas ? { ...prev, num_cuotas: validarCampoNumCuotas("", tipo_pago) } : prev));
+                    }}
                   >
                     <option value="completo">Pago completo</option>
                     <option value="cuotas">Cuotas</option>
@@ -587,7 +643,12 @@ export default function PedidosVentas() {
                       min="2"
                       className={`pedidosventas-form-input${erroresVenta.num_cuotas ? " input-error" : ""}`}
                       value={formVenta.num_cuotas}
-                      onChange={(e) => { setFormVenta({ ...formVenta, num_cuotas: e.target.value }); setErroresVenta((prev) => ({ ...prev, num_cuotas: "" })); }}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormVenta({ ...formVenta, num_cuotas: value });
+                        setErroresVenta((prev) => (prev.num_cuotas ? { ...prev, num_cuotas: validarCampoNumCuotas(value, formVenta.tipo_pago) } : prev));
+                      }}
+                      onBlur={() => setErroresVenta((prev) => ({ ...prev, num_cuotas: validarCampoNumCuotas(formVenta.num_cuotas, formVenta.tipo_pago) }))}
                     />
                     {erroresVenta.num_cuotas && <span className="pedidosventas-field-error">{erroresVenta.num_cuotas}</span>}
                   </div>
@@ -652,6 +713,7 @@ export default function PedidosVentas() {
                           className={`pedidosventas-form-select${erroresVenta[`item_${i}_producto`] ? " input-error" : ""}`}
                           value={item.id_producto}
                           onChange={(e) => actualizarItemVenta(i, "id_producto", e.target.value)}
+                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_producto`]: validarCampoItemProducto(formVenta.items[i]) }))}
                         >
                           <option value="">Producto...</option>
                           {productos.map((p) => (
@@ -664,6 +726,7 @@ export default function PedidosVentas() {
                           className={`pedidosventas-form-select${erroresVenta[`item_${i}_variante`] ? " input-error" : ""}`}
                           value={item.id_variante}
                           onChange={(e) => actualizarItemVenta(i, "id_variante", e.target.value)}
+                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_variante`]: validarCampoItemVariante(formVenta.items[i]) }))}
                           disabled={!item.id_producto || variantesActivas.length === 0}
                         >
                           <option value="">
@@ -684,6 +747,7 @@ export default function PedidosVentas() {
                           className={`pedidosventas-form-input${erroresVenta[`item_${i}_cantidad`] ? " input-error" : ""}`}
                           value={item.cantidad}
                           onChange={(e) => actualizarItemVenta(i, "cantidad", e.target.value)}
+                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: validarCampoItemCantidad(formVenta.items[i]) }))}
                         />
                       </div>
                       <div>
@@ -694,6 +758,7 @@ export default function PedidosVentas() {
                           className={`pedidosventas-form-input${erroresVenta[`item_${i}_precio`] ? " input-error" : ""}`}
                           value={item.precio_unitario}
                           onChange={(e) => actualizarItemVenta(i, "precio_unitario", e.target.value)}
+                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_precio`]: validarCampoItemPrecio(formVenta.items[i]) }))}
                         />
                       </div>
                       <div>

@@ -263,7 +263,12 @@ export default function GestProductos() {
         <label className="gestproductos-form-label">Nombre de la categoría <span className="gestproductos-required">*</span></label>
         <input type="text" className={`gestproductos-form-input${erroresCategoria.nombre ? " input-error" : ""}`} placeholder="Ej: Ropa Deportiva"
           value={formCategoria.nombre}
-          onChange={e => { setFormCategoria({ ...formCategoria, nombre: e.target.value }); if (erroresCategoria.nombre) setErroresCategoria({ nombre: "" }); }} />
+          onChange={e => {
+            const nombre = e.target.value;
+            setFormCategoria({ ...formCategoria, nombre });
+            if (erroresCategoria.nombre) setErroresCategoria(prev => ({ ...prev, nombre: nombre.trim() ? "" : prev.nombre }));
+          }}
+          onBlur={() => setErroresCategoria(prev => ({ ...prev, nombre: formCategoria.nombre?.trim() ? "" : "El nombre de la categoría es obligatorio" }))} />
         {erroresCategoria.nombre && <p className="gestproductos-field-error">{erroresCategoria.nombre}</p>}
       </div>
       <div className="gestproductos-form-group">
@@ -500,7 +505,22 @@ export default function GestProductos() {
                 <div className="gestproductos-form-group">
                   <label className="gestproductos-form-label">Nombre <span className="gestproductos-required">*</span></label>
                   <input className={`gestproductos-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Camiseta Deportiva" value={form.nombre}
-                    onChange={e => { setForm({ ...form, nombre: e.target.value }); if (errores.nombre) setErrores(p => ({ ...p, nombre: "" })); }} />
+                    onChange={e => {
+                      const nombre = e.target.value;
+                      setForm({ ...form, nombre });
+                      if (errores.nombre) {
+                        let msg = "";
+                        if (!nombre.trim()) msg = "El nombre del producto es obligatorio.";
+                        else if (nombre.trim().length < 3) msg = "El nombre debe tener al menos 3 caracteres.";
+                        setErrores(p => ({ ...p, nombre: msg }));
+                      }
+                    }}
+                    onBlur={() => {
+                      let msg = "";
+                      if (!form.nombre.trim()) msg = "El nombre del producto es obligatorio.";
+                      else if (form.nombre.trim().length < 3) msg = "El nombre debe tener al menos 3 caracteres.";
+                      setErrores(p => ({ ...p, nombre: msg }));
+                    }} />
                   {errores.nombre && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.nombre}</p>}
                 </div>
 
@@ -508,7 +528,12 @@ export default function GestProductos() {
                   <div className="gestproductos-form-group">
                     <label className="gestproductos-form-label">Categoría <span className="gestproductos-required">*</span></label>
                     <select className={`gestproductos-form-select${errores.id_categoria ? " input-error" : ""}`} value={form.id_categoria}
-                      onChange={e => { setForm({ ...form, id_categoria: Number(e.target.value) }); if (errores.id_categoria) setErrores(p => ({ ...p, id_categoria: "" })); }}>
+                      onChange={e => {
+                        const id_categoria = Number(e.target.value);
+                        setForm({ ...form, id_categoria });
+                        if (errores.id_categoria) setErrores(p => ({ ...p, id_categoria: id_categoria ? "" : p.id_categoria }));
+                      }}
+                      onBlur={() => setErrores(p => ({ ...p, id_categoria: form.id_categoria ? "" : "Selecciona una categoría." }))}>
                       <option value="">— Seleccionar —</option>
                       {categorias.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>)}
                     </select>
@@ -518,7 +543,12 @@ export default function GestProductos() {
                   <div className="gestproductos-form-group">
                     <label className="gestproductos-form-label">Precio (COP) <span className="gestproductos-required">*</span></label>
                     <input type="number" min={0} className={`gestproductos-form-input${errores.precio ? " input-error" : ""}`} placeholder="0" value={form.precio}
-                      onChange={e => { setForm({ ...form, precio: e.target.value }); if (errores.precio) setErrores(p => ({ ...p, precio: "" })); }} />
+                      onChange={e => {
+                        const precio = e.target.value;
+                        setForm({ ...form, precio });
+                        if (errores.precio) setErrores(p => ({ ...p, precio: (precio && Number(precio) > 0) ? "" : p.precio }));
+                      }}
+                      onBlur={() => setErrores(p => ({ ...p, precio: (form.precio && Number(form.precio) > 0) ? "" : "El precio debe ser mayor a $0." }))} />
                     {errores.precio && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.precio}</p>}
                   </div>
                 </div>

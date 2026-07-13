@@ -172,6 +172,15 @@ export default function Usuarios() {
     return Object.keys(e).length === 0;
   };
 
+  // Mismas reglas que validarPasoDatosCuenta, factorizadas para reutilizar en onBlur/onChange (validación en tiempo real).
+  const revisarContrasena = (valor) => {
+    let msg = "";
+    if (!editar && !valor) msg = "La contraseña es obligatoria";
+    if (valor && valor.length < 6) msg = "La contraseña debe tener al menos 6 caracteres";
+    if (valor && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(valor)) msg = "La contraseña debe contener un símbolo";
+    return msg;
+  };
+
   const validarPasoUbicacionRol = () => {
     const e = {};
     if (!form.id_barrio) e.id_barrio = "Selecciona un barrio";
@@ -262,7 +271,15 @@ export default function Usuarios() {
       <div className="ms-form-row">
         <div className="ms-form-group">
           <label className="ms-form-label">Tipo doc. <span className="ms-req">*</span></label>
-          <select className="ms-form-select" value={form.tipo_doc} onChange={e => setForm({ ...form, tipo_doc: e.target.value })}>
+          <select className="ms-form-select" value={form.tipo_doc}
+            onChange={e => {
+              const tipo_doc = e.target.value;
+              setForm({ ...form, tipo_doc });
+              if (errores.documento) {
+                const msg = !form.documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(tipo_doc, form.documento);
+                setErrores(prev => ({ ...prev, documento: msg }));
+              }
+            }}>
             {TIPOS_DOC.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
@@ -271,14 +288,30 @@ export default function Usuarios() {
           <input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="1001234567" value={form.documento}
             disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode={form.tipo_doc === "PP" ? "text" : "numeric"}
             maxLength={maxLongitudDocumento(form.tipo_doc)}
-            onChange={e => { setForm({ ...form, documento: form.tipo_doc === "PP" ? e.target.value : soloDigitos(e.target.value) }); if (errores.documento) setErrores(prev => ({ ...prev, documento: "" })); }} />
+            onChange={e => {
+              const documento = form.tipo_doc === "PP" ? e.target.value : soloDigitos(e.target.value);
+              setForm({ ...form, documento });
+              if (errores.documento) {
+                const msg = !documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(form.tipo_doc, documento);
+                setErrores(prev => ({ ...prev, documento: msg }));
+              }
+            }}
+            onBlur={() => {
+              const msg = !form.documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(form.tipo_doc, form.documento);
+              setErrores(prev => ({ ...prev, documento: msg }));
+            }} />
           {errores.documento && <span className="ms-form-error">{errores.documento}</span>}
         </div>
       </div>
       <div className="ms-form-group">
         <label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label>
         <input className={`ms-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Nicol Zapata" value={form.nombre}
-          onChange={e => { setForm({ ...form, nombre: e.target.value }); if (errores.nombre) setErrores(prev => ({ ...prev, nombre: "" })); }} />
+          onChange={e => {
+            const nombre = e.target.value;
+            setForm({ ...form, nombre });
+            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: nombre.trim() ? "" : prev.nombre }));
+          }}
+          onBlur={() => setErrores(prev => ({ ...prev, nombre: form.nombre.trim() ? "" : "El nombre es obligatorio" }))} />
         {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
       </div>
 
@@ -287,13 +320,23 @@ export default function Usuarios() {
           <label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label>
           <input type="email" className={`ms-form-input${errores.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={form.email}
             disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined}
-            onChange={e => { setForm({ ...form, email: e.target.value }); if (errores.email) setErrores(prev => ({ ...prev, email: "" })); }} />
+            onChange={e => {
+              const email = e.target.value;
+              setForm({ ...form, email });
+              if (errores.email) setErrores(prev => ({ ...prev, email: email.trim() ? "" : prev.email }));
+            }}
+            onBlur={() => setErrores(prev => ({ ...prev, email: form.email.trim() ? "" : "El correo electrónico es obligatorio" }))} />
           {errores.email && <span className="ms-form-error">{errores.email}</span>}
         </div>
         <div className="ms-form-group">
           <label className="ms-form-label">Teléfono <span className="ms-req">*</span></label>
           <input className={`ms-form-input${errores.telefono ? " input-error" : ""}`} placeholder="3001234567" value={form.telefono} inputMode="numeric"
-            onChange={e => { setForm({ ...form, telefono: soloDigitos(e.target.value) }); if (errores.telefono) setErrores(prev => ({ ...prev, telefono: "" })); }} />
+            onChange={e => {
+              const telefono = soloDigitos(e.target.value);
+              setForm({ ...form, telefono });
+              if (errores.telefono) setErrores(prev => ({ ...prev, telefono: telefono.trim() ? "" : prev.telefono }));
+            }}
+            onBlur={() => setErrores(prev => ({ ...prev, telefono: form.telefono.trim() ? "" : "El teléfono es obligatorio" }))} />
           {errores.telefono && <span className="ms-form-error">{errores.telefono}</span>}
         </div>
       </div>
@@ -306,7 +349,12 @@ export default function Usuarios() {
               className={`ms-form-input${errores.contrasena ? " input-error" : ""}`}
               placeholder={editar ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"}
               value={form.contrasena}
-              onChange={e => { setForm({ ...form, contrasena: e.target.value }); if (errores.contrasena) setErrores(prev => ({ ...prev, contrasena: "" })); }} />
+              onChange={e => {
+                const contrasena = e.target.value;
+                setForm({ ...form, contrasena });
+                if (errores.contrasena) setErrores(prev => ({ ...prev, contrasena: revisarContrasena(contrasena) }));
+              }}
+              onBlur={() => setErrores(prev => ({ ...prev, contrasena: revisarContrasena(form.contrasena) }))} />
             <div className="input-bar" />
             <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <IconEyeOpen /> : <IconEyeClosed />}</span>
           </div>
@@ -323,7 +371,12 @@ export default function Usuarios() {
       <div className="ms-form-group">
         <label className="ms-form-label">Barrio <span className="ms-req">*</span></label>
         <select className={`ms-form-select${errores.id_barrio ? " input-error" : ""}`} value={form.id_barrio}
-          onChange={e => { setForm({ ...form, id_barrio: e.target.value }); if (errores.id_barrio) setErrores(prev => ({ ...prev, id_barrio: "" })); }}>
+          onChange={e => {
+            const id_barrio = e.target.value;
+            setForm({ ...form, id_barrio });
+            if (errores.id_barrio) setErrores(prev => ({ ...prev, id_barrio: id_barrio ? "" : prev.id_barrio }));
+          }}
+          onBlur={() => setErrores(prev => ({ ...prev, id_barrio: form.id_barrio ? "" : "Selecciona un barrio" }))}>
           <option value="">— Selecciona un barrio —</option>
           {barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
         </select>
@@ -332,7 +385,12 @@ export default function Usuarios() {
       <div className="ms-form-group">
         <label className="ms-form-label">Dirección <span className="ms-req">*</span></label>
         <input className={`ms-form-input${errores.direccion ? " input-error" : ""}`} placeholder="Cra 43A # 10-20 Apto 301" value={form.direccion}
-          onChange={e => { setForm({ ...form, direccion: e.target.value }); if (errores.direccion) setErrores(prev => ({ ...prev, direccion: "" })); }} />
+          onChange={e => {
+            const direccion = e.target.value;
+            setForm({ ...form, direccion });
+            if (errores.direccion) setErrores(prev => ({ ...prev, direccion: direccion.trim() ? "" : prev.direccion }));
+          }}
+          onBlur={() => setErrores(prev => ({ ...prev, direccion: form.direccion.trim() ? "" : "La dirección es obligatoria" }))} />
         {errores.direccion && <span className="ms-form-error">{errores.direccion}</span>}
       </div>
 
@@ -549,21 +607,52 @@ export default function Usuarios() {
           labelGuardar={editar ? "Actualizar" : "Registrar"}>
           <div>
             <div className="ms-form-row">
-              <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.nombre ? " input-error" : ""}`} placeholder="Ej: Juan Pérez" value={clienteForm.nombre} onChange={e => { setClienteForm({ ...clienteForm, nombre: e.target.value }); if (erroresCliente.nombre) setErroresCliente(prev => ({ ...prev, nombre: "" })); }} />{erroresCliente.nombre && <span className="ms-form-error">{erroresCliente.nombre}</span>}</div>
-              <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={clienteForm.tipo_doc} disabled={!!editar} onChange={e => setClienteForm({ ...clienteForm, tipo_doc: e.target.value })}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
+              <div className="ms-form-group"><label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.nombre ? " input-error" : ""}`} placeholder="Ej: Juan Pérez" value={clienteForm.nombre}
+                onChange={e => { const nombre = e.target.value; setClienteForm({ ...clienteForm, nombre }); if (erroresCliente.nombre) setErroresCliente(prev => ({ ...prev, nombre: nombre.trim() ? "" : prev.nombre })); }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, nombre: clienteForm.nombre.trim() ? "" : "El nombre es obligatorio" }))} />{erroresCliente.nombre && <span className="ms-form-error">{erroresCliente.nombre}</span>}</div>
+              <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={clienteForm.tipo_doc} disabled={!!editar}
+                onChange={e => {
+                  const tipo_doc = e.target.value;
+                  setClienteForm({ ...clienteForm, tipo_doc });
+                  if (erroresCliente.documento) {
+                    const msg = !clienteForm.documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(tipo_doc, clienteForm.documento);
+                    setErroresCliente(prev => ({ ...prev, documento: msg }));
+                  }
+                }}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
             </div>
             <div className="ms-form-row">
-              <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode={clienteForm.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(clienteForm.tipo_doc)} onChange={e => { setClienteForm({ ...clienteForm, documento: clienteForm.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value) }); if (erroresCliente.documento) setErroresCliente(prev => ({ ...prev, documento: "" })); }} />{erroresCliente.documento && <span className="ms-form-error">{erroresCliente.documento}</span>}</div>
-              <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.telefono ? " input-error" : ""}`} placeholder="3001234567" value={clienteForm.telefono} inputMode="numeric" onChange={e => { setClienteForm({ ...clienteForm, telefono: soloDigitos(e.target.value) }); if (erroresCliente.telefono) setErroresCliente(prev => ({ ...prev, telefono: "" })); }} />{erroresCliente.telefono && <span className="ms-form-error">{erroresCliente.telefono}</span>}</div>
+              <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode={clienteForm.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(clienteForm.tipo_doc)}
+                onChange={e => {
+                  const documento = clienteForm.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value);
+                  setClienteForm({ ...clienteForm, documento });
+                  if (erroresCliente.documento) {
+                    const msg = !documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(clienteForm.tipo_doc, documento);
+                    setErroresCliente(prev => ({ ...prev, documento: msg }));
+                  }
+                }}
+                onBlur={() => {
+                  const msg = !clienteForm.documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(clienteForm.tipo_doc, clienteForm.documento);
+                  setErroresCliente(prev => ({ ...prev, documento: msg }));
+                }} />{erroresCliente.documento && <span className="ms-form-error">{erroresCliente.documento}</span>}</div>
+              <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.telefono ? " input-error" : ""}`} placeholder="3001234567" value={clienteForm.telefono} inputMode="numeric"
+                onChange={e => { const telefono = soloDigitos(e.target.value); setClienteForm({ ...clienteForm, telefono }); if (erroresCliente.telefono) setErroresCliente(prev => ({ ...prev, telefono: telefono.trim() ? "" : prev.telefono })); }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, telefono: clienteForm.telefono.trim() ? "" : "El teléfono es obligatorio" }))} />{erroresCliente.telefono && <span className="ms-form-error">{erroresCliente.telefono}</span>}</div>
             </div>
-            <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className={`ms-form-input${erroresCliente.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={clienteForm.email} disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined} onChange={e => { setClienteForm({ ...clienteForm, email: e.target.value }); if (erroresCliente.email) setErroresCliente(prev => ({ ...prev, email: "" })); }} />{erroresCliente.email && <span className="ms-form-error">{erroresCliente.email}</span>}</div>
+            <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className={`ms-form-input${erroresCliente.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={clienteForm.email} disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined}
+                onChange={e => { const email = e.target.value; setClienteForm({ ...clienteForm, email }); if (erroresCliente.email) setErroresCliente(prev => ({ ...prev, email: email.trim() ? "" : prev.email })); }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, email: clienteForm.email.trim() ? "" : "El correo electrónico es obligatorio" }))} />{erroresCliente.email && <span className="ms-form-error">{erroresCliente.email}</span>}</div>
           </div>
           <div>
             <div className="ms-form-group"><label className="ms-form-label">Ciudad</label><input className="ms-form-input" value="Medellín" disabled style={{ opacity: 0.55 }} /></div>
             <div className="ms-form-group">
               <label className="ms-form-label">Barrio <span className="ms-req">*</span></label>
               <select className={`ms-form-select${erroresCliente.id_barrio ? " input-error" : ""}`} value={clienteForm.id_barrio}
-                onChange={e => { setClienteForm({ ...clienteForm, id_barrio: Number(e.target.value) }); if (erroresCliente.id_barrio) setErroresCliente(prev => ({ ...prev, id_barrio: "" })); }}>
+                onChange={e => {
+                  const id_barrio = Number(e.target.value);
+                  setClienteForm({ ...clienteForm, id_barrio });
+                  if (erroresCliente.id_barrio) setErroresCliente(prev => ({ ...prev, id_barrio: id_barrio ? "" : prev.id_barrio }));
+                }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, id_barrio: clienteForm.id_barrio ? "" : "Selecciona un barrio" }))}>
                 <option value="">— Seleccionar —</option>
                 {barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
               </select>
@@ -572,7 +661,12 @@ export default function Usuarios() {
             <div className="ms-form-group">
               <label className="ms-form-label">Dirección completa <span className="ms-req">*</span></label>
               <input className={`ms-form-input${erroresCliente.direccion ? " input-error" : ""}`} placeholder="Cra 70 # 48-15 Apto 201" value={clienteForm.direccion}
-                onChange={e => { setClienteForm({ ...clienteForm, direccion: e.target.value }); if (erroresCliente.direccion) setErroresCliente(prev => ({ ...prev, direccion: "" })); }} />
+                onChange={e => {
+                  const direccion = e.target.value;
+                  setClienteForm({ ...clienteForm, direccion });
+                  if (erroresCliente.direccion) setErroresCliente(prev => ({ ...prev, direccion: direccion.trim() ? "" : prev.direccion }));
+                }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, direccion: clienteForm.direccion.trim() ? "" : "La dirección es obligatoria" }))} />
               {erroresCliente.direccion && <span className="ms-form-error">{erroresCliente.direccion}</span>}
             </div>
 
