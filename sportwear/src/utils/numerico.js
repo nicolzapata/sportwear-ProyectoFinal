@@ -54,3 +54,17 @@ export const validarTelefono = (telefono) => {
   if (valor.length !== LONGITUD_TELEFONO) return `El teléfono debe tener ${LONGITUD_TELEFONO} dígitos.`;
   return "";
 };
+
+// Longitud mínima válida para cada palabra de un nombre (evita iniciales sueltas como "J").
+export const LONGITUD_MIN_PALABRA_NOMBRE = 2;
+
+// Valida que un nombre de persona sea obligatorio y que cada nombre/apellido
+// (cada palabra separada por espacios) tenga al menos LONGITUD_MIN_PALABRA_NOMBRE letras.
+// `mensajeVacio` permite reusar el texto de "obligatorio" que ya usaba cada formulario.
+export const validarNombre = (valor, mensajeVacio = "El nombre es obligatorio") => {
+  const texto = (valor ?? "").toString().trim();
+  if (!texto) return mensajeVacio;
+  const palabraCorta = texto.split(/\s+/).some((p) => p.length < LONGITUD_MIN_PALABRA_NOMBRE);
+  if (palabraCorta) return "Cada nombre o apellido debe tener al menos 2 letras.";
+  return "";
+};

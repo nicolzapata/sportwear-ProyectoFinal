@@ -8,7 +8,6 @@ import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
-const tipoByCliente = (tipo_cliente) => tipo_cliente === "VIP" ? "Abono" : "Pago completo";
 const FILAS_POR_PAGINA = 10;
 
 export default function PagosAbonos() {
@@ -72,9 +71,7 @@ export default function PagosAbonos() {
   };
 
   const handleVentaChange = (id_venta) => {
-    const venta = ventas.find(v => String(v.id_venta) === String(id_venta));
-    const tipo  = venta ? tipoByCliente(venta.tipo_cliente) : "Pago completo";
-    setForm(f => ({ ...f, id_venta, tipo }));
+    setForm(f => ({ ...f, id_venta, tipo: "Pago completo" }));
   };
 
   const filtrados       = datos.filter(p => p.cliente?.toLowerCase().includes(busqueda.toLowerCase()) || String(p.id_pago).includes(busqueda));
@@ -99,7 +96,7 @@ export default function PagosAbonos() {
         fecha:    form.fecha || new Date().toISOString().split("T")[0],
       });
       const venta = ventas.find(v => v.id_venta === Number(form.id_venta));
-      setDatos(prev => [{ ...nuevo, cliente: venta?.cliente ?? "—", tipo_cliente: venta?.tipo_cliente ?? "—" }, ...prev]);
+      setDatos(prev => [{ ...nuevo, cliente: venta?.cliente ?? "—" }, ...prev]);
       setModal(false);
     } catch (err) {
       alert(err.response?.data?.message ?? "Error al registrar el pago.");
@@ -274,7 +271,7 @@ export default function PagosAbonos() {
                       }}
                     >
                       <option value="">Seleccionar venta...</option>
-                      {ventas.map(v => <option key={v.id_venta} value={v.id_venta}>V-{String(v.id_venta).padStart(3, "0")} — {v.cliente} ({v.tipo_cliente})</option>)}
+                      {ventas.map(v => <option key={v.id_venta} value={v.id_venta}>V-{String(v.id_venta).padStart(3, "0")} — {v.cliente}</option>)}
                     </select>
                     {errores.id_venta && <span className="pagosabonos-field-error">{errores.id_venta}</span>}
                   </div>
@@ -296,7 +293,7 @@ export default function PagosAbonos() {
 
                 <div className="pagosabonos-form-row">
                   <div className="pagosabonos-form-group">
-                    <label className="pagosabonos-form-label">Tipo <small style={{ color: "#888" }}>(auto según cliente)</small></label>
+                    <label className="pagosabonos-form-label">Tipo</label>
                     <input className="pagosabonos-form-input" value={form.tipo} readOnly style={{ background: "var(--input-disabled-bg, #f3f4f6)", cursor: "not-allowed" }} />
                   </div>
                   <div className="pagosabonos-form-group">

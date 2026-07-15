@@ -7,11 +7,11 @@ import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../co
 import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
 import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, LONGITUD_TELEFONO } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, LONGITUD_TELEFONO } from "../../utils/numerico";
 import "./Clientes.css";
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
-const FORM_VACIO = { nombre: "", tipo_doc: "CC", documento: "", telefono: "", email: "", id_barrio: "", direccion: "", tipo_cliente: "Regular", permiso_pagos: 1, permiso_cuotas: 1, estado: "Activo" };
+const FORM_VACIO = { nombre: "", tipo_doc: "CC", documento: "", telefono: "", email: "", ciudad: "Medellín", id_barrio: "", direccion: "", contrasena: "", confirmar: "", permiso_cuotas: 1, estado: "Activo" };
 const FILAS_POR_PAGINA = 10;
 
 export default function Clientes() {
@@ -68,7 +68,7 @@ export default function Clientes() {
   const abrirRegistrar = () => { setEditar(null); setForm(FORM_VACIO); setBarFiltrados(barrios); setModal(true); };
   const abrirEditar    = (c) => {
     setEditar(c.id_cliente);
-    setForm({ nombre: c.nombre, tipo_doc: c.tipo_doc, documento: c.documento, telefono: c.telefono || "", email: c.email || "", id_barrio: c.id_barrio || "", direccion: c.direccion || "", tipo_cliente: c.tipo_cliente, permiso_pagos: c.permiso_pagos, permiso_cuotas: c.permiso_cuotas || 1, estado: c.estado });
+    setForm({ nombre: c.nombre, tipo_doc: c.tipo_doc, documento: c.documento, telefono: c.telefono || "", email: c.email || "", ciudad: c.ciudad || "Medellín", id_barrio: c.id_barrio || "", direccion: c.direccion || "", contrasena: "", confirmar: "", permiso_cuotas: c.permiso_cuotas || 1, estado: c.estado });
     setBarFiltrados(barrios);
     setModal(true);
   };
@@ -81,7 +81,7 @@ export default function Clientes() {
         setDatos(prev => prev.map(c => c.id_cliente === editar ? { ...c, ...data } : c));
       } else {
         const { data } = await api.post("/clientes", form);
-        setDatos(prev => [...prev, { ...data, barrio_nombre: "", comuna: "", ciudad: "Medellín" }]);
+        setDatos(prev => [...prev, { ...data, barrio_nombre: "", comuna: "" }]);
       }
       setModal(false);
     } catch (err) {
@@ -90,10 +90,28 @@ export default function Clientes() {
     }
   };
 
-  const errorNombre = (valor) => (!valor.trim() ? "El nombre es obligatorio" : "");
+  const errorNombre = (valor) => validarNombre(valor, "El nombre es obligatorio");
   const errorDocumento = (tipoDoc, valor) => {
     if (!valor.trim()) return "El documento es obligatorio";
     return validarNumeroDocumento(tipoDoc, valor);
+  };
+  const errorCiudad = (valor) => (!valor.trim() ? "La ciudad es obligatoria" : "");
+  const errorEmail = (valor) => {
+    if (!valor.trim()) return "El correo es obligatorio";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)) return "El correo electrónico no es válido";
+    return "";
+  };
+  const errorContrasena = (valor) => {
+    if (!valor) return "La contraseña es obligatoria";
+    if (valor.length < 6) return "Debe tener al menos 6 caracteres";
+    // eslint-disable-next-line no-useless-escape
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(valor)) return "Debe contener al menos un símbolo";
+    return "";
+  };
+  const errorConfirmar = (valor, contrasena) => {
+    if (!valor) return "Confirma la contraseña";
+    if (valor !== contrasena) return "Las contraseñas no coinciden";
+    return "";
   };
 
   const validarPasoDatos = () => {
@@ -104,26 +122,31 @@ export default function Clientes() {
     if (eDocumento) e.documento = eDocumento;
     const eTelefono = validarTelefono(form.telefono);
     if (eTelefono) e.telefono = eTelefono;
+    const eEmail = errorEmail(form.email);
+    if (eEmail) e.email = eEmail;
     setErrores(e);
     return Object.keys(e).length === 0;
   };
 
-  const validarPasoUbicacion = () => true;
+  const validarPasoUbicacion = () => {
+    const eCiudad = errorCiudad(form.ciudad);
+    setErrores(prev => ({ ...prev, ciudad: eCiudad }));
+    return !eCiudad;
+  };
 
-  const validarPasoClasificacion = () => true;
+  const validarPasoClasificacion = () => {
+    if (editar) return true;
+    const eContrasena = errorContrasena(form.contrasena);
+    const eConfirmar = errorConfirmar(form.confirmar, form.contrasena);
+    setErrores(prev => ({ ...prev, contrasena: eContrasena, confirmar: eConfirmar }));
+    return !eContrasena && !eConfirmar;
+  };
 
   const toggleEstado = async (id, nuevoEstado) => {
     try {
       await api.patch(`/clientes/${id}/estado`);
       setDatos(prev => prev.map(c => c.id_cliente === id ? { ...c, estado: nuevoEstado } : c));
     } catch { showToast("error", "Error al cambiar estado"); }
-  };
-
-  const tipoBadge = (t) => {
-    if (t === "VIP") return "vip";
-    if (t === "Mayorista") return "mayorista";
-    if (t === "Corporativo") return "corporativo";
-    return "";
   };
 
   const PasoDatos = (<div>
@@ -134,12 +157,12 @@ export default function Clientes() {
     </div>
     <div className="ms-form-row">
       <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${errores.telefono ? " input-error" : ""}`} inputMode="numeric" maxLength={LONGITUD_TELEFONO} placeholder="3001234567" value={form.telefono} onChange={e => { const telefono = soloDigitos(e.target.value); setForm({ ...form, telefono }); if (errores.telefono) setErrores(prev => ({ ...prev, telefono: validarTelefono(telefono) })); }} onBlur={() => setErrores(prev => ({ ...prev, telefono: validarTelefono(form.telefono) }))} />{errores.telefono && <span className="ms-form-error">{errores.telefono}</span>}</div>
-      <div className="ms-form-group"><label className="ms-form-label">Correo electrónico</label><input type="email" className="ms-form-input" placeholder="ejemplo@correo.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></div>
+      <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className={`ms-form-input${errores.email ? " input-error" : ""}`} disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined} placeholder="ejemplo@correo.com" value={form.email} onChange={e => { const email = e.target.value; setForm({ ...form, email }); if (errores.email) setErrores(prev => ({ ...prev, email: errorEmail(email) })); }} onBlur={() => setErrores(prev => ({ ...prev, email: errorEmail(form.email) }))} />{errores.email && <span className="ms-form-error">{errores.email}</span>}</div>
     </div>
   </div>);
 
   const PasoUbicacion = (<div>
-    <div className="ms-form-group"><label className="ms-form-label">Ciudad</label><input className="ms-form-input" value="Medellín" disabled style={{ opacity: 0.55 }} /></div>
+    <div className="ms-form-group"><label className="ms-form-label">Ciudad <span className="ms-req">*</span></label><input className={`ms-form-input${errores.ciudad ? " input-error" : ""}`} placeholder="Medellín" value={form.ciudad} onChange={e => { const ciudad = e.target.value; setForm({ ...form, ciudad }); if (errores.ciudad) setErrores(prev => ({ ...prev, ciudad: errorCiudad(ciudad) })); }} onBlur={() => setErrores(prev => ({ ...prev, ciudad: errorCiudad(form.ciudad) }))} />{errores.ciudad && <span className="ms-form-error">{errores.ciudad}</span>}</div>
     <div className="ms-form-row">
       <div className="ms-form-group"><label className="ms-form-label">Zona / Área</label><select className="ms-form-select" onChange={e => handleZona(e.target.value)}><option value="">— Todas las zonas —</option>{zonas.map(z => <option key={z} value={z}>{z}</option>)}</select></div>
       <div className="ms-form-group"><label className="ms-form-label">Barrio / Comuna</label><select className="ms-form-select" value={form.id_barrio} onChange={e => setForm({ ...form, id_barrio: Number(e.target.value) })}><option value="">— Seleccionar —</option>{barFiltrados.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} — {b.comuna}</option>)}</select></div>
@@ -148,10 +171,12 @@ export default function Clientes() {
   </div>);
 
   const PasoClasificacion = (<div>
-    <div className="ms-form-row">
-      <div className="ms-form-group"><label className="ms-form-label">Tipo de cliente</label><select className="ms-form-select" value={form.tipo_cliente} onChange={e => setForm({ ...form, tipo_cliente: e.target.value })}>{["Regular","VIP","Mayorista","Corporativo"].map(t => <option key={t}>{t}</option>)}</select></div>
-      <div className="ms-form-group"><label className="ms-form-label">Permiso de pagos</label><select className="ms-form-select" value={form.permiso_pagos} onChange={e => setForm({ ...form, permiso_pagos: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
-    </div>
+    {!editar && (
+      <div className="ms-form-row">
+        <div className="ms-form-group"><label className="ms-form-label">Contraseña <span className="ms-req">*</span></label><input type="password" className={`ms-form-input${errores.contrasena ? " input-error" : ""}`} placeholder="Mín. 6 caracteres" value={form.contrasena} onChange={e => { const contrasena = e.target.value; setForm({ ...form, contrasena }); if (errores.contrasena) setErrores(prev => ({ ...prev, contrasena: errorContrasena(contrasena) })); if (errores.confirmar) setErrores(prev => ({ ...prev, confirmar: errorConfirmar(form.confirmar, contrasena) })); }} onBlur={() => setErrores(prev => ({ ...prev, contrasena: errorContrasena(form.contrasena) }))} />{errores.contrasena && <span className="ms-form-error">{errores.contrasena}</span>}</div>
+        <div className="ms-form-group"><label className="ms-form-label">Confirmar contraseña <span className="ms-req">*</span></label><input type="password" className={`ms-form-input${errores.confirmar ? " input-error" : ""}`} placeholder="Repite la contraseña" value={form.confirmar} onChange={e => { const confirmar = e.target.value; setForm({ ...form, confirmar }); if (errores.confirmar) setErrores(prev => ({ ...prev, confirmar: errorConfirmar(confirmar, form.contrasena) })); }} onBlur={() => setErrores(prev => ({ ...prev, confirmar: errorConfirmar(form.confirmar, form.contrasena) }))} />{errores.confirmar && <span className="ms-form-error">{errores.confirmar}</span>}</div>
+      </div>
+    )}
     <div className="ms-form-row">
       <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><select className="ms-form-select" value={form.permiso_cuotas} onChange={e => setForm({ ...form, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
       <div className="ms-form-group"><label className="ms-form-label">Estado</label><select className="ms-form-select" value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
@@ -175,8 +200,7 @@ export default function Clientes() {
   </DetalleGrid></DetalleSeccion>);
 
   const DetalleClasificacion = c && (<DetalleSeccion><DetalleGrid>
-    <DetalleItem label="Tipo cliente" value={c.tipo_cliente} />
-    <DetalleItem label="Estado"       value={c.estado} />
+    <DetalleItem label="Estado" value={c.estado} />
   </DetalleGrid></DetalleSeccion>);
 
   if (error) return <div style={{ padding: 32, color: "var(--danger)" }}>{error}</div>;
@@ -200,7 +224,6 @@ export default function Clientes() {
                 { header: "Documento", value: (c) => `${c.tipo_doc} ${c.documento}` },
                 { header: "Teléfono", value: (c) => c.telefono || "—" },
                 { header: "Barrio", value: (c) => (c.barrio_nombre ? `${c.barrio_nombre} (${c.comuna})` : "—") },
-                { header: "Tipo", key: "tipo_cliente" },
                 { header: "Compras", value: (c) => c.total_compras || 0 },
                 { header: "Total gastado", value: (c) => `$${Number(c.total_gastado || 0).toLocaleString("es-CO")}` },
                 ...(tienePerm('Clientes.estado') ? [{ header: "Estado", key: "estado" }] : []),
@@ -219,7 +242,6 @@ export default function Clientes() {
               <th className="tbl-th">Documento</th>
               <th className="tbl-th">Teléfono</th>
               <th className="tbl-th">Barrio</th>
-              <th className="tbl-th">Tipo</th>
               <th className="tbl-th">Compras</th>
               <th className="tbl-th">Total</th>
               {tienePerm('Clientes.estado') && <th className="tbl-th">Estado</th>}
@@ -228,16 +250,15 @@ export default function Clientes() {
           </thead>
           <tbody className="tbl-body">
             {loading ? (
-              <tr><td colSpan="9" className="tbl-td">Cargando clientes...</td></tr>
+              <tr><td colSpan="8" className="tbl-td">Cargando clientes...</td></tr>
             ) : filtrados.length === 0 ? (
-              <tr><td colSpan="9" className="tbl-td">No hay clientes con compras registradas</td></tr>
+              <tr><td colSpan="8" className="tbl-td">No hay clientes con compras registradas</td></tr>
             ) : filtrados.map((c) => (
               <tr key={c.id_cliente} className="tbl-row">
                 <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
                 <td className="tbl-td"><span className="tabla-doc">{c.tipo_doc} {c.documento}</span></td>
                 <td className="tbl-td clientes-phone-cell">{c.telefono || '—'}</td>
                 <td className="tbl-td">{c.barrio_nombre ? <div><div className="clientes-barrio-name">{c.barrio_nombre}</div><div className="clientes-comuna-name">{c.comuna}</div></div> : <span className="clientes-empty">—</span>}</td>
-                <td className="tbl-td"><span className={`tabla-tipo ${tipoBadge(c.tipo_cliente)}`}>{c.tipo_cliente}</span></td>
                 <td className="tbl-td">{c.total_compras || 0}</td>
                 <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
                 {tienePerm('Clientes.estado') && (

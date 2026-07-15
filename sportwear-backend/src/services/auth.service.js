@@ -171,7 +171,7 @@ const registro = async (datos) => {
  */
 const crearUsuario = async ({
   nombre, email, contrasena, id_rol,
-  tipo_doc, documento, telefono, ciudad, id_barrio, direccion, tipo_cliente,
+  tipo_doc, documento, telefono, ciudad, id_barrio, direccion,
 }) => {
   validarCamposNumericos({ documento, teléfono: telefono });
 
@@ -194,12 +194,11 @@ const crearUsuario = async ({
         throw { status: 409, message: 'El documento ya está registrado' };
 
       const nuevoCliente = await client.query(
-        `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion, tipo_cliente)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id_cliente`,
+        `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_cliente`,
         [
           nombre, tipo_doc || 'CC', documento, telefono || null, email,
           ciudad || 'Medellín', id_barrio || null, direccion || null,
-          tipo_cliente || 'Regular',
         ]
       );
       id_cliente = nuevoCliente.rows[0].id_cliente;
@@ -223,7 +222,7 @@ const crearUsuario = async ({
 };
 
 const actualizarUsuario = async (id, datos, usuarioActual) => {
-  const { nombre, email, id_rol, estado, contrasena, tipo_doc, documento, telefono, ciudad, id_barrio, direccion, tipo_cliente } = datos;
+  const { nombre, email, id_rol, estado, contrasena, tipo_doc, documento, telefono, ciudad, id_barrio, direccion } = datos;
   validarCamposNumericos({ teléfono: telefono });
   const client = await pool.connect();
   try {
@@ -259,17 +258,17 @@ const actualizarUsuario = async (id, datos, usuarioActual) => {
     if (id_cliente) {
       await client.query(
         `UPDATE "Clientes" SET nombre=$1, telefono=$2,
-         ciudad=$3, id_barrio=$4, direccion=$5, tipo_cliente=COALESCE($7, tipo_cliente)
+         ciudad=$3, id_barrio=$4, direccion=$5
          WHERE id_cliente=$6`,
         [nombre, telefono || null,
-         ciudad || 'Medellín', id_barrio || null, direccion || null, id_cliente, tipo_cliente || null]
+         ciudad || 'Medellín', id_barrio || null, direccion || null, id_cliente]
       );
     } else if (documento) {
       const nuevoCliente = await client.query(
-        `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion, tipo_cliente)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id_cliente`,
+        `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id_cliente`,
         [nombre, tipo_doc || 'CC', documento, telefono || null, email,
-         ciudad || 'Medellín', id_barrio || null, direccion || null, tipo_cliente || 'Regular']
+         ciudad || 'Medellín', id_barrio || null, direccion || null]
       );
       await client.query(
         `UPDATE "Usuarios" SET id_cliente=$1 WHERE id_usuario=$2`,

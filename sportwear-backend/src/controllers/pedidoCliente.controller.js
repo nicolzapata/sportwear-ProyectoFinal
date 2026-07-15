@@ -4,7 +4,7 @@
 //
 // Flujo:
 //   1. Toma id_cliente del token (nunca del body)
-//   2. Verifica permiso_pagos del cliente
+//   2. Verifica que el cliente existe
 //   3. Crea la Venta + DetalleVenta + descuenta stock (ventasService.crearVenta)
 //   4. Registra el pago en PagosAbonos con el estado que corresponda:
 //        estado_venta "Confirmado" → pago "Confirmado"
@@ -21,19 +21,13 @@ const crearPedidoCliente = async (req, res) => {
     if (!id_cliente)
       return res.status(403).json({ message: 'Tu cuenta no tiene un cliente asociado.' });
 
-    // 1. Verificar permiso_pagos y traer datos del cliente
+    // 1. Verificar que el cliente existe
     const clienteRes = await pool.query(
-      `SELECT permiso_pagos, tipo_cliente FROM "Clientes" WHERE id_cliente = $1`,
+      `SELECT id_cliente FROM "Clientes" WHERE id_cliente = $1`,
       [id_cliente]
     );
     if (!clienteRes.rows.length)
       return res.status(404).json({ message: 'Cliente no encontrado.' });
-
-    const { permiso_pagos, tipo_cliente } = clienteRes.rows[0];
-    if (!permiso_pagos)
-      return res.status(403).json({
-        message: 'Tu cuenta tiene el permiso de pagos bloqueado. Contacta al administrador.'
-      });
 
     // Guardar permiso_cuotas en req para uso posterior
     req.permiso_cuotas = clienteRes.rows[0].permiso_cuotas;
@@ -70,11 +64,11 @@ const crearPedidoCliente = async (req, res) => {
       })),
     });
 
-    // 4. Registrar pago usando el service existente (respeta la lógica de permiso_pagos)
+    // 4. Registrar pago usando el service existente
     await pagosService.crearPago({
       id_venta:        venta.id_venta,
       monto:           venta.total,
-      tipo:            tipo_cliente === 'VIP' ? 'Abono' : 'Pago completo',
+      tipo:            'Pago completo',
       metodo:          estado === 'Confirmado' ? (metodo_pago || 'Efectivo') : '—',
       referencia_pago: null,
       estado:          estado === 'Confirmado' ? 'Confirmado' : 'Pendiente',

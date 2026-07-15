@@ -8,7 +8,7 @@ import PaymentModal from "../../components/PaymentModal";
 import OrderDetailModal from "../../components/OrderDetailModal";
 import { IconCreditCard, IconShoppingCart } from "../../components/Icons";
 import Loader from "../../components/Loader";
-import { soloDigitos, validarTelefono, LONGITUD_TELEFONO } from "../../utils/numerico";
+import { soloDigitos, validarTelefono, validarNombre, LONGITUD_TELEFONO } from "../../utils/numerico";
 import "./MiCuenta.css";
 
 export default function MiCuenta() {
@@ -86,7 +86,8 @@ export default function MiCuenta() {
 
   const validarPasoDatos = () => {
     const e = {};
-    if (!form.nombre.trim()) e.nombre = "El nombre es obligatorio";
+    const eNombre = validarNombre(form.nombre);
+    if (eNombre) e.nombre = eNombre;
     if (!form.documento.trim()) e.documento = "El documento es obligatorio";
     const eTelefono = validarTelefono(form.telefono);
     if (eTelefono) e.telefono = eTelefono;
@@ -180,9 +181,9 @@ export default function MiCuenta() {
           onChange={(e) => {
             const nombre = e.target.value;
             setForm({ ...form, nombre });
-            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: nombre.trim() ? "" : prev.nombre }));
+            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: validarNombre(nombre) }));
           }}
-          onBlur={() => setErrores(prev => ({ ...prev, nombre: form.nombre?.trim() ? "" : "El nombre es obligatorio" }))}
+          onBlur={() => setErrores(prev => ({ ...prev, nombre: validarNombre(form.nombre) }))}
         />
         {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
       </div>

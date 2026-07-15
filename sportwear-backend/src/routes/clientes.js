@@ -2,7 +2,7 @@
 const router = require('express').Router();
 const {
   getClientes, getClientesConVentas, getClienteById, crearCliente,
-  actualizarCliente, toggleEstado, togglePermisoPagos, togglePermisoCuotas,
+  actualizarCliente, toggleEstado, togglePermisoCuotas,
   getMiPerfil, actualizarMiPerfil, debugClientesVentas, getClientesRolCliente
 } = require('../controllers/clientes.controller');
 const { verificarToken, tieneModulo } = require('../middlewares/auth.middleware');
@@ -19,7 +19,6 @@ router.get('/:id',                  verificarToken, tieneModulo('Clientes', 'ver
 router.post('/',                    verificarToken, tieneModulo('Clientes', 'crear'),  crearCliente);
 router.put('/:id',                  verificarToken, tieneModulo('Clientes', 'editar'), actualizarCliente);
 router.patch('/:id/estado',         verificarToken, tieneModulo('Clientes', 'estado'), toggleEstado);
-router.patch('/:id/permiso-pagos',  verificarToken, tieneModulo('Clientes', 'editar'), togglePermisoPagos);
 router.patch('/:id/permiso-cuotas', verificarToken, tieneModulo('Clientes', 'editar'), togglePermisoCuotas);
 
 module.exports = router;

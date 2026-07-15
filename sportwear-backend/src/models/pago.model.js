@@ -14,7 +14,7 @@ class PagoModel extends BaseModel {
 
   async findAllConCliente() {
     const result = await pool.query(
-      `SELECT pa.*, c.nombre AS cliente, c.permiso_pagos, c.tipo_cliente
+      `SELECT pa.*, c.nombre AS cliente
        FROM "PagosAbonos" pa
        JOIN "Ventas"   v ON pa.id_venta  = v.id_venta
        JOIN "Clientes" c ON v.id_cliente = c.id_cliente

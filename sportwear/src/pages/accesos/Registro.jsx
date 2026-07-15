@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
 import logo from "../../assets/LOGO.png";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, LONGITUD_TELEFONO } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, LONGITUD_TELEFONO } from "../../utils/numerico";
 import "./Login.css";
 import "./Registro.css";
 
@@ -102,7 +102,8 @@ export default function Registro() {
   // Calcula TODOS los errores del formulario a partir de un estado dado, sin tocar el state.
   const calcularErrores = (formValue) => {
     const e = {};
-    if (!formValue.nombre.trim()) e.nombre = "El nombre es obligatorio.";
+    const errorNombre = validarNombre(formValue.nombre, "El nombre es obligatorio.");
+    if (errorNombre) e.nombre = errorNombre;
     if (!formValue.documento.trim()) e.documento = "El documento es obligatorio.";
     else {
       const errorLongitud = validarNumeroDocumento(formValue.tipo_doc, formValue.documento);

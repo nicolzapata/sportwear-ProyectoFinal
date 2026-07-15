@@ -1,6 +1,7 @@
 // src/services/clientes.service.js
 const pool = require('../config/db');
 const { validarCamposNumericos } = require('../utils/validarNumerico');
+const { enviarCorreo } = require('./mailer.service');
 
 const getClientes = async () => {
   const result = await pool.query(`
@@ -44,28 +45,80 @@ const getClienteById = async (id) => {
   return result.rows[0];
 };
 
+// Crea un cliente y, en la misma transacción, su cuenta de acceso (Usuarios),
+// igual que el registro público (ver auth.service.js -> registro()).
 const crearCliente = async (datos) => {
-  const { nombre, tipo_doc, documento, telefono, email, id_barrio, direccion, tipo_cliente, permiso_pagos, permiso_cuotas, estado } = datos;
+  const { nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion, permiso_cuotas, estado, contrasena } = datos;
   if (!nombre || !documento) throw { status: 400, message: 'Nombre y documento son requeridos' };
+  if (!email || !contrasena) throw { status: 400, message: 'Correo y contraseña son requeridos' };
   validarCamposNumericos({ documento, teléfono: telefono });
 
-  const result = await pool.query(`
-    INSERT INTO "Clientes"
-      (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion, tipo_cliente, permiso_pagos, permiso_cuotas, estado)
-    VALUES ($1,$2,$3,$4,$5,'Medellín',$6,$7,$8,$9,$10,$11) RETURNING *
-  `, [
-    nombre, tipo_doc || 'CC', documento, telefono || null, email || null,
-    id_barrio || null, direccion || null, tipo_cliente || 'Regular',
-    permiso_pagos !== undefined ? permiso_pagos : true,
-    permiso_cuotas !== undefined ? permiso_cuotas : true,
-    estado || 'Activo',
-  ]);
-  return result.rows[0];
+  const client = await pool.connect();
+  try {
+    const emailExiste = await client.query(`SELECT id_usuario FROM "Usuarios" WHERE email = $1`, [email]);
+    if (emailExiste.rows.length > 0)
+      throw { status: 409, message: 'El email ya está registrado' };
+
+    const docExiste = await client.query(`SELECT id_cliente FROM "Clientes" WHERE documento = $1`, [documento]);
+    if (docExiste.rows.length > 0)
+      throw { status: 409, message: 'El documento ya está registrado' };
+
+    const rolResult = await client.query(`SELECT id_rol FROM "Roles" WHERE LOWER(nombre) = 'cliente'`);
+    const id_rol_cliente = rolResult.rows[0]?.id_rol;
+    if (!id_rol_cliente) throw { status: 500, message: 'No se encontró el rol "Cliente"' };
+
+    await client.query('BEGIN');
+
+    const nuevoCliente = await client.query(`
+      INSERT INTO "Clientes"
+        (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion, permiso_cuotas, estado)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *
+    `, [
+      nombre, tipo_doc || 'CC', documento, telefono || null, email,
+      ciudad || 'Medellín', id_barrio || null, direccion || null,
+      permiso_cuotas !== undefined ? permiso_cuotas : true,
+      estado || 'Activo',
+    ]);
+    const cliente = nuevoCliente.rows[0];
+
+    await client.query(
+      `INSERT INTO "Usuarios" (nombre, email, password_hash, id_rol, id_cliente)
+       VALUES ($1, $2, crypt($3, gen_salt('bf',12)), $4, $5)`,
+      [nombre, email, contrasena, id_rol_cliente, cliente.id_cliente]
+    );
+
+    await client.query('COMMIT');
+
+    enviarCorreo({
+      to: email,
+      subject: 'Bienvenido a DVNA SportWear',
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto">
+          <h2 style="color:#b49780">DVNA SportWear</h2>
+          <p>Hola ${nombre},</p>
+          <p>Tu cuenta fue creada exitosamente con el correo <strong>${email}</strong>.</p>
+          <p>Ya puedes iniciar sesión y comenzar a comprar en nuestro catálogo.</p>
+          <a href="${process.env.FRONTEND_URL}/login"
+             style="display:inline-block;padding:12px 24px;background:#b49780;color:#fff;
+                    border-radius:6px;text-decoration:none;margin:16px 0">
+            Ir a mi cuenta
+          </a>
+        </div>
+      `,
+    });
+
+    return cliente;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 const actualizarCliente = async (id, datos) => {
   // La identificación (tipo_doc/documento) y el email no se pueden modificar una vez creados.
-  const { nombre, telefono, id_barrio, direccion, tipo_cliente, permiso_pagos, permiso_cuotas, estado } = datos;
+  const { nombre, telefono, id_barrio, direccion, permiso_cuotas, estado } = datos;
   validarCamposNumericos({ teléfono: telefono });
   const campos = [];
   const valores = [];
@@ -74,8 +127,6 @@ const actualizarCliente = async (id, datos) => {
   if (telefono !== undefined) { campos.push(`telefono = $${idx++}`); valores.push(telefono); }
   if (id_barrio !== undefined) { campos.push(`id_barrio = $${idx++}`); valores.push(id_barrio); }
   if (direccion !== undefined) { campos.push(`direccion = $${idx++}`); valores.push(direccion); }
-  if (tipo_cliente !== undefined) { campos.push(`tipo_cliente = $${idx++}`); valores.push(tipo_cliente); }
-  if (permiso_pagos !== undefined) { campos.push(`permiso_pagos = $${idx++}`); valores.push(permiso_pagos); }
   if (permiso_cuotas !== undefined) { campos.push(`permiso_cuotas = $${idx++}`); valores.push(permiso_cuotas); }
   if (estado !== undefined) { campos.push(`estado = $${idx++}`); valores.push(estado); }
   if (campos.length === 0) return { id_cliente: id };
@@ -91,15 +142,6 @@ const toggleEstado = async (id) => {
     UPDATE "Clientes"
     SET estado = CASE WHEN estado='Activo' THEN 'Inactivo' ELSE 'Activo' END
     WHERE id_cliente = $1 RETURNING id_cliente, estado
-  `, [id]);
-  if (!result.rows.length) throw { status: 404, message: 'No encontrado' };
-  return result.rows[0];
-};
-
-const togglePermisoPagos = async (id) => {
-  const result = await pool.query(`
-    UPDATE "Clientes" SET permiso_pagos = NOT permiso_pagos
-    WHERE id_cliente = $1 RETURNING id_cliente, permiso_pagos
   `, [id]);
   if (!result.rows.length) throw { status: 404, message: 'No encontrado' };
   return result.rows[0];
@@ -141,4 +183,4 @@ const getClientesRolCliente = async () => {
   return result.rows;
 };
 
-module.exports = { getClientes, getClientesConVentas, getClienteById, crearCliente, actualizarCliente, toggleEstado, togglePermisoPagos, togglePermisoCuotas, actualizarMiPerfil, debugClientesVentas, getClientesRolCliente };
+module.exports = { getClientes, getClientesConVentas, getClienteById, crearCliente, actualizarCliente, toggleEstado, togglePermisoCuotas, actualizarMiPerfil, debugClientesVentas, getClientesRolCliente };

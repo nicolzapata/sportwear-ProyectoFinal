@@ -2,8 +2,7 @@
 // Tabla: Clientes
 // PK: id_cliente
 // Columnas: id_cliente, nombre, tipo_doc, documento, telefono, email,
-//           ciudad, id_barrio, direccion, tipo_cliente,
-//           permiso_pagos, estado, fecha_registro
+//           ciudad, id_barrio, direccion, permiso_cuotas, estado, fecha_registro
 
 const BaseModel = require('./base.model');
 const pool      = require('../config/db');
@@ -40,15 +39,6 @@ class ClienteModel extends BaseModel {
 
   async findByEmail(email) {
     return await this.findOneBy('email', email);
-  }
-
-  async togglePermisoPagos(id) {
-    const result = await pool.query(
-      `UPDATE "Clientes" SET permiso_pagos = NOT permiso_pagos
-       WHERE id_cliente = $1 RETURNING id_cliente, permiso_pagos`,
-      [id]
-    );
-    return result.rows[0] || null;
   }
 
   async findActivos() {

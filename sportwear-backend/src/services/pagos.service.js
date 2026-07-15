@@ -4,7 +4,7 @@ const { enviarCorreo } = require('./mailer.service');
 
 const getPagos = async () => {
   const result = await pool.query(`
-    SELECT pa.*, v.id_cliente, c.nombre AS cliente, c.permiso_pagos, c.tipo_cliente
+    SELECT pa.*, v.id_cliente, c.nombre AS cliente
     FROM "PagosAbonos" pa
     JOIN "Ventas"   v ON pa.id_venta=v.id_venta
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
@@ -15,7 +15,7 @@ const getPagos = async () => {
 
 const getPagoById = async (id) => {
   const result = await pool.query(`
-    SELECT pa.*, c.nombre AS cliente, c.permiso_pagos
+    SELECT pa.*, c.nombre AS cliente
     FROM "PagosAbonos" pa
     JOIN "Ventas"   v ON pa.id_venta=v.id_venta
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
@@ -70,15 +70,6 @@ const crearPago = async (datos) => {
   const { id_venta, monto, tipo, metodo, referencia_pago, estado, fecha } = datos;
   if (!id_venta || !monto) throw { status: 400, message: 'id_venta y monto son requeridos' };
   if (Number(monto) <= 0) throw { status: 400, message: 'El monto debe ser mayor a cero' };
-
-  const check = await pool.query(`
-    SELECT c.permiso_pagos, c.nombre AS cliente
-    FROM "Ventas" v JOIN "Clientes" c ON v.id_cliente=c.id_cliente
-    WHERE v.id_venta=$1
-  `, [id_venta]);
-  if (!check.rows.length) throw { status: 404, message: 'Venta no encontrada' };
-  if (!check.rows[0].permiso_pagos)
-    throw { status: 403, message: `El cliente "${check.rows[0].cliente}" tiene los pagos bloqueados.` };
 
   const { saldo } = await getSaldoPendiente(pool, id_venta);
   if (Number(monto) > saldo)

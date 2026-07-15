@@ -6,7 +6,7 @@ import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, LONGITUD_TELEFONO } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, LONGITUD_TELEFONO } from "../../utils/numerico";
 import './Proveedores.css';
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
@@ -127,7 +127,7 @@ export default function Proveedores() {
     return errorLongitud || "";
   };
   const validarCampoRazonSocial = (v) => (!v.trim() ? "La razón social es obligatoria" : "");
-  const validarCampoNombreContacto = (v) => (!v.trim() ? "La persona de contacto es obligatoria" : "");
+  const validarCampoNombreContacto = (v) => validarNombre(v, "La persona de contacto es obligatoria");
   const validarCampoCiudad = (v) => (!v.trim() ? "La ciudad es obligatoria" : "");
   const validarCampoDireccion = (v) => (!v.trim() ? "La dirección es obligatoria" : "");
   const validarCampoEmail = (v) => {
@@ -145,7 +145,8 @@ export default function Proveedores() {
       if (errorLongitud) e.numero_doc = errorLongitud;
     }
     if (!form.razon_social.trim()) e.razon_social = "La razón social es obligatoria";
-    if (!form.nombre_contacto.trim()) e.nombre_contacto = "La persona de contacto es obligatoria";
+    const errorNombreContacto = validarCampoNombreContacto(form.nombre_contacto);
+    if (errorNombreContacto) e.nombre_contacto = errorNombreContacto;
     if (!form.ciudad.trim()) e.ciudad = "La ciudad es obligatoria";
     const errorTelefono = validarTelefono(form.telefono_celular);
     if (errorTelefono) e.telefono_celular = errorTelefono;

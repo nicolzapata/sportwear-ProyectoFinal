@@ -14,8 +14,7 @@ class VentaModel extends BaseModel {
 
   async findAllConCliente() {
     const result = await pool.query(
-      `SELECT v.*, c.nombre AS cliente, c.tipo_cliente,
-              c.permiso_pagos, c.email AS cliente_email
+      `SELECT v.*, c.nombre AS cliente, c.email AS cliente_email
        FROM "Ventas" v
        JOIN "Clientes" c ON v.id_cliente = c.id_cliente
        ORDER BY v.id_venta DESC`
@@ -25,7 +24,7 @@ class VentaModel extends BaseModel {
 
   async findByIdConDetalle(id) {
     const cab = await pool.query(
-      `SELECT v.*, c.nombre AS cliente, c.permiso_pagos
+      `SELECT v.*, c.nombre AS cliente
        FROM "Ventas" v
        JOIN "Clientes" c ON v.id_cliente = c.id_cliente
        WHERE v.id_venta = $1`, [id]

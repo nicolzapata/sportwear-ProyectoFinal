@@ -3,7 +3,7 @@ const pool = require('../config/db');
 
 const getVentas = async () => {
   const cab = await pool.query(`
-    SELECT v.*, c.nombre AS cliente, c.tipo_cliente, c.permiso_pagos, c.email AS cliente_email
+    SELECT v.*, c.nombre AS cliente, c.email AS cliente_email
     FROM "Ventas" v
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
     WHERE v.estado NOT IN ('Abandonado', 'Pendiente')
@@ -26,7 +26,7 @@ const getVentas = async () => {
 
 const getVentaById = async (id) => {
   const cab = await pool.query(`
-    SELECT v.*, c.nombre AS cliente, c.permiso_pagos
+    SELECT v.*, c.nombre AS cliente
     FROM "Ventas" v JOIN "Clientes" c ON v.id_cliente=c.id_cliente
     WHERE v.id_venta=$1
   `, [id]);

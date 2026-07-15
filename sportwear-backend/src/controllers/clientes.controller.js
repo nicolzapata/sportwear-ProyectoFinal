@@ -64,15 +64,6 @@ const toggleEstado = async (req, res) => {
   }
 };
 
-const togglePermisoPagos = async (req, res) => {
-  try {
-    const data = await clientesService.togglePermisoPagos(req.params.id);
-    res.json({ ok: true, ...data });
-  } catch (err) {
-    res.status(err.status || 500).json({ message: err.message });
-  }
-};
-
 const togglePermisoCuotas = async (req, res) => {
   try {
     const data = await clientesService.togglePermisoCuotas(req.params.id);
@@ -124,6 +115,6 @@ const getClientesRolCliente = async (req, res) => {
 
 module.exports = {
   getClientes, getClientesConVentas, getClienteById, crearCliente,
-  actualizarCliente, toggleEstado, togglePermisoPagos, togglePermisoCuotas,
+  actualizarCliente, toggleEstado, togglePermisoCuotas,
   getMiPerfil, actualizarMiPerfil, debugClientesVentas, getClientesRolCliente,
 };
