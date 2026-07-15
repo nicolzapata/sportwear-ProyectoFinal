@@ -3,11 +3,11 @@
    MÓDULO: ACCESOS - REGISTRO
    RESPONSABLE: NICOL DAHIANNA ZAPATA
    ====================================== */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../services/api";
 import logo from "../../assets/LOGO.png";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, LONGITUD_TELEFONO } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../utils/numerico";
 import "./Login.css";
 import "./Registro.css";
 
@@ -80,7 +80,7 @@ export default function Registro() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    nombre: "", tipo_doc: "CC", documento: "",
+    nombres: "", apellidos: "", tipo_doc: "CC", documento: "",
     telefono: "", email: "", contrasena: "",
     confirmar: "", ciudad: "Medellín", id_barrio: "", direccion: "",
   });
@@ -93,17 +93,38 @@ export default function Registro() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Para descartar la respuesta de /check-email si el usuario ya cambió el campo
+  // mientras la verificación estaba en vuelo (evita marcar un error obsoleto).
+  const formRef = useRef(form);
+  useEffect(() => { formRef.current = form; }, [form]);
+
   useEffect(() => {
     api.get("/barrios")
       .then(({ data }) => setBarrios(data))
       .catch(() => setBarrios([]));
   }, []);
 
+  // Verificación en tiempo real (onBlur): si el correo ya existe, lo avisa de una vez
+  // en vez de esperar a que el usuario complete todo el formulario y lo envíe.
+  const verificarEmailDuplicado = async (email) => {
+    try {
+      const { data } = await api.get("/auth/check-email", { params: { email } });
+      if (data?.existe && formRef.current.email.trim() === email) {
+        setErrores(prev => ({ ...prev, email: "Este correo ya está registrado." }));
+      }
+    } catch {
+      // Si la verificación falla (red, etc.) no bloqueamos al usuario; el submit
+      // igual rechaza duplicados con el 409 del backend.
+    }
+  };
+
   // Calcula TODOS los errores del formulario a partir de un estado dado, sin tocar el state.
   const calcularErrores = (formValue) => {
     const e = {};
-    const errorNombre = validarNombre(formValue.nombre, "El nombre es obligatorio.");
-    if (errorNombre) e.nombre = errorNombre;
+    const errorNombres = validarNombre(formValue.nombres, "El nombre es obligatorio.");
+    if (errorNombres) e.nombres = errorNombres;
+    const errorApellidos = validarNombre(formValue.apellidos, "El apellido es obligatorio.");
+    if (errorApellidos) e.apellidos = errorApellidos;
     if (!formValue.documento.trim()) e.documento = "El documento es obligatorio.";
     else {
       const errorLongitud = validarNumeroDocumento(formValue.tipo_doc, formValue.documento);
@@ -111,8 +132,8 @@ export default function Registro() {
     }
     const errorTelefono = validarTelefono(formValue.telefono);
     if (errorTelefono) e.telefono = errorTelefono;
-    if (!formValue.email.trim()) e.email = "El correo es obligatorio.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formValue.email)) e.email = "El correo electrónico no es válido.";
+    const errorEmail = validarEmail(formValue.email, "El correo es obligatorio.");
+    if (errorEmail) e.email = errorEmail;
     if (!formValue.ciudad.trim()) e.ciudad = "La ciudad es obligatoria.";
     if (!formValue.id_barrio) e.id_barrio = "Selecciona un barrio.";
     if (!formValue.direccion.trim()) e.direccion = "La dirección es obligatoria.";
@@ -166,6 +187,10 @@ export default function Registro() {
     const bar = e.target.parentElement.querySelector(".input-bar");
     if (bar) bar.style.transform = "scaleX(0)";
     if (e.target.name) validarCampo(e.target.name);
+    if (e.target.name === "email") {
+      const valor = e.target.value.trim();
+      if (valor && !validarEmail(valor)) verificarEmailDuplicado(valor);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -177,7 +202,7 @@ export default function Registro() {
     setLoading(true);
     try {
       await api.post("/auth/registro", {
-        nombre: form.nombre, tipo_doc: form.tipo_doc,
+        nombre: `${form.nombres} ${form.apellidos}`.trim(), tipo_doc: form.tipo_doc,
         documento: form.documento, telefono: form.telefono,
         email: form.email, contrasena: form.contrasena,
         ciudad: form.ciudad,
@@ -233,10 +258,17 @@ export default function Registro() {
         ) : (
           <form onSubmit={handleSubmit}>
 
-            <Field icon={<IconUser />} name="nombre" label="Nombre completo"
-              placeholder="Ana Sofía López" required
-              value={form.nombre} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-              error={errores.nombre} />
+            <div className="registro-row">
+              <Field icon={<IconUser />} name="nombres" label="Nombres"
+                placeholder="Ana Sofía" required
+                value={form.nombres} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+                error={errores.nombres} />
+
+              <Field icon={<IconUser />} name="apellidos" label="Apellidos"
+                placeholder="López Ríos" required
+                value={form.apellidos} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+                error={errores.apellidos} />
+            </div>
 
             <div className="registro-row">
               <div className="form-group">

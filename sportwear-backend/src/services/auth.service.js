@@ -31,7 +31,7 @@ const login = async ({ email, contrasena }) => {
             r.nombre AS rol
      FROM "Usuarios" u
      INNER JOIN "Roles" r ON u.id_rol = r.id_rol
-     WHERE u.email = $1`,
+     WHERE LOWER(u.email) = LOWER($1)`,
     [email]
   );
   const base = baseResult.rows[0];
@@ -45,7 +45,7 @@ const login = async ({ email, contrasena }) => {
 
   const authResult = await pool.query(
     `SELECT id_usuario FROM "Usuarios"
-     WHERE email = $1 AND password_hash = crypt($2, password_hash)`,
+     WHERE LOWER(email) = LOWER($1) AND password_hash = crypt($2, password_hash)`,
     [email, contrasena]
   );
 
@@ -106,10 +106,11 @@ const login = async ({ email, contrasena }) => {
 };
 
 const registro = async (datos) => {
-  const { nombre, email, contrasena, telefono, documento, tipo_doc, ciudad, direccion, id_barrio } = datos;
+  const { nombre, contrasena, telefono, documento, tipo_doc, ciudad, direccion, id_barrio } = datos;
+  const email = (datos.email || '').trim().toLowerCase();
   const client = await pool.connect();
   try {
-    const emailExiste = await client.query(`SELECT id_usuario FROM "Usuarios" WHERE email = $1`, [email]);
+    const emailExiste = await client.query(`SELECT id_usuario FROM "Usuarios" WHERE LOWER(email) = $1`, [email]);
     if (emailExiste.rows.length > 0)
       throw { status: 409, message: 'El email ya está registrado' };
 
@@ -170,12 +171,13 @@ const registro = async (datos) => {
  * y lo vincula vía id_cliente, manteniendo ambas tablas sincronizadas.
  */
 const crearUsuario = async ({
-  nombre, email, contrasena, id_rol,
+  nombre, email: emailCrudo, contrasena, id_rol,
   tipo_doc, documento, telefono, ciudad, id_barrio, direccion,
 }) => {
   validarCamposNumericos({ documento, teléfono: telefono });
+  const email = (emailCrudo || '').trim().toLowerCase();
 
-  const emailExiste = await pool.query(`SELECT id_usuario FROM "Usuarios" WHERE email = $1`, [email]);
+  const emailExiste = await pool.query(`SELECT id_usuario FROM "Usuarios" WHERE LOWER(email) = $1`, [email]);
   if (emailExiste.rows.length > 0)
     throw { status: 409, message: 'El email ya está registrado' };
 
@@ -240,8 +242,8 @@ const actualizarUsuario = async (id, datos, usuarioActual) => {
     const rolRes = await client.query(`SELECT nombre FROM "Roles" WHERE id_rol = $1`, [id_rol]);
     const estadoFinal = esRolProtegido(rolRes.rows[0]?.nombre) ? 'Activo' : estado;
 
-    // El correo del usuario y la identificación del cliente no se pueden editar
-    // una vez creados (solo se fijan al registrar), por eso no aparecen en estos UPDATE.
+    // El correo del usuario no se puede editar una vez creado (solo se fija al
+    // registrar), por eso no aparece en estos UPDATE. El documento sí es editable.
     if (contrasena && esPropioUsuario) {
       await client.query(
         `UPDATE "Usuarios" SET nombre=$1, id_rol=$2, estado=$3,
@@ -256,11 +258,19 @@ const actualizarUsuario = async (id, datos, usuarioActual) => {
     }
 
     if (id_cliente) {
+      if (documento) {
+        const docExiste = await client.query(
+          `SELECT id_cliente FROM "Clientes" WHERE documento = $1 AND id_cliente != $2`,
+          [documento, id_cliente]
+        );
+        if (docExiste.rows.length > 0)
+          throw { status: 409, message: 'El documento ya está registrado' };
+      }
       await client.query(
-        `UPDATE "Clientes" SET nombre=$1, telefono=$2,
-         ciudad=$3, id_barrio=$4, direccion=$5
-         WHERE id_cliente=$6`,
-        [nombre, telefono || null,
+        `UPDATE "Clientes" SET nombre=$1, tipo_doc=$2, documento=$3, telefono=$4,
+         ciudad=$5, id_barrio=$6, direccion=$7
+         WHERE id_cliente=$8`,
+        [nombre, tipo_doc || 'CC', documento, telefono || null,
          ciudad || 'Medellín', id_barrio || null, direccion || null, id_cliente]
       );
     } else if (documento) {
@@ -301,7 +311,7 @@ const getPerfil = async (id_usuario) => {
 
 const recuperarContrasena = async (email) => {
   const result = await pool.query(
-    `SELECT id_usuario FROM "Usuarios" WHERE email = $1`,
+    `SELECT id_usuario FROM "Usuarios" WHERE LOWER(email) = LOWER($1)`,
     [email]
   );
   const usuario = result.rows[0];
@@ -376,4 +386,20 @@ const restablecerContrasena = async (token, contrasena) => {
   );
 };
 
-module.exports = { login, registro, crearUsuario, actualizarUsuario, getPerfil, recuperarContrasena, restablecerContrasena };
+// Chequeo liviano para validación en tiempo real (onBlur) en los formularios de
+// registro/creación: si el correo ya existe en Usuarios o Clientes, se avisa
+// antes de enviar el formulario, sin esperar al 409 del submit.
+const existeEmail = async (emailCrudo) => {
+  const email = (emailCrudo || '').trim().toLowerCase();
+  if (!email) return false;
+  const result = await pool.query(
+    `SELECT 1 FROM "Usuarios" WHERE LOWER(email) = $1
+     UNION
+     SELECT 1 FROM "Clientes" WHERE LOWER(email) = $1
+     LIMIT 1`,
+    [email]
+  );
+  return result.rows.length > 0;
+};
+
+module.exports = { login, registro, crearUsuario, actualizarUsuario, getPerfil, recuperarContrasena, restablecerContrasena, existeEmail };

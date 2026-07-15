@@ -6,7 +6,7 @@ import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, LONGITUD_TELEFONO } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../utils/numerico";
 import './Proveedores.css';
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
@@ -17,7 +17,8 @@ const FORM_VACIO = {
   numero_doc: "",
   razon_social: "",
   nombre_comercial: "",
-  nombre_contacto: "",
+  nombres_contacto: "",
+  apellidos_contacto: "",
   cargo_contacto: "",
   telefono_celular: "",
   email_contacto: "",
@@ -32,6 +33,12 @@ const FORM_VACIO = {
   plazo_pago_dias: 30,
   condiciones: "",
   estado: "Activo",
+};
+
+// "nombre_contacto" completo (BD) -> primer palabra = nombres, resto = apellidos.
+const dividirNombreContacto = (nombreCompleto) => {
+  const partes = (nombreCompleto || "").trim().split(/\s+/).filter(Boolean);
+  return { nombres_contacto: partes[0] || "", apellidos_contacto: partes.slice(1).join(" ") };
 };
 
 export default function Proveedores() {
@@ -92,7 +99,7 @@ export default function Proveedores() {
       numero_doc: p.numero_doc || "",
       razon_social: p.razon_social || "",
       nombre_comercial: p.nombre_comercial || "",
-      nombre_contacto: p.nombre_contacto || "",
+      ...dividirNombreContacto(p.nombre_contacto),
       cargo_contacto: p.cargo_contacto || "",
       telefono_celular: p.telefono_celular || "",
       email_contacto: p.email_contacto || "",
@@ -117,8 +124,6 @@ export default function Proveedores() {
     if (errores[campo]) setErrores((prev) => ({ ...prev, [campo]: "" }));
   };
 
-  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
   // Validadores por campo: misma condición y mismo texto que validar(), para
   // poder reutilizarlos en onBlur/onChange y mostrar errores en tiempo real.
   const validarCampoNumeroDoc = (tipoDoc, numeroDoc) => {
@@ -127,14 +132,11 @@ export default function Proveedores() {
     return errorLongitud || "";
   };
   const validarCampoRazonSocial = (v) => (!v.trim() ? "La razón social es obligatoria" : "");
-  const validarCampoNombreContacto = (v) => validarNombre(v, "La persona de contacto es obligatoria");
+  const validarCampoNombresContacto = (v) => validarNombre(v, "El nombre de la persona de contacto es obligatorio");
+  const validarCampoApellidosContacto = (v) => validarNombre(v, "El apellido de la persona de contacto es obligatorio");
   const validarCampoCiudad = (v) => (!v.trim() ? "La ciudad es obligatoria" : "");
   const validarCampoDireccion = (v) => (!v.trim() ? "La dirección es obligatoria" : "");
-  const validarCampoEmail = (v) => {
-    if (!v.trim()) return "El correo es obligatorio";
-    if (!EMAIL_REGEX.test(v)) return "El correo no tiene un formato válido";
-    return "";
-  };
+  const validarCampoEmail = (v) => validarEmail(v, "El correo es obligatorio");
 
   const validar = () => {
     const e = {};
@@ -145,14 +147,16 @@ export default function Proveedores() {
       if (errorLongitud) e.numero_doc = errorLongitud;
     }
     if (!form.razon_social.trim()) e.razon_social = "La razón social es obligatoria";
-    const errorNombreContacto = validarCampoNombreContacto(form.nombre_contacto);
-    if (errorNombreContacto) e.nombre_contacto = errorNombreContacto;
+    const errorNombresContacto = validarCampoNombresContacto(form.nombres_contacto);
+    if (errorNombresContacto) e.nombres_contacto = errorNombresContacto;
+    const errorApellidosContacto = validarCampoApellidosContacto(form.apellidos_contacto);
+    if (errorApellidosContacto) e.apellidos_contacto = errorApellidosContacto;
     if (!form.ciudad.trim()) e.ciudad = "La ciudad es obligatoria";
     const errorTelefono = validarTelefono(form.telefono_celular);
     if (errorTelefono) e.telefono_celular = errorTelefono;
     if (!form.direccion.trim()) e.direccion = "La dirección es obligatoria";
-    if (!form.email_contacto.trim()) e.email_contacto = "El correo es obligatorio";
-    else if (!EMAIL_REGEX.test(form.email_contacto)) e.email_contacto = "El correo no tiene un formato válido";
+    const errorEmailContacto = validarCampoEmail(form.email_contacto);
+    if (errorEmailContacto) e.email_contacto = errorEmailContacto;
     setErrores(e);
     return Object.keys(e).length === 0;
   };
@@ -167,7 +171,8 @@ export default function Proveedores() {
     setConfirmarGuardar(false);
     setGuardando(true);
     try {
-      const payload = { ...form, plazo_pago_dias: Number(form.plazo_pago_dias) || 30 };
+      const { nombres_contacto, apellidos_contacto, ...resto } = form;
+      const payload = { ...resto, nombre_contacto: `${nombres_contacto} ${apellidos_contacto}`.trim(), plazo_pago_dias: Number(form.plazo_pago_dias) || 30 };
       if (editar) {
         const res = await api.put(`/proveedores/${editar}`, payload);
         setDatos((prev) => prev.map((p) => (p.id_proveedor === editar ? res.data : p)));
@@ -446,25 +451,44 @@ export default function Proveedores() {
 
                 <div className="proveedores-form-row-3">
                   <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Persona de contacto <span className="proveedores-req">*</span></label>
+                    <label className="proveedores-form-label">Nombres de contacto <span className="proveedores-req">*</span></label>
                     <input
                       type="text"
-                      className={`proveedores-form-input${errores.nombre_contacto ? " input-error" : ""}`}
-                      placeholder="Ej: Juan Pérez"
-                      value={form.nombre_contacto}
+                      className={`proveedores-form-input${errores.nombres_contacto ? " input-error" : ""}`}
+                      placeholder="Ej: Juan"
+                      value={form.nombres_contacto}
                       onChange={(e) => {
                         const valor = e.target.value;
-                        setForm((prev) => ({ ...prev, nombre_contacto: valor }));
-                        if (errores.nombre_contacto) setErrores((prev) => ({ ...prev, nombre_contacto: validarCampoNombreContacto(valor) }));
+                        setForm((prev) => ({ ...prev, nombres_contacto: valor }));
+                        if (errores.nombres_contacto) setErrores((prev) => ({ ...prev, nombres_contacto: validarCampoNombresContacto(valor) }));
                       }}
-                      onBlur={() => setErrores((prev) => ({ ...prev, nombre_contacto: validarCampoNombreContacto(form.nombre_contacto) }))}
+                      onBlur={() => setErrores((prev) => ({ ...prev, nombres_contacto: validarCampoNombresContacto(form.nombres_contacto) }))}
                     />
-                    {errores.nombre_contacto && <span className="proveedores-field-error">{errores.nombre_contacto}</span>}
+                    {errores.nombres_contacto && <span className="proveedores-field-error">{errores.nombres_contacto}</span>}
+                  </div>
+                  <div className="proveedores-form-group">
+                    <label className="proveedores-form-label">Apellidos de contacto <span className="proveedores-req">*</span></label>
+                    <input
+                      type="text"
+                      className={`proveedores-form-input${errores.apellidos_contacto ? " input-error" : ""}`}
+                      placeholder="Ej: Pérez"
+                      value={form.apellidos_contacto}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        setForm((prev) => ({ ...prev, apellidos_contacto: valor }));
+                        if (errores.apellidos_contacto) setErrores((prev) => ({ ...prev, apellidos_contacto: validarCampoApellidosContacto(valor) }));
+                      }}
+                      onBlur={() => setErrores((prev) => ({ ...prev, apellidos_contacto: validarCampoApellidosContacto(form.apellidos_contacto) }))}
+                    />
+                    {errores.apellidos_contacto && <span className="proveedores-field-error">{errores.apellidos_contacto}</span>}
                   </div>
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Cargo</label>
                     <input type="text" className="proveedores-form-input" value={form.cargo_contacto} onChange={(e) => set("cargo_contacto", e.target.value)} />
                   </div>
+                </div>
+
+                <div className="proveedores-form-row">
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Teléfono celular <span className="proveedores-req">*</span></label>
                     <input
@@ -483,9 +507,6 @@ export default function Proveedores() {
                     />
                     {errores.telefono_celular && <span className="proveedores-field-error">{errores.telefono_celular}</span>}
                   </div>
-                </div>
-
-                <div className="proveedores-form-row">
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Correo de contacto <span className="proveedores-req">*</span></label>
                     <input
@@ -502,13 +523,14 @@ export default function Proveedores() {
                     />
                     {errores.email_contacto && <span className="proveedores-field-error">{errores.email_contacto}</span>}
                   </div>
-                  <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Estado</label>
-                    <select className="proveedores-form-select" value={form.estado} onChange={(e) => set("estado", e.target.value)}>
-                      <option value="Activo">Activo</option>
-                      <option value="Inactivo">Inactivo</option>
-                    </select>
-                  </div>
+                </div>
+
+                <div className="proveedores-form-group">
+                  <label className="proveedores-form-label">Estado</label>
+                  <select className="proveedores-form-select" value={form.estado} onChange={(e) => set("estado", e.target.value)}>
+                    <option value="Activo">Activo</option>
+                    <option value="Inactivo">Inactivo</option>
+                  </select>
                 </div>
               </div>
 

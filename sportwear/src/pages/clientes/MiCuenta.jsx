@@ -1,5 +1,5 @@
 // src/pages/clientes/MiCuenta.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
@@ -8,8 +8,16 @@ import PaymentModal from "../../components/PaymentModal";
 import OrderDetailModal from "../../components/OrderDetailModal";
 import { IconCreditCard, IconShoppingCart } from "../../components/Icons";
 import Loader from "../../components/Loader";
-import { soloDigitos, validarTelefono, validarNombre, LONGITUD_TELEFONO } from "../../utils/numerico";
+import { soloDigitos, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../utils/numerico";
 import "./MiCuenta.css";
+
+// "nombre" completo (BD) -> primer palabra = nombres, resto = apellidos.
+const dividirNombre = (nombreCompleto) => {
+  const partes = (nombreCompleto || "").trim().split(/\s+/).filter(Boolean);
+  return { nombres: partes[0] || "", apellidos: partes.slice(1).join(" ") };
+};
+
+const errorEmailPerfil = (valor) => validarEmail(valor);
 
 export default function MiCuenta() {
   const { usuario, actualizarUsuario } = useAuth();
@@ -18,8 +26,9 @@ export default function MiCuenta() {
   const [pedidos, setPedidos]               = useState([]);
   const [perfil, setPerfil]                 = useState(null);
   const [showModalSteps, setShowModalSteps] = useState(false);
+  const [pasoModal, setPasoModal]           = useState(0);
   const [form, setForm]                     = useState({});
-  const [errores, setErrores]               = useState({ nombre: "", documento: "" });
+  const [errores, setErrores]               = useState({ nombres: "", apellidos: "", documento: "", email: "" });
   const [guardando, setGuardando]           = useState(false);
   const [cargando, setCargando]             = useState(true);
   const [barrios, setBarrios]               = useState([]);
@@ -45,8 +54,9 @@ export default function MiCuenta() {
       setPedidos(filtrados);
       if (perfilRes.data) {
         setPerfil(perfilRes.data);
+        const { nombres, apellidos } = dividirNombre(perfilRes.data.nombre);
         setForm({
-          nombre:        perfilRes.data.nombre        || "",
+          nombres, apellidos,
           tipo_doc:      perfilRes.data.tipo_doc      || "CC",
           documento:     perfilRes.data.documento     || "",
           telefono:      perfilRes.data.telefono      || "",
@@ -68,16 +78,44 @@ export default function MiCuenta() {
     setForm((f) => ({ ...f, id_barrio: "" }));
   };
 
+  // Para descartar la respuesta de /check-email si el usuario ya cambió
+  // el campo mientras la verificación estaba en vuelo.
+  const formRef = useRef(form);
+  useEffect(() => { formRef.current = form; }, [form]);
+
+  // Verificación en tiempo real (onBlur): si el correo ya existe, avisa de una vez.
+  // Se excluye el propio correo actual del perfil para no marcarlo como "duplicado".
+  const verificarEmailDuplicado = async (email) => {
+    if (perfil?.email && email.toLowerCase() === perfil.email.toLowerCase()) return;
+    try {
+      const { data } = await api.get("/auth/check-email", { params: { email } });
+      if (data?.existe && formRef.current.email.trim() === email) {
+        setErrores(prev => ({ ...prev, email: "Este correo ya está registrado." }));
+      }
+    } catch {
+      // Si falla la verificación en tiempo real, no bloqueamos al usuario.
+    }
+  };
+
   const guardarCambios = async () => {
     setGuardando(true);
+    const { nombres, apellidos, ...resto } = form;
+    const payload = { ...resto, nombre: `${nombres} ${apellidos}`.trim() };
     try {
-      const { data } = await api.put("/clientes/mi-perfil", form);
+      const { data } = await api.put("/clientes/mi-perfil", payload);
       setPerfil(data);
       actualizarUsuario({ nombre: data.nombre });
       setShowModalSteps(false);
       showToast("✅ Perfil actualizado correctamente");
     } catch (err) {
-      alert("Error al guardar: " + (err.response?.data?.message || "Error"));
+      const mensaje = err.response?.data?.message;
+      const campo = /correo|email/i.test(mensaje || "") ? "email" : /documento/i.test(mensaje || "") ? "documento" : null;
+      if (err.response?.status === 409 && campo) {
+        setErrores(prev => ({ ...prev, [campo]: mensaje }));
+        setPasoModal(0);
+      } else {
+        showToast("❌ Error al guardar: " + (mensaje || "Error"));
+      }
       return false;
     } finally {
       setGuardando(false);
@@ -86,11 +124,15 @@ export default function MiCuenta() {
 
   const validarPasoDatos = () => {
     const e = {};
-    const eNombre = validarNombre(form.nombre);
-    if (eNombre) e.nombre = eNombre;
+    const eNombres = validarNombre(form.nombres);
+    if (eNombres) e.nombres = eNombres;
+    const eApellidos = validarNombre(form.apellidos, "El apellido es obligatorio");
+    if (eApellidos) e.apellidos = eApellidos;
     if (!form.documento.trim()) e.documento = "El documento es obligatorio";
     const eTelefono = validarTelefono(form.telefono);
     if (eTelefono) e.telefono = eTelefono;
+    const eEmail = errorEmailPerfil(form.email);
+    if (eEmail) e.email = eEmail;
     setErrores(e);
     return Object.keys(e).length === 0;
   };
@@ -172,20 +214,37 @@ export default function MiCuenta() {
 
   const PasoDatos = (
     <div>
-      <div className="ms-form-group">
-        <label className="ms-form-label">Nombre completo <span className="ms-req">*</span></label>
-        <input
-          className={`ms-form-input${errores.nombre ? " input-error" : ""}`}
-          placeholder="Ej: Juan Pérez"
-          value={form.nombre || ""}
-          onChange={(e) => {
-            const nombre = e.target.value;
-            setForm({ ...form, nombre });
-            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: validarNombre(nombre) }));
-          }}
-          onBlur={() => setErrores(prev => ({ ...prev, nombre: validarNombre(form.nombre) }))}
-        />
-        {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
+      <div className="ms-form-row">
+        <div className="ms-form-group">
+          <label className="ms-form-label">Nombres <span className="ms-req">*</span></label>
+          <input
+            className={`ms-form-input${errores.nombres ? " input-error" : ""}`}
+            placeholder="Ej: Juan"
+            value={form.nombres || ""}
+            onChange={(e) => {
+              const nombres = e.target.value;
+              setForm({ ...form, nombres });
+              if (errores.nombres) setErrores(prev => ({ ...prev, nombres: validarNombre(nombres) }));
+            }}
+            onBlur={() => setErrores(prev => ({ ...prev, nombres: validarNombre(form.nombres) }))}
+          />
+          {errores.nombres && <span className="ms-form-error">{errores.nombres}</span>}
+        </div>
+        <div className="ms-form-group">
+          <label className="ms-form-label">Apellidos <span className="ms-req">*</span></label>
+          <input
+            className={`ms-form-input${errores.apellidos ? " input-error" : ""}`}
+            placeholder="Ej: Pérez"
+            value={form.apellidos || ""}
+            onChange={(e) => {
+              const apellidos = e.target.value;
+              setForm({ ...form, apellidos });
+              if (errores.apellidos) setErrores(prev => ({ ...prev, apellidos: validarNombre(apellidos, "El apellido es obligatorio") }));
+            }}
+            onBlur={() => setErrores(prev => ({ ...prev, apellidos: validarNombre(form.apellidos, "El apellido es obligatorio") }))}
+          />
+          {errores.apellidos && <span className="ms-form-error">{errores.apellidos}</span>}
+        </div>
       </div>
       <div className="ms-form-row">
         <div className="ms-form-group">
@@ -229,8 +288,27 @@ export default function MiCuenta() {
           {errores.telefono && <span className="ms-form-error">{errores.telefono}</span>}
         </div>
         <div className="ms-form-group">
-          <label className="ms-form-label">Correo electrónico</label>
-          <input type="email" className="ms-form-input" placeholder="ejemplo@correo.com" value={form.email || ""} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label>
+          <input
+            type="email"
+            className={`ms-form-input${errores.email ? " input-error" : ""}`}
+            placeholder="ejemplo@correo.com"
+            value={form.email || ""}
+            onChange={(e) => {
+              const email = e.target.value;
+              setForm({ ...form, email });
+              if (errores.email) setErrores(prev => ({ ...prev, email: errorEmailPerfil(email) }));
+            }}
+            onBlur={() => {
+              const mensaje = errorEmailPerfil(form.email);
+              setErrores(prev => ({ ...prev, email: mensaje }));
+              if (!mensaje) {
+                const valor = form.email.trim();
+                if (valor) verificarEmailDuplicado(valor);
+              }
+            }}
+          />
+          {errores.email && <span className="ms-form-error">{errores.email}</span>}
         </div>
       </div>
     </div>
@@ -307,7 +385,7 @@ export default function MiCuenta() {
                     </div>
                   ))}
                 </div>
-                <button className="btn profile-edit-btn" onClick={() => setShowModalSteps(true)}>
+                <button className="btn profile-edit-btn" onClick={() => { setPasoModal(0); setShowModalSteps(true); }}>
                   Editar perfil
                 </button>
               </div>
@@ -430,6 +508,7 @@ export default function MiCuenta() {
         <ModalSteps
           titulo="Editar perfil"
           pasos={["Datos personales", "Ubicación"]}
+          step={pasoModal} onStepChange={setPasoModal}
           onClose={() => setShowModalSteps(false)}
           onGuardar={guardarCambios}
           validaciones={[validarPasoDatos, validarPasoUbicacion]}

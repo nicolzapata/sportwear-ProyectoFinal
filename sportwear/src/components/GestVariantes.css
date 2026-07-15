@@ -132,6 +132,12 @@
   border-bottom: 1px solid var(--dvna-border);
   border-left: 1px solid var(--dvna-border);
   min-width: 64px;
+  position: relative;
+}
+.gv-th-talla-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 .gv-matrix-table tbody tr { transition: background 0.15s; }
 .gv-matrix-table tbody tr:hover { background: var(--dvna-pale); }
@@ -170,6 +176,121 @@
 .gv-stock-val.out { color: var(--dvna-muted); }
 .gv-stock-val.low { color: var(--warning); }
 .gv-stock-na { font-size: 12px; color: var(--dvna-border); }
+
+/* Botón de opciones (tres puntos) del encabezado de talla */
+.gv-btn-kebab {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--r);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dvna-border);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.gv-btn-kebab:hover,
+.gv-btn-kebab[aria-expanded="true"] { color: var(--dvna-charcoal); background: var(--dvna-pale); }
+
+/* Menú "Editar / Eliminar" de una combinación pendiente */
+.gv-mini-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 110px;
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow, 0 4px 20px rgba(50,35,20,0.12));
+  overflow: hidden;
+  text-align: left;
+}
+.gv-mini-menu button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  color: var(--dvna-charcoal);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.gv-mini-menu button:hover { background: var(--dvna-pale); }
+.gv-mini-menu button.danger { color: var(--danger); }
+.gv-mini-menu button.danger:hover { background: rgba(184,50,50,0.06); }
+.gv-mini-menu svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+/* Menú "Editar / Eliminar" anclado al encabezado de una talla: lista una
+   fila por cada color que tiene esa talla, cada una con sus propias acciones. */
+.gv-mini-menu-talla {
+  left: 0;
+  right: auto;
+  min-width: 170px;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.gv-mini-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--dvna-border);
+}
+.gv-mini-menu-row:last-child { border-bottom: none; }
+.gv-mini-menu-color {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+}
+.gv-mini-menu-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.gv-mini-menu-actions button {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r);
+}
+.gv-mini-menu-actions button.danger:hover { background: rgba(184,50,50,0.06); }
+
+/* Etiqueta de color fijo al agregar tallas a un color existente */
+.gv-locked-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-white);
+  border: 1.5px solid var(--brown);
+  border-radius: 20px;
+  padding: 6px 14px;
+  width: fit-content;
+}
+.gv-locked-color strong { font-weight: 600; }
 
 .gv-stock-input {
   width: 54px;

@@ -48,15 +48,20 @@ const getClienteById = async (id) => {
 // Crea un cliente y, en la misma transacción, su cuenta de acceso (Usuarios),
 // igual que el registro público (ver auth.service.js -> registro()).
 const crearCliente = async (datos) => {
-  const { nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion, permiso_cuotas, estado, contrasena } = datos;
+  const { nombre, tipo_doc, documento, telefono, ciudad, id_barrio, direccion, permiso_cuotas, estado, contrasena } = datos;
+  const email = (datos.email || '').trim().toLowerCase();
   if (!nombre || !documento) throw { status: 400, message: 'Nombre y documento son requeridos' };
   if (!email || !contrasena) throw { status: 400, message: 'Correo y contraseña son requeridos' };
   validarCamposNumericos({ documento, teléfono: telefono });
 
   const client = await pool.connect();
   try {
-    const emailExiste = await client.query(`SELECT id_usuario FROM "Usuarios" WHERE email = $1`, [email]);
+    const emailExiste = await client.query(`SELECT id_usuario FROM "Usuarios" WHERE LOWER(email) = $1`, [email]);
     if (emailExiste.rows.length > 0)
+      throw { status: 409, message: 'El email ya está registrado' };
+
+    const emailClienteExiste = await client.query(`SELECT id_cliente FROM "Clientes" WHERE LOWER(email) = $1`, [email]);
+    if (emailClienteExiste.rows.length > 0)
       throw { status: 409, message: 'El email ya está registrado' };
 
     const docExiste = await client.query(`SELECT id_cliente FROM "Clientes" WHERE documento = $1`, [documento]);

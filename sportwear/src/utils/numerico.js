@@ -68,3 +68,22 @@ export const validarNombre = (valor, mensajeVacio = "El nombre es obligatorio") 
   if (palabraCorta) return "Cada nombre o apellido debe tener al menos 2 letras.";
   return "";
 };
+
+// Valida un correo indicando el problema puntual (falta @, falta punto, etc.)
+// en vez de un genérico "correo no válido", para que el usuario sepa qué corregir.
+export const validarEmail = (valor, mensajeVacio = "El correo electrónico es obligatorio") => {
+  const texto = (valor ?? "").toString().trim();
+  if (!texto) return mensajeVacio;
+  if (/\s/.test(texto)) return "El correo electrónico no debe contener espacios.";
+  const arrobas = texto.split("@").length - 1;
+  if (arrobas === 0) return "Al correo le falta el símbolo @.";
+  if (arrobas > 1) return "El correo solo puede tener un símbolo @.";
+  const [local, dominio] = texto.split("@");
+  if (!local) return "Falta el texto antes del @.";
+  if (!dominio) return "Falta el dominio después del @ (ej: gmail.com).";
+  if (!dominio.includes(".")) return "Al dominio le falta el punto (ej: .com).";
+  if (dominio.startsWith(".") || dominio.endsWith(".") || dominio.includes(".."))
+    return "El dominio del correo no es válido.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(texto)) return "El correo electrónico no es válido.";
+  return "";
+};

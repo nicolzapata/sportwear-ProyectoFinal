@@ -34,6 +34,11 @@ const IconX = () => (
     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 );
+const IconDots = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+    <circle cx="12" cy="5" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="19" r="2.2"/>
+  </svg>
+);
 
 /**
  * GestVariantes
@@ -59,11 +64,27 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
 
   // ── Estado modo local ──────────────────────────────────────────────────────
   const [pendingVariantes, setPendingVariantes] = useState([]);
+  // Menú de opciones (Editar/Eliminar), anclado al encabezado de la talla,
+  // y edición inline de una combinación pendiente puntual.
+  const [menuTallaAbierta,   setMenuTallaAbierta]   = useState(null); // talla | null
+  const [editandoPendiente,  setEditandoPendiente]  = useState(null); // { id_color, talla, stock } | null
 
   // ── Selector del editor "agregar nuevas" (compartido ambos modos) ──────────
   const [coloresSel, setColoresSel] = useState([]);
   const [tallasSel,  setTallasSel]  = useState([]);
   const [matriz,     setMatriz]     = useState({});
+  // Cuando se agrega talla a un color ya existente (atajo "+"), el color queda
+  // fijo y no se pueden volver a ofrecer las tallas que ese color ya tiene.
+  const [colorBloqueado,    setColorBloqueado]    = useState(null);
+  const [tallasBloqueadas,  setTallasBloqueadas]  = useState([]);
+
+  // Cierra el menú de opciones al hacer click fuera de él.
+  useEffect(() => {
+    if (!menuTallaAbierta) return;
+    const cerrar = () => setMenuTallaAbierta(null);
+    document.addEventListener("click", cerrar);
+    return () => document.removeEventListener("click", cerrar);
+  }, [menuTallaAbierta]);
 
   // ── Carga inicial ──────────────────────────────────────────────────────────
   const cargar = async () => {
@@ -209,6 +230,16 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
     onPendingChange?.(updated);
   };
 
+  const actualizarStockPendiente = (id_color, talla, nuevoStock) => {
+    const updated = pendingVariantes.map(v =>
+      v.id_color === id_color && v.talla === talla
+        ? { ...v, stock: Math.max(0, Number(nuevoStock) || 0) }
+        : v
+    );
+    setPendingVariantes(updated);
+    onPendingChange?.(updated);
+  };
+
   // ── Edición individual (modo conectado) ────────────────────────────────────
   const iniciarEdicion = (v) => {
     setEditando({
@@ -224,9 +255,13 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
 
   // Atajo: agregar más tallas a un color que ya tiene variantes, sin tener
   // que volver a buscarlo y marcarlo desde cero en el selector de colores.
-  const agregarTallaAColor = (c) => {
+  // El color queda fijo y no se ofrecen las tallas que ese color ya tiene.
+  const agregarTallaAColor = (c, tallasUsadas = []) => {
     setEditando(null);
-    setColoresSel([{ id_color: c.id_color, nombre: c.color_nombre, codigo_hex: c.codigo_hex }]);
+    const colorObj = { id_color: c.id_color, nombre: c.color_nombre, codigo_hex: c.codigo_hex };
+    setColoresSel([colorObj]);
+    setColorBloqueado(colorObj);
+    setTallasBloqueadas(tallasUsadas);
     setTallasSel([]);
     setMatriz({});
     setModoAgregar(true);
@@ -308,8 +343,45 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
               <thead>
                 <tr>
                   <th className="gv-th-color">Color</th>
-                  {tallasPendientes.map(t => <th key={t} className="gv-th-talla">{t}</th>)}
-                  <th />
+                  {tallasPendientes.map(t => {
+                    const menuAbierto = menuTallaAbierta === t;
+                    const combos = coloresPendientes
+                      .map(c => ({ c, v: getPending(c.id_color, t) }))
+                      .filter(({ v }) => v);
+                    return (
+                      <th key={t} className="gv-th-talla">
+                        <span className="gv-th-talla-label">
+                          {t}
+                          <button className="gv-btn-kebab"
+                            onClick={(e) => { e.stopPropagation(); setMenuTallaAbierta(menuAbierto ? null : t); }}
+                            title="Opciones">
+                            <IconDots />
+                          </button>
+                        </span>
+                        {menuAbierto && (
+                          <div className="gv-mini-menu gv-mini-menu-talla" onClick={(e) => e.stopPropagation()}>
+                            {combos.map(({ c, v }) => (
+                              <div key={c.id_color} className="gv-mini-menu-row">
+                                <span className="gv-mini-menu-color">
+                                  <span className="gv-color-dot" style={{ background: c.codigo_hex || "#ccc" }} />
+                                  {c.color_nombre} · {v.stock}
+                                </span>
+                                <span className="gv-mini-menu-actions">
+                                  <button onClick={() => { setEditandoPendiente({ id_color: c.id_color, talla: t, stock: v.stock }); setMenuTallaAbierta(null); }} title="Editar">
+                                    <IconEdit />
+                                  </button>
+                                  <button className="danger" onClick={() => eliminarPendiente(c.id_color, t)} title="Eliminar">
+                                    <IconTrash />
+                                  </button>
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </th>
+                    );
+                  })}
+                  <th className="gv-th-acciones" />
                 </tr>
               </thead>
               <tbody>
@@ -323,25 +395,29 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
                     </td>
                     {tallasPendientes.map(t => {
                       const v = getPending(c.id_color, t);
+                      const enEdicion = editandoPendiente?.id_color === c.id_color && editandoPendiente?.talla === t;
                       return (
                         <td key={t} className="gv-td-stock">
-                          {v
-                            ? <span className={`gv-stock-val${v.stock === 0 ? " out" : v.stock < 5 ? " low" : ""}`}>{v.stock}</span>
-                            : <span className="gv-stock-na">—</span>}
+                          {!v ? <span className="gv-stock-na">—</span> : enEdicion ? (
+                            <input
+                              type="number" min={0} autoFocus className="gv-stock-input"
+                              value={editandoPendiente.stock}
+                              onChange={e => setEditandoPendiente(prev => ({ ...prev, stock: e.target.value }))}
+                              onBlur={() => { actualizarStockPendiente(c.id_color, t, editandoPendiente.stock); setEditandoPendiente(null); }}
+                              onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
+                            />
+                          ) : (
+                            <span className={`gv-stock-val${v.stock === 0 ? " out" : v.stock < 5 ? " low" : ""}`}>{v.stock}</span>
+                          )}
                         </td>
                       );
                     })}
                     <td className="gv-td-del">
-                      {tallasPendientes.map(t => {
-                        const v = getPending(c.id_color, t);
-                        return v ? (
-                          <button key={t} className="gv-btn-del"
-                            onClick={() => eliminarPendiente(c.id_color, t)}
-                            title={`Quitar ${c.color_nombre} · ${t}`}>
-                            <IconTrash />
-                          </button>
-                        ) : null;
-                      })}
+                      <button className="gv-btn-edit"
+                        onClick={() => agregarTallaAColor(c, pendingVariantes.filter(v => v.id_color === c.id_color).map(v => v.talla))}
+                        title={`Agregar otra talla en ${c.color_nombre}`}>
+                        <IconPlus />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -355,7 +431,10 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
         )}
 
         <div className="gv-editor">
-          <button className="gv-toggle-editor" onClick={() => { setModoAgregar(p => !p); setError(""); }}>
+          <button className="gv-toggle-editor" onClick={() => {
+            setModoAgregar(p => !p); setError("");
+            setColorBloqueado(null); setTallasBloqueadas([]); setColoresSel([]); setTallasSel([]); setMatriz({});
+          }}>
             {modoAgregar ? <><IconX /> Cancelar</> : <><IconPlus /> Agregar</>}
           </button>
 
@@ -368,6 +447,8 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
                 onGuardar={guardarMatrizLocal}
                 labelGuardar="Agregar a la lista"
                 guardando={false}
+                colorBloqueado={colorBloqueado}
+                tallasBloqueadas={tallasBloqueadas}
               />
             </div>
           )}
@@ -440,7 +521,9 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
                     })}
                   </td>
                   <td className="gv-td-del">
-                    <button className="gv-btn-edit" onClick={() => agregarTallaAColor(c)} title={`Agregar otra talla en ${c.color_nombre}`}>
+                    <button className="gv-btn-edit"
+                      onClick={() => agregarTallaAColor(c, variantes.filter(v => v.id_color === c.id_color).map(v => v.talla))}
+                      title={`Agregar otra talla en ${c.color_nombre}`}>
                       <IconPlus />
                     </button>
                   </td>
@@ -536,7 +619,10 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
       {/* ── Panel agregar nuevas variantes ── */}
       {!editando && (
         <div className="gv-editor">
-          <button className="gv-toggle-editor" onClick={() => { setModoAgregar(p => !p); setError(""); }}>
+          <button className="gv-toggle-editor" onClick={() => {
+            setModoAgregar(p => !p); setError("");
+            setColorBloqueado(null); setTallasBloqueadas([]); setColoresSel([]); setTallasSel([]); setMatriz({});
+          }}>
             {modoAgregar ? <><IconX /> Cancelar</> : <><IconPlus /> Agregar</>}
           </button>
 
@@ -549,6 +635,8 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
                 onGuardar={guardarMatrizConectado}
                 labelGuardar="Guardar variantes"
                 guardando={guardando}
+                colorBloqueado={colorBloqueado}
+                tallasBloqueadas={tallasBloqueadas}
               />
             </div>
           )}
@@ -559,39 +647,53 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
 }
 
 // ── Subcomponente reutilizable: editor de nuevas variantes (matriz) ──────────
-function EditorNuevas({ colores, coloresSel, toggleColor, tallasSel, toggleTalla, matriz, setStock, onGuardar, labelGuardar, guardando }) {
+function EditorNuevas({ colores, coloresSel, toggleColor, tallasSel, toggleTalla, matriz, setStock, onGuardar, labelGuardar, guardando, colorBloqueado, tallasBloqueadas = [] }) {
+  const tallaStepNum  = colorBloqueado ? 1 : 2;
+  const stockStepNum  = colorBloqueado ? 2 : 3;
+  const tallasDisponibles = TALLAS.filter(t => !tallasBloqueadas.includes(t));
+
   return (
     <>
-      <div className="gv-step">
-        <p className="gv-step-label"><span className="gv-step-num">1</span> Selecciona los colores</p>
-        <div className="gv-color-chips">
-          {colores.map(c => {
-            const activo = coloresSel.some(x => x.id_color === c.id_color);
-            return (
-              <button key={c.id_color} className={`gv-color-chip${activo ? " active" : ""}`} onClick={() => toggleColor(c)}>
-                <span className="gv-chip-dot" style={{ background: c.codigo_hex || "#ccc" }} />
-                {c.nombre}
-                {activo && <span className="gv-chip-check"><IconCheck /></span>}
-              </button>
-            );
-          })}
+      {colorBloqueado ? (
+        <div className="gv-locked-color">
+          <span className="gv-color-dot" style={{ background: colorBloqueado.codigo_hex || "#ccc" }} />
+          Agregando talla para <strong>{colorBloqueado.nombre}</strong>
         </div>
-      </div>
+      ) : (
+        <div className="gv-step">
+          <p className="gv-step-label"><span className="gv-step-num">1</span> Selecciona los colores</p>
+          <div className="gv-color-chips">
+            {colores.map(c => {
+              const activo = coloresSel.some(x => x.id_color === c.id_color);
+              return (
+                <button key={c.id_color} className={`gv-color-chip${activo ? " active" : ""}`} onClick={() => toggleColor(c)}>
+                  <span className="gv-chip-dot" style={{ background: c.codigo_hex || "#ccc" }} />
+                  {c.nombre}
+                  {activo && <span className="gv-chip-check"><IconCheck /></span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="gv-step">
-        <p className="gv-step-label"><span className="gv-step-num">2</span> Selecciona las tallas</p>
+        <p className="gv-step-label"><span className="gv-step-num">{tallaStepNum}</span> Selecciona las tallas</p>
         <div className="gv-talla-chips">
-          {["XS","S","M","L","XL","XXL","Única","28","30","32","34","36","38","40","42","44"].map(t => (
+          {tallasDisponibles.map(t => (
             <button key={t} className={`gv-talla-chip${tallasSel.includes(t) ? " active" : ""}`} onClick={() => toggleTalla(t)}>
               {t}
             </button>
           ))}
         </div>
+        {tallasDisponibles.length === 0 && (
+          <p className="gv-empty">Este color ya tiene todas las tallas agregadas.</p>
+        )}
       </div>
 
       {coloresSel.length > 0 && tallasSel.length > 0 && (
         <div className="gv-step">
-          <p className="gv-step-label"><span className="gv-step-num">3</span> Define el stock por combinación</p>
+          <p className="gv-step-label"><span className="gv-step-num">{stockStepNum}</span> Define el stock por combinación</p>
           <div className="gv-table-wrap">
             <table className="gv-matrix-table">
               <thead>

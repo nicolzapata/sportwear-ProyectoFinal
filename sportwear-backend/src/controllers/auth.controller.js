@@ -84,4 +84,13 @@ const restablecer = async (req, res) => {
   }
 };
 
-module.exports = { login, registro, crearUsuario, actualizarUsuario, perfil, recuperar, restablecer };
+const checkEmail = async (req, res) => {
+  try {
+    const existe = await authService.existeEmail(req.query.email);
+    res.json({ existe });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message || 'Error interno del servidor' });
+  }
+};
+
+module.exports = { login, registro, crearUsuario, actualizarUsuario, perfil, recuperar, restablecer, checkEmail };
