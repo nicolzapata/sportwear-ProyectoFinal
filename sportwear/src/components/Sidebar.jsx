@@ -11,18 +11,19 @@ import {
 import "./Sidebar.css";
 
 const NAV_ICONS = {
-  "/dashboard":  <IconDashboard />,
-  "/roles":      <IconShield />,
-  "/usuarios":   <IconUsers />,
-  "/productos":  <IconShoppingBag />,
-  "/colores":    <IconPalette />,
-  "/catalogo":   <IconBox />,
-  "/proveedores":<IconTruck />,
-  "/compras":    <IconCart />,
-  "/ventas":     <IconHeart />,
-  "/pedidos":    <IconDollar />,
-  "/pagos":      <IconCreditCard />,
-  "/mi-cuenta":  <IconUser />,
+  "/dashboard":      <IconDashboard />,
+  "/roles":          <IconShield />,
+  "/usuarios":       <IconUsers />,
+  "/productos":      <IconShoppingBag />,
+  "/catalogo-admin": <IconBox />,
+  "/colores":        <IconPalette />,
+  "/catalogo":       <IconTag />,
+  "/proveedores":    <IconTruck />,
+  "/compras":        <IconCart />,
+  "/ventas":         <IconHeart />,
+  "/pedidos":        <IconDollar />,
+  "/pagos":          <IconCreditCard />,
+  "/mi-cuenta":      <IconUser />,
 };
 
 const MODULOS_CLIENTE = ['dashboard', 'catalogo', 'categorias'];

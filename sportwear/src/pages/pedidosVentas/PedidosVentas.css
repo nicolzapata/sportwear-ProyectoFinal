@@ -58,21 +58,6 @@
   gap: 0.75rem;
 }
 
-.btn-print {
-  background: white;
-  color: #333;
-  border: 1px solid #e0e0e0;
-  padding: 0.8rem 1rem;
-  border-radius: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.btn-print:hover { border-color: #1a1a1a; background: #fafafa; }
-
 .print-button-container { display: none; }
 
 .pedidosventas-search-wrapper {
@@ -288,6 +273,92 @@
   border: 1px solid #f0f0f0;
 }
 
+/* ── Ancho fijo de la columna "Estado" (7ª columna, tras fusionar Cant./Abonos/Saldo)
+     para que no empuje el resto de la tabla cuando el texto del estado cambia de largo ── */
+.tbl th:nth-child(7), .tbl td:nth-child(7) {
+  width: 160px;
+  min-width: 160px;
+}
+
+/* ── Celda "Pago" compacta: barra de progreso + abonado/saldo en una sola columna ── */
+.pedidosventas-pago-cell {
+  display: flex; flex-direction: column; gap: 4px;
+  border: none; background: none; cursor: pointer; text-align: left;
+  padding: 2px 0; min-width: 130px; font-family: inherit;
+}
+.pedidosventas-pago-bar-track {
+  width: 100%; height: 4px; border-radius: 2px; background: #f0ede8; overflow: hidden;
+}
+.pedidosventas-pago-bar-fill {
+  height: 100%; background: #2e7d32; border-radius: 2px; transition: width 0.4s ease;
+}
+.pedidosventas-pago-textos {
+  display: flex; justify-content: space-between; gap: 8px; font-size: 0.72rem;
+}
+.pedidosventas-pago-abonado { color: #1a1a1a; font-weight: 600; }
+.pedidosventas-pago-saldo { color: #b96422; }
+.pedidosventas-pago-cell:hover .pedidosventas-pago-abonado { text-decoration: underline; }
+
+.pedidosventas-producto-cant { color: #999; font-size: 0.78em; }
+
+/* ── Dropdown de estado (mismo patrón que Pedidos.jsx) ── */
+.pedidosventas-estado-dropdown { position: relative; display: inline-block; }
+
+.pedidosventas-estado-trigger {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;
+  border: 1px solid #e0e0e0; background: white; border-radius: 20px;
+  padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 500; cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 140px;
+  white-space: nowrap;
+}
+.pedidosventas-estado-trigger:disabled { cursor: default; opacity: 0.85; }
+.pedidosventas-estado-trigger:not(:disabled):hover { border-color: #1a1a1a; background: #fafafa; }
+
+.pedidosventas-estado-trigger.pedidosventas-badge-active   { border-color: #bfe0c4; color: #2e7d32; background: #f0f9f1; }
+.pedidosventas-estado-trigger.pedidosventas-badge-pending  { border-color: #ffd7b5; color: #b96422; background: #fff6ee; }
+.pedidosventas-estado-trigger.pedidosventas-badge-inactive { border-color: #ddd; color: #757575; background: #f7f7f7; }
+
+.pedidosventas-estado-panel {
+  z-index: 999;
+  background: white; border: 1px solid #eaeaea; border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+  padding: 0.4rem;
+  display: flex; flex-direction: column; gap: 2px;
+  animation: pedidosventas-panel-in 0.12s ease;
+}
+@keyframes pedidosventas-panel-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pedidosventas-estado-item {
+  display: flex; align-items: center; gap: 10px;
+  border: none; background: none; text-align: left;
+  padding: 0.55rem 0.6rem; border-radius: 8px; font-size: 0.82rem; color: #999;
+  cursor: not-allowed; width: 100%;
+}
+.pedidosventas-estado-item.done    { color: #2e7d32; }
+.pedidosventas-estado-item.current { color: #1a1a1a; font-weight: 600; background: #f5f5f5; }
+.pedidosventas-estado-item.clickable { color: #1a1a1a; cursor: pointer; }
+.pedidosventas-estado-item.clickable:hover { background: #f0f0f0; }
+
+.pedidosventas-estado-dot {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid #ddd; color: white;
+}
+.pedidosventas-estado-item.done .pedidosventas-estado-dot    { background: #2e7d32; border-color: #2e7d32; }
+.pedidosventas-estado-item.current .pedidosventas-estado-dot { background: #1a1a1a; border-color: #1a1a1a; }
+
+.pedidosventas-estado-divider { height: 1px; background: #eee; margin: 4px 2px; }
+
+.pedidosventas-estado-item-cancelar { color: #b83232; }
+.pedidosventas-estado-item-cancelar.clickable:hover { background: #fbeaea; }
+.pedidosventas-estado-item-cancelar .pedidosventas-estado-dot { border-color: #e0b3b3; }
+
+.pedidosventas-estado-anulado-msg { padding: 0.6rem; font-size: 0.8rem; color: #757575; text-align: center; }
+
 /* Modal ampliado tipo factura, un solo panel sin pasos (igual a Proveedores/Pagos) */
 .pedidosventas-modal-factura { max-width: 680px; }
 .pedidosventas-factura-body { padding: 1.5rem; }
@@ -376,9 +447,6 @@
 .pedidosventas-form-label {
   display: block; font-size: 0.75rem; font-weight: 500; color: #555;
   margin-bottom: 0.3rem; text-transform: none; letter-spacing: normal;
-}
-.pedidosventas-form-input::placeholder {
-  color: #999; opacity: 1;
 }
 .pedidosventas-form-input, .pedidosventas-form-select {
   width: 100%; padding: 0.8rem 1rem; border: 1px solid #e0e0e0; border-radius: 12px;

@@ -1,10 +1,10 @@
 // src/pages/pedidosVentas/PedidosVentas.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import './PedidosVentas.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import ExportButtons from "../../components/ExportButtons";
-import { IconDollar, IconEye, IconSearch, IconX } from "../../components/Icons";
+import { IconDollar, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
 const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;
@@ -24,6 +24,124 @@ const formVentaInicial = () => ({
   items: [nuevoItem()],
 });
 
+// ── Dropdown de estado (mismo patrón que Pedidos.jsx) ──
+const ESTADOS_ORDEN_VENTA = ['Pendiente', 'Pagado'];
+const TRANSICIONES_VENTA = {
+  'Pendiente': ['Pagado', 'Anulado'],
+  'Pagado':    ['Anulado'],
+  'Anulado':   [],
+};
+
+const IconChevronDown = () => (
+  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+const IconCheckSm = () => (
+  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+function EstadoDropdownVenta({ venta, abierto, onToggle, onCambiar, cambiando, tienePerm }) {
+  const btnRef = useRef(null);
+  const panelRef = useRef(null);
+  const [coords, setCoords] = useState(null);
+
+  const estadoActual = venta.estado;
+  const esAnulado = estadoActual === 'Anulado';
+  const idxActual = ESTADOS_ORDEN_VENTA.indexOf(estadoActual);
+  const siguientes = TRANSICIONES_VENTA[estadoActual] || [];
+  const puedeEditar = tienePerm('PedidosVentas.estado') && siguientes.length > 0;
+
+  useEffect(() => {
+    if (!abierto || !btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 6, left: r.left, width: r.width });
+  }, [abierto]);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrar = (e) => {
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        panelRef.current && !panelRef.current.contains(e.target)
+      ) onToggle(null);
+    };
+    const cerrarPorScroll = () => onToggle(null);
+    document.addEventListener('mousedown', cerrar);
+    window.addEventListener('scroll', cerrarPorScroll, true);
+    window.addEventListener('resize', cerrarPorScroll);
+    return () => {
+      document.removeEventListener('mousedown', cerrar);
+      window.removeEventListener('scroll', cerrarPorScroll, true);
+      window.removeEventListener('resize', cerrarPorScroll);
+    };
+  }, [abierto, onToggle]);
+
+  const badgeClase = estadoActual === 'Pagado' ? 'active' : estadoActual === 'Anulado' ? 'inactive' : 'pending';
+
+  return (
+    <div className="pedidosventas-estado-dropdown">
+      <button
+        ref={btnRef}
+        type="button"
+        className={`pedidosventas-estado-trigger pedidosventas-badge-${badgeClase}`}
+        onClick={() => puedeEditar && onToggle(abierto ? null : venta.id_venta)}
+        disabled={!puedeEditar}
+      >
+        {estadoActual}
+        {puedeEditar && <IconChevronDown />}
+      </button>
+
+      {abierto && puedeEditar && coords && createPortal(
+        <div
+          ref={panelRef}
+          className="pedidosventas-estado-panel"
+          style={{ position: 'fixed', top: coords.top, left: coords.left, minWidth: Math.max(coords.width, 190) }}
+        >
+          {esAnulado ? (
+            <div className="pedidosventas-estado-anulado-msg">Venta anulada</div>
+          ) : (
+            <>
+              {ESTADOS_ORDEN_VENTA.map((estado, i) => {
+                const yaPaso   = i < idxActual;
+                const esActual = i === idxActual;
+                const habilitado = siguientes.includes(estado);
+                return (
+                  <button
+                    key={estado}
+                    type="button"
+                    className={`pedidosventas-estado-item${yaPaso ? " done" : ""}${esActual ? " current" : ""}${habilitado ? " clickable" : ""}`}
+                    disabled={!habilitado || cambiando}
+                    onClick={() => { onCambiar(venta.id_venta, estado); onToggle(null); }}
+                  >
+                    <span className="pedidosventas-estado-dot">
+                      {yaPaso || esActual ? <IconCheckSm /> : null}
+                    </span>
+                    <span className="pedidosventas-estado-item-label">{estado}</span>
+                  </button>
+                );
+              })}
+              <div className="pedidosventas-estado-divider" />
+              <button
+                type="button"
+                className={`pedidosventas-estado-item pedidosventas-estado-item-cancelar${siguientes.includes('Anulado') ? " clickable" : ""}`}
+                disabled={!siguientes.includes('Anulado') || cambiando}
+                onClick={() => { onCambiar(venta.id_venta, 'Anulado'); onToggle(null); }}
+              >
+                <span className="pedidosventas-estado-dot" />
+                <span className="pedidosventas-estado-item-label">Anular venta</span>
+              </button>
+            </>
+          )}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 export default function PedidosVentas() {
   const { usuario } = useAuth();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
@@ -37,6 +155,8 @@ export default function PedidosVentas() {
   const [abonosModal, setAbonosModal] = useState(null);
   const [formAbono,   setFormAbono]   = useState({ monto: "", metodo: "Efectivo", fecha: "" });
   const [erroresAbono, setErroresAbono] = useState({ monto: "", fecha: "" });
+  const [filaAbierta, setFilaAbierta] = useState(null);
+  const [cambiandoEstado, setCambiandoEstado] = useState(false);
 
   // ── Nueva venta ──
   const [clientes,   setClientes]   = useState([]);
@@ -45,6 +165,8 @@ export default function PedidosVentas() {
   const [guardandoVenta, setGuardandoVenta] = useState(false);
   const [formVenta,  setFormVenta]  = useState(formVentaInicial());
   const [erroresVenta, setErroresVenta] = useState({});
+  const [cargandoDatosVenta, setCargandoDatosVenta] = useState(false);
+  const [errorDatosVenta,   setErrorDatosVenta]   = useState("");
 
   useEffect(() => { cargar(); }, []);
 
@@ -71,8 +193,6 @@ export default function PedidosVentas() {
           estado = totalPagado >= v.total ? "Pagado" : "Pendiente";
         }
 
-        if (estado === "Pendiente" && v.estado === "Pendiente") return null;
-
         return { ...v, total_pagado: totalPagado, abonos, estado };
       }).filter(Boolean);
 
@@ -86,9 +206,6 @@ export default function PedidosVentas() {
   };
 
   // ── Cargar clientes y productos solo cuando se abre el modal de nueva venta ──
-  const [cargandoDatosVenta, setCargandoDatosVenta] = useState(false);
-  const [errorDatosVenta,   setErrorDatosVenta]   = useState("");
-
   const cargarDatosVenta = async () => {
     setCargandoDatosVenta(true);
     setErrorDatosVenta("");
@@ -114,52 +231,13 @@ export default function PedidosVentas() {
     cargarDatosVenta();
   };
 
-  // ── Validaciones por campo (reutilizadas por validarVenta y por onBlur/onChange en tiempo real) ──
-  const validarCampoCliente = (idCliente) => (!idCliente ? "El cliente es obligatorio" : "");
-  const validarCampoFecha = (fecha) => (!fecha ? "La fecha es obligatoria" : "");
-  const validarCampoNumCuotas = (numCuotas, tipoPago) =>
-    (tipoPago === "cuotas" && (!numCuotas || Number(numCuotas) < 2))
-      ? "Indica el número de cuotas (mínimo 2)"
-      : "";
-
-  const validarCampoItemProducto = (it) => (!it.id_producto ? "Selecciona un producto" : "");
-  const validarCampoItemVariante = (it) => {
-    const producto = productos.find((p) => String(p.id_producto) === String(it.id_producto));
-    const variantesActivas = (producto?.variantes || []).filter((v) => v.estado === "Activo");
-    return (variantesActivas.length > 0 && !it.id_variante) ? "Selecciona talla y color" : "";
-  };
-  const validarCampoItemCantidad = (it) => (!it.cantidad || Number(it.cantidad) <= 0) ? "Cantidad inválida" : "";
-  const validarCampoItemPrecio = (it) => (!it.precio_unitario || Number(it.precio_unitario) <= 0) ? "Precio inválido" : "";
-
-  const CAMPO_A_ERROR_ITEM = {
-    id_producto: { key: "producto", validar: validarCampoItemProducto },
-    id_variante: { key: "variante", validar: validarCampoItemVariante },
-    cantidad: { key: "cantidad", validar: validarCampoItemCantidad },
-    precio_unitario: { key: "precio", validar: validarCampoItemPrecio },
-  };
-
   const actualizarItemVenta = (index, campo, valor) => {
-    const nuevoItem = { ...formVenta.items[index], [campo]: valor };
-    if (campo === "id_producto") nuevoItem.id_variante = "";
     setFormVenta((prev) => {
       const items = [...prev.items];
-      items[index] = nuevoItem;
+      items[index] = { ...items[index], [campo]: valor };
+      if (campo === "id_producto") items[index].id_variante = "";
       return { ...prev, items };
     });
-    const info = CAMPO_A_ERROR_ITEM[campo];
-    if (info || campo === "id_producto") {
-      setErroresVenta((prev) => {
-        const next = { ...prev };
-        if (info && prev[`item_${index}_${info.key}`]) {
-          next[`item_${index}_${info.key}`] = info.validar(nuevoItem);
-        }
-        // Cambiar de producto también puede resolver/afectar un error de variante ya mostrado
-        if (campo === "id_producto" && prev[`item_${index}_variante`]) {
-          next[`item_${index}_variante`] = validarCampoItemVariante(nuevoItem);
-        }
-        return next;
-      });
-    }
   };
   const agregarItemVenta = () => setFormVenta((prev) => ({ ...prev, items: [...prev.items, nuevoItem()] }));
   const quitarItemVenta = (index) =>
@@ -178,21 +256,18 @@ export default function PedidosVentas() {
 
   const validarVenta = () => {
     const e = {};
-    const errCliente = validarCampoCliente(formVenta.id_cliente);
-    if (errCliente) e.id_cliente = errCliente;
-    const errFecha = validarCampoFecha(formVenta.fecha);
-    if (errFecha) e.fecha = errFecha;
-    const errCuotas = validarCampoNumCuotas(formVenta.num_cuotas, formVenta.tipo_pago);
-    if (errCuotas) e.num_cuotas = errCuotas;
+    if (!formVenta.id_cliente) e.id_cliente = "El cliente es obligatorio";
+    if (!formVenta.fecha) e.fecha = "La fecha es obligatoria";
+    if (formVenta.tipo_pago === "cuotas" && (!formVenta.num_cuotas || Number(formVenta.num_cuotas) < 2)) {
+      e.num_cuotas = "Indica el número de cuotas (mínimo 2)";
+    }
     formVenta.items.forEach((it, i) => {
-      const errProducto = validarCampoItemProducto(it);
-      if (errProducto) e[`item_${i}_producto`] = errProducto;
-      const errVariante = validarCampoItemVariante(it);
-      if (errVariante) e[`item_${i}_variante`] = errVariante;
-      const errCantidad = validarCampoItemCantidad(it);
-      if (errCantidad) e[`item_${i}_cantidad`] = errCantidad;
-      const errPrecio = validarCampoItemPrecio(it);
-      if (errPrecio) e[`item_${i}_precio`] = errPrecio;
+      if (!it.id_producto) e[`item_${i}_producto`] = "Selecciona un producto";
+      const producto = productos.find((p) => String(p.id_producto) === String(it.id_producto));
+      const variantesActivas = (producto?.variantes || []).filter((v) => v.estado === "Activo");
+      if (variantesActivas.length > 0 && !it.id_variante) e[`item_${i}_variante`] = "Selecciona talla y color";
+      if (!it.cantidad || Number(it.cantidad) <= 0) e[`item_${i}_cantidad`] = "Cantidad inválida";
+      if (!it.precio_unitario || Number(it.precio_unitario) <= 0) e[`item_${i}_precio`] = "Precio inválido";
     });
     setErroresVenta(e);
     return Object.keys(e).length === 0;
@@ -236,11 +311,14 @@ export default function PedidosVentas() {
   const filtradosPagina  = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
   const cambiarEstado = async (id, estado) => {
+    setCambiandoEstado(true);
     try {
       await api.patch(`/ventas/${id}/estado`, { estado });
       setDatos(prev => prev.map(v => v.id_venta === id ? { ...v, estado } : v));
     } catch (err) {
       alert(err.response?.data?.message || "Error al cambiar estado");
+    } finally {
+      setCambiandoEstado(false);
     }
   };
 
@@ -303,22 +381,7 @@ export default function PedidosVentas() {
               <span>+</span> Nueva venta
             </button>
           )}
-          <ExportButtons
-            datos={filtrados}
-            columnas={[
-              { header: "Cliente", key: "cliente" },
-              { header: "Producto", value: (v) => v.items?.map((i) => i.producto).filter(Boolean).join(', ') || '-' },
-              { header: "Cantidad", value: (v) => v.items?.reduce((sum, i) => sum + i.cantidad, 0) || 0 },
-              { header: "Total", value: (v) => fmt(v.total) },
-              { header: "Tipo", value: (v) => (v.tipo_pago === 'cuotas' ? `Cuotas (${v.num_cuotas})` : 'Completo') },
-              { header: "Abonado", value: (v) => fmt(v.total_pagado || 0) },
-              { header: "Saldo", value: (v) => fmt(v.total - (v.total_pagado || 0)) },
-              { header: "Fecha", value: (v) => v.fecha?.toString().split("T")[0] || "—" },
-              { header: "Estado", key: "estado" },
-            ]}
-            nombreArchivo="pedidos_ventas"
-            titulo="Pedidos y Ventas"
-          />
+          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
         </div>
       </div>
 
@@ -326,28 +389,32 @@ export default function PedidosVentas() {
         {filtrados.length} venta{filtrados.length !== 1 ? 's' : ''} encontrada{filtrados.length !== 1 ? 's' : ''}
       </div>
 
-      <div className="tbl-container">
+      <div className="tbl-container pedidosventas-tbl-container">
         <table className="tbl">
           <thead className="tbl-header">
             <tr>
               <th className="tbl-th">Cliente</th>
               <th className="tbl-th">Producto</th>
-              <th className="tbl-th">Cant.</th>
               <th className="tbl-th">Total</th>
               <th className="tbl-th">Tipo</th>
-              <th className="tbl-th">Abonos</th>
-              <th className="tbl-th">Saldo</th>
+              <th className="tbl-th">Pago</th>
               <th className="tbl-th">Fecha</th>
               <th className="tbl-th">Estado</th>
               <th className="tbl-th">Acciones</th>
             </tr>
           </thead>
           <tbody className="tbl-body">
-            {filtradosPagina.map((v) => (
+            {filtradosPagina.map((v) => {
+              const cantTotal = v.items?.reduce((sum, i) => sum + i.cantidad, 0) || 0;
+              const saldo = v.total - (v.total_pagado || 0);
+              const pct = v.total > 0 ? Math.min(100, Math.round(((v.total_pagado || 0) / v.total) * 100)) : 0;
+              return (
               <tr key={v.id_venta} className="tbl-row">
                 <td className="tbl-td"><span className="pedidosventas-cliente-name">{v.cliente}</span></td>
-                <td className="tbl-td pedidosventas-producto-cell">{v.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}</td>
-                <td className="tbl-td pedidosventas-cantidad-cell">{v.items?.reduce((sum, i) => sum + i.cantidad, 0) || '-'}</td>
+                <td className="tbl-td pedidosventas-producto-cell">
+                  {v.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
+                  {cantTotal > 0 && <span className="pedidosventas-producto-cant"> · {cantTotal} uds</span>}
+                </td>
                 <td className="tbl-td pedidosventas-total-cell">{fmt(v.total)}</td>
                 <td className="tbl-td">
                   {v.tipo_pago === 'cuotas'
@@ -355,35 +422,40 @@ export default function PedidosVentas() {
                     : <span className="pedidosventas-badge">Completo</span>}
                 </td>
                 <td className="tbl-td">
-                  <button className="pedidosventas-abonos-btn" onClick={() => setAbonosModal(v)}>
-                    {v.total_pagado ? fmt(v.total_pagado) : "-"}
+                  <button className="pedidosventas-pago-cell" onClick={() => setAbonosModal(v)} title="Ver abonos">
+                    <div className="pedidosventas-pago-bar-track">
+                      <div className="pedidosventas-pago-bar-fill" style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="pedidosventas-pago-textos">
+                      <span className="pedidosventas-pago-abonado">{fmt(v.total_pagado || 0)}</span>
+                      <span className="pedidosventas-pago-saldo">{saldo > 0 ? `Saldo ${fmt(saldo)}` : 'Sin saldo'}</span>
+                    </div>
                   </button>
                 </td>
-                <td className="tbl-td">
-                  <span className={`pedidosventas-saldo ${(v.total - (v.total_pagado || 0)) <= 0 ? 'pedidosventas-saldo-zero' : ''}`}>
-                    {fmt(v.total - (v.total_pagado || 0))}
-                  </span>
-                </td>
                 <td className="tbl-td pedidosventas-fecha-cell">{v.fecha?.toString().split("T")[0]}</td>
-                <td className="tbl-td"><span className={`pedidosventas-badge ${getEstadoBadge(v.estado)}`}>{v.estado}</span></td>
+                <td className="tbl-td">
+                  <EstadoDropdownVenta
+                    venta={v}
+                    abierto={filaAbierta === v.id_venta}
+                    onToggle={setFilaAbierta}
+                    onCambiar={cambiarEstado}
+                    cambiando={cambiandoEstado}
+                    tienePerm={tienePerm}
+                  />
+                </td>
                 <td className="tbl-td">
                   <div className="pedidosventas-action-cell">
                     <button className="pedidosventas-action-btn pedidosventas-view-btn" onClick={() => setVerDetalle(v)}><IconEye /></button>
-                    {tienePerm('PedidosVentas.estado') && v.estado !== "Anulado" && v.estado !== "Pagado" && (
+                    {tienePerm('PedidosVentas.estado') && v.tipo_pago === 'cuotas' && v.estado !== "Anulado" && v.estado !== "Pagado" && (
                       <button className="pedidosventas-action-btn pedidosventas-pay-btn" onClick={() => setAbonosModal(v)} title="Agregar abono"><IconDollar /></button>
-                    )}
-                    {tienePerm('PedidosVentas.estado') && v.estado === "Pendiente" && (
-                      <button className="pedidosventas-action-btn pedidosventas-pay-full-btn" onClick={() => cambiarEstado(v.id_venta, "Pagado")} title="Marcar como pagado"><IconDollar /></button>
-                    )}
-                    {tienePerm('PedidosVentas.estado') && v.estado !== "Anulado" && (
-                      <button className="pedidosventas-action-btn pedidosventas-cancel-btn" onClick={() => cambiarEstado(v.id_venta, "Anulado")} title="Anular venta"><IconX /></button>
                     )}
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {filtrados.length === 0 && (
-              <tr><td colSpan={10} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>No hay ventas registradas</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>No hay ventas registradas</td></tr>
             )}
           </tbody>
         </table>
@@ -579,12 +651,7 @@ export default function PedidosVentas() {
                   <select
                     className={`pedidosventas-form-select${erroresVenta.id_cliente ? " input-error" : ""}`}
                     value={formVenta.id_cliente}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setFormVenta({ ...formVenta, id_cliente: value });
-                      setErroresVenta((prev) => (prev.id_cliente ? { ...prev, id_cliente: validarCampoCliente(value) } : prev));
-                    }}
-                    onBlur={() => setErroresVenta((prev) => ({ ...prev, id_cliente: validarCampoCliente(formVenta.id_cliente) }))}
+                    onChange={(e) => { setFormVenta({ ...formVenta, id_cliente: e.target.value }); setErroresVenta((prev) => ({ ...prev, id_cliente: "" })); }}
                   >
                     <option value="">Seleccionar cliente...</option>
                     {clientes.map((c) => (
@@ -608,12 +675,7 @@ export default function PedidosVentas() {
                     type="date"
                     className={`pedidosventas-form-input${erroresVenta.fecha ? " input-error" : ""}`}
                     value={formVenta.fecha}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setFormVenta({ ...formVenta, fecha: value });
-                      setErroresVenta((prev) => (prev.fecha ? { ...prev, fecha: validarCampoFecha(value) } : prev));
-                    }}
-                    onBlur={() => setErroresVenta((prev) => ({ ...prev, fecha: validarCampoFecha(formVenta.fecha) }))}
+                    onChange={(e) => { setFormVenta({ ...formVenta, fecha: e.target.value }); setErroresVenta((prev) => ({ ...prev, fecha: "" })); }}
                   />
                   {erroresVenta.fecha && <span className="pedidosventas-field-error">{erroresVenta.fecha}</span>}
                 </div>
@@ -625,11 +687,7 @@ export default function PedidosVentas() {
                   <select
                     className="pedidosventas-form-select"
                     value={formVenta.tipo_pago}
-                    onChange={(e) => {
-                      const tipo_pago = e.target.value;
-                      setFormVenta({ ...formVenta, tipo_pago, num_cuotas: "" });
-                      setErroresVenta((prev) => (prev.num_cuotas ? { ...prev, num_cuotas: validarCampoNumCuotas("", tipo_pago) } : prev));
-                    }}
+                    onChange={(e) => setFormVenta({ ...formVenta, tipo_pago: e.target.value, num_cuotas: "" })}
                   >
                     <option value="completo">Pago completo</option>
                     <option value="cuotas">Cuotas</option>
@@ -643,12 +701,7 @@ export default function PedidosVentas() {
                       min="2"
                       className={`pedidosventas-form-input${erroresVenta.num_cuotas ? " input-error" : ""}`}
                       value={formVenta.num_cuotas}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setFormVenta({ ...formVenta, num_cuotas: value });
-                        setErroresVenta((prev) => (prev.num_cuotas ? { ...prev, num_cuotas: validarCampoNumCuotas(value, formVenta.tipo_pago) } : prev));
-                      }}
-                      onBlur={() => setErroresVenta((prev) => ({ ...prev, num_cuotas: validarCampoNumCuotas(formVenta.num_cuotas, formVenta.tipo_pago) }))}
+                      onChange={(e) => { setFormVenta({ ...formVenta, num_cuotas: e.target.value }); setErroresVenta((prev) => ({ ...prev, num_cuotas: "" })); }}
                     />
                     {erroresVenta.num_cuotas && <span className="pedidosventas-field-error">{erroresVenta.num_cuotas}</span>}
                   </div>
@@ -713,7 +766,6 @@ export default function PedidosVentas() {
                           className={`pedidosventas-form-select${erroresVenta[`item_${i}_producto`] ? " input-error" : ""}`}
                           value={item.id_producto}
                           onChange={(e) => actualizarItemVenta(i, "id_producto", e.target.value)}
-                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_producto`]: validarCampoItemProducto(formVenta.items[i]) }))}
                         >
                           <option value="">Producto...</option>
                           {productos.map((p) => (
@@ -726,7 +778,6 @@ export default function PedidosVentas() {
                           className={`pedidosventas-form-select${erroresVenta[`item_${i}_variante`] ? " input-error" : ""}`}
                           value={item.id_variante}
                           onChange={(e) => actualizarItemVenta(i, "id_variante", e.target.value)}
-                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_variante`]: validarCampoItemVariante(formVenta.items[i]) }))}
                           disabled={!item.id_producto || variantesActivas.length === 0}
                         >
                           <option value="">
@@ -747,7 +798,6 @@ export default function PedidosVentas() {
                           className={`pedidosventas-form-input${erroresVenta[`item_${i}_cantidad`] ? " input-error" : ""}`}
                           value={item.cantidad}
                           onChange={(e) => actualizarItemVenta(i, "cantidad", e.target.value)}
-                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: validarCampoItemCantidad(formVenta.items[i]) }))}
                         />
                       </div>
                       <div>
@@ -758,7 +808,6 @@ export default function PedidosVentas() {
                           className={`pedidosventas-form-input${erroresVenta[`item_${i}_precio`] ? " input-error" : ""}`}
                           value={item.precio_unitario}
                           onChange={(e) => actualizarItemVenta(i, "precio_unitario", e.target.value)}
-                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_precio`]: validarCampoItemPrecio(formVenta.items[i]) }))}
                         />
                       </div>
                       <div>

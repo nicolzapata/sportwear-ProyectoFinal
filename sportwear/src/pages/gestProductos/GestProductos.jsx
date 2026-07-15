@@ -1,5 +1,6 @@
 // src/pages/productos/GestProductos.jsx
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import GaleriaImagenes from "../../components/GaleriaImagenes";
@@ -19,6 +20,7 @@ const FORM_VACIO = { nombre: "", descripcion: "", id_categoria: "", precio: "", 
 export default function GestProductos() {
   const { usuario } = useAuth();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [datos,            setDatos]            = useState([]);
   const [categorias,       setCategorias]       = useState([]);
@@ -64,11 +66,27 @@ export default function GestProductos() {
         })
       );
       setDatos(productosConImagen);
-    } catch { mostrarToast("error", "No se pudo cargar."); }
+      return productosConImagen;
+    } catch { mostrarToast("error", "No se pudo cargar."); return []; }
     finally { setLoading(false); }
   };
+
+  // ── Carga inicial + soporte de deep-link "?edit=ID" (viene desde el catálogo admin) ──
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { cargar(); }, []);
+  useEffect(() => {
+    cargar().then((productosConImagen) => {
+      const editId = searchParams.get('edit');
+      if (editId) {
+        const producto = productosConImagen.find(p => String(p.id_producto) === String(editId));
+        if (producto) {
+          abrirEditar(producto);
+        }
+        // Limpia el query param para que no se re-abra al refrescar/cerrar
+        setSearchParams({}, { replace: true });
+      }
+    });
+    // eslint-disable-next-line
+  }, []);
 
   const filtradosAll = datos.filter(p =>
     p.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -741,16 +759,6 @@ export default function GestProductos() {
             </div>
           </div>
         </div>
-      )}
-
-      {eliminarId && (
-        <ConfirmModal
-          title="Eliminar producto"
-          message="¿Seguro que deseas eliminar este producto? Dejará de mostrarse en el catálogo y en la gestión de productos. No se puede eliminar si tiene pedidos pendientes."
-          confirmLabel="Sí, eliminar"
-          onConfirm={confirmarEliminar}
-          onCancel={() => setEliminarId(null)}
-        />
       )}
 
       {eliminarId && (

@@ -1,5 +1,6 @@
 // src/pages/compras/Compras.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import './Compras.css';
@@ -23,6 +24,135 @@ const formInicial = () => ({
   items: [nuevoItem()],
 });
 
+// ── Dropdown de estado con colores (mismo patrón que Pedidos/Ventas) ──
+const ESTADOS_ORDEN_COMPRA = ['Pendiente', 'En Tránsito', 'Recibido'];
+const TRANSICIONES_COMPRA = {
+  'Pendiente':    ['En Tránsito', 'Recibido', 'Anulado'],
+  'En Tránsito':  ['Recibido', 'Anulado'],
+  'Recibido':     [],
+  'Anulado':      [],
+};
+
+const IconChevronDown = () => (
+  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+const IconCheckSm = () => (
+  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+function EstadoDropdownCompra({ compra, abierto, onToggle, onCambiar, cambiando, tienePerm }) {
+  const btnRef = useRef(null);
+  const panelRef = useRef(null);
+  const [coords, setCoords] = useState(null);
+
+  const estadoActual = compra.estado;
+  const esAnulado = estadoActual === 'Anulado';
+  const esRecibido = estadoActual === 'Recibido';
+  const idxActual = ESTADOS_ORDEN_COMPRA.indexOf(estadoActual);
+  const siguientes = TRANSICIONES_COMPRA[estadoActual] || [];
+  const puedeEditar = tienePerm('Compras.editar') && siguientes.length > 0;
+
+  useEffect(() => {
+    if (!abierto || !btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 6, left: r.left, width: r.width });
+  }, [abierto]);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrar = (e) => {
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        panelRef.current && !panelRef.current.contains(e.target)
+      ) onToggle(null);
+    };
+    const cerrarPorScroll = () => onToggle(null);
+    document.addEventListener('mousedown', cerrar);
+    window.addEventListener('scroll', cerrarPorScroll, true);
+    window.addEventListener('resize', cerrarPorScroll);
+    return () => {
+      document.removeEventListener('mousedown', cerrar);
+      window.removeEventListener('scroll', cerrarPorScroll, true);
+      window.removeEventListener('resize', cerrarPorScroll);
+    };
+  }, [abierto, onToggle]);
+
+  const badgeClase =
+    estadoActual === 'Recibido'    ? 'active' :
+    estadoActual === 'Anulado'     ? 'inactive' :
+    estadoActual === 'En Tránsito' ? 'info' : 'pending';
+
+  return (
+    <div className="compras-estado-dropdown">
+      <button
+        ref={btnRef}
+        type="button"
+        className={`compras-estado-trigger compras-estado-${badgeClase}`}
+        onClick={() => puedeEditar && onToggle(abierto ? null : compra.id_compra)}
+        disabled={!puedeEditar}
+      >
+        {estadoActual}
+        {puedeEditar && <IconChevronDown />}
+      </button>
+
+      {abierto && puedeEditar && coords && createPortal(
+        <div
+          ref={panelRef}
+          className="compras-estado-panel"
+          style={{ position: 'fixed', top: coords.top, left: coords.left, minWidth: Math.max(coords.width, 190) }}
+        >
+          {esAnulado || esRecibido ? (
+            <div className="compras-estado-final-msg">
+              {esAnulado ? 'Compra anulada' : 'Compra recibida — inventario ya actualizado'}
+            </div>
+          ) : (
+            <>
+              {ESTADOS_ORDEN_COMPRA.map((estado, i) => {
+                const yaPaso   = i < idxActual;
+                const esActual = i === idxActual;
+                const habilitado = siguientes.includes(estado);
+                return (
+                  <button
+                    key={estado}
+                    type="button"
+                    className={`compras-estado-item${yaPaso ? " done" : ""}${esActual ? " current" : ""}${habilitado ? " clickable" : ""}`}
+                    disabled={!habilitado || cambiando}
+                    onClick={() => { onCambiar(compra.id_compra, estado); onToggle(null); }}
+                  >
+                    <span className="compras-estado-dot">
+                      {yaPaso || esActual ? <IconCheckSm /> : null}
+                    </span>
+                    <span className="compras-estado-item-label">{estado}</span>
+                  </button>
+                );
+              })}
+              {tienePerm('Compras.anular') && (
+                <>
+                  <div className="compras-estado-divider" />
+                  <button
+                    type="button"
+                    className={`compras-estado-item compras-estado-item-cancelar${siguientes.includes('Anulado') ? " clickable" : ""}`}
+                    disabled={!siguientes.includes('Anulado') || cambiando}
+                    onClick={() => { onCambiar(compra.id_compra, 'Anulado'); onToggle(null); }}
+                  >
+                    <span className="compras-estado-dot" />
+                    <span className="compras-estado-item-label">Anular compra</span>
+                  </button>
+                </>
+              )}
+            </>
+          )}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
 export default function Compras() {
   const { usuario } = useAuth();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
@@ -43,6 +173,8 @@ export default function Compras() {
   const [guardandoEstado, setGuardandoEstado] = useState(false);
   const [form, setForm] = useState(formInicial());
   const [errores, setErrores] = useState({});
+  const [filaAbierta, setFilaAbierta] = useState(null);
+  const [cambiandoEstadoTabla, setCambiandoEstadoTabla] = useState(false);
 
   useEffect(() => {
     cargarDatos();
@@ -174,13 +306,30 @@ export default function Compras() {
     setModoEdicion(false);
   };
 
+  // ── Cambio de estado directo desde el dropdown de la tabla ──
+  const cambiarEstadoDesdeTabla = async (id, estado) => {
+    setCambiandoEstadoTabla(true);
+    try {
+      if (estado === 'Anulado') {
+        await api.patch(`/compras/${id}/anular`);
+      } else {
+        await api.patch(`/compras/${id}/estado`, { estado });
+      }
+      setCompras((prev) => prev.map((c) => (c.id_compra === id ? { ...c, estado } : c)));
+    } catch (err) {
+      alert(err.response?.data?.message || "Error al cambiar el estado de la compra");
+    } finally {
+      setCambiandoEstadoTabla(false);
+    }
+  };
+
+  // ── Guardar estado desde el modal de detalle: ahora cierra toda la ventana ──
   const guardarEstado = async () => {
     setGuardandoEstado(true);
     try {
       const res = await api.patch(`/compras/${verDetalle.id_compra}/estado`, { estado: estadoEditado });
       setCompras((prev) => prev.map((c) => (c.id_compra === verDetalle.id_compra ? { ...c, estado: res.data.estado } : c)));
-      setVerDetalle((prev) => ({ ...prev, estado: res.data.estado }));
-      setModoEdicion(false);
+      cerrarDetalle();
     } catch (err) {
       alert(err.response?.data?.message || "Error al actualizar el estado de la compra");
     } finally {
@@ -268,7 +417,7 @@ export default function Compras() {
         {filtradosAll.length} compra{filtradosAll.length !== 1 ? 's' : ''} encontrada{filtradosAll.length !== 1 ? 's' : ''}
       </div>
 
-      <div className="tbl-container">
+      <div className="tbl-container compras-tbl-container">
         <table className="tbl">
           <thead className="tbl-header">
             <tr>
@@ -289,7 +438,16 @@ export default function Compras() {
                 <td className="tbl-td">{c.items?.length || 0} producto{c.items?.length !== 1 ? 's' : ''}</td>
                 <td className="tbl-td compras-total-cell">{fmt(c.total)}</td>
                 <td className="tbl-td compras-fecha-cell">{c.fecha?.toString().split("T")[0]}</td>
-                <td className="tbl-td"><span className={`compras-badge ${getEstadoBadge(c.estado)}`}>{c.estado}</span></td>
+                <td className="tbl-td">
+                  <EstadoDropdownCompra
+                    compra={c}
+                    abierto={filaAbierta === c.id_compra}
+                    onToggle={setFilaAbierta}
+                    onCambiar={cambiarEstadoDesdeTabla}
+                    cambiando={cambiandoEstadoTabla}
+                    tienePerm={tienePerm}
+                  />
+                </td>
                 <td className="tbl-td">
                   <div className="compras-action-cell">
                     <button className="compras-action-btn compras-view-btn" onClick={() => abrirDetalle(c)} title="Ver detalles">
@@ -298,11 +456,6 @@ export default function Compras() {
                     {tienePerm('Compras.editar') && c.estado !== "Anulado" && (
                       <button className="compras-action-btn compras-edit-btn" onClick={() => abrirEdicion(c)} title="Editar estado">
                         <IconEdit />
-                      </button>
-                    )}
-                    {tienePerm('Compras.anular') && c.estado !== "Anulado" && (
-                      <button className="compras-action-btn compras-cancel-btn" onClick={() => anularCompra(c.id_compra)} title="Anular compra">
-                        <IconX />
                       </button>
                     )}
                   </div>
