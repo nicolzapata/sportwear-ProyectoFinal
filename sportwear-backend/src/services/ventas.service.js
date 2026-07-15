@@ -6,7 +6,7 @@ const getVentas = async () => {
     SELECT v.*, c.nombre AS cliente, c.tipo_cliente, c.permiso_pagos, c.email AS cliente_email
     FROM "Ventas" v
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
-    WHERE v.estado NOT IN ('Abandonado', 'Pendiente')
+    WHERE v.estado != 'Abandonado'
     ORDER BY v.id_venta DESC
   `);
   const ids = cab.rows.map(v => v.id_venta);

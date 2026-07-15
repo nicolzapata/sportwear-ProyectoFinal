@@ -18,6 +18,7 @@ const titulos = {
   "/clientes":      { label: "Clientes",          icon: <IconUser /> },
   "/categorias":    { label: "Categorías",        icon: <IconTag /> },
   "/productos":     { label: "Gestión Productos", icon: <IconShoppingBag /> },
+  "/catalogo-admin": { label: "Catálogo",       icon: <IconBox /> },
   "/colores":       { label: "Colores",           icon: <IconPalette /> },
   "/catalogo":      { label: "Catálogo",          icon: <IconBox /> },
   "/proveedores":   { label: "Proveedores",       icon: <IconTruck /> },
