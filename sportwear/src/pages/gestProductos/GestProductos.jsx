@@ -171,7 +171,7 @@ export default function GestProductos() {
         }
         setPendingVariantes([]); setPendingImagenes([]);
         mostrarToast("exito", "Producto guardado con variantes e imágenes.");
-        cargar();
+        setModal(false); window.scrollTo(0, 0); cargar();
       }
     } catch (err) {
       setErrores(prev => ({ ...prev, general: err.response?.data?.message || "Error al guardar." }));
