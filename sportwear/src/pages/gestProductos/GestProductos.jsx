@@ -23,8 +23,12 @@ export default function GestProductos() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [datos,            setDatos]            = useState([]);
-  const [categorias,       setCategorias]       = useState([]);
+  const [totalProductos,   setTotalProductos]   = useState(0);
+  const [categorias,       setCategorias]       = useState([]); // listado completo, para el <select> del formulario
+  const [categoriasPagina, setCategoriasPagina] = useState([]); // página actual de la pestaña "Categorías"
+  const [totalCategorias,  setTotalCategorias]  = useState(0);
   const [busqueda,         setBusqueda]         = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [modal,            setModal]            = useState(false);
   const [verDetalle,       setVerDetalle]       = useState(null);
   const [editar,           setEditar]           = useState(null);
@@ -53,12 +57,19 @@ export default function GestProductos() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const cargar = async () => {
+  // Listado completo de categorías (sin paginar): alimenta el <select> del formulario de producto.
+  const cargarCategoriasCompletas = async () => {
     try {
-      const [p, c] = await Promise.all([api.get("/productos"), api.get("/categorias")]);
-      setCategorias(c.data);
+      const { data } = await api.get("/categorias");
+      setCategorias(data);
+    } catch { /* el formulario simplemente mostrará el select vacío */ }
+  };
+
+  const cargarProductos = async (pagina = paginaProductos, q = busquedaDebounced) => {
+    try {
+      const { data } = await api.get("/productos", { params: { page: pagina, limit: FILAS_POR_PAGINA, q: q || undefined } });
       const productosConImagen = await Promise.all(
-        p.data.map(async (prod) => {
+        data.data.map(async (prod) => {
           try {
             const { data: imgs } = await api.get(`/imagenes?tipo=Producto&id=${prod.id_producto}`);
             return { ...prod, imagenPrincipal: imgs.length > 0 ? imgs[0].url : null };
@@ -66,44 +77,61 @@ export default function GestProductos() {
         })
       );
       setDatos(productosConImagen);
+      setTotalProductos(data.total);
       return productosConImagen;
     } catch { mostrarToast("error", "No se pudo cargar."); return []; }
     finally { setLoading(false); }
   };
 
-  // ── Carga inicial + soporte de deep-link "?edit=ID" (viene desde el catálogo admin) ──
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const cargarCategoriasPagina = async (pagina = paginaCategorias, q = busquedaDebounced) => {
+    try {
+      const { data } = await api.get("/categorias", { params: { page: pagina, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      const filas = ordenCategorias === "fecha"
+        ? [...data.data].sort((a, b) => new Date(b.fecha_creacion || 0) - new Date(a.fecha_creacion || 0))
+        : data.data;
+      setCategoriasPagina(filas);
+      setTotalCategorias(data.total);
+    } catch { mostrarToast("error", "No se pudo cargar."); }
+    finally { setLoading(false); }
+  };
+
+  const cargar = async () => {
+    await Promise.all([
+      cargarCategoriasCompletas(),
+      tab === 'productos' ? cargarProductos() : cargarCategoriasPagina(),
+    ]);
+  };
+
+  // ── Carga inicial (categorías completas para el <select>) + soporte de deep-link "?edit=ID" ──
+  // La tabla de productos se carga por el efecto de paginación de más abajo.
   useEffect(() => {
-    cargar().then((productosConImagen) => {
-      const editId = searchParams.get('edit');
-      if (editId) {
-        const producto = productosConImagen.find(p => String(p.id_producto) === String(editId));
-        if (producto) {
-          abrirEditar(producto);
-        }
-        // Limpia el query param para que no se re-abra al refrescar/cerrar
-        setSearchParams({}, { replace: true });
-      }
-    });
+    cargarCategoriasCompletas();
+
+    const editId = searchParams.get('edit');
+    if (editId) {
+      api.get('/productos', { params: { id: editId } }).then(({ data }) => {
+        if (data && data[0]) abrirEditar(data[0]);
+      }).finally(() => setSearchParams({}, { replace: true }));
+    }
     // eslint-disable-next-line
   }, []);
 
-  const filtradosAll = datos.filter(p =>
-    p.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.categoria?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    p.codigo?.toLowerCase().includes(busqueda.toLowerCase())
-  );
-  const filtrados             = filtradosAll.slice((paginaProductos - 1) * FILAS_POR_PAGINA, paginaProductos * FILAS_POR_PAGINA);
-  const totalPaginasProductos = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
+  // Buscador con debounce: evita disparar una petición por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
+    return () => clearTimeout(t);
+  }, [busqueda]);
 
-  const categoriasFiltradasAll = categorias
-    .filter(c => c.nombre?.toLowerCase().includes(busqueda.toLowerCase()))
-    .slice()
-    .sort((a, b) => ordenCategorias === "fecha"
-      ? new Date(b.fecha_creacion || 0) - new Date(a.fecha_creacion || 0)
-      : a.nombre.localeCompare(b.nombre));
-  const categoriasFiltradas    = categoriasFiltradasAll.slice((paginaCategorias - 1) * FILAS_POR_PAGINA, paginaCategorias * FILAS_POR_PAGINA);
-  const totalPaginasCategorias = Math.ceil(categoriasFiltradasAll.length / FILAS_POR_PAGINA);
+  // Al cambiar de búsqueda vuelve a la página 1 de ambas pestañas.
+  useEffect(() => { setPaginaProductos(1); setPaginaCategorias(1); }, [busquedaDebounced]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (tab === 'productos') cargarProductos(paginaProductos, busquedaDebounced); }, [tab, paginaProductos, busquedaDebounced]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (tab === 'categorias') cargarCategoriasPagina(paginaCategorias, busquedaDebounced); }, [tab, paginaCategorias, busquedaDebounced, ordenCategorias]);
+
+  const totalPaginasProductos  = Math.ceil(totalProductos / FILAS_POR_PAGINA) || 1;
+  const totalPaginasCategorias = Math.ceil(totalCategorias / FILAS_POR_PAGINA) || 1;
 
   // ── Productos ──────────────────────────────────────────────────────────────
   const abrirRegistrar = () => {
@@ -200,7 +228,7 @@ export default function GestProductos() {
     setEliminarId(null);
     try {
       await api.delete(`/productos/${id}`);
-      setDatos(prev => prev.filter(p => p.id_producto !== id));
+      cargarProductos();
       mostrarToast("exito", "Producto eliminado.");
     } catch (err) {
       mostrarToast("error", err.response?.data?.message || "No se pudo eliminar el producto.");
@@ -258,6 +286,7 @@ export default function GestProductos() {
   const cambiarEstadoCategoria = async (id, nuevoEstado) => {
     try {
       await api.patch(`/categorias/${id}/estado`);
+      setCategoriasPagina(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
       setCategorias(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
       mostrarToast("exito", "Estado actualizado.");
     } catch (err) {
@@ -312,8 +341,8 @@ export default function GestProductos() {
           <div className="gestproductos-search-wrapper">
             <span className="gestproductos-search-icon"><IconSearch /></span>
             <input className="gestproductos-search-input" placeholder={tab === 'productos' ? "Buscar por nombre, código o categoría..." : "Buscar categoría por nombre..."} value={busqueda}
-              onChange={(e) => { setBusqueda(e.target.value); setPaginaProductos(1); setPaginaCategorias(1); }} />
-            {busqueda && <button className="gestproductos-search-clear" onClick={() => { setBusqueda(""); setPaginaProductos(1); setPaginaCategorias(1); }}><IconX /></button>}
+              onChange={(e) => setBusqueda(e.target.value)} />
+            {busqueda && <button className="gestproductos-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
           </div>
           <div className="gestproductos-tabs-bar">
             <button className={`gestproductos-tab-btn${tab === 'productos' ? ' active' : ''}`} onClick={() => setTab('productos')}><IconBox /> Productos</button>
@@ -329,7 +358,10 @@ export default function GestProductos() {
           )}
           {tab === 'productos' ? (
             <ExportButtons
-              datos={filtradosAll}
+              obtenerDatos={async () => {
+                const { data } = await api.get("/productos", { params: { q: busquedaDebounced || undefined } });
+                return data;
+              }}
               columnas={[
                 { header: "Producto", key: "nombre" },
                 { header: "Categoría", key: "categoria" },
@@ -343,7 +375,10 @@ export default function GestProductos() {
             />
           ) : (
             <ExportButtons
-              datos={categoriasFiltradasAll}
+              obtenerDatos={async () => {
+                const { data } = await api.get("/categorias", { params: { q: busquedaDebounced || undefined } });
+                return data;
+              }}
               columnas={[
                 { header: "Nombre", key: "nombre" },
                 { header: "Estado", key: "estado" },
@@ -365,16 +400,16 @@ export default function GestProductos() {
                 <th className="tbl-th">Categoría</th>
                 <th className="tbl-th">Precio</th>
                 <th className="tbl-th">Stock</th>
-                <th className="tbl-th">Variantes</th>
+                <th className="tbl-th">Tallas/Colores</th>
                 {tienePerm('Productos.publicar') && <th className="tbl-th">Publicado</th>}
                 {tienePerm('Productos.estado') && <th className="tbl-th">Estado</th>}
                 <th className="tbl-th">Acciones</th>
               </tr>
             </thead>
             <tbody className="tbl-body">
-              {filtrados.length === 0 ? (
+              {datos.length === 0 ? (
                 <tr><td colSpan={9} className="gestproductos-empty-row">No se encontraron productos.</td></tr>
-              ) : filtrados.map((p) => (
+              ) : datos.map((p) => (
                 <tr key={p.id_producto} className="tbl-row">
                   <td className="tbl-td">
                     <div className="gestproductos-img-cell">
@@ -440,15 +475,14 @@ export default function GestProductos() {
                 <button key={n} className={`paginador-btn ${n === paginaProductos ? "paginador-btn-active" : ""}`} onClick={() => setPaginaProductos(n)}>{n}</button>
               ))}
               <button className="paginador-btn" onClick={() => setPaginaProductos(p => Math.min(p + 1, totalPaginasProductos))} disabled={paginaProductos === totalPaginasProductos}>›</button>
-              <span className="paginador-info">Página {paginaProductos} de {totalPaginasProductos} · {filtradosAll.length} registros</span>
+              <span className="paginador-info">Página {paginaProductos} de {totalPaginasProductos} · {totalProductos} registros</span>
             </div>
           )}
         </div>
       ) : (
         <div className="gestproductos-table-container">
           <div className="gestproductos-orden-bar">
-            <label className="gestproductos-form-label" htmlFor="ordenCategorias">Ordenar por</label>
-            <select id="ordenCategorias" className="gestproductos-form-select" value={ordenCategorias} onChange={e => setOrdenCategorias(e.target.value)}>
+            <select id="ordenCategorias" className="gestproductos-form-select gestproductos-orden-select" value={ordenCategorias} onChange={e => setOrdenCategorias(e.target.value)}>
               <option value="nombre">Nombre (A-Z)</option>
               <option value="fecha">Más recientes primero</option>
             </select>
@@ -463,9 +497,9 @@ export default function GestProductos() {
               </tr>
             </thead>
             <tbody className="tbl-body">
-              {categoriasFiltradas.length === 0 ? (
+              {categoriasPagina.length === 0 ? (
                 <tr><td colSpan={4} className="gestproductos-empty-row">No se encontraron categorías.</td></tr>
-              ) : categoriasFiltradas.map((c) => (
+              ) : categoriasPagina.map((c) => (
                 <tr key={c.id_categoria} className="tbl-row">
                   <td className="tbl-td">
                     <div className="catproductos-categoria-cell">
@@ -499,7 +533,7 @@ export default function GestProductos() {
                 <button key={n} className={`paginador-btn ${n === paginaCategorias ? "paginador-btn-active" : ""}`} onClick={() => setPaginaCategorias(n)}>{n}</button>
               ))}
               <button className="paginador-btn" onClick={() => setPaginaCategorias(p => Math.min(p + 1, totalPaginasCategorias))} disabled={paginaCategorias === totalPaginasCategorias}>›</button>
-              <span className="paginador-info">Página {paginaCategorias} de {totalPaginasCategorias} · {categoriasFiltradasAll.length} registros</span>
+              <span className="paginador-info">Página {paginaCategorias} de {totalPaginasCategorias} · {totalCategorias} registros</span>
             </div>
           )}
         </div>

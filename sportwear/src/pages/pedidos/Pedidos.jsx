@@ -137,28 +137,40 @@ export default function Pedidos() {
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
 
   const [datos,      setDatos]      = useState([]);
+  const [totalPedidos, setTotalPedidos] = useState(0);
   const [cargando,   setCargando]   = useState(true);
   const [errorMsg,   setErrorMsg]   = useState("");
   const [busqueda,   setBusqueda]   = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [pagina,     setPagina]     = useState(1);
   const [verDetalle, setVerDetalle] = useState(null);
   const [cambiando,  setCambiando]  = useState(false);
   const [filaAbierta, setFilaAbierta] = useState(null);
 
-  useEffect(() => { cargar(); }, []);
-
-  const cargar = async () => {
+  const cargar = async (pag = pagina, q = busquedaDebounced) => {
     setCargando(true);
     setErrorMsg("");
     try {
-      const { data } = await api.get("/pedidos");
-      setDatos(data);
+      const { data } = await api.get("/pedidos", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      setDatos(data.data);
+      setTotalPedidos(data.total);
     } catch (err) {
       setErrorMsg(err.response?.data?.message || "Error al cargar los pedidos");
     } finally {
       setCargando(false);
     }
   };
+
+  // Buscador con debounce: evita disparar una petición por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  useEffect(() => { setPagina(1); }, [busquedaDebounced]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cargar(pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
 
   const abrirDetalle = async (p) => {
     try {
@@ -185,9 +197,7 @@ export default function Pedidos() {
     }
   };
 
-  const filtrados       = datos.filter(p => p.cliente?.toLowerCase().includes(busqueda.toLowerCase()));
-  const totalPaginas    = Math.ceil(filtrados.length / FILAS_POR_PAGINA) || 1;
-  const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+  const totalPaginas = Math.ceil(totalPedidos / FILAS_POR_PAGINA) || 1;
 
   const getEstadoBadge = (estado) => {
     switch (estado) {
@@ -213,10 +223,10 @@ export default function Pedidos() {
               className="pedidos-search-input"
               placeholder="Buscar por cliente..."
               value={busqueda}
-              onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
+              onChange={(e) => setBusqueda(e.target.value)}
             />
             {busqueda && (
-              <button className="pedidos-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}>
+              <button className="pedidos-search-clear" onClick={() => setBusqueda("")}>
                 <IconX />
               </button>
             )}
@@ -224,7 +234,10 @@ export default function Pedidos() {
         </div>
         <div className="pedidos-actions-right">
           <ExportButtons
-            datos={filtrados}
+            obtenerDatos={async () => {
+              const { data } = await api.get("/pedidos", { params: { q: busquedaDebounced || undefined } });
+              return data;
+            }}
             columnas={[
               { header: "Cliente", key: "cliente" },
               { header: "Productos", value: (p) => p.items?.map((i) => i.producto).filter(Boolean).join(', ') || '-' },
@@ -239,7 +252,7 @@ export default function Pedidos() {
       </div>
 
       <div className="pedidos-results-count">
-        {filtrados.length} pedido{filtrados.length !== 1 ? 's' : ''} encontrado{filtrados.length !== 1 ? 's' : ''}
+        {totalPedidos} pedido{totalPedidos !== 1 ? 's' : ''} encontrado{totalPedidos !== 1 ? 's' : ''}
       </div>
 
       <div className="tbl-container pedidos-tbl-container">
@@ -255,7 +268,7 @@ export default function Pedidos() {
             </tr>
           </thead>
           <tbody className="tbl-body">
-            {filtradosPagina.map((p) => (
+            {datos.map((p) => (
               <tr key={p.id_pedido} className="tbl-row">
                 <td className="tbl-td">{p.cliente}</td>
                 <td className="tbl-td pedidos-producto-cell">
@@ -282,7 +295,7 @@ export default function Pedidos() {
                 </td>
               </tr>
             ))}
-            {filtrados.length === 0 && (
+            {datos.length === 0 && (
               <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>No hay pedidos registrados</td></tr>
             )}
           </tbody>
@@ -295,7 +308,7 @@ export default function Pedidos() {
               <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
             <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} registros</span>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalPedidos} registros</span>
           </div>
         )}
       </div>

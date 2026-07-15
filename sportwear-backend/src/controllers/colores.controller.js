@@ -3,7 +3,8 @@ const coloresService = require('../services/colores.service');
 
 const getColores = async (req, res) => {
   try {
-    const data = await coloresService.getColores();
+    const { page, limit, q } = req.query;
+    const data = await coloresService.getColores({ page, limit, q });
     res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });

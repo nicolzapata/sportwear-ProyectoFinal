@@ -4,15 +4,39 @@ const { validarCamposNumericos } = require('../utils/validarNumerico');
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const getProveedores = async () => {
+const getProveedores = async ({ page, limit, q } = {}) => {
+  const params = [];
+  let busquedaSql = '';
+  if (q) {
+    params.push(`%${q}%`);
+    busquedaSql = `WHERE (p.razon_social ILIKE $${params.length} OR p.nombre_comercial ILIKE $${params.length} OR p.numero_doc ILIKE $${params.length})`;
+  }
+
+  const paginar = page !== undefined;
+  let limitOffsetSql = '';
+  if (paginar) {
+    const pagina = Math.max(parseInt(page) || 1, 1);
+    const limite = Math.max(parseInt(limit) || 10, 1);
+    const offset = (pagina - 1) * limite;
+    params.push(limite, offset);
+    limitOffsetSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
+  }
+
   const result = await pool.query(`
     SELECT p.*, COALESCE(COUNT(c.id_compra), 0) AS total_compras
+           ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "Proveedores" p
     LEFT JOIN "Compras" c ON c.id_proveedor = p.id_proveedor
+    ${busquedaSql}
     GROUP BY p.id_proveedor
     ORDER BY p.id_proveedor DESC
-  `);
-  return result.rows;
+    ${limitOffsetSql}
+  `, params);
+
+  if (!paginar) return result.rows;
+  const total = result.rows[0] ? Number(result.rows[0].total_count) : 0;
+  const data = result.rows.map(({ total_count, ...r }) => r);
+  return { data, total };
 };
 
 const getProveedorById = async (id) => {

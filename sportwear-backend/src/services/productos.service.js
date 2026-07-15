@@ -6,11 +6,15 @@ const getProductos = async (opciones = {}) => {
   const filtros = typeof opciones === 'string' || opciones === undefined
     ? { publicado: opciones }
     : opciones;
-  const { publicado, id_categoria, q, precio_min, precio_max, talla, color } = filtros;
+  const { publicado, id_categoria, id, q, precio_min, precio_max, talla, color, page, limit } = filtros;
 
   const condiciones = [`p.estado != 'Eliminado'`];
   const params = [];
 
+  if (id) {
+    params.push(id);
+    condiciones.push(`p.id_producto = $${params.length}`);
+  }
   if (publicado !== undefined) {
     params.push(publicado === '1' || publicado === 'true');
     condiciones.push(`p.publicado = $${params.length}`);
@@ -42,6 +46,19 @@ const getProductos = async (opciones = {}) => {
 
   const whereClause = `WHERE ${condiciones.join(' AND ')}`;
 
+  // La paginación es opt-in: solo se activa si viene "page" en la petición.
+  // Así los selects/dropdowns que necesitan el listado completo (formularios
+  // de venta/compra, catálogo público, etc.) siguen recibiendo el array plano.
+  const paginar = page !== undefined;
+  let limitOffsetSql = '';
+  if (paginar) {
+    const pagina = Math.max(parseInt(page) || 1, 1);
+    const limite = Math.max(parseInt(limit) || 10, 1);
+    const offset = (pagina - 1) * limite;
+    params.push(limite, offset);
+    limitOffsetSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
+  }
+
   const result = await pool.query(`
     SELECT
       p.id_producto,
@@ -54,6 +71,7 @@ const getProductos = async (opciones = {}) => {
       p.estado,
       p.fecha_creacion,
       c.nombre AS categoria,
+      ${paginar ? 'COUNT(*) OVER() AS total_count,' : ''}
       -- Stock total sumado desde variantes
       COALESCE((
         SELECT SUM(v.stock)
@@ -83,8 +101,14 @@ const getProductos = async (opciones = {}) => {
     LEFT JOIN "Categorias" c ON p.id_categoria = c.id_categoria
     ${whereClause}
     ORDER BY p.fecha_creacion DESC
+    ${limitOffsetSql}
   `, params);
-  return result.rows;
+
+  if (!paginar) return result.rows;
+
+  const total = result.rows[0] ? Number(result.rows[0].total_count) : 0;
+  const data = result.rows.map(({ total_count, ...r }) => r);
+  return { data, total };
 };
 
 const crearProducto = async (datos) => {

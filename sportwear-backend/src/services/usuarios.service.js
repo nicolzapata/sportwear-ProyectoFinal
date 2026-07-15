@@ -5,8 +5,8 @@ const jwt = require('jsonwebtoken');
 const MAX_INTENTOS    = 5;
 const BLOQUEO_MINUTOS = 30;
 
-const listar = async () => {
-  return await usuarioModel.findAllConRol();
+const listar = async (opciones) => {
+  return await usuarioModel.findAllConRol(opciones);
 };
 
 const obtener = async (id) => {

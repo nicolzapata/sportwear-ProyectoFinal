@@ -3,7 +3,8 @@ const pedidosService = require('../services/pedidos.service');
 
 const getPedidos = async (req, res) => {
   try {
-    const data = await pedidosService.getPedidos();
+    const { page, limit, q } = req.query;
+    const data = await pedidosService.getPedidos({ page, limit, q });
     res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });

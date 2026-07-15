@@ -15,10 +15,12 @@ export default function PagosAbonos() {
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
 
   const [datos,      setDatos]      = useState([]);
+  const [totalPagos, setTotalPagos] = useState(0);
   const [ventas,     setVentas]     = useState([]);
   const [cargando,   setCargando]   = useState(true);
   const [errorMsg,   setErrorMsg]   = useState("");
   const [busqueda,   setBusqueda]   = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [pagina,     setPagina]     = useState(1);
   const [modal,      setModal]      = useState(false);
   const [verDetalle, setVerDetalle] = useState(null);
@@ -30,7 +32,7 @@ export default function PagosAbonos() {
   const [modalMetodos,   setModalMetodos]   = useState(false);
   const [nuevoMetodo,    setNuevoMetodo]    = useState("");
 
-  useEffect(() => { cargar(); cargarMetodos(); }, []);
+  useEffect(() => { cargarMetodos(); api.get("/ventas").then(r => setVentas(r.data)).catch(console.error); }, []);
 
   const cargarMetodos = async () => {
     try {
@@ -55,13 +57,13 @@ export default function PagosAbonos() {
     } catch (err) { alert(err.response?.data?.message ?? "Error al cambiar el estado del método."); }
   };
 
-  const cargar = async () => {
+  const cargar = async (pag = pagina, q = busquedaDebounced) => {
     setCargando(true);
     setErrorMsg("");
     try {
-      const [pagosRes, ventasRes] = await Promise.all([api.get("/pagos"), api.get("/ventas")]);
-      setDatos(pagosRes.data);
-      setVentas(ventasRes.data);
+      const { data } = await api.get("/pagos", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      setDatos(data.data);
+      setTotalPagos(data.total);
     } catch (err) {
       console.error("Error cargando pagos:", err);
       setErrorMsg("No se pudieron cargar los pagos. Intenta de nuevo.");
@@ -70,13 +72,22 @@ export default function PagosAbonos() {
     }
   };
 
+  // Buscador con debounce: evita disparar una petición por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  useEffect(() => { setPagina(1); }, [busquedaDebounced]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cargar(pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
+
   const handleVentaChange = (id_venta) => {
     setForm(f => ({ ...f, id_venta, tipo: "Pago completo" }));
   };
 
-  const filtrados       = datos.filter(p => p.cliente?.toLowerCase().includes(busqueda.toLowerCase()) || String(p.id_pago).includes(busqueda));
-  const totalPaginas    = Math.ceil(filtrados.length / FILAS_POR_PAGINA);
-  const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+  const totalPaginas = Math.ceil(totalPagos / FILAS_POR_PAGINA) || 1;
 
   const guardar = async () => {
     const e = {};
@@ -87,7 +98,7 @@ export default function PagosAbonos() {
     if (Object.keys(e).length > 0) return;
     setGuardando(true);
     try {
-      const { data: nuevo } = await api.post("/pagos", {
+      await api.post("/pagos", {
         id_venta: Number(form.id_venta),
         monto:    Number(form.monto),
         tipo:     form.tipo,
@@ -95,8 +106,7 @@ export default function PagosAbonos() {
         estado:   form.estado,
         fecha:    form.fecha || new Date().toISOString().split("T")[0],
       });
-      const venta = ventas.find(v => v.id_venta === Number(form.id_venta));
-      setDatos(prev => [{ ...nuevo, cliente: venta?.cliente ?? "—" }, ...prev]);
+      cargar();
       setModal(false);
     } catch (err) {
       alert(err.response?.data?.message ?? "Error al registrar el pago.");
@@ -149,7 +159,7 @@ export default function PagosAbonos() {
   };
 
   if (cargando) return <Loader text="Cargando pagos..." />;
-  if (errorMsg) return <div style={{ padding: 32, color: "var(--danger)" }}>{errorMsg}<button onClick={cargar} style={{ marginLeft: 12 }}>Reintentar</button></div>;
+  if (errorMsg) return <div style={{ padding: 32, color: "var(--danger)" }}>{errorMsg}<button onClick={() => cargar()} style={{ marginLeft: 12 }}>Reintentar</button></div>;
 
   return (
     <div className="pagosabonos-container">
@@ -157,8 +167,8 @@ export default function PagosAbonos() {
         <div className="pagosabonos-actions-left">
           <div className="pagosabonos-search-wrapper">
           <span className="pagosabonos-search-icon"><IconSearch /></span>
-          <input type="text" className="pagosabonos-search-input" placeholder="Buscar por cliente o ID..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
-          {busqueda && <button className="pagosabonos-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
+          <input type="text" className="pagosabonos-search-input" placeholder="Buscar por cliente o ID..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+          {busqueda && <button className="pagosabonos-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
           </div>
         </div>
         <div className="pagosabonos-actions-right">
@@ -171,7 +181,10 @@ export default function PagosAbonos() {
             </button>
           )}
           <ExportButtons
-            datos={filtrados}
+            obtenerDatos={async () => {
+              const { data } = await api.get("/pagos", { params: { q: busquedaDebounced || undefined } });
+              return data;
+            }}
             columnas={[
               { header: "Venta", value: (p) => `V-${String(p.id_venta).padStart(3, "0")}` },
               { header: "Cliente", key: "cliente" },
@@ -202,7 +215,7 @@ export default function PagosAbonos() {
             </tr>
           </thead>
           <tbody className="tbl-body">
-            {filtradosPagina.map((p) => (
+            {datos.map((p) => (
               <tr key={p.id_pago} className="tbl-row">
                 <td className="tbl-td"><span className="pagosabonos-venta-badge">V-{String(p.id_venta).padStart(3, "0")}</span></td>
                 <td className="tbl-td"><span className="pagosabonos-cliente-name">{p.cliente}</span></td>
@@ -229,7 +242,7 @@ export default function PagosAbonos() {
                 </td>
               </tr>
             ))}
-            {filtrados.length === 0 && (
+            {datos.length === 0 && (
               <tr><td colSpan={8} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>No hay pagos que coincidan con la búsqueda.</td></tr>
             )}
           </tbody>
@@ -242,7 +255,7 @@ export default function PagosAbonos() {
               <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
             <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} registros</span>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalPagos} registros</span>
           </div>
         )}
       </div>

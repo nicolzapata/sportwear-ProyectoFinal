@@ -19,8 +19,11 @@ export default function Colores() {
   const { usuario } = useAuth();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
 
-  const [datos,    setDatos]    = useState([]);
+  const [datos,    setDatos]    = useState([]); // listado completo (activos): alimenta la pestaña "Muestra"
+  const [datosLista, setDatosLista] = useState([]); // página actual de la pestaña "Lista"
+  const [totalColores, setTotalColores] = useState(0);
   const [busqueda, setBusqueda] = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [pagina,   setPagina]   = useState(1);
   const [modal,    setModal]    = useState(false);
   const [editar,   setEditar]   = useState(null);
@@ -45,11 +48,29 @@ export default function Colores() {
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
+
+  const cargarLista = async (pag = pagina, q = busquedaDebounced) => {
+    try {
+      const { data } = await api.get("/colores", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      setDatosLista(data.data);
+      setTotalColores(data.total);
+    } catch (err) { console.error(err); }
+  };
+
   useEffect(() => { cargar(); }, []);
 
-  const filtradosAll = datos.filter(c => c.nombre.toLowerCase().includes(busqueda.toLowerCase()));
-  const filtrados    = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
-  const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
+  // Buscador con debounce: evita disparar una petición por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  useEffect(() => { setPagina(1); }, [busquedaDebounced]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (tab === 'lista') cargarLista(pagina, busquedaDebounced); }, [tab, pagina, busquedaDebounced]);
+
+  const totalPaginas = Math.ceil(totalColores / FILAS_POR_PAGINA) || 1;
 
   const abrirRegistrar = () => { setEditar(null); setForm({ nombre: "", codigo_hex: "#000000", estado: "Activo" }); setModal(true); };
   const abrirEditar    = (c) => { setEditar(c.id_color); setForm({ nombre: c.nombre, codigo_hex: c.codigo_hex, estado: c.estado }); setModal(true); };
@@ -59,7 +80,7 @@ export default function Colores() {
     try {
       if (editar) await api.put(`/colores/${editar}`, form);
       else        await api.post("/colores", form);
-      setModal(false); cargar();
+      setModal(false); cargar(); cargarLista();
     } catch (err) { console.error(err); return false; }
   };
 
@@ -96,17 +117,17 @@ export default function Colores() {
     try {
       await api.delete(`/colores/${pendingDeleteId}`);
       setPendingDeleteId(null);
-      cargar();
+      cargar(); cargarLista();
     } catch (err) {
       setPendingDeleteId(null);
       showToast("error", err.response?.data?.message || "Error al eliminar color");
     }
   };
 
-  const toggleEstado = async (id, nuevoEstado) => {
+  const toggleEstado = async (id) => {
     try {
       await api.patch(`/colores/${id}/estado`);
-      setDatos(prev => prev.map(c => c.id_color === id ? { ...c, estado: nuevoEstado } : c));
+      cargar(); cargarLista();
     } catch { showToast("error", "Error al cambiar estado"); }
   };
 
@@ -178,8 +199,8 @@ export default function Colores() {
         <div className="colores-actions-left">
           <div className="colores-search-wrapper">
             <span className="colores-search-icon"><IconSearch /></span>
-            <input type="text" className="colores-search-input" placeholder="Buscar color..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
-            {busqueda && <button className="colores-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
+            <input type="text" className="colores-search-input" placeholder="Buscar color..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+            {busqueda && <button className="colores-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
           </div>
           <div className="colores-tabs-bar">
             <button className={`colores-tab-btn${tab === 'muestra' ? ' active' : ''}`} onClick={() => setTab('muestra')}><IconPalette /> Muestra</button>
@@ -192,7 +213,10 @@ export default function Colores() {
           )}
           {tab === 'lista' && (
             <ExportButtons
-              datos={filtradosAll}
+              obtenerDatos={async () => {
+                const { data } = await api.get("/colores", { params: { q: busquedaDebounced || undefined } });
+                return data;
+              }}
               columnas={[
                 { header: "Nombre", key: "nombre" },
                 { header: "HEX", key: "codigo_hex" },
@@ -231,7 +255,7 @@ export default function Colores() {
               </tr>
             </thead>
             <tbody className="tbl-body">
-              {filtrados.map((c) => (
+              {datosLista.map((c) => (
                 <tr key={c.id_color} className="tbl-row">
                   <td className="tbl-td">
                     <div className="colores-name-cell">
@@ -265,7 +289,7 @@ export default function Colores() {
                 <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
               ))}
               <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-              <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtradosAll.length} registros</span>
+              <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalColores} registros</span>
             </div>
           )}
           {/* Print button moved to top action bar */}

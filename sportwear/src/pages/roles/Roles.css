@@ -107,6 +107,20 @@
 .estado-activo   { color: #3a6648; }
 .estado-inactivo { color: #b83232; }
 
+.role-front-usuarios {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(26, 26, 26, 0.55);
+  background: rgba(255,255,255,0.5);
+  padding: 3px 12px;
+  border-radius: 20px;
+}
+.role-front-usuarios svg { width: 11px; height: 11px; flex-shrink: 0; }
+
 /* ── Botón "ver detalle" — esquina superior derecha del frente ── */
 .role-front-detail-btn {
   position: absolute;
@@ -259,6 +273,29 @@
   flex-shrink: 0;
 }
 
+/* Metadatos (fecha de creación) */
+.role-back-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 2px 8px;
+  border-bottom: 1px solid var(--dvna-border, #e8e0d8);
+  flex-shrink: 0;
+}
+.role-back-meta-label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dvna-muted, #999);
+}
+.role-back-meta-valor {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--dvna-charcoal, #1a1a1a);
+}
+
 /* Lista de módulos con permisos */
 .role-back-permisos {
   display: flex;
@@ -295,6 +332,54 @@
   background: white;
   color: var(--dvna-charcoal, #1a1a1a);
   white-space: nowrap;
+}
+
+/* Usuarios asignados */
+.role-back-usuarios {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.role-back-usuarios-titulo {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dvna-charcoal, #1a1a1a);
+}
+.role-back-usuarios-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.role-back-usuario-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--dvna-pale, #f7f4f1);
+  border: 1px solid var(--dvna-border, #e8e0d8);
+}
+.role-back-usuario-nombre {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--dvna-charcoal, #1a1a1a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.role-back-usuario-estado {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 /* Sin permisos */

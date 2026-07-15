@@ -1,16 +1,42 @@
 // src/services/categorias.service.js
 const pool = require('../config/db');
 
-const getCategorias = async () => {
+const getCategorias = async ({ page, limit, q } = {}) => {
+  const condiciones = [];
+  const params = [];
+  if (q) {
+    params.push(`%${q}%`);
+    condiciones.push(`c.nombre ILIKE $${params.length}`);
+  }
+  const whereClause = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
+
+  const paginar = page !== undefined;
+  let limitOffsetSql = '';
+  if (paginar) {
+    const pagina = Math.max(parseInt(page) || 1, 1);
+    const limite = Math.max(parseInt(limit) || 10, 1);
+    const offset = (pagina - 1) * limite;
+    params.push(limite, offset);
+    limitOffsetSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
+  }
+
   const result = await pool.query(
     `SELECT c.id_categoria, c.nombre, c.descripcion, c.estado, c.icono, c.fecha_creacion,
             COUNT(p.id_producto) FILTER (WHERE p.estado != 'Eliminado') AS total_productos
+            ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
      FROM "Categorias" c
      LEFT JOIN "Productos" p ON p.id_categoria = c.id_categoria
+     ${whereClause}
      GROUP BY c.id_categoria
-     ORDER BY c.nombre`
+     ORDER BY c.nombre
+     ${limitOffsetSql}`,
+    params
   );
-  return result.rows;
+
+  if (!paginar) return result.rows;
+  const total = result.rows[0] ? Number(result.rows[0].total_count) : 0;
+  const data = result.rows.map(({ total_count, ...r }) => r);
+  return { data, total };
 };
 
 const getCategoriaById = async (id) => {

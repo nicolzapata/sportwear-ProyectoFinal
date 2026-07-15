@@ -1,15 +1,38 @@
 // src/services/ventas.service.js
 const pool = require('../config/db');
 
-const getVentas = async () => {
+const getVentas = async ({ page, limit, q } = {}) => {
+  const params = [];
+  let busquedaSql = '';
+  if (q) {
+    params.push(`%${q}%`);
+    busquedaSql = `AND c.nombre ILIKE $${params.length}`;
+  }
+
+  const paginar = page !== undefined;
+  let limitOffsetSql = '';
+  if (paginar) {
+    const pagina = Math.max(parseInt(page) || 1, 1);
+    const limite = Math.max(parseInt(limit) || 10, 1);
+    const offset = (pagina - 1) * limite;
+    params.push(limite, offset);
+    limitOffsetSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
+  }
+
   const cab = await pool.query(`
     SELECT v.*, c.nombre AS cliente, c.email AS cliente_email
+           ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "Ventas" v
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
-    WHERE v.estado != 'Abandonado'
+    WHERE v.estado != 'Abandonado' ${busquedaSql}
     ORDER BY v.id_venta DESC
-  `);
-  const ids = cab.rows.map(v => v.id_venta);
+    ${limitOffsetSql}
+  `, params);
+
+  const total = cab.rows[0] ? Number(cab.rows[0].total_count) : 0;
+  const filas = cab.rows.map(({ total_count, ...r }) => r);
+
+  const ids = filas.map(v => v.id_venta);
   let detalles = [];
   if (ids.length) {
     const det = await pool.query(`
@@ -21,7 +44,10 @@ const getVentas = async () => {
     `, [ids]);
     detalles = det.rows;
   }
-  return cab.rows.map(v => ({ ...v, items: detalles.filter(d => d.id_venta === v.id_venta) }));
+  const data = filas.map(v => ({ ...v, items: detalles.filter(d => d.id_venta === v.id_venta) }));
+
+  if (!paginar) return data;
+  return { data, total };
 };
 
 const getVentaById = async (id) => {

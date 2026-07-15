@@ -5,7 +5,7 @@ import { exportarExcel, exportarPDF } from "../utils/exportar";
 import { IconFileText } from "./Icons";
 import "./ExportButtons.css";
 
-export default function ExportButtons({ datos, columnas, nombreArchivo = "exportacion", titulo = "" }) {
+export default function ExportButtons({ datos, obtenerDatos, columnas, nombreArchivo = "exportacion", titulo = "" }) {
   const [abierto, setAbierto] = useState(false);
   const [exportando, setExportando] = useState(false);
   const ref = useRef(null);
@@ -22,8 +22,11 @@ export default function ExportButtons({ datos, columnas, nombreArchivo = "export
     setAbierto(false);
     setExportando(true);
     try {
-      if (formato === "excel") await exportarExcel(datos, columnas, nombreArchivo, titulo);
-      else await exportarPDF(datos, columnas, nombreArchivo, titulo);
+      // Si la tabla pagina contra el backend, "datos" solo trae la página actual;
+      // obtenerDatos() (si se pasa) trae el total de resultados filtrados para exportar.
+      const filas = obtenerDatos ? await obtenerDatos() : datos;
+      if (formato === "excel") await exportarExcel(filas, columnas, nombreArchivo, titulo);
+      else await exportarPDF(filas, columnas, nombreArchivo, titulo);
     } catch {
       alert("No se pudo generar el archivo de exportación.");
     } finally {

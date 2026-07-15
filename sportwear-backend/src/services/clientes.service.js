@@ -13,19 +13,43 @@ const getClientes = async () => {
   return result.rows;
 };
 
-const getClientesConVentas = async () => {
+const getClientesConVentas = async ({ page, limit, q } = {}) => {
+  const params = [];
+  let busquedaSql = '';
+  if (q) {
+    params.push(`%${q}%`);
+    busquedaSql = `AND (cl.nombre ILIKE $${params.length} OR cl.documento ILIKE $${params.length})`;
+  }
+
+  const paginar = page !== undefined;
+  let limitOffsetSql = '';
+  if (paginar) {
+    const pagina = Math.max(parseInt(page) || 1, 1);
+    const limite = Math.max(parseInt(limit) || 10, 1);
+    const offset = (pagina - 1) * limite;
+    params.push(limite, offset);
+    limitOffsetSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
+  }
+
   const result = await pool.query(`
     SELECT cl.*, b.nombre AS barrio_nombre, b.zona,
            COUNT(v.id_venta) AS total_compras,
            COALESCE(SUM(v.total::numeric), 0) AS total_gastado
+           ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "Clientes" cl
     LEFT JOIN "Barrios" b ON cl.id_barrio = b.id_barrio
     LEFT JOIN "Ventas" v ON cl.id_cliente = v.id_cliente AND v.estado NOT IN ('Abandonado', 'Pendiente')
+    WHERE 1=1 ${busquedaSql}
     GROUP BY cl.id_cliente, b.nombre, b.zona
     HAVING COUNT(v.id_venta) > 0
     ORDER BY total_gastado DESC
-  `);
-  return result.rows;
+    ${limitOffsetSql}
+  `, params);
+
+  if (!paginar) return result.rows;
+  const total = result.rows[0] ? Number(result.rows[0].total_count) : 0;
+  const data = result.rows.map(({ total_count, ...r }) => r);
+  return { data, total };
 };
 
 const debugClientesVentas = async () => {
@@ -176,16 +200,39 @@ const actualizarMiPerfil = async (id, datos) => {
   if (!result.rows.length) throw { status: 404, message: 'Cliente no encontrado' };
   return result.rows[0];
 };
-const getClientesRolCliente = async () => {
+const getClientesRolCliente = async ({ page, limit, q } = {}) => {
+  const params = [];
+  let busquedaSql = '';
+  if (q) {
+    params.push(`%${q}%`);
+    busquedaSql = `AND (cl.nombre ILIKE $${params.length} OR cl.documento ILIKE $${params.length})`;
+  }
+
+  const paginar = page !== undefined;
+  let limitOffsetSql = '';
+  if (paginar) {
+    const pagina = Math.max(parseInt(page) || 1, 1);
+    const limite = Math.max(parseInt(limit) || 10, 1);
+    const offset = (pagina - 1) * limite;
+    params.push(limite, offset);
+    limitOffsetSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
+  }
+
   const result = await pool.query(`
     SELECT cl.*, b.nombre AS barrio_nombre, b.zona
+           ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "Clientes" cl
     INNER JOIN "Usuarios" u ON cl.id_cliente = u.id_cliente
     LEFT JOIN "Barrios" b ON cl.id_barrio = b.id_barrio
-    WHERE u.id_rol = 2
+    WHERE u.id_rol = 2 ${busquedaSql}
     ORDER BY cl.id_cliente DESC
-  `);
-  return result.rows;
+    ${limitOffsetSql}
+  `, params);
+
+  if (!paginar) return result.rows;
+  const total = result.rows[0] ? Number(result.rows[0].total_count) : 0;
+  const data = result.rows.map(({ total_count, ...r }) => r);
+  return { data, total };
 };
 
 module.exports = { getClientes, getClientesConVentas, getClienteById, crearCliente, actualizarCliente, toggleEstado, togglePermisoCuotas, actualizarMiPerfil, debugClientesVentas, getClientesRolCliente };

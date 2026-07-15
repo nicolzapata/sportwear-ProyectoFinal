@@ -3,17 +3,41 @@ const pool = require('../config/db');
 
 const ESTADOS_VALIDOS = ['Pendiente', 'En preparación', 'Enviado', 'Entregado', 'Cancelado'];
 
-const getPedidos = async () => {
+const getPedidos = async ({ page, limit, q } = {}) => {
+  const params = [];
+  let busquedaSql = '';
+  if (q) {
+    params.push(`%${q}%`);
+    busquedaSql = `WHERE c.nombre ILIKE $${params.length}`;
+  }
+
+  const paginar = page !== undefined;
+  let limitOffsetSql = '';
+  if (paginar) {
+    const pagina = Math.max(parseInt(page) || 1, 1);
+    const limite = Math.max(parseInt(limit) || 10, 1);
+    const offset = (pagina - 1) * limite;
+    params.push(limite, offset);
+    limitOffsetSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
+  }
+
   const result = await pool.query(`
     SELECT p.id_pedido, p.id_venta, p.estado_pedido, p.fecha_actualizacion,
            v.total, v.fecha AS fecha_venta, v.direccion_entrega, v.estado AS estado_venta,
            c.nombre AS cliente, c.email AS cliente_email
+           ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "Pedidos" p
     JOIN "Ventas" v    ON p.id_venta = v.id_venta
     JOIN "Clientes" c  ON v.id_cliente = c.id_cliente
+    ${busquedaSql}
     ORDER BY p.fecha_actualizacion DESC
-  `);
-  const ids = result.rows.map(p => p.id_venta);
+    ${limitOffsetSql}
+  `, params);
+
+  const total = result.rows[0] ? Number(result.rows[0].total_count) : 0;
+  const filas = result.rows.map(({ total_count, ...r }) => r);
+
+  const ids = filas.map(p => p.id_venta);
   let detalles = [];
   if (ids.length) {
     const det = await pool.query(`
@@ -25,7 +49,10 @@ const getPedidos = async () => {
     `, [ids]);
     detalles = det.rows;
   }
-  return result.rows.map(p => ({ ...p, items: detalles.filter(d => d.id_venta === p.id_venta) }));
+  const data = filas.map(p => ({ ...p, items: detalles.filter(d => d.id_venta === p.id_venta) }));
+
+  if (!paginar) return data;
+  return { data, total };
 };
 
 const getPedidoById = async (id_pedido) => {

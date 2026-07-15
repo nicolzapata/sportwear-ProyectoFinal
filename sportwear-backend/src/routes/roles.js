@@ -400,6 +400,20 @@ router.patch('/:id/estado', verificarToken, soloAdmin, async (req, res) => {
   } finally { client.release(); }
 });
 
+// ── GET /:id/usuarios — lista de usuarios asignados al rol ────────────────────
+router.get('/:id/usuarios', verificarToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT id_usuario, nombre, email, estado
+       FROM "Usuarios"
+       WHERE id_rol = $1
+       ORDER BY nombre ASC`,
+      [req.params.id]
+    );
+    res.json(rows);
+  } catch (err) { fail(res, err); }
+});
+
 // ── GET /:id/usuarios-count ───────────────────────────────────────────────────
 router.get('/:id/usuarios-count', verificarToken, async (req, res) => {
   try {

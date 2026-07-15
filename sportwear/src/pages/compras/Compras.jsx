@@ -164,7 +164,9 @@ export default function Compras() {
   const [error, setError] = useState("");
 
   const [busqueda, setBusqueda] = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [pagina, setPagina] = useState(1);
+  const [totalCompras, setTotalCompras] = useState(0);
   const [modal, setModal] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [verDetalle, setVerDetalle] = useState(null);
@@ -176,22 +178,23 @@ export default function Compras() {
   const [filaAbierta, setFilaAbierta] = useState(null);
   const [cambiandoEstadoTabla, setCambiandoEstadoTabla] = useState(false);
 
+  // Proveedores y productos: listado completo (sin paginar), alimentan los <select> del formulario.
   useEffect(() => {
-    cargarDatos();
+    Promise.all([api.get("/proveedores"), api.get("/productos")]).then(([proveedoresRes, productosRes]) => {
+      setProveedores(proveedoresRes.data || []);
+      setProductos((productosRes.data || []).filter((p) => p.estado === "Activo"));
+    }).catch((err) => {
+      setError(err.response?.data?.message || "No se pudo cargar la información de compras. Verifica tu conexión o tus permisos.");
+    });
   }, []);
 
-  const cargarDatos = async () => {
+  const cargarCompras = async (pag = pagina, q = busquedaDebounced) => {
     setCargando(true);
     setError("");
     try {
-      const [comprasRes, proveedoresRes, productosRes] = await Promise.all([
-        api.get("/compras"),
-        api.get("/proveedores"),
-        api.get("/productos"),
-      ]);
-      setCompras(comprasRes.data || []);
-      setProveedores(proveedoresRes.data || []);
-      setProductos((productosRes.data || []).filter((p) => p.estado === "Activo"));
+      const { data } = await api.get("/compras", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      setCompras(data.data || []);
+      setTotalCompras(data.total);
     } catch (err) {
       setError(err.response?.data?.message || "No se pudo cargar la información de compras. Verifica tu conexión o tus permisos.");
     } finally {
@@ -199,14 +202,18 @@ export default function Compras() {
     }
   };
 
-  const filtradosAll = compras.filter((c) =>
-    c.proveedor?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    c.nombre_comercial?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    String(c.id_compra).includes(busqueda) ||
-    c.numero_orden?.toLowerCase().includes(busqueda.toLowerCase())
-  );
-  const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA) || 1;
-  const filtrados = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+  // Buscador con debounce: evita disparar una petición por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  useEffect(() => { setPagina(1); }, [busquedaDebounced]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cargarCompras(pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
+
+  const totalPaginas = Math.ceil(totalCompras / FILAS_POR_PAGINA) || 1;
 
   // ── Manejo de líneas de producto dentro del formulario ──
   const actualizarItem = (index, campo, valor) => {
@@ -281,7 +288,7 @@ export default function Compras() {
       await api.post("/compras", payload);
       setModal(false);
       setForm(formInicial());
-      cargarDatos();
+      cargarCompras();
     } catch (err) {
       alert(err.response?.data?.message || "Error al registrar la compra");
     } finally {
@@ -379,10 +386,10 @@ export default function Compras() {
               className="compras-search-input"
               placeholder="Buscar por proveedor, N° orden o ID..."
               value={busqueda}
-              onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
+              onChange={(e) => setBusqueda(e.target.value)}
             />
             {busqueda && (
-              <button className="compras-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}>
+              <button className="compras-search-clear" onClick={() => setBusqueda("")}>
                 <IconX />
               </button>
             )}
@@ -398,7 +405,10 @@ export default function Compras() {
             </button>
           )}
           <ExportButtons
-            datos={filtradosAll}
+            obtenerDatos={async () => {
+              const { data } = await api.get("/compras", { params: { q: busquedaDebounced || undefined } });
+              return data;
+            }}
             columnas={[
               { header: "Proveedor", key: "proveedor" },
               { header: "N° Orden", key: "numero_orden" },
@@ -414,7 +424,7 @@ export default function Compras() {
       </div>
 
       <div className="compras-results-count">
-        {filtradosAll.length} compra{filtradosAll.length !== 1 ? 's' : ''} encontrada{filtradosAll.length !== 1 ? 's' : ''}
+        {totalCompras} compra{totalCompras !== 1 ? 's' : ''} encontrada{totalCompras !== 1 ? 's' : ''}
       </div>
 
       <div className="tbl-container compras-tbl-container">
@@ -431,7 +441,7 @@ export default function Compras() {
             </tr>
           </thead>
           <tbody className="tbl-body">
-            {filtrados.map((c) => (
+            {compras.map((c) => (
               <tr key={c.id_compra} className="tbl-row">
                 <td className="tbl-td"><span className="compras-proveedor-name">{c.proveedor}</span></td>
                 <td className="tbl-td">{c.numero_orden || "—"}</td>
@@ -462,7 +472,7 @@ export default function Compras() {
                 </td>
               </tr>
             ))}
-            {filtradosAll.length === 0 && (
+            {compras.length === 0 && (
               <tr>
                 <td colSpan={7} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
                   No hay compras que coincidan con la búsqueda.
@@ -479,7 +489,7 @@ export default function Compras() {
               <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
             <button className="paginador-btn" onClick={() => setPagina((p) => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtradosAll.length} registros</span>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalCompras} registros</span>
           </div>
         )}
       </div>

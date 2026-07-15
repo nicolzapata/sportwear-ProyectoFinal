@@ -557,6 +557,20 @@
   box-shadow: 0 0 0 3px rgba(209, 58, 47, 0.08);
 }
 
+/* Selector "Ordenar por" de la pestaña Categorías: más angosto que el resto de selects del formulario */
+.gestproductos-orden-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.gestproductos-orden-select {
+  width: auto;
+  min-width: 200px;
+  padding: 0.5rem 0.8rem;
+  font-family: var(--font-body);
+}
+
 /* Mensaje de error por campo */
 .gestproductos-field-error {
   margin: 0.3rem 0 0 0;

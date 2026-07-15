@@ -12,7 +12,8 @@ const getClientes = async (req, res) => {
 
 const getClientesConVentas = async (req, res) => {
   try {
-    const data = await clientesService.getClientesConVentas();
+    const { page, limit, q } = req.query;
+    const data = await clientesService.getClientesConVentas({ page, limit, q });
     res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
@@ -106,7 +107,8 @@ const actualizarMiPerfil = async (req, res) => {
 
 const getClientesRolCliente = async (req, res) => {
   try {
-    const data = await clientesService.getClientesRolCliente();
+    const { page, limit, q } = req.query;
+    const data = await clientesService.getClientesRolCliente({ page, limit, q });
     res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });

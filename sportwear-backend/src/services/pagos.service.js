@@ -2,15 +2,40 @@
 const pool = require('../config/db');
 const { enviarCorreo } = require('./mailer.service');
 
-const getPagos = async () => {
+const getPagos = async ({ page, limit, q } = {}) => {
+  const params = [];
+  let busquedaSql = '';
+  if (q) {
+    params.push(`%${q}%`);
+    busquedaSql = `AND (c.nombre ILIKE $${params.length} OR CAST(pa.id_pago AS TEXT) = $${params.length + 1})`;
+    params.push(q);
+  }
+
+  const paginar = page !== undefined;
+  let limitOffsetSql = '';
+  if (paginar) {
+    const pagina = Math.max(parseInt(page) || 1, 1);
+    const limite = Math.max(parseInt(limit) || 10, 1);
+    const offset = (pagina - 1) * limite;
+    params.push(limite, offset);
+    limitOffsetSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
+  }
+
   const result = await pool.query(`
     SELECT pa.*, v.id_cliente, c.nombre AS cliente
+           ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "PagosAbonos" pa
     JOIN "Ventas"   v ON pa.id_venta=v.id_venta
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
+    WHERE 1=1 ${busquedaSql}
     ORDER BY pa.id_pago DESC
-  `);
-  return result.rows;
+    ${limitOffsetSql}
+  `, params);
+
+  if (!paginar) return result.rows;
+  const total = result.rows[0] ? Number(result.rows[0].total_count) : 0;
+  const data = result.rows.map(({ total_count, ...r }) => r);
+  return { data, total };
 };
 
 const getPagoById = async (id) => {

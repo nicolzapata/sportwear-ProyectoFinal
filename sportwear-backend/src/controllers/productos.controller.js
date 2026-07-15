@@ -3,8 +3,8 @@ const productosService = require('../services/productos.service');
 
 const getProductos = async (req, res) => {
   try {
-    const { publicado, id_categoria, q, precio_min, precio_max, talla, color } = req.query;
-    const data = await productosService.getProductos({ publicado, id_categoria, q, precio_min, precio_max, talla, color });
+    const { publicado, id_categoria, id, q, precio_min, precio_max, talla, color, page, limit } = req.query;
+    const data = await productosService.getProductos({ publicado, id_categoria, id, q, precio_min, precio_max, talla, color, page, limit });
     res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });

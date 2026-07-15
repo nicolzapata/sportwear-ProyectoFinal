@@ -6,10 +6,35 @@ const makeController = (tabla, campos, pkField = `id_${tabla.toLowerCase()}`) =>
 
   const getAll = async (req, res) => {
     try {
+      const { page, limit, q } = req.query;
+      const params = [];
+      let busquedaSql = '';
+      if (q && campos.includes('nombre')) {
+        params.push(`%${q}%`);
+        const colEmail = campos.includes('email') ? ` OR email ILIKE $${params.length}` : '';
+        params.push(q);
+        busquedaSql = `WHERE (nombre ILIKE $1${colEmail} OR CAST("${pkField}" AS TEXT) = $${params.length})`;
+      }
+
+      const paginar = page !== undefined;
+      let limitOffsetSql = '';
+      if (paginar) {
+        const pagina = Math.max(parseInt(page) || 1, 1);
+        const limite = Math.max(parseInt(limit) || 10, 1);
+        const offset = (pagina - 1) * limite;
+        params.push(limite, offset);
+        limitOffsetSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
+      }
+
       const result = await pool.query(
-        `SELECT * FROM "${tabla}" ORDER BY 1 DESC`
+        `SELECT *${paginar ? ', COUNT(*) OVER() AS total_count' : ''} FROM "${tabla}" ${busquedaSql} ORDER BY 1 DESC ${limitOffsetSql}`,
+        params
       );
-      res.json(result.rows);
+
+      if (!paginar) return res.json(result.rows);
+      const total = result.rows[0] ? Number(result.rows[0].total_count) : 0;
+      const data = result.rows.map(({ total_count, ...r }) => r);
+      res.json({ data, total });
     } catch (err) { res.status(500).json({ message: err.message }); }
   };
 

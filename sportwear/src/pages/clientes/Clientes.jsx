@@ -25,12 +25,14 @@ export default function Clientes() {
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
 
   const [datos,        setDatos]        = useState([]);
+  const [totalClientes, setTotalClientes] = useState(0);
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState(null);
   const [barrios,      setBarrios]      = useState([]);
   const [zonas,        setZonas]        = useState([]);
   const [barFiltrados, setBarFiltrados] = useState([]);
   const [busqueda,     setBusqueda]     = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [pagina,       setPagina]       = useState(1);
   const [modal,        setModal]        = useState(false);
   const [pasoModal,    setPasoModal]    = useState(0);
@@ -63,32 +65,48 @@ export default function Clientes() {
     }
   };
 
+  const cargarClientes = async (pag = pagina, q = busquedaDebounced) => {
+    try {
+      const { data } = await api.get("/clientes/con-ventas", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      setDatos(data.data);
+      setTotalClientes(data.total);
+    } catch (err) {
+      setError(err.response?.data?.message || "Error al cargar clientes");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     Promise.all([
-      api.get("/clientes/con-ventas"),
       api.get("/barrios"),
       api.get("/barrios/zonas")
-    ]).then(([clientesRes, barriosRes, zonasRes]) => {
-      setDatos(clientesRes.data);
+    ]).then(([barriosRes, zonasRes]) => {
       setBarrios(barriosRes.data);
       setBarFiltrados(barriosRes.data);
       setZonas(zonasRes.data);
     }).catch((err) => {
       setError(err.response?.data?.message || "Error al cargar clientes");
-    }).finally(() => setLoading(false));
+    });
   }, []);
+
+  // Buscador con debounce: evita disparar una petición por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  useEffect(() => { setPagina(1); }, [busquedaDebounced]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cargarClientes(pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
 
   const handleZona = (zona) => {
     setBarFiltrados(zona ? barrios.filter(b => b.zona === zona) : barrios);
     setForm(f => ({ ...f, id_barrio: "" }));
   };
 
-  const filtradosAll = datos.filter(c =>
-    c.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    c.documento?.includes(busqueda)
-  );
-  const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA);
-  const filtrados    = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+  const totalPaginas = Math.ceil(totalClientes / FILAS_POR_PAGINA) || 1;
 
   const abrirRegistrar = () => { setEditar(null); setForm(FORM_VACIO); setBarFiltrados(barrios); setPasoModal(0); setModal(true); };
   const abrirEditar    = (c) => {
@@ -121,12 +139,11 @@ export default function Clientes() {
     const payload = { ...resto, nombre: `${nombres} ${apellidos}`.trim() };
     try {
       if (editar) {
-        const { data } = await api.put(`/clientes/${editar}`, payload);
-        setDatos(prev => prev.map(c => c.id_cliente === editar ? { ...c, ...data } : c));
+        await api.put(`/clientes/${editar}`, payload);
       } else {
-        const { data } = await api.post("/clientes", payload);
-        setDatos(prev => [...prev, { ...data, barrio_nombre: "", comuna: "" }]);
+        await api.post("/clientes", payload);
       }
+      cargarClientes();
       setModal(false);
     } catch (err) {
       if (!atenderErrorCampo(err)) {
@@ -271,15 +288,18 @@ export default function Clientes() {
       <div className="clientes-actions-bar">
         <div className="clientes-search-wrapper">
           <span className="clientes-search-icon"><IconSearch /></span>
-          <input type="text" className="clientes-search-input" placeholder="Buscar por nombre o documento..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
-          {busqueda && <button className="clientes-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
+          <input type="text" className="clientes-search-input" placeholder="Buscar por nombre o documento..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+          {busqueda && <button className="clientes-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
           </div>
           <div className="clientes-actions-right">
             {tienePerm('Clientes.crear') && (
               <button className="clientes-btn-primary" onClick={abrirRegistrar}><span>+</span> Nuevo cliente</button>
             )}
             <ExportButtons
-              datos={filtradosAll}
+              obtenerDatos={async () => {
+                const { data } = await api.get("/clientes/con-ventas", { params: { q: busquedaDebounced || undefined } });
+                return data;
+              }}
               columnas={[
                 { header: "Cliente", key: "nombre" },
                 { header: "Documento", value: (c) => `${c.tipo_doc} ${c.documento}` },
@@ -311,9 +331,9 @@ export default function Clientes() {
           <tbody className="tbl-body">
             {loading ? (
               <tr><td colSpan="8" className="tbl-td">Cargando clientes...</td></tr>
-            ) : filtrados.length === 0 ? (
+            ) : datos.length === 0 ? (
               <tr><td colSpan="8" className="tbl-td">No hay clientes con compras registradas</td></tr>
-            ) : filtrados.map((c) => (
+            ) : datos.map((c) => (
               <tr key={c.id_cliente} className="tbl-row">
                 <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
                 <td className="tbl-td"><span className="tabla-doc">{c.tipo_doc} {c.documento}</span></td>
@@ -343,7 +363,7 @@ export default function Clientes() {
               <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
             <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtradosAll.length} registros</span>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalClientes} registros</span>
           </div>
         )}
 

@@ -51,24 +51,23 @@ export default function Proveedores() {
   const [guardando, setGuardando] = useState(false);
 
   const [busqueda, setBusqueda] = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [modal, setModal] = useState(false);
   const [verDetalle, setVerDetalle] = useState(null);
   const [editar, setEditar] = useState(null);
   const [form, setForm] = useState(FORM_VACIO);
   const [errores, setErrores] = useState({});
   const [pagina, setPagina] = useState(1);
+  const [totalProveedores, setTotalProveedores] = useState(0);
   const [confirmarGuardar, setConfirmarGuardar] = useState(false);
 
-  useEffect(() => {
-    cargarProveedores();
-  }, []);
-
-  const cargarProveedores = async () => {
+  const cargarProveedores = async (pag = pagina, q = busquedaDebounced) => {
     setCargando(true);
     setError("");
     try {
-      const res = await api.get("/proveedores");
-      setDatos(res.data || []);
+      const { data } = await api.get("/proveedores", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      setDatos(data.data || []);
+      setTotalProveedores(data.total);
     } catch (err) {
       setError(err.response?.data?.message || "No se pudieron cargar los proveedores.");
     } finally {
@@ -76,14 +75,18 @@ export default function Proveedores() {
     }
   };
 
-  const filtradosAll = datos.filter(
-    (p) =>
-      p.razon_social?.toLowerCase().includes(busqueda.toLowerCase()) ||
-      p.nombre_comercial?.toLowerCase().includes(busqueda.toLowerCase()) ||
-      p.numero_doc?.includes(busqueda)
-  );
-  const filtrados = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
-  const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA) || 1;
+  // Buscador con debounce: evita disparar una petición por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  useEffect(() => { setPagina(1); }, [busquedaDebounced]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cargarProveedores(pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
+
+  const totalPaginas = Math.ceil(totalProveedores / FILAS_POR_PAGINA) || 1;
 
   const abrirRegistrar = () => {
     setEditar(null);
@@ -173,13 +176,9 @@ export default function Proveedores() {
     try {
       const { nombres_contacto, apellidos_contacto, ...resto } = form;
       const payload = { ...resto, nombre_contacto: `${nombres_contacto} ${apellidos_contacto}`.trim(), plazo_pago_dias: Number(form.plazo_pago_dias) || 30 };
-      if (editar) {
-        const res = await api.put(`/proveedores/${editar}`, payload);
-        setDatos((prev) => prev.map((p) => (p.id_proveedor === editar ? res.data : p)));
-      } else {
-        const res = await api.post("/proveedores", payload);
-        setDatos((prev) => [res.data, ...prev]);
-      }
+      if (editar) await api.put(`/proveedores/${editar}`, payload);
+      else        await api.post("/proveedores", payload);
+      cargarProveedores();
       setModal(false);
     } catch (err) {
       alert(err.response?.data?.message || "Error al guardar el proveedor");
@@ -217,10 +216,10 @@ export default function Proveedores() {
               className="proveedores-search-input"
               placeholder="Buscar proveedor o documento..."
               value={busqueda}
-              onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
+              onChange={(e) => setBusqueda(e.target.value)}
             />
             {busqueda && (
-              <button className="proveedores-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}>
+              <button className="proveedores-search-clear" onClick={() => setBusqueda("")}>
                 <IconX />
               </button>
             )}
@@ -233,7 +232,10 @@ export default function Proveedores() {
             </button>
           )}
           <ExportButtons
-            datos={filtradosAll}
+            obtenerDatos={async () => {
+              const { data } = await api.get("/proveedores", { params: { q: busquedaDebounced || undefined } });
+              return data;
+            }}
             columnas={[
               { header: "Empresa", value: (p) => p.nombre_comercial || p.razon_social },
               { header: "Documento", value: (p) => `${p.tipo_doc} ${p.numero_doc}` },
@@ -251,7 +253,7 @@ export default function Proveedores() {
       </div>
 
       <div className="proveedores-results-count">
-        {filtradosAll.length} proveedor{filtradosAll.length !== 1 ? 'es' : ''} encontrado{filtradosAll.length !== 1 ? 's' : ''}
+        {totalProveedores} proveedor{totalProveedores !== 1 ? 'es' : ''} encontrado{totalProveedores !== 1 ? 's' : ''}
       </div>
 
       <div className="tbl-container">
@@ -270,7 +272,7 @@ export default function Proveedores() {
             </tr>
           </thead>
           <tbody className="tbl-body">
-            {filtrados.map((p) => (
+            {datos.map((p) => (
               <tr key={p.id_proveedor} className="tbl-row">
                 <td className="tbl-td">
                   <span className="proveedores-empresa-name">{p.razon_social}</span>
@@ -295,7 +297,7 @@ export default function Proveedores() {
                 </td>
               </tr>
             ))}
-            {filtradosAll.length === 0 && (
+            {datos.length === 0 && (
               <tr>
                 <td colSpan={9} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>
                   No hay proveedores registrados todavía.
@@ -312,7 +314,7 @@ export default function Proveedores() {
               <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
             <button className="paginador-btn" onClick={() => setPagina((p) => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtradosAll.length} registros</span>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalProveedores} registros</span>
           </div>
         )}
       </div>

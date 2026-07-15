@@ -1,14 +1,39 @@
 // src/services/compras.service.js
 const pool = require('../config/db');
 
-const getCompras = async () => {
+const getCompras = async ({ page, limit, q } = {}) => {
+  const params = [];
+  let busquedaSql = '';
+  if (q) {
+    params.push(`%${q}%`);
+    busquedaSql = `WHERE (p.razon_social ILIKE $${params.length} OR p.nombre_comercial ILIKE $${params.length} OR c.numero_orden ILIKE $${params.length} OR CAST(c.id_compra AS TEXT) = $${params.length + 1})`;
+    params.push(q);
+  }
+
+  const paginar = page !== undefined;
+  let limitOffsetSql = '';
+  if (paginar) {
+    const pagina = Math.max(parseInt(page) || 1, 1);
+    const limite = Math.max(parseInt(limit) || 10, 1);
+    const offset = (pagina - 1) * limite;
+    params.push(limite, offset);
+    limitOffsetSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
+  }
+
   const cab = await pool.query(`
     SELECT c.*, p.razon_social AS proveedor, p.nombre_comercial
+           ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "Compras" c
     JOIN "Proveedores" p ON c.id_proveedor = p.id_proveedor
+    ${busquedaSql}
     ORDER BY c.id_compra DESC
-  `);
-  const ids = cab.rows.map(c => c.id_compra);
+    ${limitOffsetSql}
+  `, params);
+
+  const total = cab.rows[0] ? Number(cab.rows[0].total_count) : 0;
+  const filas = cab.rows.map(({ total_count, ...r }) => r);
+
+  const ids = filas.map(c => c.id_compra);
   let detalles = [];
   if (ids.length) {
     const det = await pool.query(`
@@ -21,7 +46,10 @@ const getCompras = async () => {
     `, [ids]);
     detalles = det.rows;
   }
-  return cab.rows.map(c => ({ ...c, items: detalles.filter(d => d.id_compra === c.id_compra) }));
+  const data = filas.map(c => ({ ...c, items: detalles.filter(d => d.id_compra === c.id_compra) }));
+
+  if (!paginar) return data;
+  return { data, total };
 };
 
 const getCompraById = async (id) => {

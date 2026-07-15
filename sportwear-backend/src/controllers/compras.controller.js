@@ -3,7 +3,8 @@ const comprasService = require('../services/compras.service');
 
 const getCompras = async (req, res) => {
   try {
-    const data = await comprasService.getCompras();
+    const { page, limit, q } = req.query;
+    const data = await comprasService.getCompras({ page, limit, q });
     res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });

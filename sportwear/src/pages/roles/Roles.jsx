@@ -96,11 +96,15 @@ const mergeModulos = (backendModulos) => {
 };
 
 // ── RoleCard ──────────────────────────────────────────────────────────────────
+const formatFecha = (fecha) =>
+  fecha ? new Date(fecha).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '—';
+
 function RoleCard({ rol, index, onEditar, onCambiarEstado, puedeEditar, puedeEstado }) {
   const [flipped,         setFlipped]         = useState(false);
   const [permisos,        setPermisos]        = useState([]);
-  const [loadingPermisos, setLoadingPermisos] = useState(false);
-  const [permisosLoaded,  setPermisosLoaded]  = useState(false);
+  const [usuariosAsignados, setUsuariosAsignados] = useState([]);
+  const [loadingDetalle,  setLoadingDetalle]  = useState(false);
+  const [detalleLoaded,   setDetalleLoaded]   = useState(false);
 
   const color     = PALETAS[index % PALETAS.length];
   const icon      = getRoleIcon(rol.nombre);
@@ -118,13 +122,17 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado, puedeEditar, puedeEst
 
   const handleFlipOpen = async (e) => {
     e.stopPropagation();
-    if (!permisosLoaded) {
-      setLoadingPermisos(true);
+    if (!detalleLoaded) {
+      setLoadingDetalle(true);
       try {
-        const { data } = await api.get(`/roles/${rol.id_rol}/permisos`);
-        setPermisos(Array.isArray(data) ? data : []);
-      } catch { setPermisos([]); }
-      finally { setLoadingPermisos(false); setPermisosLoaded(true); }
+        const [permisosRes, usuariosRes] = await Promise.all([
+          api.get(`/roles/${rol.id_rol}/permisos`),
+          api.get(`/roles/${rol.id_rol}/usuarios`),
+        ]);
+        setPermisos(Array.isArray(permisosRes.data) ? permisosRes.data : []);
+        setUsuariosAsignados(Array.isArray(usuariosRes.data) ? usuariosRes.data : []);
+      } catch { setPermisos([]); setUsuariosAsignados([]); }
+      finally { setLoadingDetalle(false); setDetalleLoaded(true); }
     }
     setFlipped(true);
   };
@@ -152,6 +160,15 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado, puedeEditar, puedeEst
               <svg width="5" height="5" viewBox="0 0 6 6"><circle cx="3" cy="3" r="3" fill="currentColor"/></svg>
               {rol.estado}
             </span>
+            {rol.usuarios_activos !== undefined && (
+              <span className="role-front-usuarios">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                {rol.usuarios_activos} usuario{Number(rol.usuarios_activos) !== 1 ? 's' : ''}
+              </span>
+            )}
             {protegido && (
               <span className="role-front-hint">
                 <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -179,7 +196,12 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado, puedeEditar, puedeEst
           </div>
 
           <div className="role-back-body">
-            {loadingPermisos ? (
+            <div className="role-back-meta">
+              <span className="role-back-meta-label">Creado</span>
+              <span className="role-back-meta-valor">{formatFecha(rol.fecha_creacion)}</span>
+            </div>
+
+            {loadingDetalle ? (
               <div className="role-back-loading">
                 <div className="role-back-spinner" />
                 <span>Cargando permisos...</span>
@@ -197,9 +219,27 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado, puedeEditar, puedeEst
                   </div>
                 ))}
               </div>
-            ) : permisosLoaded ? (
+            ) : detalleLoaded ? (
               <p className="role-back-empty">Sin permisos asignados</p>
             ) : null}
+
+            {!loadingDetalle && detalleLoaded && (
+              <div className="role-back-usuarios">
+                <span className="role-back-usuarios-titulo">Usuarios asignados ({usuariosAsignados.length})</span>
+                {usuariosAsignados.length > 0 ? (
+                  <ul className="role-back-usuarios-list">
+                    {usuariosAsignados.map((u) => (
+                      <li key={u.id_usuario} className="role-back-usuario-item">
+                        <span className="role-back-usuario-nombre" title={u.email}>{u.nombre}</span>
+                        <span className={`role-back-usuario-estado ${u.estado === 'Activo' ? 'estado-activo' : 'estado-inactivo'}`}>{u.estado}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="role-back-empty">Sin usuarios asignados</p>
+                )}
+              </div>
+            )}
 
             {protegido && (
               <div className="role-back-protected">

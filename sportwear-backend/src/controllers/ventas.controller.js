@@ -4,7 +4,8 @@ const { generarComprobanteVentaPDF } = require('../services/pdf.service');
 
 const getVentas = async (req, res) => {
   try {
-    const data = await ventasService.getVentas();
+    const { page, limit, q } = req.query;
+    const data = await ventasService.getVentas({ page, limit, q });
     res.json(data);
   } catch (err) {
     console.error('ERROR getVentas:', err);

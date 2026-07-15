@@ -34,6 +34,7 @@ export default function Usuarios() {
   };
   const [barrios,        setBarrios]        = useState([]);
   const [busqueda,       setBusqueda]       = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [modal,          setModal]          = useState(false);
   const [pasoModal,      setPasoModal]      = useState(0);
   const [detalle,        setDetalle]        = useState(null);
@@ -43,6 +44,8 @@ export default function Usuarios() {
   const [showPassword,   setShowPassword]   = useState(false);
   const [paginaUsuarios, setPaginaUsuarios] = useState(1);
   const [paginaClientes, setPaginaClientes] = useState(1);
+  const [totalUsuarios,  setTotalUsuarios]  = useState(0);
+  const [totalClientesTab, setTotalClientesTab] = useState(0);
   const [toast,          setToast]          = useState(null);
 
   const [filterType, setFilterType] = useState(() =>
@@ -111,46 +114,60 @@ export default function Usuarios() {
     return false;
   };
 
-  useEffect(() => {
-    const promesas = [api.get("/roles"), api.get("/barrios")];
-    if (tieneUsuarios) promesas.unshift(api.get("/usuarios"));
+  const cargarUsuarios = async (pag = paginaUsuarios, q = busquedaDebounced) => {
+    if (!tieneUsuarios) return;
+    try {
+      const { data } = await api.get("/usuarios", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      setUsuarios(data.data);
+      setTotalUsuarios(data.total);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  };
 
-    Promise.all(promesas).then((res) => {
-      if (tieneUsuarios) {
-        setUsuarios(res[0].data);
-        setRoles(res[1].data);
-        setBarrios(res[2].data);
-      } else {
-        setRoles(res[0].data);
-        setBarrios(res[1].data);
-      }
-    }).catch(console.error).finally(() => setLoading(false));
-  }, [tieneUsuarios]);
+  const cargarClientesTab = async (pag = paginaClientes, q = busquedaDebounced) => {
+    if (!tieneClientes) return;
+    try {
+      const { data } = await api.get("/clientes/rol-cliente", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      setClientes(data.data);
+      setTotalClientesTab(data.total);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
+  };
 
   useEffect(() => {
-    if (filterType === "clientes" && tieneClientes) {
-      api.get("/clientes/rol-cliente").then(r => setClientes(r.data)).catch(console.error);
-    }
-  }, [filterType, tieneClientes]);
+    Promise.all([api.get("/roles"), api.get("/barrios")]).then(([rolesRes, barriosRes]) => {
+      setRoles(rolesRes.data);
+      setBarrios(barriosRes.data);
+    }).catch(console.error).finally(() => {
+      if (!tieneUsuarios && !tieneClientes) setLoading(false);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Buscador con debounce: evita disparar una petición por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  useEffect(() => { setPaginaUsuarios(1); setPaginaClientes(1); }, [busquedaDebounced]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cargarUsuarios(paginaUsuarios, busquedaDebounced); }, [tieneUsuarios, paginaUsuarios, busquedaDebounced]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (filterType === "clientes") cargarClientesTab(paginaClientes, busquedaDebounced);
+  }, [filterType, tieneClientes, paginaClientes, busquedaDebounced]);
 
   const getRoleName = (id_rol) =>
     roles.find(r => Number(r.id_rol) === Number(id_rol))?.nombre || id_rol;
 
-  const filtrados = filterType === "usuarios"
-    ? usuarios.filter(u =>
-        u.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
-        u.email?.toLowerCase().includes(busqueda.toLowerCase()) ||
-        String(u.id_usuario).includes(busqueda.trim())
-      )
-    : clientes.filter(c =>
-        c.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
-        c.documento?.includes(busqueda)
-      );
-
   const pagina       = filterType === "usuarios" ? paginaUsuarios : paginaClientes;
   const setPagina    = filterType === "usuarios" ? setPaginaUsuarios : setPaginaClientes;
-  const totalPaginas = Math.ceil(filtrados.length / FILAS_POR_PAGINA);
-  const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+  const totalRegistros = filterType === "usuarios" ? totalUsuarios : totalClientesTab;
+  const totalPaginas = Math.ceil(totalRegistros / FILAS_POR_PAGINA) || 1;
+  const filtradosPagina = filterType === "usuarios" ? usuarios : clientes;
 
   const abrirDetalle = async (u) => {
     setDetalle(u);
@@ -254,7 +271,7 @@ export default function Usuarios() {
     try {
       if (!editar) await api.post("/usuarios", payload);
       else         await api.put(`/usuarios/${editar}`, payload);
-      cargar();
+      cargarUsuarios();
       setModal(false);
     } catch (err) {
       if (!atenderErrorCampo(err, setErrores)) {
@@ -324,14 +341,13 @@ export default function Usuarios() {
     const payload = { ...resto, nombre: `${nombres} ${apellidos}`.trim() };
     try {
       if (editar) {
-        const { data } = await api.put(`/clientes/${editar}`, payload);
-        setClientes(prev => prev.map(c => c.id_cliente === editar ? { ...c, ...data } : c));
+        await api.put(`/clientes/${editar}`, payload);
         showToast("exito", "Cliente actualizado correctamente.");
       } else {
-        const { data } = await api.post("/clientes", payload);
-        setClientes(prev => [...prev, { ...data, barrio_nombre: "" }]);
+        await api.post("/clientes", payload);
         showToast("exito", "Cliente registrado correctamente.");
       }
+      cargarClientesTab();
       setModal(false);
     } catch (err) {
       if (!atenderErrorCampo(err, setErroresCliente)) {
@@ -339,10 +355,6 @@ export default function Usuarios() {
       }
       return false;
     }
-  };
-
-  const cargar = () => {
-    if (tieneUsuarios) api.get("/usuarios").then(r => setUsuarios(r.data)).catch(console.error);
   };
 
   const toggleEstadoUsuario = async (id, nuevoEstado) => {
@@ -601,8 +613,8 @@ export default function Usuarios() {
           <div className="usuarios-search-wrapper">
             <span className="usuarios-search-icon"><IconSearch /></span>
             <input type="text" className="usuarios-search-input" placeholder={filterType === 'usuarios' ? "Buscar por nombre, email o ID..." : "Buscar por nombre o documento..."} value={busqueda}
-              onChange={e => { setBusqueda(e.target.value); setPaginaUsuarios(1); setPaginaClientes(1); }} />
-            {busqueda && <button className="usuarios-search-clear" onClick={() => { setBusqueda(""); setPaginaUsuarios(1); setPaginaClientes(1); }}><IconX /></button>}
+              onChange={e => setBusqueda(e.target.value)} />
+            {busqueda && <button className="usuarios-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
           </div>
 
           {tieneUsuarios && tieneClientes && (
@@ -621,7 +633,11 @@ export default function Usuarios() {
             <button className="usuarios-btn-primary" onClick={abrirRegistrarCliente}><span>+</span> Nuevo cliente</button>
           )}
           <ExportButtons
-            datos={filtrados}
+            obtenerDatos={async () => {
+              const url = filterType === 'usuarios' ? "/usuarios" : "/clientes/rol-cliente";
+              const { data } = await api.get(url, { params: { q: busquedaDebounced || undefined } });
+              return data;
+            }}
             columnas={filterType === 'usuarios' ? [
               { header: "Usuario", key: "nombre" },
               { header: "Email", key: "email" },
@@ -730,7 +746,7 @@ export default function Usuarios() {
               <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
             <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} registros</span>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalRegistros} registros</span>
           </div>
         )}
       </div>
