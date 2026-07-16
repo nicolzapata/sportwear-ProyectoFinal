@@ -400,7 +400,7 @@ export default function PedidosVentas() {
       </div>
 
       <div className="tbl-container pedidosventas-tbl-container">
-        <table className="tbl">
+        <table className="tbl pedidosventas-tabla">
           <thead className="tbl-header">
             <tr>
               <th className="tbl-th">Cliente</th>

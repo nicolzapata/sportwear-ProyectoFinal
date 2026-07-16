@@ -52,8 +52,11 @@
 .pedidos-action-btn:hover { border-color: #1a1a1a; background: #fafafa; }
 
 /* ── Ancho fijo de la columna "Estado" (5ª columna) para que no empuje
-     el resto de la tabla cuando el texto del estado cambia de largo ── */
-.tbl th:nth-child(5), .tbl td:nth-child(5) {
+     el resto de la tabla cuando el texto del estado cambia de largo ──
+     Escopado a .pedidos-tabla (no .tbl a secas): .tbl es la clase
+     compartida por todas las tablas del sistema, y nth-child(5) sin
+     ámbito colisionaba con la 5ª columna de otras páginas (ej. GestProductos). */
+.pedidos-tabla th:nth-child(5), .pedidos-tabla td:nth-child(5) {
   width: 170px;
   min-width: 170px;
 }

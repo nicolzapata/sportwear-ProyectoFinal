@@ -256,7 +256,7 @@ export default function Pedidos() {
       </div>
 
       <div className="tbl-container pedidos-tbl-container">
-        <table className="tbl">
+        <table className="tbl pedidos-tabla">
           <thead className="tbl-header">
             <tr>
               <th className="tbl-th">Cliente</th>

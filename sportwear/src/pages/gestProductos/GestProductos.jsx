@@ -1,5 +1,6 @@
 // src/pages/productos/GestProductos.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -16,6 +17,97 @@ import "./GestProductos.css";
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const ERRORES_INICIALES = { nombre: "", id_categoria: "", precio: "", general: "" };
 const FORM_VACIO = { nombre: "", descripcion: "", id_categoria: "", precio: "", publicado: false, estado: "Activo" };
+
+// ── Medición de chips de la columna Tallas/Colores ─────────────────────────
+// La columna tiene un ancho fijo (ver .gestproductos-th-variantes en el CSS);
+// en vez de mostrar un número fijo de chips, se estima el ancho real de cada
+// uno (canvas measureText) y se calculan cuántos caben antes de resumir el
+// resto en un chip "+N más".
+const ANCHO_COL_VARIANTES = 190;
+const ANCHO_CHIP_MAS = 56;
+const ANCHO_CHIP_FIJO = 14 /* swatch */ + 6 /* gap swatch-texto */ + 20 /* padding */ + 2 /* borde */;
+const GAP_CHIPS = 6;
+let medirCanvas = null;
+const anchoTexto = (texto) => {
+  if (typeof document === "undefined") return texto.length * 6.5;
+  if (!medirCanvas) medirCanvas = document.createElement("canvas");
+  const ctx = medirCanvas.getContext("2d");
+  ctx.font = "500 12px Jost, sans-serif";
+  return ctx.measureText(texto).width;
+};
+const anchoChip = (texto) => ANCHO_CHIP_FIJO + anchoTexto(texto);
+
+const IconChevronDown = () => (
+  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
+// ── Dropdown "+N más" de Tallas/Colores (mismo patrón visual que el
+// dropdown de estado de Compras): botón pill con chevron que abre, vía
+// portal a document.body, un panel con los colores ocultos — así no queda
+// recortado por el overflow de la tabla ni por el ancho fijo de la celda. ──
+function VariantesMasDropdown({ grupos, restantes, abierto, onToggle, productoId }) {
+  const btnRef = useRef(null);
+  const panelRef = useRef(null);
+  const [coords, setCoords] = useState(null);
+
+  useEffect(() => {
+    if (!abierto || !btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 6, left: r.left, width: r.width });
+  }, [abierto]);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrar = (e) => {
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        panelRef.current && !panelRef.current.contains(e.target)
+      ) onToggle(null);
+    };
+    const cerrarPorScroll = () => onToggle(null);
+    document.addEventListener('mousedown', cerrar);
+    window.addEventListener('scroll', cerrarPorScroll, true);
+    window.addEventListener('resize', cerrarPorScroll);
+    return () => {
+      document.removeEventListener('mousedown', cerrar);
+      window.removeEventListener('scroll', cerrarPorScroll, true);
+      window.removeEventListener('resize', cerrarPorScroll);
+    };
+  }, [abierto, onToggle]);
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        type="button"
+        className="gestproductos-variante-chip gestproductos-variante-mas"
+        onClick={() => onToggle(abierto ? null : productoId)}
+        title={`+${restantes} más`}
+        aria-label={`Ver ${restantes} colores más`}
+      >
+        <IconChevronDown />
+      </button>
+
+      {abierto && coords && createPortal(
+        <div
+          ref={panelRef}
+          className="gestproductos-variantes-panel"
+          style={{ position: 'fixed', top: coords.top, left: coords.left, minWidth: Math.max(coords.width, 190) }}
+        >
+          {grupos.map(g => (
+            <div key={g.id_color} className="gestproductos-variantes-panel-item">
+              <span className="gestproductos-variantes-panel-dot" style={{ background: g.codigo_hex || "#ccc" }} />
+              <span className="gestproductos-variantes-panel-label">{g.nombre}: {g.tallas.join(", ")}</span>
+            </div>
+          ))}
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
 
 export default function GestProductos() {
   const { usuario } = useAuth();
@@ -43,6 +135,7 @@ export default function GestProductos() {
   const [tab,              setTab]              = useState("productos");
   const [paginaProductos,  setPaginaProductos]  = useState(1);
   const [paginaCategorias, setPaginaCategorias] = useState(1);
+  const [variantesDropdownAbierto, setVariantesDropdownAbierto] = useState(null);
   const FILAS_POR_PAGINA = 10;
 
   const [formCategoria,    setFormCategoria]    = useState({ nombre: "", icono: "tag" });
@@ -295,9 +388,28 @@ export default function GestProductos() {
   };
 
   const stockBadge = (stock) => {
-    if (stock === 0) return <span className="tabla-stock agotado">Agotado</span>;
-    if (stock < 5)  return <span className="tabla-stock bajo">{stock} uds <IconAlertTriangle /></span>;
+    if (stock === 0) return <span className="tabla-stock agotado"><IconAlertTriangle /> Agotado</span>;
+    if (stock <= 6)  return <span className="tabla-stock bajo"><IconAlertTriangle /> {stock} uds</span>;
     return <span className="tabla-stock normal">{stock} uds</span>;
+  };
+
+  // Agrupa las variantes de un producto por color: un solo chip por color
+  // con sus tallas concatenadas, en vez de un chip por combinación color+talla.
+  const agruparVariantesPorColor = (variantes) => {
+    const grupos = new Map();
+    variantes.forEach(v => {
+      if (!grupos.has(v.id_color)) grupos.set(v.id_color, { id_color: v.id_color, nombre: v.color_nombre, codigo_hex: v.codigo_hex, tallas: [] });
+      grupos.get(v.id_color).tallas.push(v.talla);
+    });
+    return [...grupos.values()];
+  };
+
+  // Colores blancos/muy claros necesitan un borde más marcado en el swatch
+  // para no perderse contra el fondo claro de la tabla.
+  const esColorClaro = (hex) => {
+    if (!hex || hex.length !== 7) return true;
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.85;
   };
 
   if (loading) return <Loader text="Cargando productos..." />;
@@ -392,18 +504,18 @@ export default function GestProductos() {
 
       {tab === 'productos' ? (
         <div className="gestproductos-table-container">
-          <table className="tbl">
+          <table className="tbl gestproductos-tabla">
             <thead className="tbl-header">
               <tr>
-                <th className="tbl-th">Imagen</th>
-                <th className="tbl-th">Producto</th>
-                <th className="tbl-th">Categoría</th>
-                <th className="tbl-th">Precio</th>
-                <th className="tbl-th">Stock</th>
-                <th className="tbl-th">Tallas/Colores</th>
-                {tienePerm('Productos.publicar') && <th className="tbl-th">Publicado</th>}
-                {tienePerm('Productos.estado') && <th className="tbl-th">Estado</th>}
-                <th className="tbl-th">Acciones</th>
+                <th className="tbl-th gestproductos-th-imagen">Imagen</th>
+                <th className="tbl-th gestproductos-th-producto">Producto</th>
+                <th className="tbl-th gestproductos-th-categoria">Categoría</th>
+                <th className="tbl-th gestproductos-th-compacto gestproductos-th-precio">Precio</th>
+                <th className="tbl-th gestproductos-th-compacto gestproductos-th-stock">Stock</th>
+                <th className="tbl-th gestproductos-th-variantes">Tallas/Colores</th>
+                {tienePerm('Productos.publicar') && <th className="tbl-th gestproductos-th-toggle">Publicado</th>}
+                {tienePerm('Productos.estado') && <th className="tbl-th gestproductos-th-toggle">Estado</th>}
+                <th className="tbl-th gestproductos-th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody className="tbl-body">
@@ -418,26 +530,61 @@ export default function GestProductos() {
                         : <div className="gestproductos-img-placeholder">Sin imagen</div>}
                     </div>
                   </td>
-                  <td className="tbl-td"><div className="gestproductos-product-name">{p.nombre}</div></td>
-                  <td className="tbl-td"><span className="tabla-categoria">{p.categoria}</span></td>
-                  <td className="tbl-td gestproductos-precio-cell">{fmt(p.precio)}</td>
-                  <td className="tbl-td">{stockBadge(p.stock ?? 0)}</td>
+                  <td className="tbl-td"><div className="gestproductos-product-name" title={p.nombre}>{p.nombre}</div></td>
+                  <td className="tbl-td"><span className="tabla-categoria" title={p.categoria}>{p.categoria}</span></td>
+                  <td className="tbl-td gestproductos-td-compacto gestproductos-precio-cell">{fmt(p.precio)}</td>
+                  <td className="tbl-td gestproductos-td-compacto gestproductos-stock-cell">{stockBadge(p.stock ?? 0)}</td>
                   <td className="tbl-td">
-                    {p.variantes?.length > 0 ? (
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                        {p.variantes.map(v => (
-                          <span key={v.id_variante} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10, background: "var(--dvna-pale)", border: "1px solid var(--dvna-border)", borderRadius: "var(--r)", padding: "2px 7px" }}>
-                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: v.codigo_hex || "#ccc", flexShrink: 0 }} />
-                            {v.talla}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span style={{ fontSize: 11, color: "var(--dvna-muted)", fontStyle: "italic" }}>Sin variantes</span>
+                    {p.variantes?.length > 0 ? (() => {
+                      const grupos = agruparVariantesPorColor(p.variantes).map(g => ({ ...g, texto: g.tallas.join(" · ") }));
+
+                      // ¿Cuántos chips caben completos en el ancho fijo de la columna? Se
+                      // estima el ancho real de cada uno y siempre se reserva espacio para
+                      // el chip "+N más" mientras queden grupos sin mostrar — incluso el
+                      // primer chip se descarta (pasa a sumarse en el "+N más") si no entra
+                      // completo, en vez de dejarlo sobresalir del límite de la celda.
+                      let anchoUsado = 0;
+                      let visibles = [];
+                      for (let i = 0; i < grupos.length; i++) {
+                        const g = grupos[i];
+                        const hayMasDespues = i < grupos.length - 1;
+                        const anchoNecesario = anchoChip(g.texto) + (visibles.length > 0 ? GAP_CHIPS : 0) + (hayMasDespues ? ANCHO_CHIP_MAS + GAP_CHIPS : 0);
+                        if (anchoUsado + anchoNecesario > ANCHO_COL_VARIANTES) break;
+                        visibles.push(g);
+                        anchoUsado += anchoChip(g.texto) + (visibles.length > 1 ? GAP_CHIPS : 0);
+                      }
+                      const restantes = grupos.length - visibles.length;
+
+                      return (
+                        <div className="gestproductos-variantes-cell">
+                          {visibles.map(g => {
+                            const swatchStyle = esColorClaro(g.codigo_hex)
+                              ? { background: g.codigo_hex || "#ccc", border: "2px solid #ccc" }
+                              : { background: g.codigo_hex || "#ccc" };
+                            return (
+                              <span key={g.id_color} className="gestproductos-variante-chip" title={`${g.nombre}: ${g.tallas.join(", ")}`}>
+                                <span className="gestproductos-variante-swatch" style={swatchStyle} />
+                                <span className="gestproductos-variante-tallas">{g.texto}</span>
+                              </span>
+                            );
+                          })}
+                          {restantes > 0 && (
+                            <VariantesMasDropdown
+                              grupos={grupos.slice(visibles.length)}
+                              restantes={restantes}
+                              productoId={p.id_producto}
+                              abierto={variantesDropdownAbierto === p.id_producto}
+                              onToggle={setVariantesDropdownAbierto}
+                            />
+                          )}
+                        </div>
+                      );
+                    })() : (
+                      <span className="gestproductos-sin-variantes">Sin variantes</span>
                     )}
                   </td>
                   {tienePerm('Productos.publicar') && (
-                    <td className="tbl-td">
+                    <td className="tbl-td gestproductos-td-toggle">
                       <StatusToggle
                         id={p.id_producto}
                         estado={p.publicado ? "Activo" : "Inactivo"}
@@ -448,7 +595,7 @@ export default function GestProductos() {
                     </td>
                   )}
                   {tienePerm('Productos.estado') && (
-                    <td className="tbl-td">
+                    <td className="tbl-td gestproductos-td-toggle">
                       <StatusToggle id={p.id_producto} estado={p.estado} onToggle={toggleEstadoProducto} showConfirmation={true} />
                     </td>
                   )}

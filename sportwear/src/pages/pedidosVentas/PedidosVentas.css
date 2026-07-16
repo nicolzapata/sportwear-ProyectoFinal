@@ -274,8 +274,13 @@
 }
 
 /* ── Ancho fijo de la columna "Estado" (7ª columna, tras fusionar Cant./Abonos/Saldo)
-     para que no empuje el resto de la tabla cuando el texto del estado cambia de largo ── */
-.tbl th:nth-child(7), .tbl td:nth-child(7) {
+     para que no empuje el resto de la tabla cuando el texto del estado cambia de largo ──
+     Escopado a .pedidosventas-tabla (no .tbl a secas): .tbl es la clase
+     compartida por todas las tablas del sistema, y nth-child(7) sin ámbito
+     colisionaba con la 7ª columna de otras páginas (ej. "Publicado" en
+     GestProductos, que terminaba forzado a 160px sin que ningún override
+     local pudiera vencerlo). */
+.pedidosventas-tabla th:nth-child(7), .pedidosventas-tabla td:nth-child(7) {
   width: 160px;
   min-width: 160px;
 }
