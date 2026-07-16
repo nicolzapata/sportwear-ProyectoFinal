@@ -147,11 +147,9 @@ export default function PedidosVentas() {
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
 
   const [datos,       setDatos]       = useState([]);
-  const [totalVentas, setTotalVentas] = useState(0);
   const [cargando,    setCargando]    = useState(true);
   const [errorMsg,    setErrorMsg]    = useState("");
   const [busqueda,    setBusqueda]    = useState("");
-  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [pagina,      setPagina]      = useState(1);
   const [verDetalle,  setVerDetalle]  = useState(null);
   const [abonosModal, setAbonosModal] = useState(null);
@@ -170,16 +168,18 @@ export default function PedidosVentas() {
   const [cargandoDatosVenta, setCargandoDatosVenta] = useState(false);
   const [errorDatosVenta,   setErrorDatosVenta]   = useState("");
 
-  const cargar = async (pag = pagina, q = busquedaDebounced) => {
+  useEffect(() => { cargar(); }, []);
+
+  const cargar = async () => {
     setCargando(true);
     setErrorMsg("");
     try {
       const [ventasRes, pagosRes] = await Promise.all([
-        api.get("/ventas", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } }),
+        api.get("/ventas"),
         api.get("/pagos")
       ]);
 
-      const ventas = ventasRes.data.data.map(v => {
+      const ventas = ventasRes.data.map(v => {
         const abonos      = pagosRes.data.filter(p => p.id_venta === v.id_venta);
         const totalPagado = abonos.reduce((sum, p) => sum + (p.estado === "Confirmado" ? Number(p.monto) : 0), 0);
 
@@ -197,7 +197,6 @@ export default function PedidosVentas() {
       }).filter(Boolean);
 
       setDatos(ventas);
-      setTotalVentas(ventasRes.data.total);
     } catch (err) {
       console.error("Error cargando datos:", err);
       setErrorMsg("Error al cargar los datos");
@@ -205,17 +204,6 @@ export default function PedidosVentas() {
       setCargando(false);
     }
   };
-
-  // Buscador con debounce: evita disparar una petición por cada tecla.
-  useEffect(() => {
-    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
-    return () => clearTimeout(t);
-  }, [busqueda]);
-
-  useEffect(() => { setPagina(1); }, [busquedaDebounced]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { cargar(pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
 
   // ── Cargar clientes y productos solo cuando se abre el modal de nueva venta ──
   const cargarDatosVenta = async () => {
@@ -318,7 +306,9 @@ export default function PedidosVentas() {
     }
   };
 
-  const totalPaginas     = Math.ceil(totalVentas / FILAS_POR_PAGINA) || 1;
+  const filtrados        = datos.filter(v => v.cliente?.toLowerCase().includes(busqueda.toLowerCase()));
+  const totalPaginas     = Math.ceil(filtrados.length / FILAS_POR_PAGINA);
+  const filtradosPagina  = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
   const cambiarEstado = async (id, estado) => {
     setCambiandoEstado(true);
@@ -372,8 +362,11 @@ export default function PedidosVentas() {
     }
   };
 
-  if (cargando) return <div style={{ padding: 48, color: "var(--muted)" }}>Cargando ventas...</div>;
-  if (errorMsg) return <div style={{ padding: 32, color: "var(--danger)" }}>{errorMsg}</div>;
+  if (errorMsg) return (
+    <div className="pedidosventas-container">
+      <div className="pedidosventas-error-banner"><IconX /> {errorMsg}</div>
+    </div>
+  );
 
   return (
     <div className="pedidosventas-container">
@@ -381,8 +374,8 @@ export default function PedidosVentas() {
         <div className="pedidosventas-actions-left">
           <div className="pedidosventas-search-wrapper">
             <span className="pedidosventas-search-icon"><IconSearch /></span>
-            <input type="text" className="pedidosventas-search-input" placeholder="Buscar por cliente o ID..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
-            {busqueda && <button className="pedidosventas-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
+            <input type="text" className="pedidosventas-search-input" placeholder="Buscar por cliente o ID..." value={busqueda} onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }} />
+            {busqueda && <button className="pedidosventas-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}><IconX /></button>}
           </div>
         </div>
         <div className="pedidosventas-actions-right">
@@ -396,11 +389,11 @@ export default function PedidosVentas() {
       </div>
 
       <div className="pedidosventas-results-count">
-        {totalVentas} venta{totalVentas !== 1 ? 's' : ''} encontrada{totalVentas !== 1 ? 's' : ''}
+        {cargando ? "Cargando..." : `${filtrados.length} venta${filtrados.length !== 1 ? 's' : ''} encontrada${filtrados.length !== 1 ? 's' : ''}`}
       </div>
 
       <div className="tbl-container pedidosventas-tbl-container">
-        <table className="tbl pedidosventas-tabla">
+        <table className="tbl">
           <thead className="tbl-header">
             <tr>
               <th className="tbl-th">Cliente</th>
@@ -414,7 +407,15 @@ export default function PedidosVentas() {
             </tr>
           </thead>
           <tbody className="tbl-body">
-            {datos.map((v) => {
+            {cargando ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <tr key={i} className="tbl-row">
+                  {Array.from({ length: 8 }).map((__, j) => (
+                    <td className="tbl-td" key={j}><div className="pedidosventas-skeleton-cell" /></td>
+                  ))}
+                </tr>
+              ))
+            ) : filtradosPagina.map((v) => {
               const cantTotal = v.items?.reduce((sum, i) => sum + i.cantidad, 0) || 0;
               const saldo = v.total - (v.total_pagado || 0);
               const pct = v.total > 0 ? Math.min(100, Math.round(((v.total_pagado || 0) / v.total) * 100)) : 0;
@@ -464,8 +465,10 @@ export default function PedidosVentas() {
               </tr>
               );
             })}
-            {datos.length === 0 && (
-              <tr><td colSpan={8} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>No hay ventas registradas</td></tr>
+            {!cargando && filtrados.length === 0 && (
+              <tr><td colSpan={8} style={{ padding: 0 }}>
+                <div className="pedidosventas-empty-state"><IconDollar /><p>No hay ventas registradas.</p></div>
+              </td></tr>
             )}
           </tbody>
         </table>
@@ -477,7 +480,7 @@ export default function PedidosVentas() {
               <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
             <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-            <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalVentas} registros</span>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} registros</span>
           </div>
         )}
       </div>

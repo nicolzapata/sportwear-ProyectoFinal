@@ -17,6 +17,14 @@ const getResumen = async () => {
       (SELECT COALESCE(SUM(total),0) FROM "Compras" WHERE estado != 'Anulado' AND fecha::date = CURRENT_DATE) AS compras_hoy
   `);
 
+  const stats = statsResult.rows[0];
+
+  // ── NUEVO: número de ventas cobradas + ticket promedio (faltaban, el frontend ya los esperaba) ──
+  const numeroVentas = Number(stats.ventas_totales) || 0;
+  const ingresosTotales = Number(stats.ingresos_totales) || 0;
+  stats.numero_ventas = numeroVentas;
+  stats.ticket_promedio = numeroVentas > 0 ? ingresosTotales / numeroVentas : 0;
+
   const topResult = await pool.query(`
     SELECT p.nombre, SUM(dv.cantidad) AS total_vendido
     FROM "DetalleVenta" dv
@@ -40,9 +48,9 @@ const getResumen = async () => {
   `);
 
   const clientesRecientesResult = await pool.query(`
-    SELECT id_cliente, nombre, email, fecha_creacion
+    SELECT id_cliente, nombre, email, fecha_registro
     FROM "Clientes"
-    ORDER BY fecha_creacion DESC NULLS LAST
+    ORDER BY fecha_registro DESC NULLS LAST
     LIMIT 5
   `);
 
@@ -57,7 +65,7 @@ const getResumen = async () => {
   `);
 
   return {
-    stats:              statsResult.rows[0],
+    stats,
     topProductos:       topResult.rows,
     ventasRecientes:    ventasResult.rows,
     clientesRecientes:  clientesRecientesResult.rows,
@@ -71,7 +79,6 @@ const getVentasMensuales = async () => {
     'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
   ];
 
-  // Año actual
   const currentResult = await pool.query(`
     SELECT
       EXTRACT(MONTH FROM fecha)::int AS mes_num,
@@ -83,7 +90,6 @@ const getVentasMensuales = async () => {
     GROUP BY mes_num
   `);
 
-  // Año anterior
   const previousResult = await pool.query(`
     SELECT
       EXTRACT(MONTH FROM fecha)::int AS mes_num,
@@ -95,14 +101,12 @@ const getVentasMensuales = async () => {
     GROUP BY mes_num
   `);
 
-  // Mapear a objeto { mes_num: total }
   const currentPorMes  = {};
   const previousPorMes = {};
 
   currentResult.rows.forEach(r  => { currentPorMes[r.mes_num]  = Number(r.total); });
   previousResult.rows.forEach(r => { previousPorMes[r.mes_num] = Number(r.total); });
 
-  // Siempre los 12 meses, con 0 donde no hay ventas
   const labels   = mesesNombres;
   const current  = mesesNombres.map((_, i) => currentPorMes[i + 1]  || 0);
   const previous = mesesNombres.map((_, i) => previousPorMes[i + 1] || 0);

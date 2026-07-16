@@ -426,6 +426,26 @@
   }
 }
 
+/* ── Skeleton de carga ── */
+.compras-skeleton-cell {
+  height: 14px; border-radius: 6px; width: 80%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #f7f7f7 37%, #f0f0f0 63%);
+  background-size: 400% 100%;
+  animation: compras-shimmer 1.4s ease infinite;
+}
+@keyframes compras-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* ── Estado vacío pulido ── */
+.compras-empty-state {
+  text-align: center; padding: 3rem 1rem; color: #999;
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+}
+.compras-empty-state svg { width: 30px; height: 30px; opacity: 0.5; }
+.compras-empty-state p { margin: 0; font-style: italic; font-size: 0.9rem; }
+
 .compras-error-banner {
   background: #fdecea;
   border: 1px solid #f0b8b3;
@@ -434,6 +454,9 @@
   border-radius: 12px;
   font-size: 0.85rem;
   margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* Modal */

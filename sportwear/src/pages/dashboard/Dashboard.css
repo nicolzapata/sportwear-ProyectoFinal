@@ -124,7 +124,12 @@
   font-family: var(--font-body);
   font-size: 30px; font-weight: 300; color: var(--dvna-charcoal);
   line-height: 1; text-transform: none; letter-spacing: -0.01em;
+  max-width: 100%;
+  white-space: nowrap;
 }
+/* Escala automática para que los montos grandes no se salgan de la tarjeta */
+.stat-value.stat-value-sm { font-size: 22px; }
+.stat-value.stat-value-xs { font-size: 18px; }
 
 /* ── Layout grillas simétricas ── */
 .charts-grid,
@@ -256,6 +261,91 @@
   transition: all 0.2s ease;
 }
 .btn-print:hover { background: var(--accent); transform: translateY(-2px); }
+
+/* ── Botón de período (antes no tenía NINGÚN estilo — se veía como texto suelto) ── */
+.dashboard-error-banner {
+  display: flex; align-items: center; gap: 0.6rem;
+  background: #fdecea; border: 1px solid #f0b8b3; color: #b83232;
+  padding: 1rem 1.3rem; border-radius: 12px; font-size: 0.9rem; margin-top: 1.5rem;
+}
+.period-badge {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-pale);
+  border: 0.5px solid var(--dvna-border);
+  border-radius: 20px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.period-badge:hover {
+  background: var(--dvna-border);
+  border-color: var(--dvna-circle);
+}
+
+/* Pequeña elevación al pasar el mouse sobre las tarjetas de KPI */
+.stat-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.stat-card-wrapper:hover .stat-card {
+  box-shadow: 0 8px 24px rgba(50,35,20,0.08);
+  transform: translateY(-2px);
+}
+
+/* ── Tabla de bajo stock agrupada por producto (con desplegable) ── */
+.bajostock-row-principal {
+  background: var(--dvna-pale);
+}
+.bajostock-row-principal:hover { background: var(--dvna-border); }
+
+/* Chevron como un control de acordeón real, no solo un caracter suelto */
+.bajostock-chevron-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  color: var(--dvna-charcoal);
+  font-size: 13px;
+  font-weight: 700;
+  margin-right: 14px;
+  vertical-align: middle;
+  transition: transform 0.2s ease, background 0.15s ease;
+  transform: rotate(0deg);
+}
+.bajostock-chevron-btn.abierto {
+  transform: rotate(90deg);
+  background: var(--dvna-circle);
+  color: white;
+  border-color: var(--dvna-circle);
+}
+
+.bajostock-count {
+  margin-left: 8px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #7a5500;
+  background: #fdf4e3;
+  border: 0.5px solid #e8d9b8;
+  border-radius: 20px;
+  padding: 3px 9px;
+  vertical-align: middle;
+}
+
+.bajostock-row-variante { background: #fbfaf8; }
+.bajostock-td-indent {
+  padding-left: 28px !important;
+  font-size: 13px;
+  color: var(--dvna-border);
+  font-style: normal;
+}
 
 /* ── Responsive ── */
 @media (max-width: 1100px) {

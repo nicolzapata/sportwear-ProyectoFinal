@@ -274,13 +274,8 @@
 }
 
 /* ── Ancho fijo de la columna "Estado" (7ª columna, tras fusionar Cant./Abonos/Saldo)
-     para que no empuje el resto de la tabla cuando el texto del estado cambia de largo ──
-     Escopado a .pedidosventas-tabla (no .tbl a secas): .tbl es la clase
-     compartida por todas las tablas del sistema, y nth-child(7) sin ámbito
-     colisionaba con la 7ª columna de otras páginas (ej. "Publicado" en
-     GestProductos, que terminaba forzado a 160px sin que ningún override
-     local pudiera vencerlo). */
-.pedidosventas-tabla th:nth-child(7), .pedidosventas-tabla td:nth-child(7) {
+     para que no empuje el resto de la tabla cuando el texto del estado cambia de largo ── */
+.tbl th:nth-child(7), .tbl td:nth-child(7) {
   width: 160px;
   min-width: 160px;
 }
@@ -507,6 +502,33 @@
 }
 .pedidosventas-loading-text { color: #666; font-size: 0.9rem; }
 @keyframes pedidosventas-spin { to { transform: rotate(360deg); } }
+
+/* ── Skeleton de carga ── */
+.pedidosventas-skeleton-cell {
+  height: 14px; border-radius: 6px; width: 80%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #f7f7f7 37%, #f0f0f0 63%);
+  background-size: 400% 100%;
+  animation: pedidosventas-shimmer 1.4s ease infinite;
+}
+@keyframes pedidosventas-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* ── Banner de error ── */
+.pedidosventas-error-banner {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: #fdecea; border: 1px solid #f0b8b3; color: #b83232;
+  padding: 1rem 1.2rem; border-radius: 12px; font-size: 0.85rem; margin-top: 1rem;
+}
+
+/* ── Estado vacío pulido ── */
+.pedidosventas-empty-state {
+  text-align: center; padding: 3rem 1rem; color: #999;
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+}
+.pedidosventas-empty-state svg { width: 30px; height: 30px; opacity: 0.5; }
+.pedidosventas-empty-state p { margin: 0; font-style: italic; font-size: 0.9rem; }
 
 /* Responsive — todo agrupado correctamente dentro de las media queries */
 @media (max-width: 1024px) {

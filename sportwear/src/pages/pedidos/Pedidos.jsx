@@ -4,8 +4,7 @@ import { createPortal } from "react-dom";
 import './Pedidos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import ExportButtons from "../../components/ExportButtons";
-import { IconEye, IconSearch, IconX } from "../../components/Icons";
+import { IconEye, IconPrint, IconSearch, IconX, IconBox } from "../../components/Icons";
 
 const FILAS_POR_PAGINA = 10;
 
@@ -137,40 +136,28 @@ export default function Pedidos() {
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
 
   const [datos,      setDatos]      = useState([]);
-  const [totalPedidos, setTotalPedidos] = useState(0);
   const [cargando,   setCargando]   = useState(true);
   const [errorMsg,   setErrorMsg]   = useState("");
   const [busqueda,   setBusqueda]   = useState("");
-  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [pagina,     setPagina]     = useState(1);
   const [verDetalle, setVerDetalle] = useState(null);
   const [cambiando,  setCambiando]  = useState(false);
   const [filaAbierta, setFilaAbierta] = useState(null);
 
-  const cargar = async (pag = pagina, q = busquedaDebounced) => {
+  useEffect(() => { cargar(); }, []);
+
+  const cargar = async () => {
     setCargando(true);
     setErrorMsg("");
     try {
-      const { data } = await api.get("/pedidos", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
-      setDatos(data.data);
-      setTotalPedidos(data.total);
+      const { data } = await api.get("/pedidos");
+      setDatos(data);
     } catch (err) {
       setErrorMsg(err.response?.data?.message || "Error al cargar los pedidos");
     } finally {
       setCargando(false);
     }
   };
-
-  // Buscador con debounce: evita disparar una petición por cada tecla.
-  useEffect(() => {
-    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
-    return () => clearTimeout(t);
-  }, [busqueda]);
-
-  useEffect(() => { setPagina(1); }, [busquedaDebounced]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { cargar(pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
 
   const abrirDetalle = async (p) => {
     try {
@@ -197,7 +184,9 @@ export default function Pedidos() {
     }
   };
 
-  const totalPaginas = Math.ceil(totalPedidos / FILAS_POR_PAGINA) || 1;
+  const filtrados       = datos.filter(p => p.cliente?.toLowerCase().includes(busqueda.toLowerCase()));
+  const totalPaginas    = Math.ceil(filtrados.length / FILAS_POR_PAGINA) || 1;
+  const filtradosPagina = filtrados.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
 
   const getEstadoBadge = (estado) => {
     switch (estado) {
@@ -209,8 +198,11 @@ export default function Pedidos() {
     }
   };
 
-  if (cargando) return <div style={{ padding: 48, color: "var(--muted)" }}>Cargando pedidos...</div>;
-  if (errorMsg) return <div style={{ padding: 32, color: "var(--danger)" }}>{errorMsg}</div>;
+  if (errorMsg) return (
+    <div className="pedidos-container">
+      <div className="pedidos-error-banner"><IconX /> {errorMsg}</div>
+    </div>
+  );
 
   return (
     <div className="pedidos-container">
@@ -223,40 +215,26 @@ export default function Pedidos() {
               className="pedidos-search-input"
               placeholder="Buscar por cliente..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
             />
             {busqueda && (
-              <button className="pedidos-search-clear" onClick={() => setBusqueda("")}>
+              <button className="pedidos-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}>
                 <IconX />
               </button>
             )}
           </div>
         </div>
         <div className="pedidos-actions-right">
-          <ExportButtons
-            obtenerDatos={async () => {
-              const { data } = await api.get("/pedidos", { params: { q: busquedaDebounced || undefined } });
-              return data;
-            }}
-            columnas={[
-              { header: "Cliente", key: "cliente" },
-              { header: "Productos", value: (p) => p.items?.map((i) => i.producto).filter(Boolean).join(', ') || '-' },
-              { header: "Dirección", value: (p) => p.direccion_entrega || "—" },
-              { header: "Actualizado", value: (p) => p.fecha_actualizacion?.toString().split("T")[0] || "—" },
-              { header: "Estado", key: "estado_pedido" },
-            ]}
-            nombreArchivo="pedidos"
-            titulo="Pedidos"
-          />
+          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
         </div>
       </div>
 
       <div className="pedidos-results-count">
-        {totalPedidos} pedido{totalPedidos !== 1 ? 's' : ''} encontrado{totalPedidos !== 1 ? 's' : ''}
+        {cargando ? "Cargando..." : `${filtrados.length} pedido${filtrados.length !== 1 ? 's' : ''} encontrado${filtrados.length !== 1 ? 's' : ''}`}
       </div>
 
       <div className="tbl-container pedidos-tbl-container">
-        <table className="tbl pedidos-tabla">
+        <table className="tbl">
           <thead className="tbl-header">
             <tr>
               <th className="tbl-th">Cliente</th>
@@ -268,7 +246,15 @@ export default function Pedidos() {
             </tr>
           </thead>
           <tbody className="tbl-body">
-            {datos.map((p) => (
+            {cargando ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <tr key={i} className="tbl-row">
+                  {Array.from({ length: 6 }).map((__, j) => (
+                    <td className="tbl-td" key={j}><div className="pedidos-skeleton-cell" /></td>
+                  ))}
+                </tr>
+              ))
+            ) : filtradosPagina.map((p) => (
               <tr key={p.id_pedido} className="tbl-row">
                 <td className="tbl-td">{p.cliente}</td>
                 <td className="tbl-td pedidos-producto-cell">
@@ -295,8 +281,10 @@ export default function Pedidos() {
                 </td>
               </tr>
             ))}
-            {datos.length === 0 && (
-              <tr><td colSpan={6} style={{ textAlign: "center", padding: 32, color: "var(--muted)" }}>No hay pedidos registrados</td></tr>
+            {!cargando && filtrados.length === 0 && (
+              <tr><td colSpan={6} style={{ padding: 0 }}>
+                <div className="pedidos-empty-state"><IconBox /><p>No hay pedidos registrados.</p></div>
+              </td></tr>
             )}
           </tbody>
         </table>
@@ -308,7 +296,7 @@ export default function Pedidos() {
               <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
             <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-            <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalPedidos} registros</span>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} registros</span>
           </div>
         )}
       </div>

@@ -1,11 +1,12 @@
 // src/pages/dashboard/Dashboard.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, Fragment } from "react";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 import MiCuenta from "../clientes/MiCuenta";
 import ExportButtons from "../../components/ExportButtons";
 import {
   IconDollar, IconShoppingCart, IconUsers, IconAlertTriangle,
+  IconBox, IconTruck,
 } from "../../components/Icons";
 import "./Dashboard.css";
 
@@ -29,13 +30,24 @@ const formatCurrency = (n) =>
     minimumFractionDigits: 0, maximumFractionDigits: 0,
   }).format(n || 0);
 
+// ── Escala el tamaño de fuente del KPI según qué tan largo sea el texto,
+// para que los montos grandes ($5.008.000) nunca se salgan de la tarjeta ──
+const valueSizeClass = (texto) => {
+  const len = String(texto).length;
+  if (len > 12) return "stat-value-xs";
+  if (len > 9)  return "stat-value-sm";
+  return "";
+};
+
 const BROWN    = "#b49780";
 const CHARCOAL = "#1a1a1a";
 const LIGHT    = "#e8e0d8";
 const MUTED    = "#888888";
 const BORDER   = "#e5e5e5";
 
-function SalesBarChart({ data }) {
+// ── Gráfico de barras — ahora recibe directamente los valores + la etiqueta del período
+// (antes ignoraba silenciosamente "previous" y el botón "Mensual" no hacía nada) ──
+function SalesBarChart({ labels, values, seriesLabel }) {
   const canvasRef = useRef(null);
   const chartRef  = useRef(null);
 
@@ -44,14 +56,13 @@ function SalesBarChart({ data }) {
     loadChartJs().then((Chart) => {
       if (destroyed || !canvasRef.current) return;
       if (chartRef.current) chartRef.current.destroy();
-      const valores = data.values || data.current || [];
       chartRef.current = new Chart(canvasRef.current, {
         type: "bar",
         data: {
-          labels: data.labels,
+          labels,
           datasets: [{
-            label: "Este año",
-            data: valores,
+            label: seriesLabel,
+            data: values,
             backgroundColor: CHARCOAL,
             borderRadius: 4,
             borderSkipped: false,
@@ -96,7 +107,7 @@ function SalesBarChart({ data }) {
       });
     });
     return () => { destroyed = true; chartRef.current?.destroy(); };
-  }, [data]);
+  }, [labels, values, seriesLabel]);
 
   return <div style={{ position: "relative", flex: 1, minHeight: 160 }}><canvas ref={canvasRef} /></div>;
 }
@@ -167,6 +178,25 @@ export default function Dashboard() {
   const [clientesRecientes,  setClientesRecientes]  = useState([]);
   const [productosBajoStock, setProductosBajoStock] = useState([]);
   const [cargando,        setCargando]        = useState(true);
+  const [errorCarga,      setErrorCarga]       = useState("");
+
+  // ── NUEVO: período seleccionado por gráfico — el botón "Mensual" ya alterna de verdad ──
+  const [periodoVentas, setPeriodoVentas]   = useState("actual");   // actual | anterior
+  const [periodoCompras, setPeriodoCompras] = useState("actual");
+  const [expandidosStock, setExpandidosStock] = useState({});
+
+  const toggleExpandidoStock = (key) => setExpandidosStock(prev => ({ ...prev, [key]: !prev[key] }));
+
+  // ── Agrupa "Productos con bajo stock" por producto (antes: una fila por talla/color = mucho scroll) ──
+  const bajoStockAgrupado = useMemo(() => {
+    const map = {};
+    productosBajoStock.forEach((p) => {
+      const key = p.id_producto ?? p.nombre;
+      if (!map[key]) map[key] = { key, nombre: p.nombre, variantes: [] };
+      map[key].variantes.push({ talla: p.talla, color: p.color, stock: p.stock });
+    });
+    return Object.values(map);
+  }, [productosBajoStock]);
 
   useEffect(() => {
     if (usuario?.rol === 'Cliente') return;
@@ -180,10 +210,14 @@ export default function Dashboard() {
       setVentasRecientes(resumenRes.data?.ventasRecientes || []);
       setClientesRecientes(resumenRes.data?.clientesRecientes || []);
       setProductosBajoStock(resumenRes.data?.productosBajoStock || []);
-      setVentasMensuales(mensualRes.data || { labels: [], values: [] });
-      setComprasMensuales(comprasRes.data || { labels: [], values: [] });
+      setVentasMensuales(mensualRes.data || { labels: [], current: [], previous: [] });
+      setComprasMensuales(comprasRes.data || { labels: [], current: [], previous: [] });
       setCargando(false);
-    }).catch(() => setCargando(false));
+    }).catch((err) => {
+      console.error("Error cargando el dashboard:", err);
+      setErrorCarga(err.response?.data?.message || "No se pudo cargar la información del dashboard.");
+      setCargando(false);
+    });
   }, [usuario?.rol]);
 
   // Early return DESPUÉS de todos los hooks
@@ -197,7 +231,8 @@ export default function Dashboard() {
     }
   };
 
-  const barData   = ventasMensuales || { labels: [], values: [] };
+  const ventasData   = ventasMensuales  || { labels: [], current: [], previous: [] };
+  const comprasData  = comprasMensuales || { labels: [], current: [], previous: [] };
   const pagado    = ventasRecientes.filter((v) => v.estado === "Pagado").length;
   const pendiente = ventasRecientes.filter((v) => v.estado === "Pendiente").length;
   const cancelado = ventasRecientes.filter((v) => v.estado !== "Pagado" && v.estado !== "Pendiente").length;
@@ -208,6 +243,14 @@ export default function Dashboard() {
 
   if (cargando) return (
     <div style={{ padding: 48, color: "var(--muted)" }}>Cargando dashboard...</div>
+  );
+
+  if (errorCarga) return (
+    <div className="dashboard">
+      <div className="dashboard-error-banner">
+        <IconAlertTriangle /> {errorCarga}
+      </div>
+    </div>
   );
 
   return (
@@ -226,54 +269,60 @@ export default function Dashboard() {
         <div className="stat-card-wrapper">
           <div className="stat-card">
             <div className="stat-card-accent" />
+            <div className="stat-icon stat-icon-primary"><IconDollar /></div>
             <div className="stat-content">
               <span className="stat-label">Ventas del día</span>
-              <span className="stat-value">{formatCurrency(stats.ingresos_hoy)}</span>
+              <span className={`stat-value ${valueSizeClass(formatCurrency(stats.ingresos_hoy))}`}>{formatCurrency(stats.ingresos_hoy)}</span>
             </div>
           </div>
         </div>
         <div className="stat-card-wrapper">
           <div className="stat-card">
             <div className="stat-card-accent success" />
+            <div className="stat-icon stat-icon-success"><IconShoppingCart /></div>
             <div className="stat-content">
               <span className="stat-label">Ventas realizadas</span>
-              <span className="stat-value">{stats.ventas_hoy}</span>
+              <span className={`stat-value ${valueSizeClass(stats.ventas_hoy)}`}>{stats.ventas_hoy}</span>
             </div>
           </div>
         </div>
         <div className="stat-card-wrapper">
           <div className="stat-card">
             <div className="stat-card-accent danger" />
+            <div className="stat-icon stat-icon-danger"><IconAlertTriangle /></div>
             <div className="stat-content">
               <span className="stat-label">Bajo stock</span>
-              <span className="stat-value">{stats.bajo_stock}</span>
+              <span className={`stat-value ${valueSizeClass(stats.bajo_stock)}`}>{stats.bajo_stock}</span>
             </div>
           </div>
         </div>
         <div className="stat-card-wrapper">
           <div className="stat-card">
             <div className="stat-card-accent warning" />
+            <div className="stat-icon stat-icon-warning"><IconDollar /></div>
             <div className="stat-content">
               <span className="stat-label">Ingresos totales</span>
-              <span className="stat-value">{formatCurrency(stats.ingresos_totales)}</span>
+              <span className={`stat-value ${valueSizeClass(formatCurrency(stats.ingresos_totales))}`}>{formatCurrency(stats.ingresos_totales)}</span>
             </div>
           </div>
         </div>
         <div className="stat-card-wrapper">
           <div className="stat-card">
             <div className="stat-card-accent" />
+            <div className="stat-icon stat-icon-primary"><IconBox /></div>
             <div className="stat-content">
               <span className="stat-label">Pedidos pendientes</span>
-              <span className="stat-value">{stats.pedidos_pendientes ?? 0}</span>
+              <span className={`stat-value ${valueSizeClass(stats.pedidos_pendientes ?? 0)}`}>{stats.pedidos_pendientes ?? 0}</span>
             </div>
           </div>
         </div>
         <div className="stat-card-wrapper">
           <div className="stat-card">
             <div className="stat-card-accent success" />
+            <div className="stat-icon stat-icon-success"><IconTruck /></div>
             <div className="stat-content">
               <span className="stat-label">Compras totales</span>
-              <span className="stat-value">{formatCurrency(stats.compras_monto_total)}</span>
+              <span className={`stat-value ${valueSizeClass(formatCurrency(stats.compras_monto_total))}`}>{formatCurrency(stats.compras_monto_total)}</span>
             </div>
           </div>
         </div>
@@ -284,17 +333,24 @@ export default function Dashboard() {
           <div className="chart-header">
             <div>
               <h3 className="chart-title">Ventas mensuales</h3>
-              <p className="chart-subtitle">Acumulado por mes — año actual</p>
+              <p className="chart-subtitle">Acumulado por mes {periodoVentas === "actual" ? "— año actual" : "— año anterior"}</p>
             </div>
-            <button className="period-badge">Mensual</button>
+            <button className="period-badge" onClick={() => setPeriodoVentas(p => p === "actual" ? "anterior" : "actual")}>
+              {periodoVentas === "actual" ? "Ver año anterior" : "Ver año actual"}
+            </button>
           </div>
           <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 10, color: MUTED, fontFamily: "'Jost', sans-serif" }}>
             <span>
               <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: CHARCOAL, marginRight: 5, verticalAlign: "middle" }} />
-              Este año
+              {periodoVentas === "actual" ? "Este año" : "Año anterior"}
             </span>
           </div>
-          <SalesBarChart key={barData.labels?.join()} data={barData} />
+          <SalesBarChart
+            key={`ventas-${periodoVentas}`}
+            labels={ventasData.labels}
+            values={periodoVentas === "actual" ? ventasData.current : ventasData.previous}
+            seriesLabel={periodoVentas === "actual" ? "Este año" : "Año anterior"}
+          />
         </div>
 
         <div className="chart-card">
@@ -342,7 +398,9 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {ventasRecientes.map((venta) => (
+                {ventasRecientes.length === 0 ? (
+                  <tr><td className="tbl-td" colSpan={4} style={{ textAlign: "center", color: MUTED, fontStyle: "italic" }}>Sin ventas registradas aún.</td></tr>
+                ) : ventasRecientes.map((venta) => (
                   <tr key={`${venta.id_venta}-${venta.producto}`} className="tbl-row">
                     <td className="tbl-td">{venta.cliente}</td>
                     <td className="tbl-td">{venta.producto}</td>
@@ -411,10 +469,18 @@ export default function Dashboard() {
           <div className="chart-header">
             <div>
               <h3 className="chart-title">Compras mensuales</h3>
-              <p className="chart-subtitle">Acumulado por mes — año actual</p>
+              <p className="chart-subtitle">Acumulado por mes {periodoCompras === "actual" ? "— año actual" : "— año anterior"}</p>
             </div>
+            <button className="period-badge" onClick={() => setPeriodoCompras(p => p === "actual" ? "anterior" : "actual")}>
+              {periodoCompras === "actual" ? "Ver año anterior" : "Ver año actual"}
+            </button>
           </div>
-          <SalesBarChart key={`compras-${comprasMensuales?.labels?.join()}`} data={comprasMensuales || { labels: [], values: [] }} />
+          <SalesBarChart
+            key={`compras-${periodoCompras}`}
+            labels={comprasData.labels}
+            values={periodoCompras === "actual" ? comprasData.current : comprasData.previous}
+            seriesLabel={periodoCompras === "actual" ? "Este año" : "Año anterior"}
+          />
         </div>
 
         <div className="chart-card">
@@ -432,7 +498,7 @@ export default function Dashboard() {
                 <div className="top-product-info">
                   <span className="top-product-name">{cliente.nombre}</span>
                   <span className="top-product-count">
-                    {cliente.fecha_creacion ? new Date(cliente.fecha_creacion).toLocaleDateString("es-CO") : "—"}
+                    {cliente.fecha_registro ? new Date(cliente.fecha_registro).toLocaleDateString("es-CO") : "—"}
                   </span>
                 </div>
               </div>
@@ -459,20 +525,57 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {productosBajoStock.length === 0 ? (
+              {bajoStockAgrupado.length === 0 ? (
                 <tr><td className="tbl-td" colSpan={4} style={{ textAlign: "center", color: MUTED }}>Sin productos en alerta.</td></tr>
-              ) : productosBajoStock.map((p, i) => (
-                <tr key={i} className="tbl-row">
-                  <td className="tbl-td">{p.nombre}</td>
-                  <td className="tbl-td">{p.talla || "—"}</td>
-                  <td className="tbl-td">{p.color || "—"}</td>
-                  <td className="tbl-td">
-                    <span className="tabla-badge" style={{ color: p.stock === 0 ? "#b83232" : "#7a5500" }}>
-                      <IconAlertTriangle /> {p.stock} {p.stock === 0 ? "(agotado)" : ""}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              ) : bajoStockAgrupado.map((grupo) => {
+                const multiplesVariantes = grupo.variantes.length > 1;
+                const abierto = !!expandidosStock[grupo.key];
+                const stockMinimo = Math.min(...grupo.variantes.map((v) => v.stock));
+                const unica = grupo.variantes[0];
+                return (
+                  <Fragment key={grupo.key}>
+                    <tr
+                      className="tbl-row bajostock-row-principal"
+                      onClick={() => multiplesVariantes && toggleExpandidoStock(grupo.key)}
+                      style={{ cursor: multiplesVariantes ? "pointer" : "default" }}
+                    >
+                      <td className="tbl-td" style={multiplesVariantes ? { fontWeight: 600 } : undefined}>
+                        {multiplesVariantes && (
+                          <span className={`bajostock-chevron-btn${abierto ? " abierto" : ""}`}>›</span>
+                        )}
+                        {grupo.nombre}
+                        {multiplesVariantes && (
+                          <span className="bajostock-count">
+                            {grupo.variantes.length} variantes
+                          </span>
+                        )}
+                      </td>
+                      <td className="tbl-td">{multiplesVariantes ? "—" : (unica.talla || "—")}</td>
+                      <td className="tbl-td">{multiplesVariantes ? "—" : (unica.color || "—")}</td>
+                      <td className="tbl-td">
+                        <span className="tabla-badge" style={{ color: stockMinimo === 0 ? "#b83232" : "#7a5500" }}>
+                          <IconAlertTriangle />
+                          {multiplesVariantes
+                            ? ` Mínimo: ${stockMinimo}${stockMinimo === 0 ? " (agotado)" : ""}`
+                            : ` ${unica.stock} ${unica.stock === 0 ? "(agotado)" : ""}`}
+                        </span>
+                      </td>
+                    </tr>
+                    {abierto && grupo.variantes.map((v, i) => (
+                      <tr key={`${grupo.key}-${i}`} className="tbl-row bajostock-row-variante">
+                        <td className="tbl-td bajostock-td-indent">–</td>
+                        <td className="tbl-td">{v.talla || "—"}</td>
+                        <td className="tbl-td">{v.color || "—"}</td>
+                        <td className="tbl-td">
+                          <span className="tabla-badge" style={{ color: v.stock === 0 ? "#b83232" : "#7a5500" }}>
+                            <IconAlertTriangle /> {v.stock} {v.stock === 0 ? "(agotado)" : ""}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         </div>
