@@ -1,5 +1,5 @@
 // src/pages/productos/GestProductos.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
@@ -55,8 +55,24 @@ function VariantesMasDropdown({ grupos, restantes, abierto, onToggle, productoId
   useEffect(() => {
     if (!abierto || !btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
-    setCoords({ top: r.bottom + 6, left: r.left, width: r.width });
+    setCoords({ top: r.bottom + 6, left: r.left, width: r.width, arriba: false });
   }, [abierto]);
+
+  // Si el trigger está en una de las últimas filas, el panel abierto hacia
+  // abajo no entra en pantalla y queda cortado. Una vez que el panel ya está
+  // en el DOM (y por lo tanto se puede medir su alto real), si no entra
+  // debajo del trigger se reposiciona arriba — mismo criterio que usan los
+  // selects/autocompletes nativos. useLayoutEffect corre antes del paint
+  // para que no se note el reacomodo.
+  useLayoutEffect(() => {
+    if (!abierto || !coords || coords.arriba || !panelRef.current || !btnRef.current) return;
+    const panelAlto = panelRef.current.getBoundingClientRect().height;
+    const r = btnRef.current.getBoundingClientRect();
+    const espacioAbajo = window.innerHeight - r.bottom;
+    if (panelAlto + 12 > espacioAbajo) {
+      setCoords({ top: r.top - panelAlto - 6, left: r.left, width: r.width, arriba: true });
+    }
+  }, [abierto, coords]);
 
   useEffect(() => {
     if (!abierto) return;
