@@ -1,5 +1,6 @@
 // src/services/pedidos.service.js
 const pool = require('../config/db');
+const { enviarCorreo } = require('./mailer.service');
 
 const ESTADOS_VALIDOS = ['Pendiente', 'En preparación', 'Enviado', 'Entregado', 'Cancelado'];
 
@@ -106,6 +107,47 @@ const TRANSICIONES = {
   'Cancelado':      [],
 };
 
+// ── NUEVO: contenido del correo según el nuevo estado ──
+const MENSAJES_ESTADO = {
+  'En preparación': { titulo: 'Tu pedido está en preparación',  cuerpo: 'Ya estamos alistando tu pedido para el envío.' },
+  'Enviado':         { titulo: 'Tu pedido fue enviado',          cuerpo: 'Tu pedido va en camino. Pronto lo tendrás contigo.' },
+  'Entregado':        { titulo: 'Tu pedido fue entregado',        cuerpo: '¡Tu pedido llegó a su destino! Gracias por tu compra.' },
+  'Cancelado':        { titulo: 'Tu pedido fue cancelado',        cuerpo: 'Tu pedido ha sido cancelado. Si tienes dudas, contáctanos.' },
+};
+
+// ── NUEVO: notifica al cliente por correo cuando cambia el estado de su pedido ──
+// Fire-and-forget: nunca bloquea ni rompe el flujo si falla (enviarCorreo ya maneja sus propios errores).
+const notificarCambioEstado = async (id_pedido, nuevoEstado) => {
+  const mensaje = MENSAJES_ESTADO[nuevoEstado];
+  if (!mensaje) return; // sin plantilla para ese estado (ej. "Pendiente" no notifica)
+
+  const clienteRes = await pool.query(`
+    SELECT c.nombre, c.email
+    FROM "Pedidos" p
+    JOIN "Ventas" v   ON p.id_venta = v.id_venta
+    JOIN "Clientes" c ON v.id_cliente = c.id_cliente
+    WHERE p.id_pedido = $1
+  `, [id_pedido]);
+
+  const cliente = clienteRes.rows[0];
+  if (!cliente?.email) return;
+
+  enviarCorreo({
+    to: cliente.email,
+    subject: `${mensaje.titulo} — Pedido #${id_pedido}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+        <h2 style="color:#1a1a1a;">${mensaje.titulo}</h2>
+        <p>Hola ${cliente.nombre || ''},</p>
+        <p>${mensaje.cuerpo}</p>
+        <p style="color:#888; font-size: 13px;">Pedido #${id_pedido} · Nuevo estado: <b>${nuevoEstado}</b></p>
+        <hr style="border:none; border-top:1px solid #eee; margin: 20px 0;" />
+        <p style="color:#aaa; font-size: 12px;">DVNA SportWear</p>
+      </div>
+    `,
+  });
+};
+
 const cambiarEstadoPedido = async (id_pedido, nuevoEstado, id_usuario) => {
   if (!ESTADOS_VALIDOS.includes(nuevoEstado)) {
     throw { status: 400, message: `Estado inválido. Debe ser uno de: ${ESTADOS_VALIDOS.join(', ')}` };
@@ -138,6 +180,10 @@ const cambiarEstadoPedido = async (id_pedido, nuevoEstado, id_usuario) => {
     `, [id_pedido, nuevoEstado, id_usuario || null]);
 
     await client.query('COMMIT');
+
+    // ── NUEVO: notificar al cliente (después del COMMIT, sin bloquear la respuesta) ──
+    notificarCambioEstado(id_pedido, nuevoEstado);
+
     return result.rows[0];
   } catch (err) {
     await client.query('ROLLBACK');

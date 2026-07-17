@@ -1,5 +1,7 @@
 // src/services/ventas.service.js
 const pool = require('../config/db');
+const { generarComprobanteVentaBuffer } = require('./pdf.service');
+const { enviarCorreo } = require('./mailer.service');
 
 const getVentas = async ({ page, limit, q } = {}) => {
   const params = [];
@@ -52,7 +54,7 @@ const getVentas = async ({ page, limit, q } = {}) => {
 
 const getVentaById = async (id) => {
   const cab = await pool.query(`
-    SELECT v.*, c.nombre AS cliente
+    SELECT v.*, c.nombre AS cliente, c.email AS cliente_email
     FROM "Ventas" v JOIN "Clientes" c ON v.id_cliente=c.id_cliente
     WHERE v.id_venta=$1
   `, [id]);
@@ -67,6 +69,37 @@ const getVentaById = async (id) => {
   return { ...cab.rows[0], items: det.rows };
 };
 
+// ── NUEVO: envía el comprobante en PDF por correo al cliente ──
+// Fire-and-forget: nunca bloquea ni rompe el flujo si falla.
+const notificarComprobantePago = async (id_venta) => {
+  try {
+    const venta = await getVentaById(id_venta);
+    if (!venta.cliente_email) return;
+
+    const buffer = await generarComprobanteVentaBuffer({ venta, items: venta.items });
+
+    await enviarCorreo({
+      to: venta.cliente_email,
+      subject: `Comprobante de tu compra — Venta #${id_venta}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+          <h2 style="color:#1a1a1a;">¡Gracias por tu compra!</h2>
+          <p>Hola ${venta.cliente || ''},</p>
+          <p>Adjunto encontrarás el comprobante de tu compra #${id_venta} por un total de
+             ${Number(venta.total || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}.</p>
+          <hr style="border:none; border-top:1px solid #eee; margin: 20px 0;" />
+          <p style="color:#aaa; font-size: 12px;">DVNA SportWear</p>
+        </div>
+      `,
+      attachments: [
+        { filename: `comprobante-venta-${id_venta}.pdf`, content: buffer },
+      ],
+    });
+  } catch (err) {
+    console.error('Error enviando comprobante por correo:', err.message);
+  }
+};
+
 // ── NUEVO: crea la fila de seguimiento en "Pedidos" para una venta ──
 // Se llama dentro de la misma transacción que crea la Venta, usando el mismo `client`.
 const crearPedidoParaVenta = async (client, id_venta, estadoVenta) => {
@@ -78,14 +111,69 @@ const crearPedidoParaVenta = async (client, id_venta, estadoVenta) => {
   `, [id_venta, estadoPedido]);
 };
 
+// ── NUEVO: cupo de crédito ──
+// Calcula cupo, deuda actual (saldo pendiente de TODAS las ventas no anuladas)
+// y disponible de un cliente. Vive aquí (no en clientes.service.js) porque es
+// una regla de negocio de Ventas, no de gestión de Clientes.
+const getCreditoCliente = async (id_cliente) => {
+  const clienteRes = await pool.query(
+    `SELECT nombre, cupo_credito FROM "Clientes" WHERE id_cliente = $1`,
+    [id_cliente]
+  );
+  if (!clienteRes.rows.length) throw { status: 404, message: 'Cliente no encontrado' };
+  const { nombre, cupo_credito } = clienteRes.rows[0];
+
+  const deudaRes = await pool.query(`
+    SELECT COALESCE(SUM(v.total - COALESCE(pa.pagado, 0)), 0) AS deuda
+    FROM "Ventas" v
+    LEFT JOIN (
+      SELECT id_venta, SUM(monto) AS pagado
+      FROM "PagosAbonos"
+      WHERE estado = 'Confirmado'
+      GROUP BY id_venta
+    ) pa ON pa.id_venta = v.id_venta
+    WHERE v.id_cliente = $1 AND v.estado NOT IN ('Anulado', 'Abandonado')
+  `, [id_cliente]);
+
+  const deudaActual = Number(deudaRes.rows[0].deuda) || 0;
+  const cupo = cupo_credito !== null ? Number(cupo_credito) : null;
+  const disponible = cupo !== null ? Math.max(0, cupo - deudaActual) : null;
+
+  return { nombre, cupo_credito: cupo, deuda_actual: deudaActual, disponible };
+};
+
+// ── NUEVO: valida que una venta a cuotas no supere el cupo de crédito del cliente (si tiene uno asignado) ──
+const validarCupoCredito = async (id_cliente, montoNuevaVenta) => {
+  const { cupo_credito, deuda_actual } = await getCreditoCliente(id_cliente);
+  // cupo_credito === null significa "sin límite configurado" -> no se bloquea (comportamiento actual)
+  if (cupo_credito === null) return;
+  if (deuda_actual + montoNuevaVenta > cupo_credito) {
+    const disponible = Math.max(0, cupo_credito - deuda_actual);
+    throw {
+      status: 400,
+      message: `Esta venta a cuotas supera el cupo de crédito del cliente. Cupo: ${cupo_credito.toLocaleString('es-CO')}, disponible: ${disponible.toLocaleString('es-CO')}.`,
+    };
+  }
+};
+
 const crearVenta = async (datos) => {
-  const { id_cliente, descuento, impuesto, estado, fecha, observaciones, items, tipo_pago, num_cuotas, metodo_pago } = datos;
+  const { id_cliente, descuento, impuesto, estado, fecha, observaciones, items, tipo_pago, num_cuotas, metodo_pago, motivo_descuento, direccion_entrega } = datos;
   if (!id_cliente) throw { status: 400, message: 'El cliente es requerido' };
 
   const subtotal = items
     ? items.reduce((a, i) => a + i.cantidad * i.precio_unitario - (i.descuento_linea || 0), 0)
     : (datos.total || 0);
   const total = subtotal - (descuento || 0) + (impuesto || 0);
+
+  // ── NUEVO: si hay descuento general, el motivo es obligatorio ──
+  if (descuento && descuento > 0 && !motivo_descuento?.trim()) {
+    throw { status: 400, message: 'Debes indicar el motivo del descuento.' };
+  }
+
+  // ── NUEVO: validar cupo de crédito solo cuando la venta es a cuotas ──
+  if (tipo_pago === 'cuotas') {
+    await validarCupoCredito(id_cliente, total);
+  }
 
   const client = await pool.connect();
   try {
@@ -94,13 +182,15 @@ const crearVenta = async (datos) => {
     const venta = await client.query(`
       INSERT INTO "Ventas"
         (id_cliente, subtotal, descuento, impuesto, total, estado, fecha, observaciones,
-         tipo_pago, num_cuotas, metodo_pago)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+         tipo_pago, num_cuotas, metodo_pago, motivo_descuento, direccion_entrega)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
       RETURNING *
     `, [
       id_cliente, subtotal, descuento || 0, impuesto || 0, total,
       estado || 'Pendiente', fecha || new Date(), observaciones || null,
       tipo_pago || 'completo', num_cuotas || null, metodo_pago || null,
+      (descuento && descuento > 0) ? motivo_descuento.trim() : null,
+      direccion_entrega?.trim() || null,
     ]);
 
     const id_venta = venta.rows[0].id_venta;
@@ -153,6 +243,10 @@ const crearVenta = async (datos) => {
     await crearPedidoParaVenta(client, id_venta, estado || 'Pendiente');
 
     await client.query('COMMIT');
+
+    // ── NUEVO: si la venta se registró ya como pagada, enviar el comprobante por correo ──
+    if (estado === 'Pagado') notificarComprobantePago(id_venta);
+
     return { ...venta.rows[0], items };
   } catch (err) {
     await client.query('ROLLBACK');
@@ -169,6 +263,7 @@ const cambiarEstado = async (id, estado) => {
     [estado, id]
   );
   if (!result.rows.length) throw { status: 404, message: 'No encontrada' };
+  const venta = result.rows[0];
 
   // ── NUEVO: si la venta se anula, el pedido también se cancela ──
   if (estado === 'Anulado') {
@@ -178,12 +273,45 @@ const cambiarEstado = async (id, estado) => {
     `, [id]);
   }
 
-  return result.rows[0];
+  if (estado === 'Pagado') {
+    // ── CORREGIDO: primero confirmar los abonos "Pendiente" que ya existen para esta venta
+    // (el que se crea automático al registrar la venta), en vez de crear uno nuevo aparte
+    // dejando el viejo sin tocar — así evitamos duplicados y calzamos con pagarTotal(). ──
+    await pool.query(
+      `UPDATE "PagosAbonos" SET estado='Confirmado' WHERE id_venta=$1 AND estado='Pendiente'`,
+      [id]
+    );
+
+    // Si aún así queda un saldo sin cubrir (por ejemplo, no había ningún abono pendiente
+    // registrado), se crea uno nuevo para que el total cuadre.
+    const abonadoRes = await pool.query(
+      `SELECT COALESCE(SUM(monto),0) AS abonado FROM "PagosAbonos" WHERE id_venta=$1 AND estado='Confirmado'`,
+      [id]
+    );
+    const abonado = Number(abonadoRes.rows[0].abonado) || 0;
+    const saldo = Number(venta.total) - abonado;
+    if (saldo > 0.01) {
+      await pool.query(`
+        INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha)
+        VALUES ($1,$2,'Abono',$3,'Confirmado',$4)
+      `, [id, saldo, venta.metodo_pago || 'Efectivo', new Date()]);
+    }
+
+    // ── NUEVO: si la venta pasó a estar pagada, enviar el comprobante por correo ──
+    notificarComprobantePago(id);
+  }
+
+  return venta;
 };
 
 const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entrega, metodo_pago, tipo_pago, num_cuotas, items }) => {
   if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
   if (!id_cliente) throw { status: 400, message: 'Cliente no identificado' };
+
+  // ── NUEVO: validar cupo de crédito solo cuando el pedido es a cuotas ──
+  if (tipo_pago === 'cuotas') {
+    await validarCupoCredito(id_cliente, total);
+  }
 
   const client = await pool.connect();
   try {
@@ -253,7 +381,10 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
     await crearPedidoParaVenta(client, id_venta, estado || 'Confirmado');
 
     await client.query('COMMIT');
-    
+
+    // ── NUEVO: si el pedido del cliente quedó confirmado (equivalente a pagado), enviar comprobante ──
+    if ((estado || 'Confirmado') === 'Confirmado') notificarComprobantePago(id_venta);
+
     const abonosRes = await client.query(
       `SELECT * FROM "PagosAbonos" WHERE id_venta = $1 ORDER BY num_cuota ASC`,
       [id_venta]
@@ -362,4 +493,5 @@ const getMisPedidos = async (id_cliente) => {
 module.exports = {
   getVentas, getVentaById, crearVenta, cambiarEstado,
   crearMiPedido, crearCarritoAbandonado, getMisPedidos,
+  getCreditoCliente, notificarComprobantePago,
 };

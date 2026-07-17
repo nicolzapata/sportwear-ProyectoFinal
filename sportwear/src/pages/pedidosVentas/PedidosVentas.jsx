@@ -19,8 +19,10 @@ const formVentaInicial = () => ({
   num_cuotas: "",
   metodo_pago: "Efectivo",
   descuento: 0,
+  motivo_descuento: "",
   impuesto: 0,
   observaciones: "",
+  direccion_entrega: "",
   items: [nuevoItem()],
 });
 
@@ -157,6 +159,7 @@ export default function PedidosVentas() {
   const [erroresAbono, setErroresAbono] = useState({ monto: "", fecha: "" });
   const [filaAbierta, setFilaAbierta] = useState(null);
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
+  const [guardandoAbono, setGuardandoAbono] = useState(false);
 
   // ── Nueva venta ──
   const [clientes,   setClientes]   = useState([]);
@@ -165,14 +168,19 @@ export default function PedidosVentas() {
   const [guardandoVenta, setGuardandoVenta] = useState(false);
   const [formVenta,  setFormVenta]  = useState(formVentaInicial());
   const [erroresVenta, setErroresVenta] = useState({});
+  const [creditoInfo, setCreditoInfo] = useState(null);
+  const [cargandoCredito, setCargandoCredito] = useState(false);
   const [cargandoDatosVenta, setCargandoDatosVenta] = useState(false);
   const [errorDatosVenta,   setErrorDatosVenta]   = useState("");
 
   useEffect(() => { cargar(); }, []);
 
-  const cargar = async () => {
-    setCargando(true);
+  const cargar = async (silencioso = false) => {
+    if (!silencioso) {
+      setCargando(true);
+    }
     setErrorMsg("");
+    const inicio = Date.now();
     try {
       const [ventasRes, pagosRes] = await Promise.all([
         api.get("/ventas"),
@@ -196,12 +204,24 @@ export default function PedidosVentas() {
         return { ...v, total_pagado: totalPagado, abonos, estado };
       }).filter(Boolean);
 
+      if (!silencioso) {
+        // ── Tiempo mínimo de carga (400ms) para que la animación se vea intencional
+        // y no como un parpadeo — solo aplica a la carga inicial de página completa. ──
+        const transcurrido = Date.now() - inicio;
+        if (transcurrido < 400) await new Promise((r) => setTimeout(r, 400 - transcurrido));
+      }
+
+      // ── NUEVO: en modo "silencioso" (después de un pago/cambio de estado) NO se pasa
+      // por el estado de carga/skeleton — así las filas de la tabla se quedan montadas
+      // en el DOM, y la barrita de "Pago" de esa fila sí puede animarse suavemente de
+      // su valor anterior al nuevo (transition: width), en vez de aparecer ya en su
+      // posición final de golpe. ──
       setDatos(ventas);
     } catch (err) {
       console.error("Error cargando datos:", err);
       setErrorMsg("Error al cargar los datos");
     } finally {
-      setCargando(false);
+      if (!silencioso) setCargando(false);
     }
   };
 
@@ -224,6 +244,21 @@ export default function PedidosVentas() {
     }
   };
 
+  // ── NUEVO: consulta el cupo de crédito del cliente cuando la venta es a cuotas ──
+  useEffect(() => {
+    if (!modalVenta || formVenta.tipo_pago !== "cuotas" || !formVenta.id_cliente) {
+      setCreditoInfo(null);
+      return;
+    }
+    let cancelado = false;
+    setCargandoCredito(true);
+    api.get(`/ventas/credito/${formVenta.id_cliente}`)
+      .then(({ data }) => { if (!cancelado) setCreditoInfo(data); })
+      .catch(() => { if (!cancelado) setCreditoInfo(null); })
+      .finally(() => { if (!cancelado) setCargandoCredito(false); });
+    return () => { cancelado = true; };
+  }, [modalVenta, formVenta.id_cliente, formVenta.tipo_pago]);
+
   const abrirNuevaVenta = () => {
     setFormVenta(formVentaInicial());
     setErroresVenta({});
@@ -235,7 +270,12 @@ export default function PedidosVentas() {
     setFormVenta((prev) => {
       const items = [...prev.items];
       items[index] = { ...items[index], [campo]: valor };
-      if (campo === "id_producto") items[index].id_variante = "";
+      if (campo === "id_producto") {
+        items[index].id_variante = "";
+        // ── NUEVO: al elegir el producto, trae automáticamente su precio del catálogo ──
+        const producto = productos.find((p) => String(p.id_producto) === String(valor));
+        items[index].precio_unitario = producto?.precio ?? "";
+      }
       return { ...prev, items };
     });
   };
@@ -261,6 +301,9 @@ export default function PedidosVentas() {
     if (formVenta.tipo_pago === "cuotas" && (!formVenta.num_cuotas || Number(formVenta.num_cuotas) < 2)) {
       e.num_cuotas = "Indica el número de cuotas (mínimo 2)";
     }
+    if (Number(formVenta.descuento) > 0 && !formVenta.motivo_descuento?.trim()) {
+      e.motivo_descuento = "Indica el motivo del descuento";
+    }
     formVenta.items.forEach((it, i) => {
       if (!it.id_producto) e[`item_${i}_producto`] = "Selecciona un producto";
       const producto = productos.find((p) => String(p.id_producto) === String(it.id_producto));
@@ -280,10 +323,12 @@ export default function PedidosVentas() {
       const payload = {
         id_cliente: Number(formVenta.id_cliente),
         descuento: Number(formVenta.descuento) || 0,
+        motivo_descuento: Number(formVenta.descuento) > 0 ? formVenta.motivo_descuento.trim() : null,
         impuesto: Number(formVenta.impuesto) || 0,
         estado: formVenta.estado,
         fecha: formVenta.fecha,
         observaciones: formVenta.observaciones || null,
+        direccion_entrega: formVenta.direccion_entrega?.trim() || null,
         tipo_pago: formVenta.tipo_pago,
         num_cuotas: formVenta.tipo_pago === "cuotas" ? Number(formVenta.num_cuotas) : null,
         metodo_pago: formVenta.metodo_pago,
@@ -314,7 +359,11 @@ export default function PedidosVentas() {
     setCambiandoEstado(true);
     try {
       await api.patch(`/ventas/${id}/estado`, { estado });
-      setDatos(prev => prev.map(v => v.id_venta === id ? { ...v, estado } : v));
+      // ── CORREGIDO: antes solo actualizaba "estado" localmente, dejando "total_pagado"
+      // (la columna Pago) con el valor viejo. Ahora recarga desde el backend, que ya
+      // confirma el abono correspondiente al marcar "Pagado" — en modo silencioso, para
+      // que la fila no se remonte y la barrita de "Pago" se anime en vez de aparecer de golpe. ──
+      await cargar(true);
     } catch (err) {
       alert(err.response?.data?.message || "Error al cambiar estado");
     } finally {
@@ -325,31 +374,38 @@ export default function PedidosVentas() {
   const agregarAbono = async () => {
     const e = {};
     const restante = abonosModal ? abonosModal.total - (abonosModal.total_pagado || 0) : 0;
-    if (!formAbono.monto || Number(formAbono.monto) <= 0) e.monto = "El monto es obligatorio";
-    else if (Number(formAbono.monto) > restante) e.monto = "El monto no puede ser mayor al saldo";
+    const esCuotas = abonosModal?.tipo_pago === "cuotas";
+    // ── NUEVO: si NO es a cuotas, no se pide monto — se cobra el saldo restante completo ──
+    const montoAEnviar = esCuotas ? Number(formAbono.monto) : restante;
+
+    if (esCuotas) {
+      if (!formAbono.monto || Number(formAbono.monto) <= 0) e.monto = "El monto es obligatorio";
+      else if (Number(formAbono.monto) > restante) e.monto = "El monto no puede ser mayor al saldo";
+    }
     if (!formAbono.fecha) e.fecha = "La fecha es obligatoria";
     setErroresAbono(e);
     if (Object.keys(e).length > 0 || !abonosModal) return;
+
+    setGuardandoAbono(true);
     try {
-      const { data: nuevo } = await api.post("/pagos", {
+      await api.post("/pagos", {
         id_venta: abonosModal.id_venta,
-        monto:    Number(formAbono.monto),
+        monto:    montoAEnviar,
         metodo:   formAbono.metodo,
         estado:   "Confirmado",
         fecha:    formAbono.fecha || new Date().toISOString().split("T")[0]
       });
 
-      setDatos(prev => prev.map(v => {
-        if (v.id_venta !== abonosModal.id_venta) return v;
-        const nuevoTotal  = (v.total_pagado || 0) + Number(formAbono.monto);
-        const nuevoEstado = nuevoTotal >= v.total ? "Pagado" : "Pendiente";
-        return { ...v, total_pagado: nuevoTotal, estado: nuevoEstado, abonos: [...(v.abonos || []), { ...nuevo, monto: Number(formAbono.monto), estado: "Confirmado" }] };
-      }));
+      // ── Recarga en modo silencioso: la fila no se remonta, así la barrita
+      // de "Pago" de esa fila se anima de su valor anterior al nuevo. ──
+      await cargar(true);
 
       setAbonosModal(null);
       setFormAbono({ monto: "", metodo: "Efectivo", fecha: "" });
     } catch (err) {
-      alert(err.response?.data?.message || "Error al registrar abono");
+      alert(err.response?.data?.message || "Error al registrar el pago");
+    } finally {
+      setGuardandoAbono(false);
     }
   };
 
@@ -508,6 +564,9 @@ export default function PedidosVentas() {
                     <span className="pedidosventas-detalle-info-label">Estado</span>
                     <span className={`pedidosventas-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>
                   </div>
+                  {verDetalle.direccion_entrega && (
+                    <div><span className="pedidosventas-detalle-info-label">Dirección de entrega</span><span className="pedidosventas-detalle-info-valor">{verDetalle.direccion_entrega}</span></div>
+                  )}
                 </div>
               </div>
 
@@ -527,6 +586,12 @@ export default function PedidosVentas() {
                   <div><span className="pedidosventas-detalle-info-label">Total</span><span className="pedidosventas-detalle-info-valor">{fmt(verDetalle.total)}</span></div>
                   <div><span className="pedidosventas-detalle-info-label">Abonado</span><span className="pedidosventas-detalle-info-valor">{fmt(verDetalle.total_pagado || 0)}</span></div>
                   <div><span className="pedidosventas-detalle-info-label">Saldo</span><span className="pedidosventas-detalle-info-valor">{fmt(verDetalle.total - (verDetalle.total_pagado || 0))}</span></div>
+                  {Number(verDetalle.descuento) > 0 && (
+                    <div><span className="pedidosventas-detalle-info-label">Descuento</span><span className="pedidosventas-detalle-info-valor">{fmt(verDetalle.descuento)}</span></div>
+                  )}
+                  {verDetalle.motivo_descuento && (
+                    <div><span className="pedidosventas-detalle-info-label">Motivo del descuento</span><span className="pedidosventas-detalle-info-valor">{verDetalle.motivo_descuento}</span></div>
+                  )}
                 </div>
               </div>
 
@@ -554,7 +619,9 @@ export default function PedidosVentas() {
         <div className="pedidosventas-modal-overlay">
           <div className="pedidosventas-modal" onClick={(e) => e.stopPropagation()}>
             <div className="pedidosventas-modal-header">
-              <h2 className="pedidosventas-modal-title">Gestionar Abonos</h2>
+              <h2 className="pedidosventas-modal-title">
+                {abonosModal.tipo_pago === "cuotas" ? "Gestionar Abonos" : "Gestionar Pago"}
+              </h2>
               <button className="pedidosventas-modal-close" onClick={() => setAbonosModal(null)}><IconX /></button>
             </div>
             <div className="pedidosventas-modal-body">
@@ -564,7 +631,7 @@ export default function PedidosVentas() {
                   <span className="pedidosventas-abonos-summary-value">{fmt(abonosModal.total)}</span>
                 </div>
                 <div className="pedidosventas-abonos-summary-item">
-                  <span className="pedidosventas-abonos-summary-label">Abonado</span>
+                  <span className="pedidosventas-abonos-summary-label">{abonosModal.tipo_pago === "cuotas" ? "Abonado" : "Pagado"}</span>
                   <span className="pedidosventas-abonos-summary-value">{fmt(abonosModal.total_pagado || 0)}</span>
                 </div>
                 <div className="pedidosventas-abonos-summary-item">
@@ -575,7 +642,9 @@ export default function PedidosVentas() {
 
               {abonosModal.abonos?.length > 0 && (
                 <div className="pedidosventas-abonos-list">
-                  <h4 className="pedidosventas-abonos-list-title">Historial de Abonos</h4>
+                  <h4 className="pedidosventas-abonos-list-title">
+                    {abonosModal.tipo_pago === "cuotas" ? "Historial de Abonos" : "Historial de Pagos"}
+                  </h4>
                   {abonosModal.abonos.map((a, idx) => (
                     <div key={idx} className="pedidosventas-abono-item">
                       <div className="pedidosventas-abono-item-info">
@@ -590,22 +659,33 @@ export default function PedidosVentas() {
 
               {tienePerm('Pagos.crear') && abonosModal.estado !== "Pagado" && abonosModal.estado !== "Anulado" && (
                 <div className="pedidosventas-form-section">
-                  <h4 className="pedidosventas-form-section-title">Nuevo Abono</h4>
+                  <h4 className="pedidosventas-form-section-title">
+                    {abonosModal.tipo_pago === "cuotas" ? "Nuevo Abono" : "Registrar pago"}
+                  </h4>
                   <div className="pedidosventas-form-row">
-                    <div className="pedidosventas-form-group">
-                      <label className="pedidosventas-form-label">Monto (COP)</label>
-                      <input
-                        type="number"
-                        className={`pedidosventas-form-input${erroresAbono.monto ? " input-error" : ""}`}
-                        placeholder={`Máx: ${fmt(abonosModal.total - (abonosModal.total_pagado || 0))}`}
-                        value={formAbono.monto}
-                        onChange={(e) => {
-                          setFormAbono({ ...formAbono, monto: e.target.value });
-                          if (erroresAbono.monto) setErroresAbono(prev => ({ ...prev, monto: "" }));
-                        }}
-                      />
-                      {erroresAbono.monto && <span className="pedidosventas-field-error">{erroresAbono.monto}</span>}
-                    </div>
+                    {abonosModal.tipo_pago === "cuotas" ? (
+                      <div className="pedidosventas-form-group">
+                        <label className="pedidosventas-form-label">Monto (COP)</label>
+                        <input
+                          type="number"
+                          className={`pedidosventas-form-input${erroresAbono.monto ? " input-error" : ""}`}
+                          placeholder={`Máx: ${fmt(abonosModal.total - (abonosModal.total_pagado || 0))}`}
+                          value={formAbono.monto}
+                          onChange={(e) => {
+                            setFormAbono({ ...formAbono, monto: e.target.value });
+                            if (erroresAbono.monto) setErroresAbono(prev => ({ ...prev, monto: "" }));
+                          }}
+                        />
+                        {erroresAbono.monto && <span className="pedidosventas-field-error">{erroresAbono.monto}</span>}
+                      </div>
+                    ) : (
+                      <div className="pedidosventas-form-group">
+                        <label className="pedidosventas-form-label">Monto a cobrar</label>
+                        <div className="pedidosventas-monto-fijo">
+                          {fmt(abonosModal.total - (abonosModal.total_pagado || 0))}
+                        </div>
+                      </div>
+                    )}
                     <div className="pedidosventas-form-group">
                       <label className="pedidosventas-form-label">Método</label>
                       <select
@@ -638,10 +718,10 @@ export default function PedidosVentas() {
               )}
             </div>
             <div className="pedidosventas-modal-footer">
-              <button className="pedidosventas-btn-secondary" onClick={() => setAbonosModal(null)}>Cerrar</button>
+              <button className="pedidosventas-btn-secondary" onClick={() => setAbonosModal(null)} disabled={guardandoAbono}>Cerrar</button>
               {tienePerm('Pagos.crear') && abonosModal.estado !== "Pagado" && abonosModal.estado !== "Anulado" && (
-                <button className="pedidosventas-btn-primary" onClick={agregarAbono}>
-                  <IconDollar /> Registrar Abono
+                <button className="pedidosventas-btn-primary" onClick={agregarAbono} disabled={guardandoAbono}>
+                  <IconDollar /> {guardandoAbono ? "Guardando..." : (abonosModal.tipo_pago === "cuotas" ? "Registrar Abono" : "Registrar Pago")}
                 </button>
               )}
             </div>
@@ -706,6 +786,23 @@ export default function PedidosVentas() {
                     <option value="cuotas">Cuotas</option>
                   </select>
                 </div>
+                {formVenta.tipo_pago === "cuotas" && formVenta.id_cliente && (
+                  <div className="pedidosventas-credito-banner">
+                    {cargandoCredito ? (
+                      <span style={{ color: "var(--muted)" }}>Consultando cupo de crédito...</span>
+                    ) : creditoInfo?.cupo_credito !== null && creditoInfo?.cupo_credito !== undefined ? (
+                      <>
+                        <span>Cupo: <b>{fmt(creditoInfo.cupo_credito)}</b></span>
+                        <span>Deuda actual: <b>{fmt(creditoInfo.deuda_actual)}</b></span>
+                        <span className={totalVenta > (creditoInfo.disponible ?? Infinity) ? "pedidosventas-credito-excedido" : "pedidosventas-credito-ok"}>
+                          Disponible: <b>{fmt(creditoInfo.disponible)}</b>
+                        </span>
+                      </>
+                    ) : (
+                      <span style={{ color: "var(--muted)" }}>Este cliente no tiene cupo de crédito asignado (sin límite).</span>
+                    )}
+                  </div>
+                )}
                 {formVenta.tipo_pago === "cuotas" ? (
                   <div className="pedidosventas-form-group">
                     <label className="pedidosventas-form-label">Número de cuotas</label>
@@ -856,7 +953,13 @@ export default function PedidosVentas() {
                     min="0"
                     className="pedidosventas-form-input"
                     value={formVenta.descuento}
-                    onChange={(e) => setFormVenta({ ...formVenta, descuento: e.target.value })}
+                    onChange={(e) => {
+                      const descuento = e.target.value;
+                      setFormVenta({ ...formVenta, descuento });
+                      if (erroresVenta.motivo_descuento && Number(descuento) === 0) {
+                        setErroresVenta((prev) => ({ ...prev, motivo_descuento: "" }));
+                      }
+                    }}
                   />
                 </div>
                 <div className="pedidosventas-form-group">
@@ -869,6 +972,35 @@ export default function PedidosVentas() {
                     onChange={(e) => setFormVenta({ ...formVenta, impuesto: e.target.value })}
                   />
                 </div>
+              </div>
+
+              {Number(formVenta.descuento) > 0 && (
+                <div className="pedidosventas-form-group">
+                  <label className="pedidosventas-form-label">Motivo del descuento</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Cliente frecuente, producto con detalle menor, promoción..."
+                    className={`pedidosventas-form-input${erroresVenta.motivo_descuento ? " input-error" : ""}`}
+                    value={formVenta.motivo_descuento}
+                    onChange={(e) => {
+                      const motivo_descuento = e.target.value;
+                      setFormVenta({ ...formVenta, motivo_descuento });
+                      if (erroresVenta.motivo_descuento) setErroresVenta((prev) => ({ ...prev, motivo_descuento: motivo_descuento.trim() ? "" : prev.motivo_descuento }));
+                    }}
+                  />
+                  {erroresVenta.motivo_descuento && <span className="pedidosventas-field-error">{erroresVenta.motivo_descuento}</span>}
+                </div>
+              )}
+
+              <div className="pedidosventas-form-group">
+                <label className="pedidosventas-form-label">Dirección de entrega (opcional)</label>
+                <input
+                  type="text"
+                  placeholder="Ej: Cra 43A # 18-20 Apto 302 — déjalo vacío si la venta es en persona"
+                  className="pedidosventas-form-input"
+                  value={formVenta.direccion_entrega}
+                  onChange={(e) => setFormVenta({ ...formVenta, direccion_entrega: e.target.value })}
+                />
               </div>
 
               <div className="pedidosventas-form-group">

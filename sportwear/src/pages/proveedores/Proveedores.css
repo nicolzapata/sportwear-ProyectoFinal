@@ -97,7 +97,6 @@
   color: #888;
   margin-bottom: 0.2rem;
   display: block;
-
   letter-spacing: 0.3px;
 }
 
@@ -114,6 +113,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  gap: 1rem;
 }
 
 .proveedores-actions-left { display: flex; align-items: center; gap: 1rem; }
@@ -234,6 +234,116 @@
   padding-left: 0.5rem;
 }
 
+/* ══════════════════════════════════════════════════════════════
+   ── Celdas de la tabla — ANTES NO EXISTÍAN, causaban el desorden ──
+   ══════════════════════════════════════════════════════════════ */
+.proveedores-empresa-name {
+  font-weight: 500;
+  color: #1a1a1a;
+  font-size: 0.86rem;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+
+.proveedores-empresa-sub {
+  font-size: 0.72rem;
+  color: #888;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+
+.proveedores-nit-code {
+  display: inline-block;
+  background: #f5f5f5;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.74rem;
+  font-family: 'DM Mono', 'Courier New', monospace;
+  color: #555;
+  white-space: nowrap;
+}
+
+.proveedores-contacto-cell,
+.proveedores-telefono-cell {
+  font-size: 0.8rem;
+  color: #444;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.tabla-ciudad {
+  font-size: 0.78rem;
+  color: #555;
+  background: #f7f5f2;
+  border-radius: 20px;
+  padding: 0.2rem 0.6rem;
+  white-space: nowrap;
+}
+
+.proveedores-action-cell {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.proveedores-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid #eaeaea;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  flex-shrink: 0;
+}
+
+.proveedores-action-btn:hover {
+  border-color: #1a1a1a;
+  background: #fafafa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.proveedores-view-btn:hover { border-color: #1976d2; color: #1976d2; }
+.proveedores-edit-btn:hover { border-color: #2e7d32; color: #2e7d32; }
+
+/* Ancho controlado de columnas para que no se desborden y obliguen a scroll */
+.proveedores-container .tbl-td,
+.proveedores-container .tbl-th {
+  padding: 0.65rem 0.5rem;
+  font-size: 0.8rem;
+}
+.proveedores-container .tbl th:nth-child(1),
+.proveedores-container .tbl td:nth-child(1) { min-width: 140px; max-width: 160px; }
+.proveedores-container .tbl th:nth-child(2),
+.proveedores-container .tbl td:nth-child(2) { white-space: nowrap; }
+.proveedores-container .tbl th:nth-child(3),
+.proveedores-container .tbl td:nth-child(3) { max-width: 115px; }
+.proveedores-container .tbl th:nth-child(4),
+.proveedores-container .tbl td:nth-child(4) { max-width: 95px; }
+.proveedores-container .tbl th:nth-child(5),
+.proveedores-container .tbl td:nth-child(5) { max-width: 135px; }
+.proveedores-container .tbl th:nth-child(6),
+.proveedores-container .tbl td:nth-child(6) { max-width: 90px; }
+.proveedores-container .tbl th:nth-child(7),
+.proveedores-container .tbl td:nth-child(7) { text-align: center; width: 60px; }
+.proveedores-container .tbl th:nth-child(8),
+.proveedores-container .tbl td:nth-child(8) { width: 65px; }
+.proveedores-container .tbl th:nth-child(9),
+.proveedores-container .tbl td:nth-child(9) { width: 75px; }
+
 /* Modal overlay / shell */
 .proveedores-modal-overlay {
   position: fixed;
@@ -333,6 +443,8 @@
   margin-bottom: 1rem;
 }
 
+/* CORREGIDO: antes había un duplicado más abajo en el archivo que sobrescribía esto
+   a "display: flex" sin control de ancho — eso rompía el layout de dos/tres columnas. */
 .proveedores-form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -473,17 +585,6 @@
   gap: 0.5rem;
 }
 
-/* Banner de error al cargar datos (compartido con Compras) */
-.compras-error-banner {
-  background: #fdecea;
-  border: 1px solid #f0b8b3;
-  color: #b83232;
-  padding: 0.9rem 1.2rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
-}
-
 /* Detail */
 .proveedores-detail-avatar {
   width: 70px;
@@ -550,6 +651,78 @@
   to { transform: rotate(360deg); }
 }
 
+.proveedores-loading {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #888;
+  font-size: 0.9rem;
+}
+
+/* Toggle Empresa / Persona natural dentro del modal */
+.proveedores-tipo-toggle {
+  display: flex;
+  gap: 0.5rem;
+  padding: 4px;
+  background: #f5f5f5;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.proveedores-tipo-btn {
+  border: none;
+  background: transparent;
+  padding: 0.5rem 1.2rem;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.proveedores-tipo-btn.active {
+  background: white;
+  color: #1a1a1a;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Texto fijo del tipo de proveedor cuando se está editando (no editable) */
+.proveedores-tipo-fijo {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: #f5f5f5;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+/* Banner de error al cargar la lista (y compartido con Compras) */
+.proveedores-error-banner,
+.compras-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #fdecec;
+  border: 1px solid #f3c6c6;
+  color: #a33;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.proveedores-error-banner button {
+  background: none;
+  border: 1px solid #a33;
+  color: #a33;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .proveedores-container {
@@ -596,18 +769,9 @@
     justify-content: center;
   }
 
-  .proveedores-empresa-cell {
-    gap: 0.8rem;
-  }
-
-  .proveedores-empresa-avatar {
-    width: 40px;
-    height: 40px;
-    font-size: 1.2rem;
-  }
-
-  .proveedores-empresa-name {
-    font-size: 0.9rem;
+  .proveedores-empresa-name,
+  .proveedores-empresa-sub {
+    max-width: 140px;
   }
 
   .proveedores-form-row,
@@ -626,22 +790,6 @@
     font-size: 1.5rem;
   }
 
-  .proveedores-table-th,
-  .proveedores-table-td {
-    padding: 0.8rem 0.5rem;
-    font-size: 0.8rem;
-  }
-
-  .proveedores-empresa-avatar {
-    width: 36px;
-    height: 36px;
-    font-size: 1.1rem;
-  }
-
-  .proveedores-empresa-name {
-    font-size: 0.85rem;
-  }
-
   .proveedores-nit-code {
     font-size: 0.7rem;
     padding: 0.2rem 0.5rem;
@@ -652,160 +800,4 @@
     height: 32px;
     font-size: 0.9rem;
   }
-}
-
-/* ── Agregar al final de Proveedores.css ── */
-
-/* Toggle Empresa / Persona natural dentro del modal */
-.proveedores-tipo-toggle {
-  display: flex;
-  gap: 0.5rem;
-  padding: 4px;
-  background: #f5f5f5;
-  border-radius: 12px;
-  width: fit-content;
-}
-
-.proveedores-tipo-btn {
-  border: none;
-  background: transparent;
-  padding: 0.5rem 1.2rem;
-  border-radius: 9px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.proveedores-tipo-btn.active {
-  background: white;
-  color: #1a1a1a;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Banner de error al cargar la lista */
-.proveedores-error-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: #fdecec;
-  border: 1px solid #f3c6c6;
-  color: #a33;
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
-}
-
-.proveedores-error-banner button {
-  background: none;
-  border: 1px solid #a33;
-  color: #a33;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-/* Estado de carga de la tabla */
-.proveedores-loading {
-  padding: 3rem 1rem;
-  text-align: center;
-  color: #888;
-  font-size: 0.9rem;
-}
-
-/* Nombre comercial debajo de la razón social en la tabla */
-.proveedores-empresa-sub {
-  font-size: 0.78rem;
-  color: #888;
-  margin-top: 2px;
-}
-
-/* ── Agregar al final de Proveedores.css ── */
-
-/* Toggle Empresa / Persona natural dentro del modal */
-.proveedores-tipo-toggle {
-  display: flex;
-  gap: 0.5rem;
-  padding: 4px;
-  background: #f5f5f5;
-  border-radius: 12px;
-  width: fit-content;
-}
-
-.proveedores-tipo-btn {
-  border: none;
-  background: transparent;
-  padding: 0.5rem 1.2rem;
-  border-radius: 9px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #666;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.proveedores-tipo-btn.active {
-  background: white;
-  color: #1a1a1a;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Texto fijo del tipo de proveedor cuando se está editando (no editable) */
-.proveedores-tipo-fijo {
-  display: inline-block;
-  padding: 0.5rem 1rem;
-  background: #f5f5f5;
-  border-radius: 9px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #1a1a1a;
-  margin: 0;
-}
-
-/* Fila de dos columnas (ej. Nombres / Apellidos) */
-.proveedores-form-row {
-  display: flex;
-  gap: 1rem;
-}
-
-/* Banner de error al cargar la lista */
-.proveedores-error-banner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: #fdecec;
-  border: 1px solid #f3c6c6;
-  color: #a33;
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
-}
-
-.proveedores-error-banner button {
-  background: none;
-  border: 1px solid #a33;
-  color: #a33;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-/* Estado de carga de la tabla */
-.proveedores-loading {
-  padding: 3rem 1rem;
-  text-align: center;
-  color: #888;
-  font-size: 0.9rem;
-}
-
-/* Nombre comercial debajo de la razón social en la tabla */
-.proveedores-empresa-sub {
-  font-size: 0.78rem;
-  color: #888;
-  margin-top: 2px;
 }

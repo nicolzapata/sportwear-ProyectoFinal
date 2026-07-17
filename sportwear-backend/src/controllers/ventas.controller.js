@@ -94,4 +94,15 @@ const getComprobantePDF = async (req, res) => {
   }
 };
 
-module.exports = { getVentas, getVentaById, crearVenta, cambiarEstado, crearMiPedido, crearCarritoAbandonado, getMisPedidos, getComprobantePDF };
+// ── NUEVO: cupo/deuda/disponible de un cliente, para validar ventas a cuotas ──
+const getCreditoCliente = async (req, res) => {
+  try {
+    const data = await ventasService.getCreditoCliente(req.params.id_cliente);
+    res.json(data);
+  } catch (err) {
+    console.error('ERROR getCreditoCliente:', err);
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+module.exports = { getVentas, getVentaById, crearVenta, cambiarEstado, crearMiPedido, crearCarritoAbandonado, getMisPedidos, getComprobantePDF, getCreditoCliente };

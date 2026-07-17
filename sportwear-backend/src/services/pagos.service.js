@@ -1,6 +1,7 @@
 // src/services/pagos.service.js
 const pool = require('../config/db');
 const { enviarCorreo } = require('./mailer.service');
+const { notificarComprobantePago } = require('./ventas.service');
 
 const getPagos = async ({ page, limit, q } = {}) => {
   const params = [];
@@ -63,16 +64,18 @@ const getSaldoPendiente = async (client, id_venta) => {
   return { total, totalPagado, saldo: total - totalPagado };
 };
 
-const notificarAbono = async (client, id_venta, monto) => {
+// ── NUEVO: notificación simple de abono parcial. Acepta "pool" o un "client" de transacción
+// (ambos tienen `.query`) — se usa siempre DESPUÉS del COMMIT, con `pool`. ──
+const notificarAbono = async (db, id_venta, monto) => {
   try {
-    const info = await client.query(`
+    const info = await db.query(`
       SELECT c.nombre, c.email
       FROM "Ventas" v JOIN "Clientes" c ON v.id_cliente = c.id_cliente
       WHERE v.id_venta = $1
     `, [id_venta]);
     if (!info.rows.length || !info.rows[0].email) return;
     const { nombre, email } = info.rows[0];
-    const { saldo } = await getSaldoPendiente(client, id_venta);
+    const { saldo } = await getSaldoPendiente(db, id_venta);
 
     enviarCorreo({
       to: email,
@@ -91,6 +94,27 @@ const notificarAbono = async (client, id_venta, monto) => {
   }
 };
 
+// ── NUEVO: dentro de la transacción, solo evalúa y marca "Pagado" si corresponde —
+// NO envía nada todavía (el envío se hace después del COMMIT, en cada punto de llamada,
+// para no leer datos sin confirmar ni disparar correos si la transacción termina en ROLLBACK). ──
+const evaluarYMarcarPagada = async (client, id_venta) => {
+  const { total, totalPagado } = await getSaldoPendiente(client, id_venta);
+  if (totalPagado >= total) {
+    await client.query(
+      `UPDATE "Ventas" SET estado='Pagado' WHERE id_venta=$1 AND estado != 'Anulado'`,
+      [id_venta]
+    );
+    return 'completo';
+  }
+  return 'parcial';
+};
+
+// Dispara la notificación correcta después de que la transacción ya quedó confirmada.
+const notificarSegunResultado = (tipo, id_venta, monto) => {
+  if (tipo === 'completo') notificarComprobantePago(id_venta);
+  else if (tipo === 'parcial') notificarAbono(pool, id_venta, monto);
+};
+
 const crearPago = async (datos) => {
   const { id_venta, monto, tipo, metodo, referencia_pago, estado, fecha } = datos;
   if (!id_venta || !monto) throw { status: 400, message: 'id_venta y monto son requeridos' };
@@ -100,18 +124,40 @@ const crearPago = async (datos) => {
   if (Number(monto) > saldo)
     throw { status: 400, message: `El monto ($${Number(monto).toLocaleString('es-CO')}) supera el saldo pendiente ($${saldo.toLocaleString('es-CO')}).` };
 
-  const result = await pool.query(`
-    INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, referencia_pago, estado, fecha)
-    VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
-  `, [id_venta, monto, tipo || 'Pago completo', metodo || 'Efectivo',
-      referencia_pago || null, estado || 'Pendiente', fecha || new Date()]);
-  return result.rows[0];
+  const client = await pool.connect();
+  let tipoNotificacion = null;
+  try {
+    await client.query('BEGIN');
+
+    const result = await client.query(`
+      INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, referencia_pago, estado, fecha)
+      VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *
+    `, [id_venta, monto, tipo || 'Pago completo', metodo || 'Efectivo',
+        referencia_pago || null, estado || 'Pendiente', fecha || new Date()]);
+
+    const pago = result.rows[0];
+
+    if (pago.estado === 'Confirmado') {
+      tipoNotificacion = await evaluarYMarcarPagada(client, id_venta);
+    }
+
+    await client.query('COMMIT');
+
+    // ── Se envía SOLO después del COMMIT, con la transacción ya confirmada ──
+    if (tipoNotificacion) notificarSegunResultado(tipoNotificacion, id_venta, monto);
+
+    return pago;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally { client.release(); }
 };
 
 const cambiarEstado = async (id, estado) => {
   if (!estado) throw { status: 400, message: 'Estado requerido' };
 
   const client = await pool.connect();
+  let tipoNotificacion = null, idVentaNotif = null, montoNotif = null;
   try {
     await client.query('BEGIN');
     const result = await client.query(
@@ -122,18 +168,15 @@ const cambiarEstado = async (id, estado) => {
 
     // Al confirmar un pago, si con este ya se cubre el total de la venta, se marca "Pagado".
     if (estado === 'Confirmado') {
-      const { id_venta } = result.rows[0];
-      const { total, totalPagado } = await getSaldoPendiente(client, id_venta);
-      if (totalPagado >= total) {
-        await client.query(
-          `UPDATE "Ventas" SET estado='Pagado' WHERE id_venta=$1 AND estado NOT IN ('Anulado', 'Pagado')`,
-          [id_venta]
-        );
-      }
-      await notificarAbono(client, id_venta, result.rows[0].monto);
+      idVentaNotif = result.rows[0].id_venta;
+      montoNotif = result.rows[0].monto;
+      tipoNotificacion = await evaluarYMarcarPagada(client, idVentaNotif);
     }
 
     await client.query('COMMIT');
+
+    if (tipoNotificacion) notificarSegunResultado(tipoNotificacion, idVentaNotif, montoNotif);
+
     return result.rows[0];
   } catch (err) {
     await client.query('ROLLBACK');
@@ -141,19 +184,10 @@ const cambiarEstado = async (id, estado) => {
   } finally { client.release(); }
 };
 
-const marcarVentaPagadaSiCompleta = async (client, id_venta) => {
-  const { total, totalPagado } = await getSaldoPendiente(client, id_venta);
-  if (totalPagado >= total) {
-    await client.query(
-      `UPDATE "Ventas" SET estado='Pagado' WHERE id_venta=$1 AND estado NOT IN ('Anulado', 'Pagado')`,
-      [id_venta]
-    );
-  }
-};
-
 const pagarCuota = async (id_pago, { metodo, referencia_pago }) => {
   const numId = parseInt(id_pago);
   const client = await pool.connect();
+  let tipoNotificacion = null, idVentaNotif = null, montoNotif = null;
   try {
     await client.query('BEGIN');
     const result = await client.query(
@@ -161,9 +195,15 @@ const pagarCuota = async (id_pago, { metodo, referencia_pago }) => {
       [metodo || 'Efectivo', referencia_pago || null, numId]
     );
     if (!result.rows.length) throw { status: 404, message: 'Cuota no encontrada o ya pagada' };
-    await marcarVentaPagadaSiCompleta(client, result.rows[0].id_venta);
-    await notificarAbono(client, result.rows[0].id_venta, result.rows[0].monto);
+
+    idVentaNotif = result.rows[0].id_venta;
+    montoNotif = result.rows[0].monto;
+    tipoNotificacion = await evaluarYMarcarPagada(client, idVentaNotif);
+
     await client.query('COMMIT');
+
+    if (tipoNotificacion) notificarSegunResultado(tipoNotificacion, idVentaNotif, montoNotif);
+
     return result.rows[0];
   } catch (err) {
     await client.query('ROLLBACK');
@@ -173,18 +213,22 @@ const pagarCuota = async (id_pago, { metodo, referencia_pago }) => {
 
 const pagarTotal = async (id_venta, { metodo, referencia_pago }) => {
   const client = await pool.connect();
+  let tipoNotificacion = null, montoNotif = null;
   try {
     await client.query('BEGIN');
     const result = await client.query(
       `UPDATE "PagosAbonos" SET estado='Confirmado', metodo=$1, referencia_pago=$2, fecha=NOW() WHERE id_venta=$3 AND estado='Pendiente' RETURNING *`,
       [metodo || 'Efectivo', referencia_pago || null, id_venta]
     );
-    await marcarVentaPagadaSiCompleta(client, id_venta);
     if (result.rows.length) {
-      const montoTotal = result.rows.reduce((acc, r) => acc + Number(r.monto), 0);
-      await notificarAbono(client, id_venta, montoTotal);
+      montoNotif = result.rows.reduce((acc, r) => acc + Number(r.monto), 0);
+      tipoNotificacion = await evaluarYMarcarPagada(client, id_venta);
     }
+
     await client.query('COMMIT');
+
+    if (tipoNotificacion) notificarSegunResultado(tipoNotificacion, id_venta, montoNotif);
+
     return result.rows;
   } catch (err) {
     await client.query('ROLLBACK');
