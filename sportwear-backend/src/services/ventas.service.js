@@ -304,6 +304,44 @@ const cambiarEstado = async (id, estado) => {
   return venta;
 };
 
+// ── NUEVO: correo de "pedido recibido" — se envía SIEMPRE al crear el pedido,
+// sin PDF, distinto del comprobante de pago (que solo se manda cuando el pago
+// se confirma de verdad). El mensaje cambia según el método de pago elegido. ──
+const notificarPedidoRecibido = async (id_venta, metodo_pago) => {
+  try {
+    const info = await pool.query(`
+      SELECT c.nombre, c.email
+      FROM "Ventas" v JOIN "Clientes" c ON v.id_cliente = c.id_cliente
+      WHERE v.id_venta = $1
+    `, [id_venta]);
+    if (!info.rows.length || !info.rows[0].email) return;
+    const { nombre, email } = info.rows[0];
+
+    const instrucciones = {
+      'Efectivo':      'Pagarás en efectivo al momento de recibir tu pedido. Nuestro equipo se pondrá en contacto para coordinar la entrega.',
+      'Transferencia': `Realiza la transferencia a la cuenta Ahorros N° 000-000000-00 del Banco X, a nombre de DVNA SportWear S.A.S. (NIT 000.000.000-0), y envía el comprobante al WhatsApp 300 000 0000. Confirmaremos tu pedido en cuanto la recibamos.`,
+      'Tarjeta':       'Completa el pago con tarjeta para confirmar tu pedido.',
+    };
+
+    enviarCorreo({
+      to: email,
+      subject: `Recibimos tu pedido #${id_venta}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto;">
+          <h2 style="color:#1a1a1a;">¡Recibimos tu pedido!</h2>
+          <p>Hola ${nombre || ''},</p>
+          <p>Tu pedido <strong>#${id_venta}</strong> quedó registrado y está pendiente de confirmación de pago.</p>
+          <p>${instrucciones[metodo_pago] || 'Te avisaremos apenas se confirme tu pago.'}</p>
+          <hr style="border:none; border-top:1px solid #eee; margin: 20px 0;" />
+          <p style="color:#aaa; font-size: 12px;">DVNA SportWear</p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error('Error notificando pedido recibido:', err.message);
+  }
+};
+
 const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entrega, metodo_pago, tipo_pago, num_cuotas, items }) => {
   if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
   if (!id_cliente) throw { status: 400, message: 'Cliente no identificado' };
@@ -344,7 +382,34 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
       );
       const stock = stockRes.rows[0]?.stock ?? 0;
       if (stock < item.cantidad) {
-        throw { status: 400, message: `Stock insuficiente para variante ID ${item.id_variante}. Disponible: ${stock}` };
+        // ── NUEVO (HU 04.3.4): en vez de solo rechazar, se sugieren otras variantes
+        // del mismo producto que sí tengan stock suficiente para la cantidad pedida. ──
+        const productoRes = await client.query(
+          `SELECT nombre FROM "Productos" WHERE id_producto=$1`,
+          [item.id_producto]
+        );
+        const alternativasRes = await client.query(`
+          SELECT pv.id_variante, pv.talla, pv.stock, col.nombre AS color
+          FROM "ProductoVariantes" pv
+          LEFT JOIN "Colores" col ON pv.id_color = col.id_color
+          WHERE pv.id_producto = $1
+            AND pv.estado = 'Activo'
+            AND pv.stock >= $2
+            AND pv.id_variante != $3
+          ORDER BY pv.stock DESC
+          LIMIT 4
+        `, [item.id_producto, item.cantidad, item.id_variante]);
+
+        throw {
+          status: 400,
+          message: `Stock insuficiente para "${productoRes.rows[0]?.nombre || 'este producto'}". Disponible: ${stock} de ${item.cantidad} solicitadas.`,
+          id_producto: item.id_producto,
+          id_variante_solicitada: item.id_variante,
+          producto: productoRes.rows[0]?.nombre || null,
+          disponible: stock,
+          solicitado: item.cantidad,
+          alternativas: alternativasRes.rows,
+        };
       }
 
       const subtotalLinea = item.cantidad * item.precio;
@@ -382,8 +447,13 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
 
     await client.query('COMMIT');
 
-    // ── NUEVO: si el pedido del cliente quedó confirmado (equivalente a pagado), enviar comprobante ──
-    if ((estado || 'Confirmado') === 'Confirmado') notificarComprobantePago(id_venta);
+    // ── CORREGIDO: "Confirmado" aquí solo significa "el pedido quedó registrado",
+    // NO que ya se pagó — el pago real ocurre después, en el modal de "Realizar pago"
+    // (PaymentModal), que llama a los endpoints de /pagos. Esos ya se encargan de
+    // enviar el comprobante cuando el pago se confirma de verdad (ver pagos.service.js).
+    // Aquí solo se avisa que el pedido quedó registrado, con instrucciones según el
+    // método de pago elegido — nunca el comprobante de pago. ──
+    notificarPedidoRecibido(id_venta, metodo_pago);
 
     const abonosRes = await client.query(
       `SELECT * FROM "PagosAbonos" WHERE id_venta = $1 ORDER BY num_cuota ASC`,

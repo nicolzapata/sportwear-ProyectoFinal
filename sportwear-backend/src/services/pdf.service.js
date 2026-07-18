@@ -61,17 +61,22 @@ const dibujarComprobante = (doc, { venta, items }) => {
 
   doc.y = cajaY + 70;
 
-  // ── Tabla de productos ──
+  // ── Tabla de productos — anchos calculados a partir del ancho real de la tabla,
+  // para que ninguna columna (sobre todo "Subtotal") se pueda salir del borde. ──
   doc.fontSize(11).fillColor(CHARCOAL).text('Productos', izquierda, doc.y);
   doc.moveDown(0.5);
 
+  const tablaDerecha = izquierda + anchoUtil;
   const colX = {
     producto: izquierda,
-    talla:    izquierda + 250,
-    cant:     izquierda + 320,
-    precio:   izquierda + 375,
-    subtotal: izquierda + 450,
+    talla:    izquierda + Math.round(anchoUtil * 0.46), // ~46% del ancho
+    cant:     izquierda + Math.round(anchoUtil * 0.62),
+    precio:   izquierda + Math.round(anchoUtil * 0.71),
+    subtotal: izquierda + Math.round(anchoUtil * 0.84),
   };
+  const anchoProducto = colX.talla - colX.producto - 8;
+  const anchoPrecio   = colX.subtotal - colX.precio - 8;
+  const anchoSubtotal = tablaDerecha - colX.subtotal - 8; // lo que de verdad queda hasta el borde
   const filaAlto = 22;
 
   // encabezado de tabla con fondo de color
@@ -82,7 +87,7 @@ const dibujarComprobante = (doc, { venta, items }) => {
   doc.text('TALLA', colX.talla, headerY + 7);
   doc.text('CANT.', colX.cant, headerY + 7);
   doc.text('PRECIO', colX.precio, headerY + 7);
-  doc.text('SUBTOTAL', colX.subtotal, headerY + 7, { width: 95 - 8, align: 'right' });
+  doc.text('SUBTOTAL', colX.subtotal, headerY + 7, { width: anchoSubtotal, align: 'right' });
 
   let filaY = headerY + filaAlto;
   (items || []).forEach((item, i) => {
@@ -91,11 +96,11 @@ const dibujarComprobante = (doc, { venta, items }) => {
       doc.rect(izquierda, filaY, anchoUtil, filaAlto).fillColor(LIGHT).fill();
     }
     doc.fontSize(9.5).fillColor(CHARCOAL);
-    doc.text(item.producto || '—', colX.producto + 8, filaY + 6, { width: 235 });
+    doc.text(item.producto || '—', colX.producto + 8, filaY + 6, { width: anchoProducto, ellipsis: true });
     doc.text(item.talla || '—', colX.talla, filaY + 6);
     doc.text(String(item.cantidad), colX.cant, filaY + 6);
-    doc.text(fmt(item.precio_unitario), colX.precio, filaY + 6);
-    doc.text(fmt(subtotalLinea), colX.subtotal, filaY + 6, { width: 95 - 8, align: 'right' });
+    doc.text(fmt(item.precio_unitario), colX.precio, filaY + 6, { width: anchoPrecio });
+    doc.text(fmt(subtotalLinea), colX.subtotal, filaY + 6, { width: anchoSubtotal, align: 'right' });
     filaY += filaAlto;
   });
 

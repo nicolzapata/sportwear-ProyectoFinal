@@ -60,6 +60,28 @@ function formatExpiry(v) {
   return clean.length > 2 ? clean.slice(0, 2) + "/" + clean.slice(2) : clean;
 }
 
+// ── NUEVO: detecta la marca de la tarjeta por el prefijo del número, para
+// mostrar el logo correspondiente en la vista previa mientras se escribe. ──
+function detectarMarca(numero) {
+  const digits = numero.replace(/\s/g, "");
+  if (/^4/.test(digits)) return "visa";
+  if (/^5[1-5]/.test(digits) || /^2(2[2-9]\d|[3-6]\d{2}|7[01]\d|720)/.test(digits)) return "mastercard";
+  if (/^3[47]/.test(digits)) return "amex";
+  return null;
+}
+
+const IconLock = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="11" width="18" height="11" rx="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </svg>
+);
+const IconCheckSm = () => (
+  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 /* ══════════════════════════════════════════════
    VISTA: RECIBO DE PAGO
 ══════════════════════════════════════════════ */
@@ -230,6 +252,74 @@ function ReceiptView({ pedido, cliente, pago, onClose }) {
 }
 
 /* ══════════════════════════════════════════════
+   VISTA: PEDIDO PENDIENTE (Efectivo / Transferencia — sin pedir tarjeta)
+══════════════════════════════════════════════ */
+/* ── DATOS DE PRUEBA — reemplazar por los datos reales del negocio cuando los tengan ── */
+const CUENTA_BANCARIA = {
+  banco: "Banco X",
+  tipo: "Ahorros",
+  numero: "000-000000-00",
+  titular: "DVNA SportWear S.A.S. — NIT 000.000.000-0",
+  nota: "Envía el comprobante de la transferencia al WhatsApp 300 000 0000 para agilizar la confirmación.",
+};
+
+function PendienteView({ pedido, onClose, onPagoConfirmado }) {
+  const esEfectivo = pedido.metodo_pago === "Efectivo";
+  return (
+    <>
+      <div className="pm-accent pm-accent--partial" />
+      <div className="pm-header">
+        <div>
+          <h2 className="pm-title">Pedido registrado</h2>
+          <p className="pm-subtitle">Pedido #{pedido.id_venta}</p>
+        </div>
+        <button className="pm-close" onClick={onClose}><IconX /></button>
+      </div>
+
+      <div className="pm-pendiente-body">
+        <div className="pm-pendiente-icono"><IconCheckCircle /></div>
+        <p className="pm-pendiente-titulo">
+          {esEfectivo ? "Pagarás en efectivo al recibir tu pedido" : "Falta confirmar tu transferencia"}
+        </p>
+        <p className="pm-pendiente-texto">
+          {esEfectivo
+            ? "Tu pedido quedó registrado. Nuestro equipo se pondrá en contacto para coordinar la entrega y el pago."
+            : "Tu pedido quedó registrado como pendiente. Realiza la transferencia a la siguiente cuenta y confirmaremos tu pedido en cuanto la recibamos."}
+        </p>
+
+        {!esEfectivo && (
+          <div className="pm-cuenta-box">
+            <div className="pm-cuenta-row"><span>Banco</span><strong>{CUENTA_BANCARIA.banco}</strong></div>
+            <div className="pm-cuenta-row"><span>Tipo de cuenta</span><strong>{CUENTA_BANCARIA.tipo}</strong></div>
+            <div className="pm-cuenta-row"><span>Número de cuenta</span><strong>{CUENTA_BANCARIA.numero}</strong></div>
+            <div className="pm-cuenta-row"><span>Titular</span><strong>{CUENTA_BANCARIA.titular}</strong></div>
+            <p className="pm-cuenta-nota">{CUENTA_BANCARIA.nota}</p>
+          </div>
+        )}
+
+        <div className="pm-pendiente-monto">
+          <span>Total a pagar</span>
+          <strong>{fmt(pedido.total)}</strong>
+        </div>
+      </div>
+
+      <div className="pm-footer">
+        <button
+          className="pm-btn-primary"
+          style={{ flex: 1 }}
+          onClick={() => {
+            if (onPagoConfirmado) onPagoConfirmado();
+            onClose();
+          }}
+        >
+          Entendido
+        </button>
+      </div>
+    </>
+  );
+}
+
+/* ══════════════════════════════════════════════
    VISTA: FORMULARIO DE PAGO
 ══════════════════════════════════════════════ */
 function PaymentFormView({ pedido, cliente, onClose, onPagoConfirmado, setPagoRealizado }) {
@@ -237,6 +327,9 @@ function PaymentFormView({ pedido, cliente, onClose, onPagoConfirmado, setPagoRe
   const [card, setCard]             = useState({ numero: "", nombre: "", expiry: "", cvv: "" });
   const [errores, setErrores]       = useState({});
   const [procesando, setProcesando] = useState(false);
+  // ── NUEVO: la tarjeta se voltea mientras el CVV está enfocado ──
+  const [cvvFocus, setCvvFocus]     = useState(false);
+  const marca = detectarMarca(card.numero);
 
   const abonosConfirmados = pedido.abonos?.filter((a) => a.estado === "Confirmado") || [];
   const totalPagado      = Number(pedido.total_pagado || abonosConfirmados.reduce((acc, a) => acc + Number(a.monto), 0));
@@ -356,6 +449,7 @@ function PaymentFormView({ pedido, cliente, onClose, onPagoConfirmado, setPagoRe
                 className={`pm-tipo-btn${tipoPago === "total" ? " active" : ""}`}
                 onClick={() => setTipoPago("total")}
               >
+                {tipoPago === "total" && <span className="pm-tipo-check"><IconCheckSm /></span>}
                 <span className="pm-tipo-icon"><IconCard /></span>
                 <span className="pm-tipo-title">Total completo</span>
                 <span className="pm-tipo-amount">{fmt(restante)}</span>
@@ -368,6 +462,7 @@ function PaymentFormView({ pedido, cliente, onClose, onPagoConfirmado, setPagoRe
                     className={`pm-tipo-btn${tipoPago === "cuota" ? " active" : ""}`}
                     onClick={() => setTipoPago("cuota")}
                   >
+                    {tipoPago === "cuota" && <span className="pm-tipo-check"><IconCheckSm /></span>}
                     <span className="pm-tipo-icon"><IconCalendar /></span>
                     <span className="pm-tipo-title">Cuota {proximaCuota.num_cuota}</span>
                     <span className="pm-tipo-amount">{fmt(proximaCuota.monto)}</span>
@@ -387,24 +482,52 @@ function PaymentFormView({ pedido, cliente, onClose, onPagoConfirmado, setPagoRe
 
           {/* Tarjeta de crédito */}
           <div className="pm-section">
-            <label className="pm-section-label"><IconCard /> Datos de tarjeta</label>
+            <div className="pm-section-label-row">
+              <label className="pm-section-label"><IconCard /> Datos de tarjeta</label>
+              <span className="pm-secure-badge"><IconLock /> Pago seguro y encriptado</span>
+            </div>
 
-            {/* Preview visual */}
-            <div className="pm-card-preview">
-              <div className="pm-card-chip" />
-              <div className="pm-card-number">
-                {card.numero || "•••• •••• •••• ••••"}
-              </div>
-              <div className="pm-card-bottom">
-                <div>
-                  <div className="pm-card-field-label">Titular</div>
-                  <div className="pm-card-field-value">
-                    {card.nombre.toUpperCase() || "NOMBRE APELLIDO"}
+            {/* Preview visual — se voltea al enfocar el CVV */}
+            <div className="pm-card-3d">
+              <div className={`pm-card-flipper${cvvFocus ? " pm-card-flipper--flipped" : ""}`}>
+                <div className="pm-card-face pm-card-front">
+                  <div className="pm-card-top-row">
+                    <div className="pm-card-chip" />
+                    {marca && (
+                      <span className={`pm-card-brand pm-card-brand--${marca}`}>
+                        {marca === "visa" ? "VISA" : marca === "mastercard" ? "mastercard" : "AMEX"}
+                      </span>
+                    )}
+                  </div>
+                  <div className="pm-card-number">
+                    {card.numero || "•••• •••• •••• ••••"}
+                  </div>
+                  <div className="pm-card-bottom">
+                    <div>
+                      <div className="pm-card-field-label">Titular</div>
+                      <div className="pm-card-field-value">
+                        {card.nombre.toUpperCase() || "NOMBRE APELLIDO"}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="pm-card-field-label">Vence</div>
+                      <div className="pm-card-field-value">{card.expiry || "MM/AA"}</div>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div className="pm-card-field-label">Vence</div>
-                  <div className="pm-card-field-value">{card.expiry || "MM/AA"}</div>
+                <div className="pm-card-face pm-card-back">
+                  <div className="pm-card-stripe" />
+                  <div className="pm-card-signature-row">
+                    <span className="pm-card-signature-label">Firma autorizada</span>
+                    <div className="pm-card-cvv-box">
+                      <span className="pm-card-cvv-value">{card.cvv || "•••"}</span>
+                    </div>
+                  </div>
+                  {marca && (
+                    <span className={`pm-card-brand pm-card-brand--${marca} pm-card-brand--back`}>
+                      {marca === "visa" ? "VISA" : marca === "mastercard" ? "mastercard" : "AMEX"}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -451,6 +574,8 @@ function PaymentFormView({ pedido, cliente, onClose, onPagoConfirmado, setPagoRe
                   placeholder="•••"
                   value={card.cvv}
                   onChange={(e) => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                  onFocus={() => setCvvFocus(true)}
+                  onBlur={() => setCvvFocus(false)}
                   maxLength={4}
                 />
                 {errores.cvv && <span className="pm-field-error">{errores.cvv}</span>}
@@ -492,6 +617,9 @@ function PaymentFormView({ pedido, cliente, onClose, onPagoConfirmado, setPagoRe
 ══════════════════════════════════════════════ */
 export default function PaymentModal({ pedido, cliente, onClose, onPagoConfirmado }) {
   const [pagoRealizado, setPagoRealizado] = useState(null);
+  // ── NUEVO: solo se pide tarjeta si el cliente eligió pagar con tarjeta.
+  // Efectivo/Transferencia no tienen por qué pasar por un formulario de tarjeta. ──
+  const requiereTarjeta = pedido.metodo_pago === "Tarjeta";
 
   return createPortal(
     <div className="pm-overlay">
@@ -506,13 +634,19 @@ export default function PaymentModal({ pedido, cliente, onClose, onPagoConfirmad
             pago={pagoRealizado}
             onClose={onClose}
           />
-        ) : (
+        ) : requiereTarjeta ? (
           <PaymentFormView
             pedido={pedido}
             cliente={cliente}
             onClose={onClose}
             onPagoConfirmado={onPagoConfirmado}
             setPagoRealizado={setPagoRealizado}
+          />
+        ) : (
+          <PendienteView
+            pedido={pedido}
+            onClose={onClose}
+            onPagoConfirmado={onPagoConfirmado}
           />
         )}
       </div>

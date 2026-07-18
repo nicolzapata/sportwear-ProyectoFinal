@@ -103,7 +103,7 @@ export default function Carrito() {
         {/* Lista de productos */}
         <div className="carrito-lista">
           {items.map((item) => (
-            <div key={item.id} className="carrito-item">
+            <div key={item.id_variante ?? item.id} className="carrito-item">
               <div className="carrito-item-img">
                 {item.imagen ? (
                   <img src={item.imagen} alt={item.nombre} />
@@ -127,12 +127,12 @@ export default function Carrito() {
               <div className="carrito-item-cantidad">
                 <button
                   className="carrito-qty-btn"
-                  onClick={() => actualizarCantidad(item.id, item.cantidad - 1)}
+                  onClick={() => actualizarCantidad(item.id_variante ?? item.id, item.cantidad - 1)}
                 >−</button>
                 <span className="carrito-qty-num">{item.cantidad}</span>
                 <button
                   className="carrito-qty-btn"
-                  onClick={() => actualizarCantidad(item.id, item.cantidad + 1)}
+                  onClick={() => actualizarCantidad(item.id_variante ?? item.id, item.cantidad + 1)}
                   disabled={item.cantidad >= (item.stock ?? 99)}
                 >+</button>
               </div>
@@ -143,7 +143,7 @@ export default function Carrito() {
 
               <button
                 className="carrito-item-eliminar"
-                onClick={() => eliminarItem(item.id)}
+                onClick={() => eliminarItem(item.id_variante ?? item.id)}
                 title="Eliminar producto"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -165,7 +165,7 @@ export default function Carrito() {
 
           <div className="carrito-resumen-lineas">
             {items.map((item) => (
-              <div key={item.id} className="carrito-resumen-linea">
+              <div key={item.id_variante ?? item.id} className="carrito-resumen-linea">
                 <span>{item.nombre} × {item.cantidad}</span>
                 <span>{fmt(item.precio * item.cantidad)}</span>
               </div>

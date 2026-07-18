@@ -50,10 +50,17 @@ const crearMiPedido = async (req, res) => {
     const data = await ventasService.crearMiPedido({ ...req.body, id_cliente });
     res.status(201).json(data);
   } catch (err) {console.error('ERROR crearMiPedido:', err);
-    res.status(500).json({ 
-      message: err.message, 
-      detail: err.detail,   // detalle SQL
-      code:   err.code,     // código de error PostgreSQL
+    res.status(err.status || 500).json({
+      message:               err.message,
+      detail:                err.detail,   // detalle SQL
+      code:                  err.code,     // código de error PostgreSQL
+      // ── NUEVO (HU 04.3.4): datos para sugerir alternativas cuando falta stock ──
+      id_producto:           err.id_producto,
+      id_variante_solicitada: err.id_variante_solicitada,
+      producto:              err.producto,
+      disponible:            err.disponible,
+      solicitado:            err.solicitado,
+      alternativas:          err.alternativas,
     });
   }
 };

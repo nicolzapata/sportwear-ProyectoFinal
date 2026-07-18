@@ -521,3 +521,90 @@
   color: var(--text);
   text-align: right;
 }
+/* ── NUEVO (HU 04.3.4): alerta de stock insuficiente con sugerencias de alternativas ── */
+.checkout-stock-alerta {
+  font-family: var(--font-body);
+  background: rgba(192,57,43,0.05);
+  border: 1px solid rgba(192,57,43,0.18);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-top: 10px;
+}
+.checkout-stock-alerta-titulo {
+  font-size: 13px;
+  color: var(--danger, #c0392b);
+  margin: 0 0 8px;
+  font-weight: 500;
+}
+.checkout-stock-alerta-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+.checkout-stock-alternativas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.checkout-stock-alt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  border: 1px solid var(--border, #e0e0e0);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: var(--font-body);
+  color: var(--text, #1a1a1a);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.checkout-stock-alt-btn:hover {
+  border-color: var(--accent, #b49780);
+  background: rgba(180,151,128,0.08);
+}
+.checkout-stock-alt-stock {
+  font-size: 10.5px;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+/* ── NUEVO: .form-control no existía en absoluto — por eso el input de dirección
+   y el <select> de método de pago se veían sin ningún estilo. ── */
+.form-control {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text);
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
+}
+.form-control:focus {
+  outline: none;
+  border-color: var(--accent, #b49780);
+  box-shadow: 0 0 0 3px rgba(180,151,128,0.12);
+}
+select.form-control {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'><path d='M4 6l4 4 4-4' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 34px;
+}
+.form-control.input-error {
+  border-color: #c0392b;
+  box-shadow: 0 0 0 3px rgba(192,57,43,0.08);
+}
+.checkout-error-message {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: #c0392b;
+  margin-top: 4px;
+}

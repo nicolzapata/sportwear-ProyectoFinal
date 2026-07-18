@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import api from "../../services/api";
-import ModalSteps from "../../components/ModalSteps";
 import PaymentModal from "../../components/PaymentModal";
 import "./Checkout.css";
 
@@ -79,7 +78,7 @@ function getFechasCuotas(numCuotas) {
 
 export default function Checkout() {
   const { usuario }                                    = useAuth();
-  const { items, total, vaciarCarrito, eliminarItem }  = useCart();
+  const { items, total, vaciarCarrito, eliminarItem, cambiarVariante } = useCart();
   const navigate                                       = useNavigate();
 
   const [direccion,     setDireccion]     = useState(() => {
@@ -90,6 +89,9 @@ export default function Checkout() {
   const [enviando,      setEnviando]      = useState(false);
   const [exito,         setExito]         = useState(false);
   const [error,         setError]         = useState("");
+  // ── NUEVO (HU 04.3.4): cuando el backend rechaza por falta de stock, trae
+  // sugerencias de otras tallas/colores del mismo producto que sí alcanzan. ──
+  const [errorStock,    setErrorStock]    = useState(null);
   const [permisoCuotas, setPermisoCuotas] = useState(true);
   const [tipoPago,      setTipoPago]      = useState(() => {
     const s = sessionStorage.getItem("tipoPago");
@@ -99,9 +101,9 @@ export default function Checkout() {
     const s = sessionStorage.getItem("numCuotas");
     return s ? Number(s) : 2;
   });
-const [stepModal,     setStepModal]     = useState(() => true);
-const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
-const [erroresPaso, setErroresPaso] = useState({});
+  const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
+  // ── Errores de validación del panel único (antes vivían repartidos entre los 4 pasos del modal) ──
+  const [erroresPaso, setErroresPaso] = useState({});
 
   useEffect(() => {
     if (!usuario) return;
@@ -121,158 +123,56 @@ const [erroresPaso, setErroresPaso] = useState({});
   const fechasCuotas = tipoPagoActivo === "cuotas" ? getFechasCuotas(numCuotas) : [];
   const valorCuota   = Math.ceil(total / numCuotas);
 
-  // ── Paso 1: Productos ─────────────────────────────────────────────────────
-  const PasoProductos = (
-    <div className="checkout-productos-modal">
-      <h3>Productos a comprar</h3>
-      {items.map((item) => (
-        <div key={item.id_variante ?? item.id} className="checkout-item-modal">
-          <span>{item.nombre} × {item.cantidad}</span>
-          <span>{fmt(item.precio * item.cantidad)}</span>
-        </div>
-      ))}
-      <div className="checkout-total-modal">
-        <span>Total pedido:</span>
-        <span>{fmt(total)}</span>
-      </div>
-    </div>
-  );
+  // ── Aplica la variante alternativa elegida al ítem del carrito que no tenía stock ──
+  const elegirAlternativa = (alt) => {
+    if (!errorStock) return;
+    cambiarVariante(errorStock.id_variante_solicitada, {
+      id_variante: alt.id_variante,
+      talla:       alt.talla,
+      color:       alt.color,
+      stock:       alt.stock,
+    });
+    setErrorStock(null);
+  };
 
-  // ── Paso 2: Entrega ───────────────────────────────────────────────────────
-  const PasoEntrega = (
-    <div className="checkout-campos-modal">
-      <div className="checkout-campo">
-        <label className="checkout-label">Cliente</label>
-        <div className="checkout-valor">{usuario?.nombre}</div>
-      </div>
-      <div className="checkout-campo">
-        <label className="checkout-label">Correo</label>
-        <div className="checkout-valor">{usuario?.email ?? usuario?.correo ?? "—"}</div>
-      </div>
-      <div className="checkout-campo">
-        <label className="checkout-label">Dirección de entrega</label>
-        <input
-          type="text"
-          className={`form-control${erroresPaso.direccion ? " input-error" : ""}`}
-          value={direccion}
-          onChange={(e) => {
-            setDireccion(e.target.value);
-            if (erroresPaso.direccion) setErroresPaso(prev => ({ ...prev, direccion: "" }));
-          }}
-          placeholder="Cra 70 # 48-15 Apto 201, Medellín"
-        />
-        {erroresPaso.direccion && <div className="checkout-error-message">{erroresPaso.direccion}</div>}
-      </div>
-    </div>
-  );
-
-  // ── Paso 3: Pago ──────────────────────────────────────────────────────────
-  const PasoPago = (
-    <div className="checkout-campos-modal">
-      <div className="checkout-campo">
-        <label className="checkout-label">Método de pago</label>
-        <select
-          className={`form-control${erroresPaso.metodo ? " input-error" : ""}`}
-          value={metodo}
-          onChange={(e) => {
-            setMetodo(e.target.value);
-            if (erroresPaso.metodo) setErroresPaso(prev => ({ ...prev, metodo: "" }));
-          }}
-        >
-          <option value="Transferencia">Tarjeta débito</option>
-          <option value="Tarjeta">Tarjeta crédito</option>
-        </select>
-        {erroresPaso.metodo && <div className="checkout-error-message">{erroresPaso.metodo}</div>}
-      </div>
-
-      {permisoCuotas && (
-        <div className="checkout-campo" style={{ marginTop: 15 }}>
-          <label className="checkout-label">Opción de pago</label>
-          <label className="tipo-pago-option">
-            <input type="radio" name="tipoPago" value="completo" checked={tipoPago === "completo"} onChange={() => setTipoPago("completo")} />
-            <span className="tipo-pago-custom" />
-            Pago completo
-          </label>
-          <label className="tipo-pago-option">
-            <input type="radio" name="tipoPago" value="cuotas" checked={tipoPago === "cuotas"} onChange={() => setTipoPago("cuotas")} />
-            <span className="tipo-pago-custom" />
-            Pagar en cuotas
-          </label>
-          {tipoPagoActivo === "cuotas" && (
-            <div style={{ marginTop: 10, paddingLeft: 26 }}>
-              <label className="checkout-label">Número de cuotas</label>
-              <select value={numCuotas} onChange={(e) => setNumCuotas(Number(e.target.value))} className="form-control" style={{ marginTop: 4 }}>
-                <option value={2}>2 cuotas de {fmt(Math.ceil(total / 2))}</option>
-                <option value={3}>3 cuotas de {fmt(Math.ceil(total / 3))}</option>
-              </select>
-            </div>
-          )}
-        </div>
-      )}
-
-      {!metodo && (
-        <div className="checkout-error-message">Selecciona un método de pago antes de continuar.</div>
-      )}
-    </div>
-  );
-
-  // ── Paso 4: Resumen / Total cuota ─────────────────────────────────────────
-  const PasoResumen = (
-    <div className="checkout-campos-modal">
-      {/* Total */}
-      {tipoPagoActivo === "cuotas" ? (
+  // ── Bloque reutilizable de la alerta de stock + sugerencias ──
+  const AlertaStock = errorStock && (
+    <div className="checkout-stock-alerta">
+      <p className="checkout-stock-alerta-titulo">
+        Sin stock suficiente de "{errorStock.producto}" — pediste {errorStock.solicitado}, hay {errorStock.disponible} disponibles.
+      </p>
+      {errorStock.alternativas?.length > 0 ? (
         <>
-          <div className="checkout-total">
-            <span>Total cuota (1/{numCuotas})</span>
-            <span>{fmt(valorCuota)}</span>
-          </div>
-          <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 16 }}>
-            Total del pedido: {fmt(total)} en {numCuotas} cuotas de {fmt(valorCuota)}
-          </p>
-          {/* Calendarios de cuotas */}
-          <label className="checkout-label" style={{ marginBottom: 8 }}>Fechas de pago</label>
-          <div className="cal-cuotas-wrap">
-            {fechasCuotas.map((fecha, i) => (
-              <MiniCalendario key={i} fecha={fecha} cuota={i + 1} monto={valorCuota} />
+          <p className="checkout-stock-alerta-sub">Elige otra opción disponible para reemplazarla:</p>
+          <div className="checkout-stock-alternativas">
+            {errorStock.alternativas.map((alt) => (
+              <button
+                key={alt.id_variante}
+                type="button"
+                className="checkout-stock-alt-btn"
+                onClick={() => elegirAlternativa(alt)}
+              >
+                {alt.talla}{alt.color ? ` · ${alt.color}` : ""}
+                <span className="checkout-stock-alt-stock">{alt.stock} disp.</span>
+              </button>
             ))}
           </div>
         </>
       ) : (
-        <div className="checkout-total">
-          <span>Total a pagar</span>
-          <span>{fmt(total)}</span>
-        </div>
+        <p className="checkout-stock-alerta-sub">
+          No hay otras tallas o colores disponibles para este producto ahora mismo. Ajusta la cantidad o quítalo del carrito e inténtalo de nuevo.
+        </p>
       )}
-
-      {error && <p className="checkout-error">{error}</p>}
     </div>
   );
 
-  const validarPasoEntrega = () => {
-    if (!direccion.trim()) {
-      setErroresPaso(prev => ({ ...prev, direccion: "La dirección es obligatoria para continuar." }));
-      return false;
-    }
-    setErroresPaso(prev => ({ ...prev, direccion: "" }));
-    return true;
-  };
-
-  const validarPasoPago = () => {
-    if (!metodo.trim()) {
-      setErroresPaso(prev => ({ ...prev, metodo: "Selecciona un método de pago antes de continuar." }));
-      return false;
-    }
-    setErroresPaso(prev => ({ ...prev, metodo: "" }));
-    return true;
-  };
-
-  const confirmarDesdeModal = async () => {
-    try {
-      await handleConfirmar();
-      setStepModal(false);
-    } catch (err) {
-      console.error("Error en confirmarDesdeModal:", err);
-    }
+  // ── Validación del panel único (antes repartida en validarPasoEntrega/validarPasoPago del modal) ──
+  const validarFormulario = () => {
+    const e = {};
+    if (!direccion.trim()) e.direccion = "La dirección es obligatoria para continuar.";
+    if (!metodo.trim())    e.metodo    = "Selecciona un método de pago antes de continuar.";
+    setErroresPaso(e);
+    return Object.keys(e).length === 0;
   };
 
   // ── Carrito vacío ────────────────────────────────────────────────────────
@@ -290,6 +190,7 @@ const [erroresPaso, setErroresPaso] = useState({});
   // ── Confirmar pedido ──────────────────────────────────────────────────────
   const handleConfirmar = async () => {
     if (!usuario) { navigate("/login"); return; }
+    if (!validarFormulario()) return;
 
     const itemsSinVariante = items.filter((i) => !i.id_variante);
     if (itemsSinVariante.length > 0) {
@@ -300,6 +201,7 @@ const [erroresPaso, setErroresPaso] = useState({});
 
     setEnviando(true);
     setError("");
+    setErrorStock(null);
 
     const tipoPagoFinal = (!permisoCuotas && tipoPago === "cuotas") ? "completo" : tipoPago;
 
@@ -325,12 +227,21 @@ const [erroresPaso, setErroresPaso] = useState({});
           precio:      i.precio,
         })),
       });
-      
-      setStepModal(false);
+
       setPedidoConfirmado(pedido);
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message ?? "Hubo un error al procesar tu pedido. Intenta de nuevo.");
+      const data = err.response?.data;
+      // ── Si el error trae alternativas de stock, se muestran para elegir en vez
+      // de solo un mensaje genérico de error. ──
+      if (data?.alternativas) {
+        setErrorStock(data);
+        setError("");
+      } else {
+        setError(data?.message ?? "Hubo un error al procesar tu pedido. Intenta de nuevo.");
+        setErrorStock(null);
+      }
+    } finally {
       setEnviando(false);
     }
   };
@@ -362,7 +273,7 @@ const [erroresPaso, setErroresPaso] = useState({});
     );
   }
 
-  // ── Vista principal ───────────────────────────────────────────────────────
+  // ── Vista principal — un solo panel, sin modal de pasos ─────────────────────
   return (
     <div className="checkout-page">
       <div className="checkout-header">
@@ -398,7 +309,7 @@ const [erroresPaso, setErroresPaso] = useState({});
           ))}
         </div>
 
-        {/* Panel derecho */}
+        {/* Panel derecho — todos los datos y la confirmación en un solo lugar */}
         <div className="checkout-panel">
           <h2 className="checkout-section-titulo">Datos del pedido</h2>
 
@@ -412,14 +323,33 @@ const [erroresPaso, setErroresPaso] = useState({});
           </div>
           <div className="checkout-campo">
             <label className="checkout-label">Dirección de entrega</label>
-            <input type="text" className="form-control" value={direccion} onChange={(e) => setDireccion(e.target.value)} placeholder="Cra 70 # 48-15 Apto 201, Medellín" />
+            <input
+              type="text"
+              className={`form-control${erroresPaso.direccion ? " input-error" : ""}`}
+              value={direccion}
+              onChange={(e) => {
+                setDireccion(e.target.value);
+                if (erroresPaso.direccion) setErroresPaso((prev) => ({ ...prev, direccion: "" }));
+              }}
+              placeholder="Cra 70 # 48-15 Apto 201, Medellín"
+            />
+            {erroresPaso.direccion && <div className="checkout-error-message">{erroresPaso.direccion}</div>}
           </div>
           <div className="checkout-campo">
             <label className="checkout-label">Método de pago</label>
-            <select className="form-control" value={metodo} onChange={(e) => setMetodo(e.target.value)}>
+            <select
+              className={`form-control${erroresPaso.metodo ? " input-error" : ""}`}
+              value={metodo}
+              onChange={(e) => {
+                setMetodo(e.target.value);
+                if (erroresPaso.metodo) setErroresPaso((prev) => ({ ...prev, metodo: "" }));
+              }}
+            >
+              <option value="Efectivo">Efectivo (contra entrega)</option>
               <option value="Transferencia">Transferencia bancaria</option>
               <option value="Tarjeta">Tarjeta débito / crédito</option>
             </select>
+            {erroresPaso.metodo && <div className="checkout-error-message">{erroresPaso.metodo}</div>}
           </div>
 
           {permisoCuotas && (
@@ -478,30 +408,22 @@ const [erroresPaso, setErroresPaso] = useState({});
           )}
 
           {error && <p className="checkout-error">{error}</p>}
+          {AlertaStock}
 
-          <button className="btn btn-outline" style={{ width: "100%", marginTop: 16 }} onClick={() => navigate("/carrito")}>
+          <button
+            className="checkout-btn-primary"
+            style={{ width: "100%", marginTop: 16 }}
+            onClick={handleConfirmar}
+            disabled={enviando}
+          >
+            {enviando ? "Procesando..." : "Confirmar pedido"}
+          </button>
+
+          <button className="btn btn-outline" style={{ width: "100%", marginTop: 10 }} onClick={() => navigate("/carrito")} disabled={enviando}>
             Volver al carrito
           </button>
         </div>
       </div>
-
-      {/* ── Modal con 4 pasos ── */}
-      {stepModal && (
-        <ModalSteps
-          titulo="Confirmar pedido"
-          pasos={["Productos", "Entrega", "Pago", "Resumen"]}
-          onClose={() => setStepModal(false)}
-          onGuardar={confirmarDesdeModal}
-          validaciones={[() => true, validarPasoEntrega, validarPasoPago, () => true]}
-          labelGuardar="Confirmar pedido"
-          guardando={enviando}
-        >
-          {PasoProductos}
-          {PasoEntrega}
-          {PasoPago}
-          {PasoResumen}
-        </ModalSteps>
-      )}
 
       {/* ── Modal de Pago (después de confirmar pedido) ── */}
       {pedidoConfirmado && (

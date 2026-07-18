@@ -87,6 +87,27 @@ const cartReducer = (state, action) => {
     case "LOAD_ITEMS":
       return { ...state, items: action.payload };
 
+    // ── NUEVO: cambia la variante (talla/color) de un ítem ya en el carrito,
+    // sin quitarlo ni volver a agregarlo — se usa cuando el cliente elige una
+    // sugerencia de alternativa por falta de stock en el checkout. ──
+    case "REPLACE_VARIANT": {
+      const { idViejo, nuevaVariante } = action.payload;
+      return {
+        ...state,
+        items: state.items.map((i) => {
+          const match = i.id_variante ? i.id_variante === idViejo : i.id === idViejo;
+          if (!match) return i;
+          return {
+            ...i,
+            id_variante: nuevaVariante.id_variante,
+            talla:       nuevaVariante.talla,
+            color:       nuevaVariante.color,
+            stock:       nuevaVariante.stock,
+          };
+        }),
+      };
+    }
+
     case "HIDE_CART":
       return { ...state, oculto: true };
 
@@ -168,6 +189,8 @@ export const CartProvider = ({ children }) => {
   const actualizarCantidad = (id, cantidad) => dispatch({ type: "UPDATE_QUANTITY", payload: { id, cantidad } });
   const vaciarCarrito      = ()             => dispatch({ type: "CLEAR_CART" });
   const cargarItems        = (items)        => dispatch({ type: "LOAD_ITEMS",      payload: items });
+  // ── NUEVO: cambiar la variante de un ítem (usado por las sugerencias de alternativas sin stock) ──
+  const cambiarVariante    = (idViejo, nuevaVariante) => dispatch({ type: "REPLACE_VARIANT", payload: { idViejo, nuevaVariante } });
 
   const total      = state.items.reduce((acc, i) => acc + i.precio * i.cantidad, 0);
   const totalItems = state.items.reduce((acc, i) => acc + i.cantidad, 0);
@@ -182,6 +205,7 @@ export const CartProvider = ({ children }) => {
         agregarAlCarrito:    agregarItem,
         eliminarItem,
         actualizarCantidad,
+        cambiarVariante,
         vaciarCarrito,
         cargarItems,
       }}
