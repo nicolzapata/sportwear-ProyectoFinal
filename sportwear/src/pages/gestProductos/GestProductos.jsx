@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import GaleriaImagenes from "../../components/GaleriaImagenes";
 import GestVariantes from "../../components/GestVariantes";
 import ModalSteps from "../../components/ModalSteps";
+import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
 import Loader from "../../components/Loader";
@@ -455,6 +456,81 @@ export default function GestProductos() {
     </div>
   );
 
+  const DetalleInfoGeneral = verDetalle && (
+    <>
+      <div className="gestproductos-factura-seccion">
+        <h3 className="gestproductos-factura-titulo">Información general</h3>
+        <DetalleGrid>
+          <DetalleItem label="Código" value={verDetalle.codigo} />
+          <DetalleItem label="Categoría" value={verDetalle.categoria} />
+          <DetalleItem label="Precio" value={fmt(verDetalle.precio)} />
+          <DetalleItem label="Stock total" value={`${verDetalle.stock ?? 0} unidades`} />
+          <DetalleItem label="Publicado" value={verDetalle.publicado ? "Sí, visible en catálogo" : "No publicado"} />
+          <DetalleItem label="Estado" value={<span className={`tabla-status${verDetalle.estado === "Activo" ? " activo" : " inactivo"}`}>{verDetalle.estado}</span>} />
+        </DetalleGrid>
+      </div>
+      {verDetalle.historialPrecios?.length > 0 && (
+        <div className="gestproductos-factura-seccion">
+          <h3 className="gestproductos-factura-titulo">Historial de precios</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {verDetalle.historialPrecios.map(h => (
+              <div key={h.id_historial} style={{ display: "flex", justifyContent: "space-between", gap: 10, background: "var(--dvna-pale)", border: "1px solid var(--dvna-border)", borderRadius: "var(--r)", padding: "8px 12px", fontSize: 12 }}>
+                <span>{new Date(h.fecha).toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "numeric" })} {h.usuario ? `· ${h.usuario}` : ""}</span>
+                <span>{fmt(h.precio_anterior)} <span style={{ color: "var(--dvna-muted)" }}>→</span> <b>{fmt(h.precio_nuevo)}</b></span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
+  const DetalleVariantesImagenes = verDetalle && (
+    <>
+      {verDetalle.variantes?.length > 0 && (() => {
+        const conStock = verDetalle.variantes.filter(v => v.stock > 0);
+        const sinStock = verDetalle.variantes.filter(v => v.stock === 0);
+        // Mismo agrupamiento por color que la columna Tallas/Colores de la
+        // tabla: un chip por color con sus tallas concatenadas, no un chip
+        // por combinación color+talla.
+        const gruposConStock = agruparVariantesPorColor(conStock);
+        const gruposSinStock = agruparVariantesPorColor(sinStock);
+        const renderChip = (g, agotada) => {
+          const swatchStyle = esColorClaro(g.codigo_hex)
+            ? { background: g.codigo_hex || "#ccc", border: "2px solid #ccc" }
+            : { background: g.codigo_hex || "#ccc" };
+          return (
+            <div key={g.id_color} className={`gestproductos-detalle-variante-chip${agotada ? " agotada" : ""}`}>
+              <span className="gestproductos-detalle-variante-dot" style={swatchStyle} />
+              <span>{g.nombre}: {g.tallas.join(", ")}</span>
+              {agotada && <span className="gestproductos-detalle-variante-stock"> · Agotado</span>}
+            </div>
+          );
+        };
+        return (
+          <div className="gestproductos-factura-seccion">
+            <h3 className="gestproductos-factura-titulo">Variantes</h3>
+            <div className="gestproductos-detalle-variantes-cell">
+              {gruposConStock.map(g => renderChip(g, false))}
+            </div>
+            {gruposSinStock.length > 0 && (
+              <>
+                <div className="gestproductos-detalle-variantes-divider"><span>Sin stock</span></div>
+                <div className="gestproductos-detalle-variantes-cell">
+                  {gruposSinStock.map(g => renderChip(g, true))}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
+      <div className="gestproductos-factura-seccion">
+        <h3 className="gestproductos-factura-titulo">Imágenes</h3>
+        <GaleriaImagenes tipoReferencia="Producto" idReferencia={verDetalle.id_producto} soloLectura />
+      </div>
+    </>
+  );
+
   return (
     <div className="gestproductos-container">
       {toast && (
@@ -827,7 +903,7 @@ export default function GestProductos() {
         </ModalSteps>
       )}
 
-      {/* ── Modal ver detalle: panel único tipo factura ── */}
+      {/* ── Modal ver detalle: panel único tipo factura, igual al resto de módulos ── */}
       {verDetalle && (
         <div className="gestproductos-modal-overlay" onClick={() => setVerDetalle(null)}>
           <div className="gestproductos-modal gestproductos-modal-factura" onClick={(e) => e.stopPropagation()}>
@@ -840,56 +916,8 @@ export default function GestProductos() {
             </div>
 
             <div className="gestproductos-modal-body gestproductos-factura-body">
-              <div className="gestproductos-factura-seccion">
-                <h3 className="gestproductos-factura-titulo">Información general</h3>
-                <div className="gestproductos-detalle-info-grid">
-                  <div><span className="gestproductos-detalle-info-label">ID</span><span className="gestproductos-detalle-info-valor">#{String(verDetalle.id_producto).padStart(3, "0")}</span></div>
-                  <div><span className="gestproductos-detalle-info-label">Código</span><span className="gestproductos-detalle-info-valor">{verDetalle.codigo}</span></div>
-                  <div><span className="gestproductos-detalle-info-label">Categoría</span><span className="gestproductos-detalle-info-valor">{verDetalle.categoria}</span></div>
-                  <div><span className="gestproductos-detalle-info-label">Precio</span><span className="gestproductos-detalle-info-valor">{fmt(verDetalle.precio)}</span></div>
-                  <div><span className="gestproductos-detalle-info-label">Stock total</span><span className="gestproductos-detalle-info-valor">{verDetalle.stock ?? 0} unidades</span></div>
-                  <div>
-                    <span className="gestproductos-detalle-info-label">Estado</span>
-                    <span className={`tabla-status${verDetalle.estado === "Activo" ? ' activo' : ' inactivo'}`}>{verDetalle.estado}</span>
-                  </div>
-                  <div><span className="gestproductos-detalle-info-label">Publicado</span><span className="gestproductos-detalle-info-valor">{verDetalle.publicado ? "Sí, visible en catálogo" : "No publicado"}</span></div>
-                </div>
-              </div>
-
-              {verDetalle.variantes?.length > 0 && (
-                <div className="gestproductos-factura-seccion">
-                  <h3 className="gestproductos-factura-titulo">Variantes</h3>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {verDetalle.variantes.map(v => (
-                      <div key={v.id_variante} style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--dvna-pale)", border: "1px solid var(--dvna-border)", borderRadius: "var(--r)", padding: "4px 10px", fontSize: 11 }}>
-                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: v.codigo_hex || "#ccc", border: "1px solid rgba(0,0,0,0.1)", flexShrink: 0 }} />
-                        <span>{v.color_nombre}</span><span style={{ color: "var(--dvna-muted)" }}>·</span>
-                        <span>{v.talla}</span><span style={{ color: "var(--dvna-muted)" }}>·</span>
-                        <span style={{ fontWeight: 600 }}>{v.stock} uds</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="gestproductos-factura-seccion">
-                <h3 className="gestproductos-factura-titulo">Imágenes</h3>
-                <GaleriaImagenes tipoReferencia="Producto" idReferencia={verDetalle.id_producto} soloLectura />
-              </div>
-
-              {verDetalle.historialPrecios?.length > 0 && (
-                <div className="gestproductos-factura-seccion">
-                  <h3 className="gestproductos-factura-titulo">Historial de precios</h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {verDetalle.historialPrecios.map(h => (
-                      <div key={h.id_historial} style={{ display: "flex", justifyContent: "space-between", gap: 10, background: "var(--dvna-pale)", border: "1px solid var(--dvna-border)", borderRadius: "var(--r)", padding: "8px 12px", fontSize: 12 }}>
-                        <span>{new Date(h.fecha).toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "numeric" })} {h.usuario ? `· ${h.usuario}` : ""}</span>
-                        <span>{fmt(h.precio_anterior)} <span style={{ color: "var(--dvna-muted)" }}>→</span> <b>{fmt(h.precio_nuevo)}</b></span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+              {DetalleInfoGeneral}
+              {DetalleVariantesImagenes}
             </div>
 
             <div className="gestproductos-modal-footer">
@@ -904,7 +932,7 @@ export default function GestProductos() {
         </div>
       )}
 
-      {/* ── Modal ver detalle de categoría ── */}
+      {/* ── Modal ver detalle de categoría: mismo panel tipo factura ── */}
       {verDetalleCategoria && (
         <div className="gestproductos-modal-overlay" onClick={() => setVerDetalleCategoria(null)}>
           <div className="gestproductos-modal gestproductos-modal-factura" onClick={(e) => e.stopPropagation()}>
@@ -919,14 +947,11 @@ export default function GestProductos() {
             <div className="gestproductos-modal-body gestproductos-factura-body">
               <div className="gestproductos-factura-seccion">
                 <h3 className="gestproductos-factura-titulo">Información general</h3>
-                <div className="gestproductos-detalle-info-grid">
-                  <div><span className="gestproductos-detalle-info-label">Descripción</span><span className="gestproductos-detalle-info-valor">{verDetalleCategoria.descripcion || "Sin descripción"}</span></div>
-                  <div><span className="gestproductos-detalle-info-label">Fecha de creación</span><span className="gestproductos-detalle-info-valor">{verDetalleCategoria.fecha_creacion ? new Date(verDetalleCategoria.fecha_creacion).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : "—"}</span></div>
-                  <div>
-                    <span className="gestproductos-detalle-info-label">Estado</span>
-                    <span className={`tabla-status${verDetalleCategoria.estado === "Activo" ? ' activo' : ' inactivo'}`}>{verDetalleCategoria.estado}</span>
-                  </div>
-                </div>
+                <DetalleGrid>
+                  <DetalleItem label="Descripción" value={verDetalleCategoria.descripcion} full />
+                  <DetalleItem label="Fecha de creación" value={verDetalleCategoria.fecha_creacion ? new Date(verDetalleCategoria.fecha_creacion).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : null} />
+                  <DetalleItem label="Estado" value={<span className={`tabla-status${verDetalleCategoria.estado === "Activo" ? ' activo' : ' inactivo'}`}>{verDetalleCategoria.estado}</span>} />
+                </DetalleGrid>
               </div>
 
               <div className="gestproductos-factura-seccion">

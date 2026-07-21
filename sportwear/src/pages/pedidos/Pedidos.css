@@ -136,10 +136,6 @@
   font-size: 0.95rem; font-weight: 600; color: var(--brown, #b49780); margin: 0 0 1rem 0;
   text-transform: uppercase; letter-spacing: 0.06em;
 }
-.pedidos-detalle-info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-.pedidos-detalle-info-grid > div { display: flex; flex-direction: column; gap: 0.3rem; }
-.pedidos-detalle-info-label { font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
-.pedidos-detalle-info-valor { font-size: 0.9rem; color: #1a1a1a; font-weight: 500; }
 .pedidos-detalle-item-linea {
   display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem;
 }
@@ -182,7 +178,6 @@
 .pedidos-empty-state p { margin: 0; font-style: italic; font-size: 0.9rem; }
 
 @media (max-width: 1024px) { .pedidos-container { padding: 1.5rem; } }
-@media (max-width: 640px) { .pedidos-detalle-info-grid { grid-template-columns: 1fr; } }
 @media (max-width: 480px) {
   .pedidos-search-wrapper { width: 100%; }
   .pedidos-actions-bar { flex-direction: column; align-items: stretch; gap: 1rem; }

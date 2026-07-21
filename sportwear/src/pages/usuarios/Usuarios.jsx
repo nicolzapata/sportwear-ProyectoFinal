@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import ModalSteps from "../../components/ModalSteps";
-import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
+import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
 import Loader from "../../components/Loader";
@@ -578,32 +578,30 @@ export default function Usuarios() {
   );
 
   const DetalleDatosCuenta = detalle && (
-    <>
-      <DetalleSeccion><DetalleGrid>
+    <div className="usuarios-factura-seccion">
+      <h3 className="usuarios-factura-titulo">Datos y cuenta</h3>
+      <DetalleGrid>
         <DetalleItem label="Tipo doc." value={detalle.tipo_doc} />
         <DetalleItem label="Documento" value={detalle.documento} />
         <DetalleItem label="Nombre completo" value={detalle.nombre} full />
-      </DetalleGrid></DetalleSeccion>
-      <DetalleSeccion><DetalleGrid>
         <DetalleItem label="Correo electrónico" value={detalle.email} />
         <DetalleItem label="Teléfono" value={detalle.telefono} />
-      </DetalleGrid></DetalleSeccion>
-    </>
+      </DetalleGrid>
+    </div>
   );
 
   const DetalleUbicacionRol = detalle && (
-    <>
-      <DetalleSeccion><DetalleGrid>
+    <div className="usuarios-factura-seccion">
+      <h3 className="usuarios-factura-titulo">Ubicación y rol</h3>
+      <DetalleGrid>
         <DetalleItem label="Ciudad" value={detalle.ciudad} />
-        <DetalleItem label="Barrio" value={detalle.barrio || null} />
+        <DetalleItem label="Barrio" value={detalle.barrio} />
         <DetalleItem label="Dirección" value={detalle.direccion} full />
-      </DetalleGrid></DetalleSeccion>
-      <DetalleSeccion><DetalleGrid>
         <DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} />
         <DetalleItem label="Estado" value={detalle.estado} />
         <DetalleItem label="Fecha de creación" value={detalle.fecha_creacion ? new Date(detalle.fecha_creacion).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : null} />
-      </DetalleGrid></DetalleSeccion>
-    </>
+      </DetalleGrid>
+    </div>
   );
 
   return (
@@ -878,42 +876,77 @@ export default function Usuarios() {
       )}
 
       {detalle && (
-        <ModalDetalle titulo="Perfil del usuario" subtitulo={detalle.nombre}
-          badge={<span className={`tabla-status ${detalle.estado === "Activo" ? "activo" : "inactivo"}`}>{detalle.estado}</span>}
-          pasos={["Datos y cuenta", "Ubicación y rol"]}
-          onClose={() => setDetalle(null)}
-          onEditar={tienePerm('Usuarios.editar') ? () => { setDetalle(null); abrirEditar(detalle); } : undefined}
-        >
-          {DetalleDatosCuenta}{DetalleUbicacionRol}
-        </ModalDetalle>
+        <div className="usuarios-modal-overlay" onClick={() => setDetalle(null)}>
+          <div className="usuarios-modal usuarios-modal-detalle" onClick={(e) => e.stopPropagation()}>
+            <div className="usuarios-modal-header">
+              <div>
+                <h2 className="usuarios-modal-title">{detalle.nombre}</h2>
+                <p className="usuarios-modal-subtitulo">Perfil del usuario</p>
+              </div>
+              <button className="usuarios-modal-close" onClick={() => setDetalle(null)}><IconX /></button>
+            </div>
+
+            <div className="usuarios-modal-body usuarios-factura-body">
+              {DetalleDatosCuenta}
+              {DetalleUbicacionRol}
+            </div>
+
+            <div className="usuarios-modal-footer">
+              <button className="usuarios-btn-secondary" onClick={() => setDetalle(null)}>Cerrar</button>
+              {tienePerm('Usuarios.editar') && (
+                <button className="usuarios-btn-primary" onClick={() => { setDetalle(null); abrirEditar(detalle); }}>
+                  <IconEdit /> Editar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {clienteDetalle && (
-        <ModalDetalle titulo="Detalle del cliente" subtitulo={clienteDetalle.nombre}
-          badge={<span className={`tabla-status ${clienteDetalle.estado === "Activo" ? "activo" : "inactivo"}`}>{clienteDetalle.estado}</span>}
-          pasos={["Datos personales", "Ubicación y clasificación"]}
-          onClose={() => setClienteDetalle(null)}
-          onEditar={tienePerm('Clientes.editar') ? () => { setClienteDetalle(null); abrirEditarCliente(clienteDetalle); } : undefined}
-        >
-          <DetalleSeccion><DetalleGrid>
-            <DetalleItem label="Nombre completo"    value={clienteDetalle.nombre} full />
-            <DetalleItem label="Tipo documento"     value={clienteDetalle.tipo_doc} />
-            <DetalleItem label="N° documento"       value={clienteDetalle.documento} />
-            <DetalleItem label="Teléfono"           value={clienteDetalle.telefono} />
-            <DetalleItem label="Correo electrónico" value={clienteDetalle.email} />
-          </DetalleGrid></DetalleSeccion>
-          <>
-            <DetalleSeccion><DetalleGrid>
-              <DetalleItem label="Ciudad"             value={clienteDetalle.ciudad} />
-              <DetalleItem label="Barrio"             value={clienteDetalle.barrio_nombre || null} />
-              <DetalleItem label="Dirección completa" value={clienteDetalle.direccion} full />
-            </DetalleGrid></DetalleSeccion>
-            <DetalleSeccion><DetalleGrid>
-              <DetalleItem label="Pago por cuotas" value={clienteDetalle.permiso_cuotas ? "Permitido" : "Bloqueado"} />
-              <DetalleItem label="Estado"          value={clienteDetalle.estado} />
-            </DetalleGrid></DetalleSeccion>
-          </>
-        </ModalDetalle>
+        <div className="usuarios-modal-overlay" onClick={() => setClienteDetalle(null)}>
+          <div className="usuarios-modal usuarios-modal-detalle" onClick={(e) => e.stopPropagation()}>
+            <div className="usuarios-modal-header">
+              <div>
+                <h2 className="usuarios-modal-title">{clienteDetalle.nombre}</h2>
+                <p className="usuarios-modal-subtitulo">Detalle del cliente</p>
+              </div>
+              <button className="usuarios-modal-close" onClick={() => setClienteDetalle(null)}><IconX /></button>
+            </div>
+
+            <div className="usuarios-modal-body usuarios-factura-body">
+              <div className="usuarios-factura-seccion">
+                <h3 className="usuarios-factura-titulo">Datos personales</h3>
+                <DetalleGrid>
+                  <DetalleItem label="Nombre completo"    value={clienteDetalle.nombre} full />
+                  <DetalleItem label="Tipo documento"     value={clienteDetalle.tipo_doc} />
+                  <DetalleItem label="N° documento"       value={clienteDetalle.documento} />
+                  <DetalleItem label="Teléfono"           value={clienteDetalle.telefono} />
+                  <DetalleItem label="Correo electrónico" value={clienteDetalle.email} />
+                </DetalleGrid>
+              </div>
+              <div className="usuarios-factura-seccion">
+                <h3 className="usuarios-factura-titulo">Ubicación y clasificación</h3>
+                <DetalleGrid>
+                  <DetalleItem label="Ciudad"             value={clienteDetalle.ciudad} />
+                  <DetalleItem label="Barrio"             value={clienteDetalle.barrio_nombre} />
+                  <DetalleItem label="Dirección completa" value={clienteDetalle.direccion} full />
+                  <DetalleItem label="Pago por cuotas" value={clienteDetalle.permiso_cuotas ? "Permitido" : "Bloqueado"} />
+                  <DetalleItem label="Estado"          value={clienteDetalle.estado} />
+                </DetalleGrid>
+              </div>
+            </div>
+
+            <div className="usuarios-modal-footer">
+              <button className="usuarios-btn-secondary" onClick={() => setClienteDetalle(null)}>Cerrar</button>
+              {tienePerm('Clientes.editar') && (
+                <button className="usuarios-btn-primary" onClick={() => { setClienteDetalle(null); abrirEditarCliente(clienteDetalle); }}>
+                  <IconEdit /> Editar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       <Toast toast={toast} />

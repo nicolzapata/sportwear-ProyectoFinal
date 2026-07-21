@@ -134,11 +134,6 @@
   min-width: 64px;
   position: relative;
 }
-.gv-th-talla-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
 .gv-matrix-table tbody tr { transition: background 0.15s; }
 .gv-matrix-table tbody tr:hover { background: var(--dvna-pale); }
 .gv-matrix-table tbody tr:not(:last-child) td { border-bottom: 1px solid var(--dvna-border); }
@@ -167,114 +162,6 @@
   text-align: center;
   border-left: 1px solid var(--dvna-border);
 }
-.gv-stock-val {
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--dvna-charcoal);
-}
-.gv-stock-val.out { color: var(--dvna-muted); }
-.gv-stock-val.low { color: var(--warning); }
-.gv-stock-na { font-size: 12px; color: var(--dvna-border); }
-
-/* Botón de opciones (tres puntos) del encabezado de talla */
-.gv-btn-kebab {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  border: none;
-  background: transparent;
-  border-radius: var(--r);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--dvna-border);
-  cursor: pointer;
-  padding: 0;
-  transition: color 0.15s, background 0.15s;
-}
-.gv-btn-kebab:hover,
-.gv-btn-kebab[aria-expanded="true"] { color: var(--dvna-charcoal); background: var(--dvna-pale); }
-
-/* Menú "Editar / Eliminar" de una combinación pendiente */
-.gv-mini-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  min-width: 110px;
-  background: var(--dvna-white);
-  border: 1px solid var(--dvna-border);
-  border-radius: var(--r-md);
-  box-shadow: var(--shadow, 0 4px 20px rgba(50,35,20,0.12));
-  overflow: hidden;
-  text-align: left;
-}
-.gv-mini-menu button {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  width: 100%;
-  padding: 8px 12px;
-  border: none;
-  background: transparent;
-  font-family: var(--font-body);
-  font-size: 11.5px;
-  color: var(--dvna-charcoal);
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.gv-mini-menu button:hover { background: var(--dvna-pale); }
-.gv-mini-menu button.danger { color: var(--danger); }
-.gv-mini-menu button.danger:hover { background: rgba(184,50,50,0.06); }
-.gv-mini-menu svg { width: 12px; height: 12px; flex-shrink: 0; }
-
-/* Menú "Editar / Eliminar" anclado al encabezado de una talla: lista una
-   fila por cada color que tiene esa talla, cada una con sus propias acciones. */
-.gv-mini-menu-talla {
-  left: 0;
-  right: auto;
-  min-width: 170px;
-  text-transform: none;
-  letter-spacing: normal;
-}
-.gv-mini-menu-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 7px 10px;
-  border-bottom: 1px solid var(--dvna-border);
-}
-.gv-mini-menu-row:last-child { border-bottom: none; }
-.gv-mini-menu-color {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-body);
-  font-size: 11.5px;
-  font-weight: 500;
-  color: var(--dvna-charcoal);
-  white-space: nowrap;
-}
-.gv-mini-menu-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-}
-.gv-mini-menu-actions button {
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--r);
-}
-.gv-mini-menu-actions button.danger:hover { background: rgba(184,50,50,0.06); }
 
 /* Etiqueta de color fijo al agregar tallas a un color existente */
 .gv-locked-color {
@@ -307,26 +194,131 @@
 }
 .gv-stock-input:focus { border-color: var(--dvna-circle); }
 
-.gv-td-del {
-  padding: 6px 10px;
-  border-left: 1px solid var(--dvna-border);
+/* ═══════════════════════════════════════════════════════════════
+   Lista de variantes existentes: chips agrupados por color, mismo
+   lenguaje visual que "ver detalle" en GestProductos. Cada talla es su
+   propio tag editable/eliminable inline — no hace falta tabla ni menú.
+   ═══════════════════════════════════════════════════════════════ */
+.gv-chips-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.gv-btn-del {
-  width: 24px;
-  height: 24px;
+.gv-chip-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 12px;
   border: 1px solid var(--dvna-border);
-  border-radius: var(--r);
+  border-radius: var(--r-md);
+  background: var(--dvna-white);
+}
+.gv-chip-row-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+.gv-chip-row-nombre {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+}
+.gv-chip-row-tallas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.gv-talla-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-mid);
+  border-radius: 20px;
+  padding: 2px 4px 2px 4px;
+}
+.gv-talla-tag.agotada { opacity: 0.6; }
+.gv-talla-tag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  padding: 3px 4px 3px 8px;
+}
+.gv-talla-tag-stock {
+  font-weight: 600;
+  color: var(--dvna-muted);
+}
+.gv-talla-tag.agotada .gv-talla-tag-stock { color: var(--danger); }
+.gv-talla-tag-del {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
   background: transparent;
+  color: var(--dvna-muted);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--dvna-muted);
   padding: 0;
-  margin: 1px;
   transition: all 0.15s;
 }
-.gv-btn-del:hover { color: var(--danger); border-color: var(--danger); background: rgba(184,50,50,0.06); }
+.gv-talla-tag-del svg { width: 9px; height: 9px; }
+.gv-talla-tag-del:hover { background: rgba(184,50,50,0.1); color: var(--danger); }
+.gv-talla-tag-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px dashed var(--dvna-border);
+  background: transparent;
+  color: var(--dvna-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.gv-talla-tag-add:hover { border-color: var(--dvna-mid); color: var(--dvna-charcoal); background: var(--dvna-pale); }
+.gv-talla-tag-input {
+  width: 48px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  text-align: center;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-mid);
+  border-radius: 14px;
+  padding: 3px 6px;
+  outline: none;
+}
+
+/* Mismo patrón que el divisor "Sin stock" del modal de detalle: el texto
+   va arriba de una línea completa, no al costado de una línea parcial. */
+.gv-chips-divider {
+  margin: 4px 0 2px;
+  padding-bottom: 6px;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dvna-muted);
+  border-bottom: 1px solid var(--dvna-border);
+}
 
 /* ── Editor de nuevas variantes ── */
 .gv-editor { display: flex; flex-direction: column; gap: 12px; }
@@ -467,94 +459,3 @@
 .gv-btn-guardar:hover:not(:disabled) { background: var(--dvna-circle); }
 .gv-btn-guardar:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ═══════════════════════════════════════════════════════════════
-   AGREGAR AL FINAL DE GestVariantes.css
-   Panel de edición individual de variante
-═══════════════════════════════════════════════════════════════ */
-
-/* Botón editar en la tabla */
-.gv-td-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  align-items: center;
-}
-
-.gv-btn-edit {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--r, 4px);
-  border: 1px solid var(--dvna-border);
-  background: var(--dvna-pale);
-  color: var(--dvna-charcoal);
-  cursor: pointer;
-  padding: 0;
-  transition: background 0.15s, border-color 0.15s;
-}
-.gv-btn-edit:hover {
-  background: var(--dvna-light);
-  border-color: var(--dvna-mid);
-}
-
-/* Panel de edición individual */
-.gv-edit-panel {
-  margin-top: 12px;
-  border: 1.5px solid var(--dvna-accent, #b49780);
-  border-radius: var(--r-md, 8px);
-  background: var(--dvna-pale);
-  overflow: hidden;
-  animation: gv-panel-in 0.2s ease both;
-}
-
-@keyframes gv-panel-in {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.gv-edit-panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  background: rgba(180,151,128,0.1);
-  border-bottom: 1px solid var(--dvna-border);
-}
-
-.gv-edit-panel-title {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--dvna-charcoal);
-}
-
-.gv-edit-panel-body {
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-/* Input de stock en edición individual (más ancho que el de la matriz) */
-.gv-stock-input-single {
-  width: 100px;
-  padding: 6px 10px;
-  font-size: 13px;
-  border: 1px solid var(--dvna-border);
-  border-radius: var(--r, 4px);
-  background: var(--dvna-white);
-  color: var(--dvna-charcoal);
-  outline: none;
-  transition: border-color 0.15s;
-}
-.gv-stock-input-single:focus {
-  border-color: var(--dvna-accent, #b49780);
-}
-
-/* Columna de acciones en la tabla */
-.gv-th-acciones {
-  width: 56px;
-}

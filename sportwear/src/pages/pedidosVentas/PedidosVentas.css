@@ -392,21 +392,10 @@
   letter-spacing: 0.06em;
 }
 .pedidosventas-modal-subtitulo { font-size: 0.78rem; color: #888; margin: 2px 0 0; font-weight: 300; }
-.pedidosventas-detalle-info-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-.pedidosventas-detalle-info-grid > div { display: flex; flex-direction: column; gap: 0.3rem; }
-.pedidosventas-detalle-info-label {
-  font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600;
-}
-.pedidosventas-detalle-info-valor { font-size: 0.9rem; color: #1a1a1a; font-weight: 500; }
 .pedidosventas-detalle-item-linea {
   display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem;
 }
 .pedidosventas-detalle-item-linea:last-child { border-bottom: none; }
-@media (max-width: 640px) { .pedidosventas-detalle-info-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 900px) { .pedidosventas-modal-factura { max-width: 95%; } }
 
 .pedidosventas-modal-header {

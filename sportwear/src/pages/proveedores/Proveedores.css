@@ -543,34 +543,6 @@
   font-weight: 300;
 }
 
-.proveedores-detalle-info-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-.proveedores-detalle-info-grid > div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-.proveedores-detalle-info-label {
-  font-size: 0.7rem;
-  color: #999;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
-.proveedores-detalle-info-valor {
-  font-size: 0.9rem;
-  color: #1a1a1a;
-  font-weight: 500;
-}
-
-@media (max-width: 640px) {
-  .proveedores-detalle-info-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
 
 .proveedores-factura-titulo {
   font-family: 'DM Sans', system-ui, sans-serif;

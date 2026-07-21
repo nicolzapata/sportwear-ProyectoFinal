@@ -362,41 +362,8 @@
   letter-spacing: 0.06em;
 }
 
-.compras-detalle-info-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-}
-.compras-detalle-info-grid > div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-.compras-detalle-info-label {
-  font-size: 0.7rem;
-  color: #999;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
-.compras-detalle-info-valor {
-  font-size: 0.9rem;
-  color: #1a1a1a;
-  font-weight: 500;
-}
 .compras-detalle-estado-select {
   max-width: 180px;
-}
-
-.compras-detalle-observaciones {
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #f0f0f0;
-}
-.compras-detalle-observaciones p {
-  margin: 0.3rem 0 0;
-  font-size: 0.85rem;
-  color: #555;
 }
 
 .compras-total-resumen-detalle {
@@ -418,12 +385,6 @@
   font-size: 0.82rem;
   font-weight: 500;
   margin-bottom: 1.2rem;
-}
-
-@media (max-width: 640px) {
-  .compras-detalle-info-grid {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 
 /* ── Skeleton de carga ── */

@@ -263,46 +263,23 @@
   background: var(--dvna-white);
 }
 
-/* ── Modal detalle completo ── */
+/* ── Modal detalle completo: mismo panel tipo factura que Compras/Proveedores/Pedidos ── */
 .usuarios-modal-detalle { max-width: 560px; overflow-y: auto; max-height: 88vh; }
 
-.usuarios-detail-hero {
-  display: flex; align-items: center; gap: 16px;
-  padding: 4px 0 20px;
-  border-bottom: 1px solid var(--dvna-border);
-  margin-bottom: 20px;
+.usuarios-modal-subtitulo {
+  font-family: var(--font-body); font-size: 0.78rem; font-weight: 300;
+  color: var(--dvna-muted); margin: 2px 0 0;
 }
-.usuarios-detail-nombre {
-  font-family: var(--font-body); font-size: 18px; font-weight: 500;
-  color: var(--dvna-charcoal); margin-bottom: 2px;
+.usuarios-factura-body { display: flex; flex-direction: column; gap: 0; }
+.usuarios-factura-seccion {
+  padding-bottom: 1.5rem; margin-bottom: 1.5rem;
+  border-bottom: 1px dashed var(--dvna-border);
 }
-.usuarios-detail-rol {
-  font-family: var(--font-body); font-size: 12px; font-weight: 400;
-  color: var(--dvna-muted); letter-spacing: 0.04em; margin-bottom: 4px;
-}
-.usuarios-detail-sections { display: flex; flex-direction: column; gap: 20px; }
-.usuarios-detail-section  { display: flex; flex-direction: column; gap: 8px; }
-.usuarios-detail-section-title {
-  font-family: var(--font-body); font-size: 10px; font-weight: 600;
-  letter-spacing: 0.14em; 
-  color: var(--dvna-circle);
-  padding-bottom: 6px; border-bottom: 1px solid var(--dvna-border);
-}
-.usuarios-detail-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-}
-.usuarios-detail-item {
-  display: flex; flex-direction: column; gap: 3px;
-  padding: 10px 12px;
-  background: var(--dvna-pale); border-radius: 8px;
-}
-.usuarios-detail-label {
-  font-family: var(--font-body); font-size: 9px; font-weight: 600;
-  letter-spacing: 0.12em;  color: var(--dvna-muted);
-}
-.usuarios-detail-value {
-  font-family: var(--font-body); font-size: 13px; font-weight: 400;
-  color: var(--dvna-charcoal); line-height: 1.4;
+.usuarios-factura-seccion:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.usuarios-factura-titulo {
+  font-family: var(--font-body); font-size: 0.95rem; font-weight: 600;
+  color: var(--brown, #b49780); margin: 0 0 1rem 0;
+  text-transform: uppercase; letter-spacing: 0.06em;
 }
 
 /* Loading */
@@ -330,7 +307,6 @@
   .usuarios-filter-toggle { width: 100%; justify-content: center; }
   .usuarios-btn-primary { width: 100%; justify-content: center; }
   .usuarios-form-row { grid-template-columns: 1fr; gap: 0; }
-  .usuarios-detail-grid { grid-template-columns: 1fr; }
 }
 
 .usuarios-req { color: var(--dvna-circle); font-size: 13px; }

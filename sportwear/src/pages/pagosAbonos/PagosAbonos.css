@@ -304,33 +304,6 @@
   font-weight: 300;
 }
 
-.pagosabonos-detalle-info-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-.pagosabonos-detalle-info-grid > div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-.pagosabonos-detalle-info-label {
-  font-size: 0.7rem;
-  color: #999;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
-.pagosabonos-detalle-info-valor {
-  font-size: 0.9rem;
-  color: #1a1a1a;
-  font-weight: 500;
-}
-
-@media (max-width: 640px) {
-  .pagosabonos-detalle-info-grid { grid-template-columns: 1fr 1fr; }
-}
-
 @media (max-width: 900px) {
   .pagosabonos-modal-factura { max-width: 95%; }
 }

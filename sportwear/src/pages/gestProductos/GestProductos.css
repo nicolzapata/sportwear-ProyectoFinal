@@ -412,8 +412,8 @@
 }
 
 .gestproductos-factura-seccion {
-  padding-bottom: 1.5rem;
-  margin-bottom: 1.5rem;
+  padding-bottom: 2rem;
+  margin-bottom: 2rem;
   border-bottom: 1px dashed var(--dvna-border);
 }
 .gestproductos-factura-seccion:last-child {
@@ -439,31 +439,54 @@
   font-weight: 300;
 }
 
-.gestproductos-detalle-info-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-}
-.gestproductos-detalle-info-grid > div {
+/* Variantes del modal de detalle: mismo lenguaje visual que los chips de
+   la tabla (swatch con borde reforzado en colores claros, borde de la
+   familia café en vez de gris genérico). Las variantes sin stock se
+   atenúan y muestran "Agotado" en rojo, y se agrupan aparte con un
+   divisor, para que se detecten de un vistazo. */
+.gestproductos-detalle-variantes-cell {
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+  flex-wrap: wrap;
+  gap: 6px;
 }
-.gestproductos-detalle-info-label {
-  font-size: 0.7rem;
+.gestproductos-detalle-variante-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-mid);
+  border-radius: var(--r);
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--dvna-charcoal);
+}
+.gestproductos-detalle-variante-chip.agotada {
+  opacity: 0.55;
+}
+.gestproductos-detalle-variante-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+.gestproductos-detalle-variante-stock {
+  font-weight: 600;
+}
+.gestproductos-detalle-variante-chip.agotada .gestproductos-detalle-variante-stock {
+  color: var(--danger);
+}
+/* Mismo patrón que .md-seccion-titulo: el texto va arriba de una línea
+   completa debajo, no al lado de una línea parcial. */
+.gestproductos-detalle-variantes-divider {
+  margin: 12px 0 6px;
+  padding-bottom: 6px;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--dvna-muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  font-weight: 600;
-}
-.gestproductos-detalle-info-valor {
-  font-size: 0.9rem;
-  color: var(--dvna-charcoal);
-  font-weight: 500;
-}
-
-@media (max-width: 640px) {
-  .gestproductos-detalle-info-grid { grid-template-columns: 1fr 1fr; }
+  border-bottom: 1px solid var(--dvna-border);
 }
 
 @media (max-width: 900px) {
