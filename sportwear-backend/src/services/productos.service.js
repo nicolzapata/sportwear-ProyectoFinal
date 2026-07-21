@@ -70,6 +70,7 @@ const getProductos = async (opciones = {}) => {
       p.publicado,
       p.estado,
       p.fecha_creacion,
+      p.destacado,
       c.nombre AS categoria,
       ${paginar ? 'COUNT(*) OVER() AS total_count,' : ''}
       -- Stock total sumado desde variantes
@@ -112,7 +113,7 @@ const getProductos = async (opciones = {}) => {
 };
 
 const crearProducto = async (datos) => {
-  const { nombre, descripcion, id_categoria, precio, publicado, estado } = datos;
+  const { nombre, descripcion, id_categoria, precio, publicado, estado, destacado } = datos;
   if (!nombre) throw { status: 400, message: 'Nombre requerido' };
 
   const client = await pool.connect();
@@ -123,11 +124,11 @@ const crearProducto = async (datos) => {
     const codigo = `PROD-${String(nv).padStart(4, '0')}`;
 
     const result = await client.query(`
-      INSERT INTO "Productos" (codigo, nombre, descripcion, id_categoria, precio, publicado, estado)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id_producto, codigo, nombre, descripcion, publicado
+      INSERT INTO "Productos" (codigo, nombre, descripcion, id_categoria, precio, publicado, estado, destacado)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id_producto, codigo, nombre, descripcion, publicado, destacado
     `, [codigo, nombre, descripcion || null, id_categoria, precio || 0,
-        publicado || false, estado || 'Activo']);
+        publicado || false, estado || 'Activo', destacado || null]);
 
     const producto = result.rows[0];
     await client.query('COMMIT');
@@ -139,7 +140,7 @@ const crearProducto = async (datos) => {
 };
 
 const actualizarProducto = async (id, datos, id_usuario) => {
-  const { nombre, descripcion, id_categoria, precio, publicado, estado } = datos;
+  const { nombre, descripcion, id_categoria, precio, publicado, estado, destacado } = datos;
   // el código nunca se modifica (regla 03.2.3.2) — no se incluye en el UPDATE
 
   const client = await pool.connect();
@@ -151,6 +152,9 @@ const actualizarProducto = async (id, datos, id_usuario) => {
     const precioAnterior = Number(actual.rows[0].precio);
     const precioNuevo = precio !== undefined && precio !== null ? Number(precio) : precioAnterior;
 
+    // ── NUEVO: "destacado" se asigna directo (no con COALESCE) porque a diferencia
+    // de los demás campos, sí necesita poder "limpiarse" de vuelta a NULL (ej. quitar
+    // el flag de "Nuevo"/"Promoción") — con COALESCE eso nunca sería posible. ──
     const result = await client.query(`
       UPDATE "Productos" SET
         nombre       = COALESCE($1::VARCHAR,  nombre),
@@ -158,11 +162,12 @@ const actualizarProducto = async (id, datos, id_usuario) => {
         id_categoria = COALESCE($3::INTEGER,  id_categoria),
         precio       = COALESCE($4::NUMERIC,  precio),
         publicado    = COALESCE($5::BOOLEAN,  publicado),
-        estado       = COALESCE($6::VARCHAR,  estado)
+        estado       = COALESCE($6::VARCHAR,  estado),
+        destacado    = $8
       WHERE id_producto = $7
-      RETURNING id_producto, codigo, nombre, descripcion, publicado
+      RETURNING id_producto, codigo, nombre, descripcion, publicado, destacado
     `, [nombre || null, descripcion || null, id_categoria || null,
-        precio || null, publicado ?? null, estado || null, id]);
+        precio || null, publicado ?? null, estado || null, id, destacado || null]);
 
     if (!result.rows[0]) throw { status: 404, message: 'No encontrado' };
 

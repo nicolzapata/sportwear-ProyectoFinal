@@ -9,7 +9,6 @@ import "./CatalogoAdmin.css";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const PRODUCTOS_POR_PAGINA = 12;
-const DIAS_CONSIDERADO_NUEVO = 7;
 const STOCK_REFERENCIA = 40; // referencia visual para la barra de stock (100% = "bien abastecido")
 
 const IconLayers = () => (
@@ -35,6 +34,17 @@ const IconExternalLink = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
     <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+  </svg>
+);
+const IconSparkle = () => (
+  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z"/>
+  </svg>
+);
+const IconTagPromo = () => (
+  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41L11 3.83A2 2 0 0 0 9.59 3.17H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .66 1.41l9.59 9.59a2 2 0 0 0 2.83 0l5-5a2 2 0 0 0 0-2.83z"/>
+    <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
   </svg>
 );
 
@@ -100,11 +110,9 @@ export default function CatalogoAdmin() {
     }
   };
 
-  const esNuevo = (p) => {
-    if (!p.fecha_creacion) return false;
-    const dias = (Date.now() - new Date(p.fecha_creacion).getTime()) / (1000 * 60 * 60 * 24);
-    return dias <= DIAS_CONSIDERADO_NUEVO;
-  };
+  // ── CORREGIDO: antes "Nuevo" se calculaba automáticamente por fecha de
+  // creación (últimos 7 días) — ahora usa el flag real "destacado" que el
+  // Admin asigna a mano desde Gestión de Productos. ──
 
   // ── KPIs ──
   const kpis = useMemo(() => {
@@ -253,6 +261,17 @@ export default function CatalogoAdmin() {
           nombreArchivo="catalogo"
           titulo="Catálogo"
         />
+
+        {/* ── NUEVO: acceso directo a la tienda pública, para poder ver cómo
+        quedan los cambios sin tener que salir del panel admin ni adivinar la URL. ── */}
+        <a
+          className="catadmin-btn-ver-tienda"
+          href="/catalogo"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <IconExternalLink /> Ver tienda pública
+        </a>
       </div>
 
       <div className="catadmin-results-count">
@@ -297,7 +316,8 @@ export default function CatalogoAdmin() {
                     <span className={`catadmin-badge-pill${p.publicado ? " publicado" : ""}`}>
                       {p.publicado ? "Publicado" : "Oculto"}
                     </span>
-                    {esNuevo(p) && <span className="catadmin-badge-pill nuevo">Nuevo</span>}
+                    {p.destacado === "Nuevo" && <span className="catadmin-badge-pill nuevo"><IconSparkle /> Nuevo</span>}
+                    {p.destacado === "Promocion" && <span className="catadmin-badge-pill promo"><IconTagPromo /> Promoción</span>}
                     {p.estado === "Inactivo" && <span className="catadmin-badge-pill inactivo">Inactivo</span>}
                   </div>
 

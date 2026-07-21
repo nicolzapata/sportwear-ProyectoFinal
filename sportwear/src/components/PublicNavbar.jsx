@@ -1,10 +1,25 @@
 // src/components/PublicNavbar.jsx
+import { useState, useEffect, useRef } from "react";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import api from "../services/api";
 import { IconCart, IconUser, IconLogOut, IconSearch } from "./Icons";
 import logo from "../assets/LOGO.png";
 import "./Navbar.css";
+
+const fmt = (n) =>
+  Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
+
+const IconBoxMini = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <rect x="3" y="3" width="18" height="18" rx="2"/>
+    <path d="m9 9 6 6m0-6-6 6"/>
+  </svg>
+);
+
+const MIN_CARACTERES = 2;
+const MAX_SUGERENCIAS = 6;
 
 export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, setFiltroCategoria, categorias }) {
   const { usuario, logout } = useAuth();
@@ -12,7 +27,69 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
   const navigate = useNavigate();
   const esAdmin = usuario?.rol === "Admin";
 
+  // ── NUEVO (HU 04.2.9): sugerencias en vivo mientras se escribe en el buscador ──
+  const [productos, setProductos] = useState([]);
+  const [sugerenciasAbiertas, setSugerenciasAbiertas] = useState(false);
+  const [indiceActivo, setIndiceActivo] = useState(-1);
+  const buscadorRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    // Se carga una sola vez: el catálogo público no cambia tan seguido como
+    // para justificar pedirlo de nuevo en cada tecla — se filtra en el cliente.
+    api.get("/productos?publicado=1")
+      .then(({ data }) => setProductos(data || []))
+      .catch(() => setProductos([]));
+  }, []);
+
+  useEffect(() => {
+    const cerrar = (e) => {
+      if (buscadorRef.current && !buscadorRef.current.contains(e.target)) {
+        setSugerenciasAbiertas(false);
+      }
+    };
+    document.addEventListener("mousedown", cerrar);
+    return () => document.removeEventListener("mousedown", cerrar);
+  }, []);
+
+  const termino = busqueda.trim().toLowerCase();
+  const sugerencias = termino.length >= MIN_CARACTERES
+    ? productos
+        .filter(p => p.nombre?.toLowerCase().includes(termino) || p.codigo?.toLowerCase().includes(termino))
+        .slice(0, MAX_SUGERENCIAS)
+    : [];
+
   const handleLogout = () => { logout(); navigate("/"); };
+
+  const irAProducto = (p) => {
+    setSugerenciasAbiertas(false);
+    setBusqueda("");
+    navigate(`/catalogo/${p.id_producto}`);
+  };
+
+  const verTodosLosResultados = () => {
+    setSugerenciasAbiertas(false);
+    inputRef.current?.blur();
+    navigate("/catalogo");
+  };
+
+  const handleKeyDown = (e) => {
+    if (!sugerenciasAbiertas || sugerencias.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setIndiceActivo((i) => (i + 1) % sugerencias.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setIndiceActivo((i) => (i - 1 + sugerencias.length) % sugerencias.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (indiceActivo >= 0 && sugerencias[indiceActivo]) irAProducto(sugerencias[indiceActivo]);
+      else verTodosLosResultados();
+    } else if (e.key === "Escape") {
+      setSugerenciasAbiertas(false);
+      inputRef.current?.blur();
+    }
+  };
 
   return (
     <header className="navbar navbar--public-fixed">
@@ -58,15 +135,26 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
           </NavLink>
         </nav>
         {busqueda !== undefined && (
-          <div className="search-input-wrap navbar-search">
+          <div className="search-input-wrap navbar-search" ref={buscadorRef}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input
+              ref={inputRef}
               className="search-input"
               placeholder="Buscar producto..."
               value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setSugerenciasAbiertas(true);
+                setIndiceActivo(-1);
+              }}
+              onFocus={() => setSugerenciasAbiertas(true)}
+              onKeyDown={handleKeyDown}
+              role="combobox"
+              aria-expanded={sugerenciasAbiertas && termino.length >= MIN_CARACTERES}
+              aria-autocomplete="list"
+              autoComplete="off"
             />
             {(busqueda || filtroCategoria !== "Todos") && (
               <button
@@ -74,11 +162,49 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
                 onClick={() => {
                   setBusqueda("");
                   setFiltroCategoria("Todos");
+                  setSugerenciasAbiertas(false);
                 }}
                 title="Limpiar filtros"
               >
                 ✕
               </button>
+            )}
+
+            {/* ── Dropdown de sugerencias en vivo ── */}
+            {sugerenciasAbiertas && termino.length >= MIN_CARACTERES && (
+              <div className="navbar-sugerencias">
+                {sugerencias.length > 0 ? (
+                  <>
+                    {sugerencias.map((p, i) => (
+                      <button
+                        key={p.id_producto}
+                        type="button"
+                        className={`navbar-sugerencia-item${i === indiceActivo ? " activo" : ""}`}
+                        onMouseDown={(e) => { e.preventDefault(); irAProducto(p); }}
+                        onMouseEnter={() => setIndiceActivo(i)}
+                      >
+                        <span className="navbar-sugerencia-img">
+                          {p.imagen_principal
+                            ? <img src={p.imagen_principal} alt={p.nombre} />
+                            : <IconBoxMini />}
+                        </span>
+                        <span className="navbar-sugerencia-info">
+                          <span className="navbar-sugerencia-nombre">{p.nombre}</span>
+                          <span className="navbar-sugerencia-categoria">{p.categoria}</span>
+                        </span>
+                        <span className="navbar-sugerencia-precio">{fmt(p.precio)}</span>
+                      </button>
+                    ))}
+                    <button type="button" className="navbar-sugerencia-vertodos" onMouseDown={(e) => { e.preventDefault(); verTodosLosResultados(); }}>
+                      <IconSearch /> Ver todos los resultados para "{busqueda}"
+                    </button>
+                  </>
+                ) : (
+                  <div className="navbar-sugerencia-vacio">
+                    No hay productos que coincidan con "{busqueda}".
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

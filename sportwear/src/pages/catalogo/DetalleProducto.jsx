@@ -52,6 +52,17 @@ const IconX = () => (
     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 );
+const IconSparkle = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z"/>
+  </svg>
+);
+const IconTagPromo = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41L11 3.83A2 2 0 0 0 9.59 3.17H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .66 1.41l9.59 9.59a2 2 0 0 0 2.83 0l5-5a2 2 0 0 0 0-2.83z"/>
+    <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
+  </svg>
+);
 
 // ── Helpers ───────────────────────────────────────────────────
 const extraerColores = (vars) => [
@@ -270,9 +281,13 @@ export default function DetalleProducto() {
                   </>
                 )}
 
-                {agotado && !sinSeleccion && <span className="dp-badge dp-badge-out">Agotado</span>}
+                {producto.destacado === "Nuevo" && <span className="dp-badge dp-badge-nuevo"><IconSparkle /> Nuevo</span>}
+                {producto.destacado === "Promocion" && <span className="dp-badge dp-badge-promo"><IconTagPromo /> Promoción</span>}
+                {agotado && !sinSeleccion && (
+                  <span className="dp-badge dp-badge-out" style={producto.destacado ? { top: 42 } : undefined}>Agotado</span>
+                )}
                 {!agotado && !sinSeleccion && stockMostrado < 5 && (
-                  <span className="dp-badge dp-badge-warn">Pocas unidades</span>
+                  <span className="dp-badge dp-badge-warn" style={producto.destacado ? { top: 42 } : undefined}>Pocas unidades</span>
                 )}
               </>
             ) : (

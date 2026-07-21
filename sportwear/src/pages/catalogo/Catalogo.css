@@ -308,6 +308,30 @@ html, body {
   border-radius: 2px;
 }
 
+/* ── NUEVO: badges de producto destacado (Nuevo/Promoción) — estilo "ribbon"
+   con degradado e ícono, más vistoso que un rectángulo plano ── */
+.catalog-card-badge.badge-nuevo,
+.catalog-card-badge.badge-promo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 20px;
+  padding: 5px 11px 5px 9px;
+  text-transform: uppercase;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+}
+.catalog-card-badge.badge-nuevo svg,
+.catalog-card-badge.badge-promo svg {
+  flex-shrink: 0;
+}
+.catalog-card-badge.badge-nuevo {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
+.catalog-card-badge.badge-promo {
+  background: linear-gradient(135deg, #f97316, #c2410c);
+}
+
 /* ── Badge styles ── */
 .badge {
   display: inline-block;

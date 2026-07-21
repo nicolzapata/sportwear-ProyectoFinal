@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { IconCheck, IconX } from "./Icons";
 import ConfirmModal from "./ConfirmModal";
-import Toast from "./Toast";
+import { useToast } from "../context/ToastContext";
 import "./StatusToggle.css";
 
 export default function StatusToggle({ 
@@ -15,22 +15,25 @@ export default function StatusToggle({
 }) {
   const [loading, setLoading] = useState(false);
   const [pendingEstado, setPendingEstado] = useState(null);
-  const [toast, setToast] = useState(null);
+  // ── CORREGIDO: antes este componente manejaba su PROPIO toast local
+  // (useState + <Toast/> propio), separado del sistema centralizado — por
+  // eso aparecían dos avisos a la vez en páginas que también mostraban el
+  // suyo (ej. GestProductos), y por eso siempre salía en verde/"correctamente"
+  // sin importar si se activaba o desactivaba. Ahora usa el mismo
+  // mostrarToast() de toda la app, con color según la dirección real. ──
+  const { mostrarToast } = useToast();
 
   const handleToggle = async (nuevoEstado) => {
     setLoading(true);
     try {
       await onToggle(id, nuevoEstado);
-      setToast({
-        type: "exito",
-        message: `Estado cambiado a "${nuevoEstado === "Activo" ? labels.activo : labels.inactivo}" correctamente.`
-      });
+      mostrarToast(
+        nuevoEstado === "Activo" ? "exito" : "info",
+        `Estado cambiado a "${nuevoEstado === "Activo" ? labels.activo : labels.inactivo}" correctamente.`
+      );
     } catch (err) {
       console.error("Error cambiando estado:", err);
-      setToast({
-        type: "error",
-        message: err?.response?.data?.message || "Error al cambiar el estado"
-      });
+      mostrarToast("error", err?.response?.data?.message || "Error al cambiar el estado.");
     } finally {
       setLoading(false);
     }
@@ -79,8 +82,6 @@ export default function StatusToggle({
           confirmLabel={`Sí, ${(pendingEstado === "Activo" ? labels.activo : labels.inactivo).toLowerCase()}`}
         />
       )}
-
-      <Toast toast={toast} />
     </>
   );
 }
