@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import api from "../services/api";
+import { useToast } from "../context/ToastContext";
 import "./PaymentModal.css";
 
 /* ── Helpers ── */
@@ -92,6 +93,7 @@ function ReceiptView({ pedido, cliente, pago, onClose }) {
     hour: "2-digit", minute: "2-digit",
   });
   const [descargando, setDescargando] = useState(false);
+  const showToast = useToast();
 
   const descargarPDF = async () => {
     setDescargando(true);
@@ -106,7 +108,7 @@ function ReceiptView({ pedido, cliente, pago, onClose }) {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch {
-      alert("No se pudo descargar el comprobante en PDF.");
+      showToast("error", "No se pudo descargar el comprobante en PDF.");
     } finally {
       setDescargando(false);
     }

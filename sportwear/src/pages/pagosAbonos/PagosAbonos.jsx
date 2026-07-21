@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import './PagosAbonos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconCheck, IconEye, IconSearch, IconX, IconSettings } from "../../components/Icons";
 import Loader from "../../components/Loader";
@@ -14,6 +15,7 @@ const FILAS_POR_PAGINA = 10;
 export default function PagosAbonos() {
   const { usuario } = useAuth();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
+  const showToast = useToast();
 
   const [datos,      setDatos]      = useState([]);
   const [totalPagos, setTotalPagos] = useState(0);
@@ -48,14 +50,14 @@ export default function PagosAbonos() {
       await api.post("/metodos-pago", { nombre: nuevoMetodo.trim() });
       setNuevoMetodo("");
       cargarMetodos();
-    } catch (err) { alert(err.response?.data?.message ?? "Error al crear el método de pago."); }
+    } catch (err) { showToast("error", err.response?.data?.message ?? "Error al crear el método de pago."); }
   };
 
   const toggleMetodoEstado = async (id) => {
     try {
       await api.patch(`/metodos-pago/${id}/estado`);
       cargarMetodos();
-    } catch (err) { alert(err.response?.data?.message ?? "Error al cambiar el estado del método."); }
+    } catch (err) { showToast("error", err.response?.data?.message ?? "Error al cambiar el estado del método."); }
   };
 
   const cargar = async (pag = pagina, q = busquedaDebounced) => {
@@ -110,7 +112,7 @@ export default function PagosAbonos() {
       cargar();
       setModal(false);
     } catch (err) {
-      alert(err.response?.data?.message ?? "Error al registrar el pago.");
+      showToast("error", err.response?.data?.message ?? "Error al registrar el pago.");
     } finally {
       setGuardando(false);
     }
@@ -120,14 +122,14 @@ export default function PagosAbonos() {
     try {
       await api.patch(`/pagos/${id}/estado`, { estado: "Confirmado" });
       setDatos(prev => prev.map(p => p.id_pago === id ? { ...p, estado: "Confirmado" } : p));
-    } catch (err) { alert(err.response?.data?.message ?? "Error al registrar el pago."); }
+    } catch (err) { showToast("error", err.response?.data?.message ?? "Error al registrar el pago."); }
   };
 
   const cancelarPago = async (id) => {
     try {
       await api.patch(`/pagos/${id}/estado`, { estado: "Anulado" });
       setDatos(prev => prev.map(p => p.id_pago === id ? { ...p, estado: "Anulado" } : p));
-    } catch (err) { alert(err.response?.data?.message ?? "Error al cancelar el pago."); }
+    } catch (err) { showToast("error", err.response?.data?.message ?? "Error al cancelar el pago."); }
   };
 
   const getMetodoIcon = (metodo) => {

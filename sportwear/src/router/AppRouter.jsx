@@ -2,6 +2,8 @@
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { AuthProvider }  from "../context/AuthContext";
 import { CartProvider }  from "../context/CartContext";
+import { ToastProvider }   from "../context/ToastContext";
+import { ConfirmProvider } from "../context/ConfirmContext";
 import Layout            from "../components/Layout";
 import PublicLayout      from "../components/PublicLayout";
 import ProtectedRoute    from "../components/ProtectedRoute";
@@ -55,6 +57,8 @@ const P = ({ k, children }) => (
 
 export default function AppRouter() {
   return (
+    <ToastProvider>
+    <ConfirmProvider>
     <AuthProvider>
       <CartProvider>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -100,5 +104,7 @@ export default function AppRouter() {
         </BrowserRouter>
       </CartProvider>
     </AuthProvider>
+    </ConfirmProvider>
+    </ToastProvider>
   );
 }

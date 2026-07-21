@@ -34,7 +34,9 @@
   background: rgba(184,50,50,0.06);
   border-radius: var(--r);
   padding: 8px 12px;
+  margin: 0;
 }
+.gi-error-inline { margin-top: -2px; }
 
 .gi-empty {
   display: flex;
@@ -46,6 +48,7 @@
   font-family: var(--font-body);
   font-size: 12px;
   font-style: italic;
+  text-align: center;
   border: 1px dashed var(--dvna-border);
   border-radius: var(--r-md);
 }
@@ -76,29 +79,54 @@
   color: var(--dvna-muted);
   white-space: nowrap;
 }
-.gi-color-select {
+
+/* Chips seleccionables de color (subida) — pill con outline por defecto,
+   fondo sólido cuando está activo. Mismo lenguaje visual que el resto de
+   chips de la página. */
+.gi-color-chips-upload {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gi-chip-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-body);
   font-size: 11px;
+  font-weight: 500;
   color: var(--dvna-charcoal);
   background: var(--dvna-white);
   border: 1px solid var(--dvna-border);
-  border-radius: var(--r);
-  padding: 5px 10px;
+  border-radius: 20px;
+  padding: 5px 12px;
   cursor: pointer;
-  outline: none;
-  transition: border-color 0.2s;
-  flex: 1;
-  min-width: 160px;
+  transition: all 0.15s;
 }
-.gi-color-select:focus { border-color: var(--dvna-circle); }
+.gi-chip-upload:hover { border-color: var(--dvna-mid); background: var(--dvna-pale); }
+.gi-chip-upload.active {
+  background: var(--brown);
+  border-color: var(--brown);
+  color: #fff;
+}
+.gi-chip-upload.active .gi-chip-count { color: rgba(255,255,255,0.85); }
+.gi-chip-count {
+  color: var(--dvna-muted);
+  font-size: 10px;
+}
 
-.gi-color-preview-dot {
-  width: 12px;
-  height: 12px;
+/* Punto de color reutilizado en chips, badges y headers de grupo */
+.gi-chip-dot {
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  border: 1.5px solid rgba(0,0,0,0.12);
+  border: 1px solid rgba(0,0,0,0.15);
   flex-shrink: 0;
   display: inline-block;
+}
+.gi-chip-upload.active .gi-chip-dot { border-color: rgba(255,255,255,0.6); }
+.gi-chip-dot-none {
+  background: repeating-linear-gradient(45deg, var(--dvna-border), var(--dvna-border) 2px, transparent 2px, transparent 4px);
 }
 
 /* Dropzone */
@@ -108,14 +136,18 @@
   padding: 20px;
   text-align: center;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s, background 0.2s, opacity 0.2s;
   background: var(--dvna-pale);
 }
-.gi-dropzone:hover:not(.uploading) {
+.gi-dropzone:hover:not(.uploading):not(.disabled) {
   border-color: var(--dvna-circle);
   background: rgba(180,151,128,0.05);
 }
 .gi-dropzone.uploading { cursor: not-allowed; opacity: 0.7; }
+.gi-dropzone.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 
 .gi-upload-hint {
   display: flex;
@@ -127,21 +159,10 @@
   color: var(--dvna-muted);
 }
 .gi-upload-hint svg { color: var(--dvna-circle); }
+.gi-upload-hint-disabled svg { color: var(--dvna-muted); }
 .gi-upload-sub {
   font-size: 10px;
   color: var(--dvna-border);
-}
-.gi-upload-color-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 4px;
-  font-size: 11px;
-  color: var(--dvna-charcoal);
-  background: var(--dvna-white);
-  border: 1px solid var(--dvna-border);
-  border-radius: 20px;
-  padding: 3px 10px;
 }
 
 .gi-upload-uploading {
@@ -153,6 +174,53 @@
   font-size: 12px;
   color: var(--dvna-muted);
   padding: 8px 0;
+}
+
+/* Barra colapsada: "+ Agregar más fotos", reemplaza al dropzone completo
+   cuando ya hay imágenes cargadas para no quitarles protagonismo. */
+.gi-dropzone-collapsed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1.5px dashed var(--dvna-border);
+  border-radius: var(--r-md);
+  padding: 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dvna-circle);
+  background: var(--dvna-pale);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.gi-dropzone-collapsed:hover { border-color: var(--dvna-circle); background: rgba(180,151,128,0.06); }
+.gi-dropzone-collapsed svg { width: 15px; height: 15px; }
+
+/* ── Grupos de imágenes por color ────────────────────────── */
+.gi-grupos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.gi-grupo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gi-grupo-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+}
+.gi-grupo-header .gi-chip-dot { width: 10px; height: 10px; }
+.gi-grupo-count {
+  color: var(--dvna-muted);
+  font-weight: 400;
 }
 
 /* ── Grid de imágenes ────────────────────────────────────── */
@@ -194,26 +262,6 @@
 }
 .gi-card:hover .gi-img { transform: scale(1.04); }
 
-/* Badge color en esquina inferior izquierda */
-.gi-card-color-badge {
-  position: absolute;
-  bottom: 4px;
-  left: 4px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-family: var(--font-body);
-  font-size: 9px;
-  font-weight: 600;
-  color: #fff;
-  background: rgba(0,0,0,0.55);
-  border-radius: 10px;
-  padding: 2px 6px;
-  backdrop-filter: blur(4px);
-  pointer-events: none;
-  z-index: 2;
-}
-
 /* Badge principal */
 .gi-badge-principal {
   position: absolute;
@@ -233,16 +281,6 @@
   z-index: 2;
 }
 
-/* Punto de color */
-.gi-color-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.4);
-  display: inline-block;
-  flex-shrink: 0;
-}
-
 /* ── Overlay de acciones ─────────────────────────────────── */
 .gi-overlay {
   position: absolute;
@@ -251,7 +289,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   opacity: 0;
   transition: opacity 0.18s;
   border-radius: var(--r-md);
@@ -260,8 +298,8 @@
 .gi-card:hover .gi-overlay { opacity: 1; }
 
 .gi-btn {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--r);
   border: none;
   cursor: pointer;
@@ -270,21 +308,31 @@
   justify-content: center;
   transition: background 0.15s, transform 0.1s;
   flex-shrink: 0;
+  background: rgba(255,255,255,0.22);
 }
 .gi-btn:active { transform: scale(0.92); }
 
-.gi-btn-star  { background: rgba(255,255,255,0.2); color: #fbbf24; }
-.gi-btn-star:hover  { background: rgba(251,191,36,0.3); }
+.gi-btn-star  { color: #fbbf24; }
+.gi-btn-star:hover  { background: rgba(251,191,36,0.35); }
 
-.gi-btn-palette { background: rgba(255,255,255,0.2); color: #fff; }
-.gi-btn-palette:hover { background: rgba(180,151,128,0.5); }
+.gi-btn-palette { color: #fff; }
+.gi-btn-palette:hover { background: rgba(180,151,128,0.55); }
 
-.gi-btn-trash { background: rgba(255,255,255,0.2); color: #fca5a5; }
-.gi-btn-trash:hover { background: rgba(239,68,68,0.35); }
+.gi-btn-trash { color: #fca5a5; }
+.gi-btn-trash:hover { background: rgba(239,68,68,0.4); }
+
+/* Punto de color dentro del botón de paleta, cuando la imagen ya tiene
+   color asignado — reemplaza el ícono genérico por el color real. */
+.gi-btn-color-dot {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
 
 /* ── Dropdown de color para imagen existente ─────────────── */
 .gi-color-picker-wrap {
-  position: static;
+  position: relative;
   pointer-events: auto;
 }
 .gi-color-picker-dropdown {
@@ -321,27 +369,4 @@
   border-radius: 50%;
   border: 1px solid rgba(0,0,0,0.1);
   flex-shrink: 0;
-}
-/* Agregar al final de GaleriaImagenes.css */
-
-/* Dropdown inline para imágenes locales (se posiciona relativo al wrap, no fixed) */
-.gi-color-picker-dropdown--inline {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  z-index: 200;
-  min-width: 130px;
-}
-
-/* Checkmark dentro de opciones del dropdown */
-.gi-cp-check {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  color: var(--dvna-accent, #b49780);
-}
-
-/* Asegura que el wrap tenga position relative para el dropdown inline */
-.gi-color-picker-wrap {
-  position: relative;
 }

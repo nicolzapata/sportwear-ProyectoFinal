@@ -2,7 +2,9 @@
   position: fixed;
   top: 18px;
   right: 18px;
-  z-index: 250;
+  /* Por encima de cualquier modal abierto (hasta 9999), para que un error
+     mientras se guarda un formulario siempre sea visible. */
+  z-index: 10000;
   display: flex;
   align-items: center;
   gap: 12px;

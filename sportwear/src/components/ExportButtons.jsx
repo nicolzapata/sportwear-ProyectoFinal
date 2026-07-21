@@ -2,6 +2,7 @@
 // Reemplazo del botón "Imprimir": exporta la tabla visible a Excel o PDF real.
 import { useState, useRef, useEffect } from "react";
 import { exportarExcel, exportarPDF } from "../utils/exportar";
+import { useToast } from "../context/ToastContext";
 import { IconFileText } from "./Icons";
 import "./ExportButtons.css";
 
@@ -9,6 +10,7 @@ export default function ExportButtons({ datos, obtenerDatos, columnas, nombreArc
   const [abierto, setAbierto] = useState(false);
   const [exportando, setExportando] = useState(false);
   const ref = useRef(null);
+  const showToast = useToast();
 
   useEffect(() => {
     const onClickFuera = (e) => {
@@ -28,7 +30,7 @@ export default function ExportButtons({ datos, obtenerDatos, columnas, nombreArc
       if (formato === "excel") await exportarExcel(filas, columnas, nombreArchivo, titulo);
       else await exportarPDF(filas, columnas, nombreArchivo, titulo);
     } catch {
-      alert("No se pudo generar el archivo de exportación.");
+      showToast("error", "No se pudo generar el archivo de exportación.");
     } finally {
       setExportando(false);
     }

@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
+import { useConfirm } from "../../context/ConfirmContext";
 import './Compras.css';
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
@@ -157,6 +159,8 @@ function EstadoDropdownCompra({ compra, abierto, onToggle, onCambiar, cambiando,
 export default function Compras() {
   const { usuario } = useAuth();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
+  const showToast = useToast();
+  const confirmar = useConfirm();
 
   const [compras, setCompras] = useState([]);
   const [proveedores, setProveedores] = useState([]);
@@ -284,7 +288,7 @@ export default function Compras() {
       setForm(formInicial());
       cargarDatos();
     } catch (err) {
-      alert(err.response?.data?.message || "Error al registrar la compra");
+      showToast("error", err.response?.data?.message || "Error al registrar la compra");
     } finally {
       setGuardando(false);
     }
@@ -318,7 +322,7 @@ export default function Compras() {
       }
       setCompras((prev) => prev.map((c) => (c.id_compra === id ? { ...c, estado } : c)));
     } catch (err) {
-      alert(err.response?.data?.message || "Error al cambiar el estado de la compra");
+      showToast("error", err.response?.data?.message || "Error al cambiar el estado de la compra");
     } finally {
       setCambiandoEstadoTabla(false);
     }
@@ -332,19 +336,20 @@ export default function Compras() {
       setCompras((prev) => prev.map((c) => (c.id_compra === verDetalle.id_compra ? { ...c, estado: res.data.estado } : c)));
       cerrarDetalle();
     } catch (err) {
-      alert(err.response?.data?.message || "Error al actualizar el estado de la compra");
+      showToast("error", err.response?.data?.message || "Error al actualizar el estado de la compra");
     } finally {
       setGuardandoEstado(false);
     }
   };
 
   const anularCompra = async (id) => {
-    if (!window.confirm("¿Anular esta compra? Esta acción no se puede deshacer.")) return;
+    const ok = await confirmar({ title: "Anular compra", message: "¿Anular esta compra? Esta acción no se puede deshacer.", confirmLabel: "Sí, anular" });
+    if (!ok) return;
     try {
       await api.patch(`/compras/${id}/anular`);
       setCompras((prev) => prev.map((c) => (c.id_compra === id ? { ...c, estado: "Anulado" } : c)));
     } catch (err) {
-      alert(err.response?.data?.message || "Error al anular la compra");
+      showToast("error", err.response?.data?.message || "Error al anular la compra");
     }
   };
 

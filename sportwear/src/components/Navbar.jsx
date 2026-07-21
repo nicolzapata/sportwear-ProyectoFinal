@@ -8,6 +8,14 @@ import {
   IconDollar, IconHeart, IconCreditCard, IconSettings,
   IconBolt, IconBell, IconLogOut, IconX
 } from "./Icons";
+const IconStore = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l1.5-5h15L21 9" />
+    <path d="M3 9a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0" />
+    <path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9" />
+    <path d="M9 20v-6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6" />
+  </svg>
+);
 import './Navbar.css';
 import { createPortal } from "react-dom";
 
@@ -62,6 +70,10 @@ export default function Navbar() {
 
       {/* Derecha — acciones + usuario */}
       <div className="navbar-right">
+
+        <Link to="/catalogo" className="navbar-btn" title="Ver tienda">
+          <IconStore />
+        </Link>
 
         <Link to="/Notificacion" className="navbar-btn" title="Notificaciones">
           <IconBell />

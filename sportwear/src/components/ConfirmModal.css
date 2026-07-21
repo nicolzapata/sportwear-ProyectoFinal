@@ -6,7 +6,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 220;
+  /* Por encima de cualquier otro modal (incluso anidados, como el de
+     Variantes dentro del formulario de Productos), para que la confirmación
+     nunca quede detrás del formulario que la disparó. */
+  z-index: 10001;
   padding: 24px;
   animation: confirmOverlayIn 0.2s ease;
 }

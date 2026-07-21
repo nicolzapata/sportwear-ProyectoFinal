@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
+import { useToast } from "../../context/ToastContext";
 import api from "../../services/api";
 import "./Catalogo.css";
 import { IconBox, IconSearch } from "../../components/Icons";
@@ -101,6 +102,7 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
   const navigate = useNavigate();
   const { agregarAlCarrito } = useCart();
   const { usuario } = useAuth();
+  const showToast = useToast();
 
   const [imgsData,  setImgsData]  = useState(null);
   const [variantes, setVariantes] = useState(null);
@@ -272,7 +274,7 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
                   e.stopPropagation();
                   if (!usuario) { navigate("/login"); return; }
                   if (!colorSel || !tallaSel) {
-                    alert("Por favor selecciona color y talla");
+                    showToast("error", "Por favor selecciona color y talla");
                     return;
                   }
                   agregarAlCarrito({
@@ -314,6 +316,7 @@ export default function Catalogo() {
   const { usuario } = useAuth();
   const esAdmin     = usuario?.rol === "Administrador" || usuario?.rol === "Admin";
   const { busqueda, setBusqueda, filtroCategoria, setFiltroCategoria, setCategorias } = useOutletContext();
+  const showToast = useToast();
 
   const [datos,   setDatos]   = useState([]);
   const [loading, setLoading] = useState(true);
@@ -372,7 +375,7 @@ export default function Catalogo() {
       await api.patch(`/productos/${p.id_producto}/publicar`);
       cargar();
     } catch {
-      alert("Error al cambiar estado de publicación.");
+      showToast("error", "Error al cambiar estado de publicación.");
     }
   };
 

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import './Pedidos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconEye, IconPrint, IconSearch, IconX, IconBox } from "../../components/Icons";
 
@@ -135,6 +136,7 @@ function EstadoDropdown({ pedido, abierto, onToggle, onCambiar, cambiando, tiene
 export default function Pedidos() {
   const { usuario } = useAuth();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
+  const showToast = useToast();
 
   const [datos,      setDatos]      = useState([]);
   const [cargando,   setCargando]   = useState(true);
@@ -179,7 +181,7 @@ export default function Pedidos() {
         setVerDetalle(data);
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Error al cambiar el estado del pedido");
+      showToast("error", err.response?.data?.message || "Error al cambiar el estado del pedido");
     } finally {
       setCambiando(false);
     }

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
 import Loader from "../../components/Loader";
@@ -45,6 +46,7 @@ const dividirNombreContacto = (nombreCompleto) => {
 export default function Proveedores() {
   const { usuario } = useAuth();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
+  const showToast = useToast();
 
   const [datos, setDatos] = useState([]);
   const [cargando, setCargando] = useState(true);
@@ -182,7 +184,7 @@ export default function Proveedores() {
       cargarProveedores();
       setModal(false);
     } catch (err) {
-      alert(err.response?.data?.message || "Error al guardar el proveedor");
+      showToast("error", err.response?.data?.message || "Error al guardar el proveedor");
     } finally {
       setGuardando(false);
     }
@@ -193,7 +195,7 @@ export default function Proveedores() {
       const res = await api.patch(`/proveedores/${id}/estado`);
       setDatos((prev) => prev.map((p) => (p.id_proveedor === id ? { ...p, estado: res.data.estado } : p)));
     } catch (err) {
-      alert(err.response?.data?.message || "Error al cambiar el estado del proveedor");
+      showToast("error", err.response?.data?.message || "Error al cambiar el estado del proveedor");
     }
   };
 

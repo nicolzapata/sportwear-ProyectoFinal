@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import ExportButtons from "../../components/ExportButtons";
 import { IconSearch, IconX, IconBox, IconEdit, IconEye, IconAlertTriangle } from "../../components/Icons";
 import "./CatalogoAdmin.css";
@@ -41,6 +42,7 @@ const IconExternalLink = () => (
 export default function CatalogoAdmin() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
+  const showToast = useToast();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
 
   const [productos, setProductos]   = useState([]);
@@ -80,13 +82,13 @@ export default function CatalogoAdmin() {
   useEffect(() => { cargar(); }, []);
 
   const togglePublicado = async (p) => {
-    if (p.estado === "Inactivo") { alert("No se puede publicar un producto inactivo."); return; }
+    if (p.estado === "Inactivo") { showToast("error", "No se puede publicar un producto inactivo."); return; }
     try {
       await api.patch(`/productos/${p.id_producto}/publicar`);
       setProductos(prev => prev.map(x => x.id_producto === p.id_producto ? { ...x, publicado: !x.publicado } : x));
       if (verRapido?.id_producto === p.id_producto) setVerRapido(prev => ({ ...prev, publicado: !prev.publicado }));
     } catch (err) {
-      alert(err.response?.data?.message || "No se pudo cambiar la publicación.");
+      showToast("error", err.response?.data?.message || "No se pudo cambiar la publicación.");
     }
   };
 
@@ -96,7 +98,7 @@ export default function CatalogoAdmin() {
       const nuevoEstado = p.estado === "Activo" ? "Inactivo" : "Activo";
       setProductos(prev => prev.map(x => x.id_producto === p.id_producto ? { ...x, estado: nuevoEstado, publicado: nuevoEstado === "Inactivo" ? false : x.publicado } : x));
     } catch (err) {
-      alert(err.response?.data?.message || "No se pudo cambiar el estado.");
+      showToast("error", err.response?.data?.message || "No se pudo cambiar el estado.");
     }
   };
 

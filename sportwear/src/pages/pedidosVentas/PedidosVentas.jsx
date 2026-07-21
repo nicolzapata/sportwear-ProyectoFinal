@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import './PedidosVentas.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconDollar, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
@@ -148,6 +149,7 @@ function EstadoDropdownVenta({ venta, abierto, onToggle, onCambiar, cambiando, t
 export default function PedidosVentas() {
   const { usuario } = useAuth();
   const tienePerm = (p) => (usuario?.permisos || []).includes(p);
+  const showToast = useToast();
 
   const [datos,       setDatos]       = useState([]);
   const [cargando,    setCargando]    = useState(true);
@@ -346,7 +348,7 @@ export default function PedidosVentas() {
       setFormVenta(formVentaInicial());
       cargar();
     } catch (err) {
-      alert(err.response?.data?.message || "Error al registrar la venta");
+      showToast("error", err.response?.data?.message || "Error al registrar la venta");
     } finally {
       setGuardandoVenta(false);
     }
@@ -366,7 +368,7 @@ export default function PedidosVentas() {
       // que la fila no se remonte y la barrita de "Pago" se anime en vez de aparecer de golpe. ──
       await cargar(true);
     } catch (err) {
-      alert(err.response?.data?.message || "Error al cambiar estado");
+      showToast("error", err.response?.data?.message || "Error al cambiar estado");
     } finally {
       setCambiandoEstado(false);
     }
@@ -404,7 +406,7 @@ export default function PedidosVentas() {
       setAbonosModal(null);
       setFormAbono({ monto: "", metodo: "Efectivo", fecha: "" });
     } catch (err) {
-      alert(err.response?.data?.message || "Error al registrar el pago");
+      showToast("error", err.response?.data?.message || "Error al registrar el pago");
     } finally {
       setGuardandoAbono(false);
     }

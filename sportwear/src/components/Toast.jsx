@@ -11,7 +11,7 @@ const ToastIcon = ({ type }) => {
 export default function Toast({ toast }) {
   if (!toast) return null;
   return createPortal(
-    <div className={`toast toast-${toast.type || "info"}`} role="status">
+    <div key={toast.id || 0} className={`toast toast-${toast.type || "info"}`} role="status">
       <div className="toast-icon"><ToastIcon type={toast.type} /></div>
       <div className="toast-message">{toast.message}</div>
     </div>,

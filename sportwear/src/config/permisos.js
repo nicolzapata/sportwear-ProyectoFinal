@@ -9,7 +9,6 @@ export const MENU_ITEMS = [
   { key: "catalogo-admin",  path: "/catalogo-admin",  icon: "🗂️", label: "Catálogo", module: "Productos" },
   { key: "proveedores",     path: "/proveedores",     icon: "🏭", label: "Proveedores", module: "Proveedores" },
   { key: "compras",         path: "/compras",         icon: "📦", label: "Compras", module: "Compras" },
-  { key: "ver-tienda",      path: "/catalogo",        icon: "🛍️", label: "Ver tienda", divider: true, siempreVisible: true },
   { key: "pedidos",         path: "/pedidos",         icon: "🚚", label: "Pedidos", divider: true, module: "Pedidos" },
   { key: "ventas",          path: "/ventas",          icon: "💰", label: "Ventas", module: "PedidosVentas" },
   { key: "pagos",           path: "/pagos",           icon: "💳", label: "Pagos", module: "Pagos" },

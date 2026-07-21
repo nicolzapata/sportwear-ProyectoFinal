@@ -149,6 +149,8 @@ export default function GestProductos() {
   const [form,             setForm]             = useState(FORM_VACIO);
   const [pendingVariantes, setPendingVariantes] = useState([]);
   const [pendingImagenes,  setPendingImagenes]  = useState([]);
+  const [coloresSinFotos,  setColoresSinFotos]  = useState([]);
+  const [coloresAPurgar,   setColoresAPurgar]   = useState([]);
   const [tab,              setTab]              = useState("productos");
   const [paginaProductos,  setPaginaProductos]  = useState(1);
   const [paginaCategorias, setPaginaCategorias] = useState(1);
@@ -267,12 +269,45 @@ export default function GestProductos() {
 
   const validar = () => validarPasoDatos();
 
+  // Un producto no puede tener colores sin ninguna foto asociada. Compara los
+  // colores en juego (variantes existentes + pendientes) contra los colores
+  // que sí tienen al menos una imagen (existente + pendiente de subir).
+  const obtenerColoresSinFotos = async () => {
+    let coloresEnJuego = [];
+    const idsConFoto = new Set();
+
+    if (editar) {
+      try {
+        const [{ data: varsData }, { data: imgsData }] = await Promise.all([
+          api.get(`/variantes?id_producto=${editar}`),
+          api.get(`/imagenes?tipo=Producto&id=${editar}`),
+        ]);
+        coloresEnJuego = varsData.filter(v => v.id_color).map(v => ({ id_color: v.id_color, nombre: v.color_nombre }));
+        imgsData.forEach(i => { if (i.id_color) idsConFoto.add(String(i.id_color)); });
+      } catch { return []; /* si falla la verificación, no bloqueamos el guardado */ }
+    }
+
+    pendingVariantes.forEach(v => { if (v.id_color) coloresEnJuego.push({ id_color: v.id_color, nombre: v.color_nombre }); });
+    pendingImagenes.forEach(i => { if (i.id_color) idsConFoto.add(String(i.id_color)); });
+
+    const coloresUnicos = [...new Map(coloresEnJuego.map(c => [String(c.id_color), c])).values()];
+    return coloresUnicos.filter(c => !idsConFoto.has(String(c.id_color)));
+  };
+
   const guardar = async () => {
     if (!validar()) return;
     if (!editar) {
       if (pendingImagenes.length === 0) { setErrores(p => ({ ...p, general: "Agrega al menos una imagen del producto." })); return; }
       if (pendingVariantes.length === 0) { setErrores(p => ({ ...p, general: "Agrega al menos una talla disponible." })); return; }
     }
+    const sinFotos = await obtenerColoresSinFotos();
+    if (sinFotos.length > 0) { setColoresSinFotos(sinFotos); return; }
+    await guardarProducto();
+  };
+
+  // Se ejecuta al confirmar el guardado — se separó de `guardar` para poder
+  // reintentarlo automáticamente tras purgar los colores sin fotos.
+  const guardarProducto = async () => {
     setGuardando(true);
     try {
       const payload = { nombre: form.nombre, descripcion: form.descripcion || null, id_categoria: Number(form.id_categoria), precio: Number(form.precio), publicado: !!form.publicado, estado: form.estado };
@@ -316,6 +351,19 @@ export default function GestProductos() {
     } finally { setGuardando(false); }
   };
 
+  // Confirmar en la alerta de "colores sin fotos": se le pide a GestVariantes
+  // que los purgue (vía la prop coloresAPurgar) y, cuando termina, se reintenta
+  // el guardado automáticamente en onColoresPurgados.
+  const confirmarEliminarColoresSinFotos = () => {
+    setColoresAPurgar(coloresSinFotos.map(c => c.id_color));
+    setColoresSinFotos([]);
+  };
+
+  const onColoresPurgados = () => {
+    setColoresAPurgar([]);
+    guardarProducto();
+  };
+
   const toggleEstadoProducto = async (id, nuevoEstado) => {
     try {
       await api.patch(`/productos/${id}/estado`);
@@ -349,6 +397,7 @@ export default function GestProductos() {
     if (guardando) return;
     setModal(false); setErrores(ERRORES_INICIALES); setProductoId(null);
     setPendingVariantes([]); setPendingImagenes([]);
+    setColoresSinFotos([]); setColoresAPurgar([]);
     cargar();
   };
 
@@ -844,35 +893,40 @@ export default function GestProductos() {
                   </div>
                 </div>
 
-                {editar && (
-                  <div className="gestproductos-form-group">
-                    <label className="gestproductos-form-label">Estado</label>
-                    <select className="gestproductos-form-select" value={form.estado}
-                      onChange={e => setForm({ ...form, estado: e.target.value, publicado: e.target.value === "Inactivo" ? false : form.publicado })}>
-                      <option value="Activo">Activo</option>
-                      <option value="Inactivo">Inactivo</option>
-                    </select>
-                  </div>
-                )}
-
-                {tienePerm('Productos.publicar') && (
-                  <div className="gestproductos-form-group">
-                    <label className="gestproductos-form-label">Publicar en catálogo</label>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
-                      <input type="checkbox" id="publicado" checked={!!form.publicado} disabled={form.estado === "Inactivo"}
-                        onChange={e => setForm({ ...form, publicado: e.target.checked })}
-                        style={{ width: 18, height: 18, cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer" }} />
-                      <label htmlFor="publicado" style={{ cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer", fontSize: 13, color: form.estado === "Inactivo" ? "#999" : "inherit" }}>
-                        {form.estado === "Inactivo" ? "No puede publicarse si está inactivo" : (form.publicado ? "Visible en catálogo" : "No publicado")}
-                      </label>
+                <div className="gestproductos-form-row">
+                  {editar && (
+                    <div className="gestproductos-form-group">
+                      <label className="gestproductos-form-label">Estado</label>
+                      <select className="gestproductos-form-select" value={form.estado}
+                        onChange={e => setForm({ ...form, estado: e.target.value, publicado: e.target.value === "Inactivo" ? false : form.publicado })}>
+                        <option value="Activo">Activo</option>
+                        <option value="Inactivo">Inactivo</option>
+                      </select>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                  {tienePerm('Productos.publicar') && (
+                    <div className="gestproductos-form-group">
+                      <label className="gestproductos-form-label">Publicar en catálogo</label>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
+                        <input type="checkbox" id="publicado" checked={!!form.publicado} disabled={form.estado === "Inactivo"}
+                          onChange={e => setForm({ ...form, publicado: e.target.checked })}
+                          style={{ width: 18, height: 18, cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer" }} />
+                        <label htmlFor="publicado" style={{ cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer", fontSize: 13, color: form.estado === "Inactivo" ? "#999" : "inherit" }}>
+                          {form.estado === "Inactivo" ? "No puede publicarse si está inactivo" : (form.publicado ? "Visible en catálogo" : "No publicado")}
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="gestproductos-factura-seccion">
                 <h3 className="gestproductos-factura-titulo">Variantes</h3>
-                <GestVariantes idProducto={editar || productoId} estadoProducto={form.estado} onPendingChange={setPendingVariantes} />
+                <GestVariantes
+                  idProducto={editar || productoId} estadoProducto={form.estado} onPendingChange={setPendingVariantes}
+                  coloresAPurgar={coloresAPurgar} onColoresPurgados={onColoresPurgados}
+                />
               </div>
 
               <div className="gestproductos-factura-seccion">
@@ -990,6 +1044,16 @@ export default function GestProductos() {
           confirmLabel="Sí, eliminar"
           onConfirm={confirmarEliminar}
           onCancel={() => setEliminarId(null)}
+        />
+      )}
+
+      {coloresSinFotos.length > 0 && (
+        <ConfirmModal
+          title="Colores sin fotos"
+          message={`Un producto no puede tener colores sin fotos asociadas. ${coloresSinFotos.length > 1 ? "Los siguientes colores no tienen" : "El siguiente color no tiene"} ninguna foto: ${coloresSinFotos.map(c => c.nombre).join(", ")}. Puedes eliminarlos para continuar o cancelar y subirles fotos.`}
+          confirmLabel="Eliminar esos colores"
+          onConfirm={confirmarEliminarColoresSinFotos}
+          onCancel={() => setColoresSinFotos([])}
         />
       )}
     </div>

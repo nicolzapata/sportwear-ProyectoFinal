@@ -1,6 +1,7 @@
 // src/components/GestVariantes.jsx
 import { useState, useEffect } from "react";
 import api from "../services/api";
+import { useConfirm } from "../context/ConfirmContext";
 import "./GestVariantes.css";
 
 const TALLAS = ["XS","S","M","L","XL","XXL","Única","28","30","32","34","36","38","40","42","44"];
@@ -84,7 +85,8 @@ function ChipsColorList({ grupos, esEditandoTalla, valorEdicion, onIniciarEdicio
  * 2. idProducto null/undefined → modo local: acumula variantes pendientes y
  *    las emite por `onPendingChange(pendingList)` cada vez que cambian.
  */
-export default function GestVariantes({ idProducto, estadoProducto, onPendingChange }) {
+export default function GestVariantes({ idProducto, estadoProducto, onPendingChange, coloresAPurgar = [], onColoresPurgados }) {
+  const confirmar = useConfirm();
 
   // ── Estado modo conectado ──────────────────────────────────────────────────
   const [variantes,   setVariantes]   = useState([]);
@@ -145,6 +147,29 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
     if (idProducto) { setLoading(true); cargar(); }
     else            { setLoading(true); cargarColores(); }
   }, [idProducto]);
+
+  // ── Purga externa: GestProductos pide eliminar colores sin fotos antes de
+  // guardar. Borra todas las variantes de esos colores (API si están conectadas,
+  // filtro local si son pendientes) y avisa cuando termina para que el padre
+  // reintente el guardado. ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!coloresAPurgar || coloresAPurgar.length === 0) return;
+    const idsAPurgar = coloresAPurgar.map(String);
+    const purgar = async () => {
+      if (idProducto) {
+        const aEliminar = variantes.filter(v => idsAPurgar.includes(String(v.id_color)));
+        await Promise.all(aEliminar.map(v => api.delete(`/variantes/${v.id_variante}`).catch(() => {})));
+        await cargar();
+      } else {
+        const updated = pendingVariantes.filter(v => !idsAPurgar.includes(String(v.id_color)));
+        setPendingVariantes(updated);
+        onPendingChange?.(updated);
+      }
+      onColoresPurgados?.();
+    };
+    purgar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coloresAPurgar]);
 
   // ── Helpers selector "agregar" ─────────────────────────────────────────────
   const toggleColor = (color) => {
@@ -311,7 +336,8 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
   };
 
   const eliminarVariante = async (id_variante) => {
-    if (!window.confirm("¿Eliminar esta variante?")) return;
+    const ok = await confirmar({ title: "Eliminar variante", message: "¿Eliminar esta variante?", confirmLabel: "Sí, eliminar" });
+    if (!ok) return;
     try { await api.delete(`/variantes/${id_variante}`); cargar(); }
     catch { setError("No se pudo eliminar."); }
   };

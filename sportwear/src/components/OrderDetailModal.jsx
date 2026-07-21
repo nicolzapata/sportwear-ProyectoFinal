@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import api from "../services/api";
+import { useToast } from "../context/ToastContext";
 import "./OrderDetailModal.css";
 
 const fmt = (n) =>
@@ -68,6 +69,7 @@ export default function OrderDetailModal({ pedido, onClose }) {
   const progreso = totalPedido > 0 ? Math.min((totalPagado / totalPedido) * 100, 100) : 0;
   const esCuotas = pedido.tipo_pago === "cuotas";
   const [descargando, setDescargando] = useState(false);
+  const showToast = useToast();
 
   const descargarComprobante = async () => {
     setDescargando(true);
@@ -82,7 +84,7 @@ export default function OrderDetailModal({ pedido, onClose }) {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch {
-      alert("No se pudo descargar el comprobante en PDF.");
+      showToast("error", "No se pudo descargar el comprobante en PDF.");
     } finally {
       setDescargando(false);
     }
