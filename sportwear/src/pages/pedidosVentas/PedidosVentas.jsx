@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import './PedidosVentas.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconDollar, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
 const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
@@ -556,18 +557,15 @@ export default function PedidosVentas() {
             <div className="pedidosventas-modal-body pedidosventas-factura-body">
               <div className="pedidosventas-factura-seccion">
                 <h3 className="pedidosventas-factura-titulo">Información</h3>
-                <div className="pedidosventas-detalle-info-grid">
-                  <div><span className="pedidosventas-detalle-info-label">Cliente</span><span className="pedidosventas-detalle-info-valor">{verDetalle.cliente}</span></div>
-                  <div><span className="pedidosventas-detalle-info-label">Fecha</span><span className="pedidosventas-detalle-info-valor">{verDetalle.fecha?.toString().split("T")[0]}</span></div>
-                  <div><span className="pedidosventas-detalle-info-label">Tipo de pago</span><span className="pedidosventas-detalle-info-valor">{verDetalle.tipo_pago === 'cuotas' ? `Cuotas (${verDetalle.num_cuotas})` : 'Completo'}</span></div>
-                  <div>
-                    <span className="pedidosventas-detalle-info-label">Estado</span>
-                    <span className={`pedidosventas-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>
-                  </div>
+                <DetalleGrid>
+                  <DetalleItem label="Cliente" value={verDetalle.cliente} />
+                  <DetalleItem label="Fecha" value={verDetalle.fecha?.toString().split("T")[0]} />
+                  <DetalleItem label="Tipo de pago" value={verDetalle.tipo_pago === 'cuotas' ? `Cuotas (${verDetalle.num_cuotas})` : 'Completo'} />
+                  <DetalleItem label="Estado" value={<span className={`pedidosventas-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>} />
                   {verDetalle.direccion_entrega && (
-                    <div><span className="pedidosventas-detalle-info-label">Dirección de entrega</span><span className="pedidosventas-detalle-info-valor">{verDetalle.direccion_entrega}</span></div>
+                    <DetalleItem label="Dirección de entrega" value={verDetalle.direccion_entrega} full />
                   )}
-                </div>
+                </DetalleGrid>
               </div>
 
               <div className="pedidosventas-factura-seccion">
@@ -582,17 +580,17 @@ export default function PedidosVentas() {
 
               <div className="pedidosventas-factura-seccion">
                 <h3 className="pedidosventas-factura-titulo">Pago</h3>
-                <div className="pedidosventas-detalle-info-grid">
-                  <div><span className="pedidosventas-detalle-info-label">Total</span><span className="pedidosventas-detalle-info-valor">{fmt(verDetalle.total)}</span></div>
-                  <div><span className="pedidosventas-detalle-info-label">Abonado</span><span className="pedidosventas-detalle-info-valor">{fmt(verDetalle.total_pagado || 0)}</span></div>
-                  <div><span className="pedidosventas-detalle-info-label">Saldo</span><span className="pedidosventas-detalle-info-valor">{fmt(verDetalle.total - (verDetalle.total_pagado || 0))}</span></div>
+                <DetalleGrid>
+                  <DetalleItem label="Total" value={fmt(verDetalle.total)} />
+                  <DetalleItem label="Abonado" value={fmt(verDetalle.total_pagado || 0)} />
+                  <DetalleItem label="Saldo" value={fmt(verDetalle.total - (verDetalle.total_pagado || 0))} />
                   {Number(verDetalle.descuento) > 0 && (
-                    <div><span className="pedidosventas-detalle-info-label">Descuento</span><span className="pedidosventas-detalle-info-valor">{fmt(verDetalle.descuento)}</span></div>
+                    <DetalleItem label="Descuento" value={fmt(verDetalle.descuento)} />
                   )}
                   {verDetalle.motivo_descuento && (
-                    <div><span className="pedidosventas-detalle-info-label">Motivo del descuento</span><span className="pedidosventas-detalle-info-valor">{verDetalle.motivo_descuento}</span></div>
+                    <DetalleItem label="Motivo del descuento" value={verDetalle.motivo_descuento} full />
                   )}
-                </div>
+                </DetalleGrid>
               </div>
 
               {verDetalle.abonos?.length > 0 && (

@@ -8,6 +8,7 @@ import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
 import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../utils/numerico";
 import './Proveedores.css';
+import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
 const FILAS_POR_PAGINA = 10;
@@ -611,40 +612,35 @@ export default function Proveedores() {
 
               <div className="proveedores-factura-seccion">
                 <h3 className="proveedores-factura-titulo">Datos de la empresa</h3>
-                <div className="proveedores-detalle-info-grid">
-                  <div><span className="proveedores-detalle-info-label">ID</span><span className="proveedores-detalle-info-valor">#{String(verDetalle.id_proveedor).padStart(3, "0")}</span></div>
-                  <div><span className="proveedores-detalle-info-label">Documento</span><span className="proveedores-detalle-info-valor">{verDetalle.tipo_doc} {verDetalle.numero_doc}</span></div>
-                  <div><span className="proveedores-detalle-info-label">Ciudad</span><span className="proveedores-detalle-info-valor">{verDetalle.ciudad || "—"}</span></div>
-                  <div>
-                    <span className="proveedores-detalle-info-label">Estado</span>
-                    <span className={`tabla-status${verDetalle.estado === "Activo" ? ' activo' : ' inactivo'}`}>{verDetalle.estado}</span>
-                  </div>
-                  <div><span className="proveedores-detalle-info-label">Compras realizadas</span><span className="proveedores-detalle-info-valor">{verDetalle.total_compras ?? 0}</span></div>
-                  <div><span className="proveedores-detalle-info-label">Última actualización</span><span className="proveedores-detalle-info-valor">{verDetalle.fecha_actualizacion ? new Date(verDetalle.fecha_actualizacion).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : "—"}</span></div>
-                </div>
-                <div className="proveedores-detalle-info-grid" style={{ marginTop: "1rem" }}>
-                  <div><span className="proveedores-detalle-info-label">Razón social</span><span className="proveedores-detalle-info-valor">{verDetalle.razon_social}</span></div>
-                  <div><span className="proveedores-detalle-info-label">Nombre comercial</span><span className="proveedores-detalle-info-valor">{verDetalle.nombre_comercial || "—"}</span></div>
-                </div>
+                <DetalleGrid>
+                  <DetalleItem label="ID" value={`#${String(verDetalle.id_proveedor).padStart(3, "0")}`} />
+                  <DetalleItem label="Documento" value={`${verDetalle.tipo_doc} ${verDetalle.numero_doc}`} />
+                  <DetalleItem label="Ciudad" value={verDetalle.ciudad} />
+                  <DetalleItem label="Estado" value={<span className={`tabla-status${verDetalle.estado === "Activo" ? ' activo' : ' inactivo'}`}>{verDetalle.estado}</span>} />
+                  <DetalleItem label="Compras realizadas" value={verDetalle.total_compras ?? 0} />
+                  <DetalleItem label="Última actualización" value={verDetalle.fecha_actualizacion ? new Date(verDetalle.fecha_actualizacion).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : null} />
+                  <DetalleItem label="Razón social" value={verDetalle.razon_social} />
+                  <DetalleItem label="Nombre comercial" value={verDetalle.nombre_comercial} />
+                </DetalleGrid>
               </div>
 
               <div className="proveedores-factura-seccion">
                 <h3 className="proveedores-factura-titulo">Contacto</h3>
-                <div className="proveedores-detalle-info-grid">
-                  <div><span className="proveedores-detalle-info-label">Persona de contacto</span><span className="proveedores-detalle-info-valor">{verDetalle.nombre_contacto || "—"}</span></div>
-                  <div><span className="proveedores-detalle-info-label">Celular</span><span className="proveedores-detalle-info-valor">{verDetalle.telefono_celular || "—"}</span></div>
-                  <div><span className="proveedores-detalle-info-label">Correo</span><span className="proveedores-detalle-info-valor">{verDetalle.email_contacto || "—"}</span></div>
-                </div>
+                <DetalleGrid>
+                  <DetalleItem label="Persona de contacto" value={verDetalle.nombre_contacto} />
+                  <DetalleItem label="Celular" value={verDetalle.telefono_celular} />
+                  <DetalleItem label="Correo" value={verDetalle.email_contacto} />
+                </DetalleGrid>
               </div>
 
               {(verDetalle.banco || verDetalle.numero_cuenta) && (
                 <div className="proveedores-factura-seccion">
                   <h3 className="proveedores-factura-titulo">Datos bancarios</h3>
-                  <div className="proveedores-detalle-info-grid">
-                    <div><span className="proveedores-detalle-info-label">Banco</span><span className="proveedores-detalle-info-valor">{verDetalle.banco || "—"}</span></div>
-                    <div><span className="proveedores-detalle-info-label">Tipo de cuenta</span><span className="proveedores-detalle-info-valor">{verDetalle.tipo_cuenta || "—"}</span></div>
-                    <div><span className="proveedores-detalle-info-label">N° de cuenta</span><span className="proveedores-detalle-info-valor">{verDetalle.numero_cuenta || "—"}</span></div>
-                  </div>
+                  <DetalleGrid>
+                    <DetalleItem label="Banco" value={verDetalle.banco} />
+                    <DetalleItem label="Tipo de cuenta" value={verDetalle.tipo_cuenta} />
+                    <DetalleItem label="N° de cuenta" value={verDetalle.numero_cuenta} />
+                  </DetalleGrid>
                 </div>
               )}
             </div>

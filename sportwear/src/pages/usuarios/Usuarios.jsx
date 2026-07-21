@@ -2,8 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import ModalSteps from "../../components/ModalSteps";
-import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
+import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
 import Loader from "../../components/Loader";
@@ -36,7 +35,7 @@ export default function Usuarios() {
   const [busqueda,       setBusqueda]       = useState("");
   const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [modal,          setModal]          = useState(false);
-  const [pasoModal,      setPasoModal]      = useState(0);
+  const [guardandoModal, setGuardandoModal] = useState(false);
   const [detalle,        setDetalle]        = useState(null);
   const [clienteDetalle, setClienteDetalle] = useState(null);
   const [editar,         setEditar]         = useState(null);
@@ -99,15 +98,13 @@ export default function Usuarios() {
   };
 
   // Ante un 409 del backend (correo/documento duplicado), en vez de mostrar el
-  // mensaje solo en un toast genérico, lo pega al campo real y salta al paso
-  // donde vive ese campo (paso 0 en ambos modales) para que sea visible.
+  // mensaje solo en un toast genérico, lo pega al campo real para que sea visible.
   const atenderErrorCampo = (err, setErroresFn) => {
     const mensaje = err.response?.data?.message;
     if (err.response?.status === 409 && mensaje) {
       const campo = /correo|email/i.test(mensaje) ? "email" : /documento/i.test(mensaje) ? "documento" : null;
       if (campo) {
         setErroresFn(prev => ({ ...prev, [campo]: mensaje }));
-        setPasoModal(0);
         return true;
       }
     }
@@ -179,7 +176,6 @@ export default function Usuarios() {
     setEditar(null);
     setErrores({ nombres: "", apellidos: "", documento: "", email: "", contrasena: "", confirmar: "", telefono: "", direccion: "", id_barrio: "" });
     setForm({ nombres: "", apellidos: "", email: "", contrasena: "", confirmar: "", id_rol: roles[0]?.id_rol || 1, estado: "Activo", tipo_doc: "CC", documento: "", telefono: "", ciudad: "Medellín", id_barrio: "", direccion: "" });
-    setPasoModal(0);
     setModal(true);
   };
 
@@ -187,7 +183,6 @@ export default function Usuarios() {
     setEditar(null);
     setErroresCliente({ nombres: "", apellidos: "", documento: "", telefono: "", email: "", ciudad: "", direccion: "", id_barrio: "", contrasena: "", confirmar: "" });
     setClienteForm({ nombres: "", apellidos: "", tipo_doc: "CC", documento: "", telefono: "", email: "", ciudad: "Medellín", id_barrio: "", direccion: "", contrasena: "", confirmar: "", permiso_cuotas: 1, estado: "Activo" });
-    setPasoModal(0);
     setModal(true);
   };
 
@@ -201,7 +196,6 @@ export default function Usuarios() {
         setForm(f => ({ ...f, tipo_doc: data.tipo_doc || "CC", documento: data.documento || "", telefono: data.telefono || "", ciudad: data.ciudad || "Medellín", id_barrio: data.id_barrio || "", direccion: data.direccion || "" }));
       } catch (err) { console.error(err); }
     }
-    setPasoModal(0);
     setModal(true);
   };
 
@@ -209,7 +203,6 @@ export default function Usuarios() {
     setEditar(c.id_cliente);
     setErroresCliente({ nombres: "", apellidos: "", documento: "", telefono: "", email: "", ciudad: "", direccion: "", id_barrio: "", contrasena: "", confirmar: "" });
     setClienteForm({ ...dividirNombre(c.nombre), tipo_doc: c.tipo_doc, documento: c.documento, telefono: c.telefono || "", email: c.email || "", ciudad: c.ciudad || "Medellín", id_barrio: c.id_barrio || "", direccion: c.direccion || "", contrasena: "", confirmar: "", permiso_cuotas: c.permiso_cuotas || 1, estado: c.estado });
-    setPasoModal(0);
     setModal(true);
   };
 
@@ -357,6 +350,24 @@ export default function Usuarios() {
     }
   };
 
+  const handleGuardarUsuario = async () => {
+    const okDatos = validarPasoDatosCuenta();
+    const okUbicacion = validarPasoUbicacionRol();
+    if (!okDatos || !okUbicacion) return;
+    setGuardandoModal(true);
+    await guardar();
+    setGuardandoModal(false);
+  };
+
+  const handleGuardarCliente = async () => {
+    const okDatos = validarPasoClienteDatos();
+    const okUbicacion = validarPasoClienteUbicacionClasificacion();
+    if (!okDatos || !okUbicacion) return;
+    setGuardandoModal(true);
+    await guardarCliente();
+    setGuardandoModal(false);
+  };
+
   const toggleEstadoUsuario = async (id, nuevoEstado) => {
     await api.patch(`/usuarios/${id}/estado`);
     setUsuarios(prev => prev.map(u => u.id_usuario === id ? { ...u, estado: nuevoEstado } : u));
@@ -379,10 +390,10 @@ export default function Usuarios() {
   // ── Paso 1 (combinado): Documento + Cuenta ────────────────────────────────
   const PasosDatosCuenta = (
     <div>
-      <div className="ms-form-row">
-        <div className="ms-form-group">
-          <label className="ms-form-label">Tipo doc. <span className="ms-req">*</span></label>
-          <select className="ms-form-select" value={form.tipo_doc}
+      <div className="usuarios-form-row">
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">Tipo doc. <span className="usuarios-req">*</span></label>
+          <select className="usuarios-form-select" value={form.tipo_doc}
             onChange={e => {
               const tipo_doc = e.target.value;
               setForm({ ...form, tipo_doc });
@@ -394,9 +405,9 @@ export default function Usuarios() {
             {TIPOS_DOC.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
-        <div className="ms-form-group">
-          <label className="ms-form-label">N° documento <span className="ms-req">*</span></label>
-          <input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="1001234567" value={form.documento}
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">N° documento <span className="usuarios-req">*</span></label>
+          <input className={`usuarios-form-input${errores.documento ? " input-error" : ""}`} placeholder="1001234567" value={form.documento}
             inputMode={form.tipo_doc === "PP" ? "text" : "numeric"}
             maxLength={maxLongitudDocumento(form.tipo_doc)}
             onChange={e => {
@@ -411,38 +422,38 @@ export default function Usuarios() {
               const msg = !form.documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(form.tipo_doc, form.documento);
               setErrores(prev => ({ ...prev, documento: msg }));
             }} />
-          {errores.documento && <span className="ms-form-error">{errores.documento}</span>}
+          {errores.documento && <span className="usuarios-form-error">{errores.documento}</span>}
         </div>
       </div>
-      <div className="ms-form-row">
-        <div className="ms-form-group">
-          <label className="ms-form-label">Nombres <span className="ms-req">*</span></label>
-          <input className={`ms-form-input${errores.nombres ? " input-error" : ""}`} placeholder="Ej: Nicol" value={form.nombres}
+      <div className="usuarios-form-row">
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">Nombres <span className="usuarios-req">*</span></label>
+          <input className={`usuarios-form-input${errores.nombres ? " input-error" : ""}`} placeholder="Ej: Nicol" value={form.nombres}
             onChange={e => {
               const nombres = e.target.value;
               setForm({ ...form, nombres });
               if (errores.nombres) setErrores(prev => ({ ...prev, nombres: validarNombre(nombres, "El nombre es obligatorio") }));
             }}
             onBlur={() => setErrores(prev => ({ ...prev, nombres: validarNombre(form.nombres, "El nombre es obligatorio") }))} />
-          {errores.nombres && <span className="ms-form-error">{errores.nombres}</span>}
+          {errores.nombres && <span className="usuarios-form-error">{errores.nombres}</span>}
         </div>
-        <div className="ms-form-group">
-          <label className="ms-form-label">Apellidos <span className="ms-req">*</span></label>
-          <input className={`ms-form-input${errores.apellidos ? " input-error" : ""}`} placeholder="Ej: Zapata" value={form.apellidos}
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">Apellidos <span className="usuarios-req">*</span></label>
+          <input className={`usuarios-form-input${errores.apellidos ? " input-error" : ""}`} placeholder="Ej: Zapata" value={form.apellidos}
             onChange={e => {
               const apellidos = e.target.value;
               setForm({ ...form, apellidos });
               if (errores.apellidos) setErrores(prev => ({ ...prev, apellidos: validarNombre(apellidos, "El apellido es obligatorio") }));
             }}
             onBlur={() => setErrores(prev => ({ ...prev, apellidos: validarNombre(form.apellidos, "El apellido es obligatorio") }))} />
-          {errores.apellidos && <span className="ms-form-error">{errores.apellidos}</span>}
+          {errores.apellidos && <span className="usuarios-form-error">{errores.apellidos}</span>}
         </div>
       </div>
 
-      <div className="ms-form-row">
-        <div className="ms-form-group">
-          <label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label>
-          <input type="email" className={`ms-form-input${errores.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={form.email}
+      <div className="usuarios-form-row">
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">Correo electrónico <span className="usuarios-req">*</span></label>
+          <input type="email" className={`usuarios-form-input${errores.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={form.email}
             disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined}
             onChange={e => {
               const email = e.target.value;
@@ -457,27 +468,27 @@ export default function Usuarios() {
                 if (valor) verificarEmailDuplicado(valor, setErrores, formRef);
               }
             }} />
-          {errores.email && <span className="ms-form-error">{errores.email}</span>}
+          {errores.email && <span className="usuarios-form-error">{errores.email}</span>}
         </div>
-        <div className="ms-form-group">
-          <label className="ms-form-label">Teléfono <span className="ms-req">*</span></label>
-          <input className={`ms-form-input${errores.telefono ? " input-error" : ""}`} placeholder="3001234567" value={form.telefono} inputMode="numeric" maxLength={LONGITUD_TELEFONO}
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">Teléfono <span className="usuarios-req">*</span></label>
+          <input className={`usuarios-form-input${errores.telefono ? " input-error" : ""}`} placeholder="3001234567" value={form.telefono} inputMode="numeric" maxLength={LONGITUD_TELEFONO}
             onChange={e => {
               const telefono = soloDigitos(e.target.value);
               setForm({ ...form, telefono });
               if (errores.telefono) setErrores(prev => ({ ...prev, telefono: validarTelefono(telefono) }));
             }}
             onBlur={() => setErrores(prev => ({ ...prev, telefono: validarTelefono(form.telefono) }))} />
-          {errores.telefono && <span className="ms-form-error">{errores.telefono}</span>}
+          {errores.telefono && <span className="usuarios-form-error">{errores.telefono}</span>}
         </div>
       </div>
       {(!editar || editar === usuario?.id_usuario) && (
-        <div className="ms-form-group">
-          <label className="ms-form-label">Contraseña {!editar && <span className="ms-req">*</span>}</label>
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">Contraseña {!editar && <span className="usuarios-req">*</span>}</label>
           <div className="input-wrapper">
             <span className="input-icon"><IconLock /></span>
             <input type={showPassword ? "text" : "password"}
-              className={`ms-form-input${errores.contrasena ? " input-error" : ""}`}
+              className={`usuarios-form-input${errores.contrasena ? " input-error" : ""}`}
               placeholder={editar ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"}
               value={form.contrasena}
               onChange={e => {
@@ -490,14 +501,14 @@ export default function Usuarios() {
             <div className="input-bar" />
             <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <IconEyeOpen /> : <IconEyeClosed />}</span>
           </div>
-          {errores.contrasena && <span className="ms-form-error">{errores.contrasena}</span>}
+          {errores.contrasena && <span className="usuarios-form-error">{errores.contrasena}</span>}
         </div>
       )}
       {(!editar || editar === usuario?.id_usuario) && (
-        <div className="ms-form-group">
-          <label className="ms-form-label">Confirmar contraseña {(!editar || form.contrasena) && <span className="ms-req">*</span>}</label>
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">Confirmar contraseña {(!editar || form.contrasena) && <span className="usuarios-req">*</span>}</label>
           <input type="password"
-            className={`ms-form-input${errores.confirmar ? " input-error" : ""}`}
+            className={`usuarios-form-input${errores.confirmar ? " input-error" : ""}`}
             placeholder="Repite la contraseña"
             value={form.confirmar}
             onChange={e => {
@@ -506,7 +517,7 @@ export default function Usuarios() {
               if (errores.confirmar) setErrores(prev => ({ ...prev, confirmar: revisarConfirmar(confirmar, form.contrasena) }));
             }}
             onBlur={() => setErrores(prev => ({ ...prev, confirmar: revisarConfirmar(form.confirmar, form.contrasena) }))} />
-          {errores.confirmar && <span className="ms-form-error">{errores.confirmar}</span>}
+          {errores.confirmar && <span className="usuarios-form-error">{errores.confirmar}</span>}
         </div>
       )}
     </div>
@@ -515,11 +526,11 @@ export default function Usuarios() {
   // ── Paso 2 (combinado): Ubicación + Rol ───────────────────────────────────
   const PasosUbicacionRol = (
     <div>
-      <div className="ms-form-group"><label className="ms-form-label">Ciudad</label><input className="ms-form-input" placeholder="Medellín" value={form.ciudad} onChange={e => setForm({ ...form, ciudad: e.target.value })} /></div>
-      <div className="ms-form-row">
-        <div className="ms-form-group">
-          <label className="ms-form-label">Barrio <span className="ms-req">*</span></label>
-          <select className={`ms-form-select${errores.id_barrio ? " input-error" : ""}`} value={form.id_barrio}
+      <div className="usuarios-form-group"><label className="usuarios-form-label">Ciudad</label><input className="usuarios-form-input" placeholder="Medellín" value={form.ciudad} onChange={e => setForm({ ...form, ciudad: e.target.value })} /></div>
+      <div className="usuarios-form-row">
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">Barrio <span className="usuarios-req">*</span></label>
+          <select className={`usuarios-form-select${errores.id_barrio ? " input-error" : ""}`} value={form.id_barrio}
             onChange={e => {
               const id_barrio = e.target.value;
               setForm({ ...form, id_barrio });
@@ -529,33 +540,33 @@ export default function Usuarios() {
             <option value="">— Selecciona un barrio —</option>
             {barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
           </select>
-          {errores.id_barrio && <span className="ms-form-error">{errores.id_barrio}</span>}
+          {errores.id_barrio && <span className="usuarios-form-error">{errores.id_barrio}</span>}
         </div>
-        <div className="ms-form-group">
-          <label className="ms-form-label">Dirección <span className="ms-req">*</span></label>
-          <input className={`ms-form-input${errores.direccion ? " input-error" : ""}`} placeholder="Cra 43A # 10-20 Apto 301" value={form.direccion}
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">Dirección <span className="usuarios-req">*</span></label>
+          <input className={`usuarios-form-input${errores.direccion ? " input-error" : ""}`} placeholder="Cra 43A # 10-20 Apto 301" value={form.direccion}
             onChange={e => {
               const direccion = e.target.value;
               setForm({ ...form, direccion });
               if (errores.direccion) setErrores(prev => ({ ...prev, direccion: direccion.trim() ? "" : prev.direccion }));
             }}
             onBlur={() => setErrores(prev => ({ ...prev, direccion: form.direccion.trim() ? "" : "La dirección es obligatoria" }))} />
-          {errores.direccion && <span className="ms-form-error">{errores.direccion}</span>}
+          {errores.direccion && <span className="usuarios-form-error">{errores.direccion}</span>}
         </div>
       </div>
 
       {editar ? (
-        <div className="ms-form-row">
-          <div className="ms-form-group">
-            <label className="ms-form-label">Rol</label>
-            <select className="ms-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
+        <div className="usuarios-form-row">
+          <div className="usuarios-form-group">
+            <label className="usuarios-form-label">Rol</label>
+            <select className="usuarios-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
               {roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}
             </select>
           </div>
-          <div className="ms-form-group">
-            <label className="ms-form-label">Estado</label>
+          <div className="usuarios-form-group">
+            <label className="usuarios-form-label">Estado</label>
             <select
-              className="ms-form-select"
+              className="usuarios-form-select"
               value={esRolAdmin(form.id_rol) ? "Activo" : form.estado}
               disabled={esRolAdmin(form.id_rol)}
               title={esRolAdmin(form.id_rol) ? "Un administrador siempre permanece activo" : undefined}
@@ -567,9 +578,9 @@ export default function Usuarios() {
           </div>
         </div>
       ) : (
-        <div className="ms-form-group">
-          <label className="ms-form-label">Rol</label>
-          <select className="ms-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">Rol</label>
+          <select className="usuarios-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
             {roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}
           </select>
         </div>
@@ -578,32 +589,30 @@ export default function Usuarios() {
   );
 
   const DetalleDatosCuenta = detalle && (
-    <>
-      <DetalleSeccion><DetalleGrid>
+    <div className="usuarios-factura-seccion">
+      <h3 className="usuarios-factura-titulo">Datos y cuenta</h3>
+      <DetalleGrid>
         <DetalleItem label="Tipo doc." value={detalle.tipo_doc} />
         <DetalleItem label="Documento" value={detalle.documento} />
         <DetalleItem label="Nombre completo" value={detalle.nombre} full />
-      </DetalleGrid></DetalleSeccion>
-      <DetalleSeccion><DetalleGrid>
         <DetalleItem label="Correo electrónico" value={detalle.email} />
         <DetalleItem label="Teléfono" value={detalle.telefono} />
-      </DetalleGrid></DetalleSeccion>
-    </>
+      </DetalleGrid>
+    </div>
   );
 
   const DetalleUbicacionRol = detalle && (
-    <>
-      <DetalleSeccion><DetalleGrid>
+    <div className="usuarios-factura-seccion">
+      <h3 className="usuarios-factura-titulo">Ubicación y rol</h3>
+      <DetalleGrid>
         <DetalleItem label="Ciudad" value={detalle.ciudad} />
-        <DetalleItem label="Barrio" value={detalle.barrio || null} />
+        <DetalleItem label="Barrio" value={detalle.barrio} />
         <DetalleItem label="Dirección" value={detalle.direccion} full />
-      </DetalleGrid></DetalleSeccion>
-      <DetalleSeccion><DetalleGrid>
         <DetalleItem label="Rol" value={detalle.rol || getRoleName(detalle.id_rol)} />
         <DetalleItem label="Estado" value={detalle.estado} />
         <DetalleItem label="Fecha de creación" value={detalle.fecha_creacion ? new Date(detalle.fecha_creacion).toLocaleDateString("es-CO", { year: "numeric", month: "long", day: "numeric" }) : null} />
-      </DetalleGrid></DetalleSeccion>
-    </>
+      </DetalleGrid>
+    </div>
   );
 
   return (
@@ -752,32 +761,55 @@ export default function Usuarios() {
       </div>
 
       {modal && filterType === 'usuarios' && (
-        <ModalSteps titulo={editar ? "Editar usuario" : "Nuevo usuario"} pasos={["Datos y cuenta", "Ubicación y rol"]}
-          step={pasoModal} onStepChange={setPasoModal}
-          onClose={() => setModal(false)} onGuardar={guardar}
-          validaciones={[validarPasoDatosCuenta, validarPasoUbicacionRol]}
-          labelGuardar={editar ? "Actualizar" : "Registrar"}>
-          {PasosDatosCuenta}{PasosUbicacionRol}
-        </ModalSteps>
+        <div className="usuarios-modal-overlay" onClick={() => !guardandoModal && setModal(false)}>
+          <div className="usuarios-modal usuarios-modal-factura" onClick={(e) => e.stopPropagation()}>
+            <div className="usuarios-modal-header">
+              <h2 className="usuarios-modal-title">{editar ? "Editar usuario" : "Nuevo usuario"}</h2>
+              <button className="usuarios-modal-close" onClick={() => setModal(false)} disabled={guardandoModal}><IconX /></button>
+            </div>
+
+            <div className="usuarios-modal-body usuarios-factura-body">
+              <div className="usuarios-factura-seccion">
+                <h3 className="usuarios-factura-titulo">Datos y cuenta</h3>
+                {PasosDatosCuenta}
+              </div>
+              <div className="usuarios-factura-seccion">
+                <h3 className="usuarios-factura-titulo">Ubicación y rol</h3>
+                {PasosUbicacionRol}
+              </div>
+            </div>
+
+            <div className="usuarios-modal-footer">
+              <button className="usuarios-btn-secondary" onClick={() => setModal(false)} disabled={guardandoModal}>Cancelar</button>
+              <button className="usuarios-btn-primary" onClick={handleGuardarUsuario} disabled={guardandoModal}>
+                {guardandoModal ? "Guardando..." : (editar ? "Actualizar" : "Registrar")}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {modal && filterType === 'clientes' && (
-        <ModalSteps titulo={editar ? "Editar cliente" : "Nuevo cliente"} pasos={["Datos personales", "Ubicación y clasificación"]}
-          step={pasoModal} onStepChange={setPasoModal}
-          onClose={() => setModal(false)} onGuardar={guardarCliente}
-          validaciones={[validarPasoClienteDatos, validarPasoClienteUbicacionClasificacion]}
-          labelGuardar={editar ? "Actualizar" : "Registrar"}>
-          <div>
-            <div className="ms-form-row">
-              <div className="ms-form-group"><label className="ms-form-label">Nombres <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.nombres ? " input-error" : ""}`} placeholder="Ej: Juan" value={clienteForm.nombres}
-                onChange={e => { const nombres = e.target.value; setClienteForm({ ...clienteForm, nombres }); if (erroresCliente.nombres) setErroresCliente(prev => ({ ...prev, nombres: validarNombre(nombres) })); }}
-                onBlur={() => setErroresCliente(prev => ({ ...prev, nombres: validarNombre(clienteForm.nombres) }))} />{erroresCliente.nombres && <span className="ms-form-error">{erroresCliente.nombres}</span>}</div>
-              <div className="ms-form-group"><label className="ms-form-label">Apellidos <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.apellidos ? " input-error" : ""}`} placeholder="Ej: Pérez" value={clienteForm.apellidos}
-                onChange={e => { const apellidos = e.target.value; setClienteForm({ ...clienteForm, apellidos }); if (erroresCliente.apellidos) setErroresCliente(prev => ({ ...prev, apellidos: validarNombre(apellidos, "El apellido es obligatorio") })); }}
-                onBlur={() => setErroresCliente(prev => ({ ...prev, apellidos: validarNombre(clienteForm.apellidos, "El apellido es obligatorio") }))} />{erroresCliente.apellidos && <span className="ms-form-error">{erroresCliente.apellidos}</span>}</div>
+        <div className="usuarios-modal-overlay" onClick={() => !guardandoModal && setModal(false)}>
+          <div className="usuarios-modal usuarios-modal-factura" onClick={(e) => e.stopPropagation()}>
+            <div className="usuarios-modal-header">
+              <h2 className="usuarios-modal-title">{editar ? "Editar cliente" : "Nuevo cliente"}</h2>
+              <button className="usuarios-modal-close" onClick={() => setModal(false)} disabled={guardandoModal}><IconX /></button>
             </div>
-            <div className="ms-form-row">
-              <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={clienteForm.tipo_doc} disabled={!!editar}
+
+            <div className="usuarios-modal-body usuarios-factura-body">
+          <div className="usuarios-factura-seccion">
+            <h3 className="usuarios-factura-titulo">Datos personales</h3>
+            <div className="usuarios-form-row">
+              <div className="usuarios-form-group"><label className="usuarios-form-label">Nombres <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.nombres ? " input-error" : ""}`} placeholder="Ej: Juan" value={clienteForm.nombres}
+                onChange={e => { const nombres = e.target.value; setClienteForm({ ...clienteForm, nombres }); if (erroresCliente.nombres) setErroresCliente(prev => ({ ...prev, nombres: validarNombre(nombres) })); }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, nombres: validarNombre(clienteForm.nombres) }))} />{erroresCliente.nombres && <span className="usuarios-form-error">{erroresCliente.nombres}</span>}</div>
+              <div className="usuarios-form-group"><label className="usuarios-form-label">Apellidos <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.apellidos ? " input-error" : ""}`} placeholder="Ej: Pérez" value={clienteForm.apellidos}
+                onChange={e => { const apellidos = e.target.value; setClienteForm({ ...clienteForm, apellidos }); if (erroresCliente.apellidos) setErroresCliente(prev => ({ ...prev, apellidos: validarNombre(apellidos, "El apellido es obligatorio") })); }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, apellidos: validarNombre(clienteForm.apellidos, "El apellido es obligatorio") }))} />{erroresCliente.apellidos && <span className="usuarios-form-error">{erroresCliente.apellidos}</span>}</div>
+            </div>
+            <div className="usuarios-form-row">
+              <div className="usuarios-form-group"><label className="usuarios-form-label">Tipo documento</label><select className="usuarios-form-select" value={clienteForm.tipo_doc} disabled={!!editar}
                 onChange={e => {
                   const tipo_doc = e.target.value;
                   setClienteForm({ ...clienteForm, tipo_doc });
@@ -786,7 +818,7 @@ export default function Usuarios() {
                     setErroresCliente(prev => ({ ...prev, documento: msg }));
                   }
                 }}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
-              <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode={clienteForm.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(clienteForm.tipo_doc)}
+              <div className="usuarios-form-group"><label className="usuarios-form-label">N° documento <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode={clienteForm.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(clienteForm.tipo_doc)}
                 onChange={e => {
                   const documento = clienteForm.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value);
                   setClienteForm({ ...clienteForm, documento });
@@ -798,12 +830,12 @@ export default function Usuarios() {
                 onBlur={() => {
                   const msg = !clienteForm.documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(clienteForm.tipo_doc, clienteForm.documento);
                   setErroresCliente(prev => ({ ...prev, documento: msg }));
-                }} />{erroresCliente.documento && <span className="ms-form-error">{erroresCliente.documento}</span>}</div>
+                }} />{erroresCliente.documento && <span className="usuarios-form-error">{erroresCliente.documento}</span>}</div>
             </div>
-            <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.telefono ? " input-error" : ""}`} placeholder="3001234567" value={clienteForm.telefono} inputMode="numeric" maxLength={LONGITUD_TELEFONO}
+            <div className="usuarios-form-group"><label className="usuarios-form-label">Teléfono <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.telefono ? " input-error" : ""}`} placeholder="3001234567" value={clienteForm.telefono} inputMode="numeric" maxLength={LONGITUD_TELEFONO}
               onChange={e => { const telefono = soloDigitos(e.target.value); setClienteForm({ ...clienteForm, telefono }); if (erroresCliente.telefono) setErroresCliente(prev => ({ ...prev, telefono: validarTelefono(telefono) })); }}
-              onBlur={() => setErroresCliente(prev => ({ ...prev, telefono: validarTelefono(clienteForm.telefono) }))} />{erroresCliente.telefono && <span className="ms-form-error">{erroresCliente.telefono}</span>}</div>
-            <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className={`ms-form-input${erroresCliente.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={clienteForm.email} disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined}
+              onBlur={() => setErroresCliente(prev => ({ ...prev, telefono: validarTelefono(clienteForm.telefono) }))} />{erroresCliente.telefono && <span className="usuarios-form-error">{erroresCliente.telefono}</span>}</div>
+            <div className="usuarios-form-group"><label className="usuarios-form-label">Correo electrónico <span className="usuarios-req">*</span></label><input type="email" className={`usuarios-form-input${erroresCliente.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={clienteForm.email} disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined}
                 onChange={e => { const email = e.target.value; setClienteForm({ ...clienteForm, email }); if (erroresCliente.email) setErroresCliente(prev => ({ ...prev, email: errorEmailCliente(email) })); }}
                 onBlur={() => {
                   const mensaje = errorEmailCliente(clienteForm.email);
@@ -812,16 +844,18 @@ export default function Usuarios() {
                     const valor = clienteForm.email.trim();
                     if (valor) verificarEmailDuplicado(valor, setErroresCliente, clienteFormRef);
                   }
-                }} />{erroresCliente.email && <span className="ms-form-error">{erroresCliente.email}</span>}</div>
+                }} />{erroresCliente.email && <span className="usuarios-form-error">{erroresCliente.email}</span>}</div>
           </div>
-          <div>
-            <div className="ms-form-group"><label className="ms-form-label">Ciudad <span className="ms-req">*</span></label><input className={`ms-form-input${erroresCliente.ciudad ? " input-error" : ""}`} placeholder="Medellín" value={clienteForm.ciudad}
+
+          <div className="usuarios-factura-seccion">
+            <h3 className="usuarios-factura-titulo">Ubicación y clasificación</h3>
+            <div className="usuarios-form-group"><label className="usuarios-form-label">Ciudad <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.ciudad ? " input-error" : ""}`} placeholder="Medellín" value={clienteForm.ciudad}
               onChange={e => { const ciudad = e.target.value; setClienteForm({ ...clienteForm, ciudad }); if (erroresCliente.ciudad) setErroresCliente(prev => ({ ...prev, ciudad: errorCiudadCliente(ciudad) })); }}
-              onBlur={() => setErroresCliente(prev => ({ ...prev, ciudad: errorCiudadCliente(clienteForm.ciudad) }))} />{erroresCliente.ciudad && <span className="ms-form-error">{erroresCliente.ciudad}</span>}</div>
-            <div className="ms-form-row">
-              <div className="ms-form-group">
-                <label className="ms-form-label">Barrio <span className="ms-req">*</span></label>
-                <select className={`ms-form-select${erroresCliente.id_barrio ? " input-error" : ""}`} value={clienteForm.id_barrio}
+              onBlur={() => setErroresCliente(prev => ({ ...prev, ciudad: errorCiudadCliente(clienteForm.ciudad) }))} />{erroresCliente.ciudad && <span className="usuarios-form-error">{erroresCliente.ciudad}</span>}</div>
+            <div className="usuarios-form-row">
+              <div className="usuarios-form-group">
+                <label className="usuarios-form-label">Barrio <span className="usuarios-req">*</span></label>
+                <select className={`usuarios-form-select${erroresCliente.id_barrio ? " input-error" : ""}`} value={clienteForm.id_barrio}
                   onChange={e => {
                     const id_barrio = Number(e.target.value);
                     setClienteForm({ ...clienteForm, id_barrio });
@@ -831,89 +865,133 @@ export default function Usuarios() {
                   <option value="">— Seleccionar —</option>
                   {barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
                 </select>
-                {erroresCliente.id_barrio && <span className="ms-form-error">{erroresCliente.id_barrio}</span>}
+                {erroresCliente.id_barrio && <span className="usuarios-form-error">{erroresCliente.id_barrio}</span>}
               </div>
-              <div className="ms-form-group">
-                <label className="ms-form-label">Dirección completa <span className="ms-req">*</span></label>
-                <input className={`ms-form-input${erroresCliente.direccion ? " input-error" : ""}`} placeholder="Cra 70 # 48-15 Apto 201" value={clienteForm.direccion}
+              <div className="usuarios-form-group">
+                <label className="usuarios-form-label">Dirección completa <span className="usuarios-req">*</span></label>
+                <input className={`usuarios-form-input${erroresCliente.direccion ? " input-error" : ""}`} placeholder="Cra 70 # 48-15 Apto 201" value={clienteForm.direccion}
                   onChange={e => {
                     const direccion = e.target.value;
                     setClienteForm({ ...clienteForm, direccion });
                     if (erroresCliente.direccion) setErroresCliente(prev => ({ ...prev, direccion: direccion.trim() ? "" : prev.direccion }));
                   }}
                   onBlur={() => setErroresCliente(prev => ({ ...prev, direccion: clienteForm.direccion.trim() ? "" : "La dirección es obligatoria" }))} />
-                {erroresCliente.direccion && <span className="ms-form-error">{erroresCliente.direccion}</span>}
+                {erroresCliente.direccion && <span className="usuarios-form-error">{erroresCliente.direccion}</span>}
               </div>
             </div>
 
             {!editar && (
-              <div className="ms-form-row">
-                <div className="ms-form-group"><label className="ms-form-label">Contraseña <span className="ms-req">*</span></label><input type="password" className={`ms-form-input${erroresCliente.contrasena ? " input-error" : ""}`} placeholder="Mín. 6 caracteres" value={clienteForm.contrasena}
+              <div className="usuarios-form-row">
+                <div className="usuarios-form-group"><label className="usuarios-form-label">Contraseña <span className="usuarios-req">*</span></label><input type="password" className={`usuarios-form-input${erroresCliente.contrasena ? " input-error" : ""}`} placeholder="Mín. 6 caracteres" value={clienteForm.contrasena}
                   onChange={e => {
                     const contrasena = e.target.value;
                     setClienteForm({ ...clienteForm, contrasena });
                     if (erroresCliente.contrasena) setErroresCliente(prev => ({ ...prev, contrasena: revisarContrasenaCliente(contrasena) }));
                     if (erroresCliente.confirmar) setErroresCliente(prev => ({ ...prev, confirmar: revisarConfirmarCliente(clienteForm.confirmar, contrasena) }));
                   }}
-                  onBlur={() => setErroresCliente(prev => ({ ...prev, contrasena: revisarContrasenaCliente(clienteForm.contrasena) }))} />{erroresCliente.contrasena && <span className="ms-form-error">{erroresCliente.contrasena}</span>}</div>
-                <div className="ms-form-group"><label className="ms-form-label">Confirmar contraseña <span className="ms-req">*</span></label><input type="password" className={`ms-form-input${erroresCliente.confirmar ? " input-error" : ""}`} placeholder="Repite la contraseña" value={clienteForm.confirmar}
+                  onBlur={() => setErroresCliente(prev => ({ ...prev, contrasena: revisarContrasenaCliente(clienteForm.contrasena) }))} />{erroresCliente.contrasena && <span className="usuarios-form-error">{erroresCliente.contrasena}</span>}</div>
+                <div className="usuarios-form-group"><label className="usuarios-form-label">Confirmar contraseña <span className="usuarios-req">*</span></label><input type="password" className={`usuarios-form-input${erroresCliente.confirmar ? " input-error" : ""}`} placeholder="Repite la contraseña" value={clienteForm.confirmar}
                   onChange={e => {
                     const confirmar = e.target.value;
                     setClienteForm({ ...clienteForm, confirmar });
                     if (erroresCliente.confirmar) setErroresCliente(prev => ({ ...prev, confirmar: revisarConfirmarCliente(confirmar, clienteForm.contrasena) }));
                   }}
-                  onBlur={() => setErroresCliente(prev => ({ ...prev, confirmar: revisarConfirmarCliente(clienteForm.confirmar, clienteForm.contrasena) }))} />{erroresCliente.confirmar && <span className="ms-form-error">{erroresCliente.confirmar}</span>}</div>
+                  onBlur={() => setErroresCliente(prev => ({ ...prev, confirmar: revisarConfirmarCliente(clienteForm.confirmar, clienteForm.contrasena) }))} />{erroresCliente.confirmar && <span className="usuarios-form-error">{erroresCliente.confirmar}</span>}</div>
               </div>
             )}
             {editar ? (
-              <div className="ms-form-row">
-                <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><select className="ms-form-select" value={clienteForm.permiso_cuotas} onChange={e => setClienteForm({ ...clienteForm, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
-                <div className="ms-form-group"><label className="ms-form-label">Estado</label><select className="ms-form-select" value={clienteForm.estado} onChange={e => setClienteForm({ ...clienteForm, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+              <div className="usuarios-form-row">
+                <div className="usuarios-form-group"><label className="usuarios-form-label">Pago por cuotas</label><select className="usuarios-form-select" value={clienteForm.permiso_cuotas} onChange={e => setClienteForm({ ...clienteForm, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
+                <div className="usuarios-form-group"><label className="usuarios-form-label">Estado</label><select className="usuarios-form-select" value={clienteForm.estado} onChange={e => setClienteForm({ ...clienteForm, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
               </div>
             ) : (
-              <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><select className="ms-form-select" value={clienteForm.permiso_cuotas} onChange={e => setClienteForm({ ...clienteForm, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
+              <div className="usuarios-form-group"><label className="usuarios-form-label">Pago por cuotas</label><select className="usuarios-form-select" value={clienteForm.permiso_cuotas} onChange={e => setClienteForm({ ...clienteForm, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
             )}
           </div>
-        </ModalSteps>
+            </div>
+
+            <div className="usuarios-modal-footer">
+              <button className="usuarios-btn-secondary" onClick={() => setModal(false)} disabled={guardandoModal}>Cancelar</button>
+              <button className="usuarios-btn-primary" onClick={handleGuardarCliente} disabled={guardandoModal}>
+                {guardandoModal ? "Guardando..." : (editar ? "Actualizar" : "Registrar")}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {detalle && (
-        <ModalDetalle titulo="Perfil del usuario" subtitulo={detalle.nombre}
-          badge={<span className={`tabla-status ${detalle.estado === "Activo" ? "activo" : "inactivo"}`}>{detalle.estado}</span>}
-          pasos={["Datos y cuenta", "Ubicación y rol"]}
-          onClose={() => setDetalle(null)}
-          onEditar={tienePerm('Usuarios.editar') ? () => { setDetalle(null); abrirEditar(detalle); } : undefined}
-        >
-          {DetalleDatosCuenta}{DetalleUbicacionRol}
-        </ModalDetalle>
+        <div className="usuarios-modal-overlay" onClick={() => setDetalle(null)}>
+          <div className="usuarios-modal usuarios-modal-factura" onClick={(e) => e.stopPropagation()}>
+            <div className="usuarios-modal-header">
+              <div>
+                <h2 className="usuarios-modal-title">{detalle.nombre}</h2>
+                <p className="usuarios-modal-subtitulo">Perfil del usuario</p>
+              </div>
+              <button className="usuarios-modal-close" onClick={() => setDetalle(null)}><IconX /></button>
+            </div>
+
+            <div className="usuarios-modal-body usuarios-factura-body">
+              {DetalleDatosCuenta}
+              {DetalleUbicacionRol}
+            </div>
+
+            <div className="usuarios-modal-footer">
+              <button className="usuarios-btn-secondary" onClick={() => setDetalle(null)}>Cerrar</button>
+              {tienePerm('Usuarios.editar') && (
+                <button className="usuarios-btn-primary" onClick={() => { setDetalle(null); abrirEditar(detalle); }}>
+                  <IconEdit /> Editar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {clienteDetalle && (
-        <ModalDetalle titulo="Detalle del cliente" subtitulo={clienteDetalle.nombre}
-          badge={<span className={`tabla-status ${clienteDetalle.estado === "Activo" ? "activo" : "inactivo"}`}>{clienteDetalle.estado}</span>}
-          pasos={["Datos personales", "Ubicación y clasificación"]}
-          onClose={() => setClienteDetalle(null)}
-          onEditar={tienePerm('Clientes.editar') ? () => { setClienteDetalle(null); abrirEditarCliente(clienteDetalle); } : undefined}
-        >
-          <DetalleSeccion><DetalleGrid>
-            <DetalleItem label="Nombre completo"    value={clienteDetalle.nombre} full />
-            <DetalleItem label="Tipo documento"     value={clienteDetalle.tipo_doc} />
-            <DetalleItem label="N° documento"       value={clienteDetalle.documento} />
-            <DetalleItem label="Teléfono"           value={clienteDetalle.telefono} />
-            <DetalleItem label="Correo electrónico" value={clienteDetalle.email} />
-          </DetalleGrid></DetalleSeccion>
-          <>
-            <DetalleSeccion><DetalleGrid>
-              <DetalleItem label="Ciudad"             value={clienteDetalle.ciudad} />
-              <DetalleItem label="Barrio"             value={clienteDetalle.barrio_nombre || null} />
-              <DetalleItem label="Dirección completa" value={clienteDetalle.direccion} full />
-            </DetalleGrid></DetalleSeccion>
-            <DetalleSeccion><DetalleGrid>
-              <DetalleItem label="Pago por cuotas" value={clienteDetalle.permiso_cuotas ? "Permitido" : "Bloqueado"} />
-              <DetalleItem label="Estado"          value={clienteDetalle.estado} />
-            </DetalleGrid></DetalleSeccion>
-          </>
-        </ModalDetalle>
+        <div className="usuarios-modal-overlay" onClick={() => setClienteDetalle(null)}>
+          <div className="usuarios-modal usuarios-modal-factura" onClick={(e) => e.stopPropagation()}>
+            <div className="usuarios-modal-header">
+              <div>
+                <h2 className="usuarios-modal-title">{clienteDetalle.nombre}</h2>
+                <p className="usuarios-modal-subtitulo">Detalle del cliente</p>
+              </div>
+              <button className="usuarios-modal-close" onClick={() => setClienteDetalle(null)}><IconX /></button>
+            </div>
+
+            <div className="usuarios-modal-body usuarios-factura-body">
+              <div className="usuarios-factura-seccion">
+                <h3 className="usuarios-factura-titulo">Datos personales</h3>
+                <DetalleGrid>
+                  <DetalleItem label="Nombre completo"    value={clienteDetalle.nombre} full />
+                  <DetalleItem label="Tipo documento"     value={clienteDetalle.tipo_doc} />
+                  <DetalleItem label="N° documento"       value={clienteDetalle.documento} />
+                  <DetalleItem label="Teléfono"           value={clienteDetalle.telefono} />
+                  <DetalleItem label="Correo electrónico" value={clienteDetalle.email} />
+                </DetalleGrid>
+              </div>
+              <div className="usuarios-factura-seccion">
+                <h3 className="usuarios-factura-titulo">Ubicación y clasificación</h3>
+                <DetalleGrid>
+                  <DetalleItem label="Ciudad"             value={clienteDetalle.ciudad} />
+                  <DetalleItem label="Barrio"             value={clienteDetalle.barrio_nombre} />
+                  <DetalleItem label="Dirección completa" value={clienteDetalle.direccion} full />
+                  <DetalleItem label="Pago por cuotas" value={clienteDetalle.permiso_cuotas ? "Permitido" : "Bloqueado"} />
+                  <DetalleItem label="Estado"          value={clienteDetalle.estado} />
+                </DetalleGrid>
+              </div>
+            </div>
+
+            <div className="usuarios-modal-footer">
+              <button className="usuarios-btn-secondary" onClick={() => setClienteDetalle(null)}>Cerrar</button>
+              {tienePerm('Clientes.editar') && (
+                <button className="usuarios-btn-primary" onClick={() => { setClienteDetalle(null); abrirEditarCliente(clienteDetalle); }}>
+                  <IconEdit /> Editar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       <Toast toast={toast} />

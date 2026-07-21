@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import './Compras.css';
+import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
@@ -762,13 +763,12 @@ export default function Compras() {
 
               <div className="compras-factura-seccion">
                 <h3 className="compras-factura-titulo">Información</h3>
-                <div className="compras-detalle-info-grid">
-                  <div><span className="compras-detalle-info-label">Proveedor</span><span className="compras-detalle-info-valor">{verDetalle.proveedor}</span></div>
-                  <div><span className="compras-detalle-info-label">N° Orden</span><span className="compras-detalle-info-valor">{verDetalle.numero_orden || "—"}</span></div>
-                  <div><span className="compras-detalle-info-label">Fecha</span><span className="compras-detalle-info-valor">{verDetalle.fecha?.toString().split("T")[0]}</span></div>
-                  <div>
-                    <span className="compras-detalle-info-label">Estado</span>
-                    {modoEdicion ? (
+                <DetalleGrid>
+                  <DetalleItem label="Proveedor" value={verDetalle.proveedor} />
+                  <DetalleItem label="N° Orden" value={verDetalle.numero_orden} />
+                  <DetalleItem label="Fecha" value={verDetalle.fecha?.toString().split("T")[0]} />
+                  <DetalleItem label="Estado" value={
+                    modoEdicion ? (
                       <select
                         className="compras-form-select compras-detalle-estado-select"
                         value={estadoEditado}
@@ -780,15 +780,12 @@ export default function Compras() {
                       </select>
                     ) : (
                       <span className={`compras-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>
-                    )}
-                  </div>
-                </div>
-                {verDetalle.observaciones && (
-                  <div className="compras-detalle-observaciones">
-                    <span className="compras-detalle-info-label">Observaciones</span>
-                    <p>{verDetalle.observaciones}</p>
-                  </div>
-                )}
+                    )
+                  } />
+                  {verDetalle.observaciones && (
+                    <DetalleItem label="Observaciones" value={verDetalle.observaciones} full />
+                  )}
+                </DetalleGrid>
               </div>
 
               <div className="compras-factura-seccion">

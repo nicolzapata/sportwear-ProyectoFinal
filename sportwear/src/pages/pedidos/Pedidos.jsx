@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import './Pedidos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconEye, IconPrint, IconSearch, IconX, IconBox } from "../../components/Icons";
 
 const FILAS_POR_PAGINA = 10;
@@ -316,15 +317,12 @@ export default function Pedidos() {
             <div className="pedidos-modal-body pedidos-factura-body">
               <div className="pedidos-factura-seccion">
                 <h3 className="pedidos-factura-titulo">Información</h3>
-                <div className="pedidos-detalle-info-grid">
-                  <div><span className="pedidos-detalle-info-label">Cliente</span><span className="pedidos-detalle-info-valor">{verDetalle.cliente}</span></div>
-                  <div><span className="pedidos-detalle-info-label">Dirección</span><span className="pedidos-detalle-info-valor">{verDetalle.direccion_entrega || "—"}</span></div>
-                  <div><span className="pedidos-detalle-info-label">Venta</span><span className="pedidos-detalle-info-valor">V-{String(verDetalle.id_venta).padStart(3, "0")}</span></div>
-                  <div>
-                    <span className="pedidos-detalle-info-label">Estado</span>
-                    <span className={`pedidos-badge ${getEstadoBadge(verDetalle.estado_pedido)}`}>{verDetalle.estado_pedido}</span>
-                  </div>
-                </div>
+                <DetalleGrid>
+                  <DetalleItem label="Cliente" value={verDetalle.cliente} />
+                  <DetalleItem label="Dirección" value={verDetalle.direccion_entrega} />
+                  <DetalleItem label="Venta" value={`V-${String(verDetalle.id_venta).padStart(3, "0")}`} />
+                  <DetalleItem label="Estado" value={<span className={`pedidos-badge ${getEstadoBadge(verDetalle.estado_pedido)}`}>{verDetalle.estado_pedido}</span>} />
+                </DetalleGrid>
               </div>
 
               <div className="pedidos-factura-seccion">

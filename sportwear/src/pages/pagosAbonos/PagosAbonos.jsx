@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import './PagosAbonos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconCheck, IconEye, IconSearch, IconX, IconSettings } from "../../components/Icons";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
@@ -368,25 +369,22 @@ export default function PagosAbonos() {
             <div className="pagosabonos-modal-body pagosabonos-factura-body">
               <div className="pagosabonos-factura-seccion">
                 <h3 className="pagosabonos-factura-titulo">Información</h3>
-                <div className="pagosabonos-detalle-info-grid">
-                  <div><span className="pagosabonos-detalle-info-label">ID</span><span className="pagosabonos-detalle-info-valor">P-{String(verDetalle.id_pago).padStart(3, "0")}</span></div>
-                  <div><span className="pagosabonos-detalle-info-label">Venta</span><span className="pagosabonos-detalle-info-valor">V-{String(verDetalle.id_venta).padStart(3, "0")}</span></div>
-                  <div><span className="pagosabonos-detalle-info-label">Cliente</span><span className="pagosabonos-detalle-info-valor">{verDetalle.cliente}</span></div>
-                  <div><span className="pagosabonos-detalle-info-label">Tipo</span><span className="pagosabonos-detalle-info-valor">{verDetalle.tipo}</span></div>
-                  <div><span className="pagosabonos-detalle-info-label">Método</span><span className="pagosabonos-detalle-info-valor">{verDetalle.metodo}</span></div>
-                  <div><span className="pagosabonos-detalle-info-label">Fecha</span><span className="pagosabonos-detalle-info-valor">{verDetalle.fecha?.toString().split("T")[0]}</span></div>
-                </div>
+                <DetalleGrid>
+                  <DetalleItem label="ID" value={`P-${String(verDetalle.id_pago).padStart(3, "0")}`} />
+                  <DetalleItem label="Venta" value={`V-${String(verDetalle.id_venta).padStart(3, "0")}`} />
+                  <DetalleItem label="Cliente" value={verDetalle.cliente} />
+                  <DetalleItem label="Tipo" value={verDetalle.tipo} />
+                  <DetalleItem label="Método" value={verDetalle.metodo} />
+                  <DetalleItem label="Fecha" value={verDetalle.fecha?.toString().split("T")[0]} />
+                </DetalleGrid>
               </div>
 
               <div className="pagosabonos-factura-seccion">
                 <h3 className="pagosabonos-factura-titulo">Pago</h3>
-                <div className="pagosabonos-detalle-info-grid">
-                  <div><span className="pagosabonos-detalle-info-label">Monto</span><span className="pagosabonos-detalle-info-valor">{fmt(verDetalle.monto)}</span></div>
-                  <div>
-                    <span className="pagosabonos-detalle-info-label">Estado</span>
-                    <span className={`tabla-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>
-                  </div>
-                </div>
+                <DetalleGrid>
+                  <DetalleItem label="Monto" value={fmt(verDetalle.monto)} />
+                  <DetalleItem label="Estado" value={<span className={`tabla-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>} />
+                </DetalleGrid>
               </div>
             </div>
 
