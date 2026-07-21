@@ -168,6 +168,19 @@
 }
 .dp-badge-warn { background: rgba(138,95,0,0.12); color: var(--warning); }
 .dp-badge-out  { background: rgba(60,40,20,0.08); color: var(--dvna-muted); }
+.dp-badge-nuevo,
+.dp-badge-promo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 20px;
+  padding: 5px 12px 5px 10px;
+  text-transform: uppercase;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
+}
+.dp-badge-nuevo { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.dp-badge-promo { background: linear-gradient(135deg, #f97316, #c2410c); }
 
 /* ── Info ── */
 .dp-info {

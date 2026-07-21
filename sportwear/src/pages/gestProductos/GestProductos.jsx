@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
 import GaleriaImagenes from "../../components/GaleriaImagenes";
 import GestVariantes from "../../components/GestVariantes";
 import ModalSteps from "../../components/ModalSteps";
@@ -12,12 +13,12 @@ import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
-import { IconAlertTriangle, IconCheck, IconEdit, IconEye, IconSearch, IconX, IconBox, IconTag, IconTrash } from "../../components/Icons";
+import { IconAlertTriangle, IconEdit, IconEye, IconSearch, IconX, IconBox, IconTag, IconTrash } from "../../components/Icons";
 import "./GestProductos.css";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const ERRORES_INICIALES = { nombre: "", id_categoria: "", precio: "", general: "" };
-const FORM_VACIO = { nombre: "", descripcion: "", id_categoria: "", precio: "", publicado: false, estado: "Activo" };
+const FORM_VACIO = { nombre: "", descripcion: "", id_categoria: "", precio: "", publicado: false, estado: "Activo", destacado: "" };
 
 // ── Medición de chips de la columna Tallas/Colores ─────────────────────────
 // La columna tiene un ancho fijo (ver .gestproductos-th-variantes en el CSS);
@@ -145,7 +146,7 @@ export default function GestProductos() {
   const [loading,          setLoading]          = useState(true);
   const [guardando,        setGuardando]        = useState(false);
   const [errores,          setErrores]          = useState(ERRORES_INICIALES);
-  const [toast,            setToast]            = useState(null);
+  const { mostrarToast } = useToast();
   const [form,             setForm]             = useState(FORM_VACIO);
   const [pendingVariantes, setPendingVariantes] = useState([]);
   const [pendingImagenes,  setPendingImagenes]  = useState([]);
@@ -163,11 +164,6 @@ export default function GestProductos() {
   const [eliminarId,       setEliminarId]       = useState(null);
   const [ordenCategorias,  setOrdenCategorias]  = useState("nombre");
   const [verDetalleCategoria, setVerDetalleCategoria] = useState(null);
-
-  const mostrarToast = (tipo, mensaje) => {
-    setToast({ tipo, mensaje });
-    setTimeout(() => setToast(null), 3500);
-  };
 
   // Listado completo de categorías (sin paginar): alimenta el <select> del formulario de producto.
   const cargarCategoriasCompletas = async () => {
@@ -254,7 +250,7 @@ export default function GestProductos() {
 
   const abrirEditar = (p) => {
     setEditar(p.id_producto); setProductoId(p.id_producto); setErrores(ERRORES_INICIALES);
-    setForm({ nombre: p.nombre ?? "", descripcion: p.descripcion ?? "", id_categoria: p.id_categoria ?? "", precio: p.precio ?? "", publicado: !!p.publicado, estado: p.estado ?? "Activo" });
+    setForm({ nombre: p.nombre ?? "", descripcion: p.descripcion ?? "", id_categoria: p.id_categoria ?? "", precio: p.precio ?? "", publicado: !!p.publicado, estado: p.estado ?? "Activo", destacado: p.destacado ?? "" });
     setPendingVariantes([]); setPendingImagenes([]); setModal(true);
   };
 
@@ -310,7 +306,7 @@ export default function GestProductos() {
   const guardarProducto = async () => {
     setGuardando(true);
     try {
-      const payload = { nombre: form.nombre, descripcion: form.descripcion || null, id_categoria: Number(form.id_categoria), precio: Number(form.precio), publicado: !!form.publicado, estado: form.estado };
+      const payload = { nombre: form.nombre, descripcion: form.descripcion || null, id_categoria: Number(form.id_categoria), precio: Number(form.precio), publicado: !!form.publicado, estado: form.estado, destacado: form.destacado || null };
 
       if (editar) {
         await api.put(`/productos/${editar}`, payload);
@@ -365,20 +361,23 @@ export default function GestProductos() {
   };
 
   const toggleEstadoProducto = async (id, nuevoEstado) => {
-    try {
-      await api.patch(`/productos/${id}/estado`);
-      setDatos(prev => prev.map(p => p.id_producto === id ? { ...p, estado: nuevoEstado } : p));
-      mostrarToast("exito", "Estado actualizado.");
-    } catch { mostrarToast("error", "No se pudo cambiar."); }
+    // ── El aviso de éxito/error ya lo muestra StatusToggle centralizadamente —
+    // mostrarlo también aquí duplicaba el mensaje en pantalla. ──
+    await api.patch(`/productos/${id}/estado`);
+    setDatos(prev => prev.map(p => p.id_producto === id ? { ...p, estado: nuevoEstado } : p));
   };
 
   const togglePublicado = async (id) => {
-    try {
-      const producto = datos.find(p => p.id_producto === id);
-      if (producto?.estado === "Inactivo") { mostrarToast("error", "No se puede publicar un producto inactivo."); return; }
-      await api.patch(`/productos/${id}/publicar`);
-      cargar();
-    } catch (err) { console.error(err); }
+    const producto = datos.find(p => p.id_producto === id);
+    if (producto?.estado === "Inactivo") {
+      // Se lanza con la misma forma que usa axios (err.response.data.message)
+      // para que StatusToggle muestre ESTE mensaje específico en su único
+      // aviso, en vez de duplicarlo con uno genérico propio.
+      throw { response: { data: { message: "No se puede publicar un producto inactivo." } } };
+    }
+    // ── El aviso de éxito/error ya lo muestra StatusToggle centralizadamente. ──
+    await api.patch(`/productos/${id}/publicar`);
+    cargar();
   };
 
   const confirmarEliminar = async () => {
@@ -443,14 +442,10 @@ export default function GestProductos() {
   };
 
   const cambiarEstadoCategoria = async (id, nuevoEstado) => {
-    try {
-      await api.patch(`/categorias/${id}/estado`);
-      setCategoriasPagina(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
-      setCategorias(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
-      mostrarToast("exito", "Estado actualizado.");
-    } catch (err) {
-      mostrarToast("error", err.response?.data?.message || "No se pudo cambiar el estado.");
-    }
+    // ── El aviso de éxito/error ya lo muestra StatusToggle centralizadamente. ──
+    await api.patch(`/categorias/${id}/estado`);
+    setCategoriasPagina(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
+    setCategorias(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
   };
 
   const stockBadge = (stock) => {
@@ -505,17 +500,23 @@ export default function GestProductos() {
     </div>
   );
 
+  // ── Detalle de producto: info general + variantes/imágenes ──
+  // Se agregan aquí los campos "ID" y "Destacado" (versión propia) junto con
+  // el agrupamiento de variantes por color y la separación con/sin stock
+  // (versión de la compañera), para no perder ninguno de los dos cambios.
   const DetalleInfoGeneral = verDetalle && (
     <>
       <div className="gestproductos-factura-seccion">
         <h3 className="gestproductos-factura-titulo">Información general</h3>
         <DetalleGrid>
+          <DetalleItem label="ID" value={`#${String(verDetalle.id_producto).padStart(3, "0")}`} />
           <DetalleItem label="Código" value={verDetalle.codigo} />
           <DetalleItem label="Categoría" value={verDetalle.categoria} />
           <DetalleItem label="Precio" value={fmt(verDetalle.precio)} />
           <DetalleItem label="Stock total" value={`${verDetalle.stock ?? 0} unidades`} />
           <DetalleItem label="Publicado" value={verDetalle.publicado ? "Sí, visible en catálogo" : "No publicado"} />
           <DetalleItem label="Estado" value={<span className={`tabla-status${verDetalle.estado === "Activo" ? " activo" : " inactivo"}`}>{verDetalle.estado}</span>} />
+          <DetalleItem label="Destacado" value={verDetalle.destacado === "Nuevo" ? "Nuevo" : verDetalle.destacado === "Promocion" ? "Promoción" : "Ninguno"} />
         </DetalleGrid>
       </div>
       {verDetalle.historialPrecios?.length > 0 && (
@@ -582,13 +583,6 @@ export default function GestProductos() {
 
   return (
     <div className="gestproductos-container">
-      {toast && (
-        <div className={`gestproductos-toast gestproductos-toast-${toast.tipo}`}>
-          <span>{toast.tipo === "exito" ? <IconCheck /> : <IconX />}</span>
-          <span>{toast.mensaje}</span>
-        </div>
-      )}
-
       <div className="gestproductos-actions-bar">
         <div className="gestproductos-actions-left">
           <div className="gestproductos-search-wrapper">
@@ -669,9 +663,13 @@ export default function GestProductos() {
                       {p.imagenPrincipal
                         ? <img src={p.imagenPrincipal} alt={p.nombre} className="gestproductos-table-img" />
                         : <div className="gestproductos-img-placeholder">Sin imagen</div>}
+                      {p.destacado === "Nuevo" && <span className="gestproductos-img-badge gestproductos-img-badge-nuevo" title="Destacado como Nuevo">N</span>}
+                      {p.destacado === "Promocion" && <span className="gestproductos-img-badge gestproductos-img-badge-promo" title="Destacado como Promoción">%</span>}
                     </div>
                   </td>
-                  <td className="tbl-td"><div className="gestproductos-product-name" title={p.nombre}>{p.nombre}</div></td>
+                  <td className="tbl-td">
+                    <div className="gestproductos-product-name" title={p.nombre}>{p.nombre}</div>
+                  </td>
                   <td className="tbl-td"><span className="tabla-categoria" title={p.categoria}>{p.categoria}</span></td>
                   <td className="tbl-td gestproductos-td-compacto gestproductos-precio-cell">{fmt(p.precio)}</td>
                   <td className="tbl-td gestproductos-td-compacto gestproductos-stock-cell">{stockBadge(p.stock ?? 0)}</td>
@@ -918,6 +916,16 @@ export default function GestProductos() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                <div className="gestproductos-form-group">
+                  <label className="gestproductos-form-label">Destacar como <span className="gestproductos-optional">(opcional)</span></label>
+                  <select className="gestproductos-form-select" value={form.destacado}
+                    onChange={e => setForm({ ...form, destacado: e.target.value })}>
+                    <option value="">Ninguno</option>
+                    <option value="Nuevo">Nuevo</option>
+                    <option value="Promocion">Promoción</option>
+                  </select>
                 </div>
               </div>
 
