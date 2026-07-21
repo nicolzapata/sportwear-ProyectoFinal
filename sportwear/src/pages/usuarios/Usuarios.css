@@ -200,10 +200,11 @@
   background: var(--dvna-white);
   border-radius: 20px;
   width: 100%; max-width: 500px;
-  max-height: 90vh; overflow-y: auto;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
   box-shadow: 0 32px 80px rgba(10,10,10,0.2);
   animation: uModalSlide 0.25s cubic-bezier(.4,0,.2,1);
-  overflow: hidden;
 }
 @keyframes uModalSlide {
   from { opacity: 0; transform: translateY(20px) scale(0.98); }
@@ -214,6 +215,7 @@
   border-bottom: 1px solid var(--dvna-border);
   display: flex; justify-content: space-between; align-items: center;
   background: var(--dvna-pale);
+  flex-shrink: 0;
 }
 .usuarios-modal-title {
   font-family: var(--font-body);
@@ -229,11 +231,17 @@
 .usuarios-modal-close:hover { background: var(--dvna-white); }
 .usuarios-modal-close svg { width: 11px; height: 11px; }
 
-.usuarios-modal-body { padding: 24px 28px; }
+.usuarios-modal-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
 .usuarios-modal-footer {
   padding: 16px 28px; border-top: 1px solid var(--dvna-border);
   display: flex; justify-content: flex-end; gap: 10px;
   background: var(--dvna-pale);
+  flex-shrink: 0;
 }
 
 /* Form */
@@ -245,6 +253,7 @@
   letter-spacing: 0.1em; 
   color: var(--dvna-muted);
 }
+.usuarios-form-input::placeholder { color: var(--dvna-muted); opacity: 1; }
 .usuarios-form-input,
 .usuarios-form-select {
   font-family: var(--font-body);
@@ -254,7 +263,8 @@
   border: 1px solid var(--dvna-border);
   border-radius: 10px;
   padding: 10px 14px; outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%; box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 .usuarios-form-input:focus,
 .usuarios-form-select:focus {
@@ -262,9 +272,20 @@
   box-shadow: 0 0 0 3px rgba(180,151,128,0.1);
   background: var(--dvna-white);
 }
+.usuarios-form-input.input-error,
+.usuarios-form-select.input-error {
+  border-color: var(--danger, #b83232);
+  box-shadow: 0 0 0 3px rgba(184,50,50,0.08);
+}
+.usuarios-form-error {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--danger, #b83232);
+  margin-top: 2px;
+}
 
-/* ── Modal detalle completo: mismo panel tipo factura que Compras/Proveedores/Pedidos ── */
-.usuarios-modal-detalle { max-width: 560px; overflow-y: auto; max-height: 88vh; }
+/* ── Modal tipo factura (crear/editar y ver detalle), mismo patrón y ancho que Compras/Proveedores/Productos ── */
+.usuarios-modal-factura { max-width: 820px; }
 
 .usuarios-modal-subtitulo {
   font-family: var(--font-body); font-size: 0.78rem; font-weight: 300;
@@ -307,6 +328,7 @@
   .usuarios-filter-toggle { width: 100%; justify-content: center; }
   .usuarios-btn-primary { width: 100%; justify-content: center; }
   .usuarios-form-row { grid-template-columns: 1fr; gap: 0; }
+  .usuarios-modal-factura { max-width: 95%; }
 }
 
 .usuarios-req { color: var(--dvna-circle); font-size: 13px; }

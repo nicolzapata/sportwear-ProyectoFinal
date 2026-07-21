@@ -268,7 +268,9 @@
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
   border: 1px solid #f0f0f0;
 }
@@ -405,9 +407,7 @@
   justify-content: space-between;
   align-items: center;
   background: #fafafa;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 .pedidosventas-modal-title {
@@ -431,7 +431,7 @@
 }
 .pedidosventas-modal-close:hover { background: #f0f0f0; border-color: #999; }
 
-.pedidosventas-modal-body { padding: 1.5rem; }
+.pedidosventas-modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; min-height: 0; }
 
 .pedidosventas-modal-footer {
   padding: 1.5rem;
@@ -441,9 +441,7 @@
   justify-content: flex-end;
   gap: 1rem;
   background: #fafafa;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 /* Form */

@@ -393,7 +393,9 @@
   width: 90%;
   max-width: 500px;
   max-height: 90vh;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
   border: 1px solid var(--dvna-border);
 }
@@ -500,9 +502,7 @@
   justify-content: space-between;
   align-items: center;
   background: var(--dvna-pale);
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 .gestproductos-modal-title {
@@ -535,6 +535,9 @@
 
 .gestproductos-modal-body {
   padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
 }
 
 .gestproductos-modal-footer {
@@ -544,9 +547,7 @@
   justify-content: flex-end;
   gap: 1rem;
   background: var(--dvna-pale);
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
+  flex-shrink: 0;
 }
 
 /* Form */
