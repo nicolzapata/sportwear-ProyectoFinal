@@ -20,28 +20,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.get("/api", (req, res) => {
   res.json({
     success: true,
-    message: "Bienvenido a la API de Sportwear 🚀",
-    endpoints: [
-      "/api/auth",
-      "/api/roles",
-      "/api/usuarios",
-      "/api/barrios",
-      "/api/clientes",
-      "/api/colores",
-      "/api/categorias",
-      "/api/productos",
-      "/api/proveedores",
-      "/api/compras",
-      "/api/detalle-compra",
-      "/api/ventas",
-      "/api/detalle-venta",
-      "/api/pedidos",
-      "/api/pagos",
-      "/api/metodos-pago",
-      "/api/dashboard",
-      "/api/imagenes",
-      "/api/variantes"
-    ]
+    message: "Bienvenido a la API de Sportwear 🚀"
   });
 });
 // ── Rutas ─────────────────────────────────────────────────────
@@ -64,6 +43,15 @@ app.use('/api/metodos-pago',   require('./routes/metodosPago'));
 app.use('/api/dashboard',      require('./routes/dashboard'));
 app.use('/api/imagenes',       require('./routes/imagenes'));
 app.use('/api/variantes',      require('./routes/variantes'));
+
+// ── Manejador de rutas no encontradas (404) ────────────────────
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `La ruta ${req.originalUrl} no existe.`
+  });
+});
+
 // ── Manejador de errores global ───────────────────────────────
 app.use(require('./middlewares/errorHandler'));
 
