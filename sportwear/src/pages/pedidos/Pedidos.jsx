@@ -277,7 +277,7 @@ export default function Pedidos() {
                 </td>
                 <td className="tbl-td">
                   <div className="pedidos-action-cell">
-                    <button className="pedidos-action-btn" onClick={() => abrirDetalle(p)} title="Ver detalle">
+                    <button className="pedidos-action-btn pedidos-view-btn" onClick={() => abrirDetalle(p)} title="Ver detalle">
                       <IconEye />
                     </button>
                   </div>

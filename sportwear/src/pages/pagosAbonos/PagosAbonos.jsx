@@ -4,6 +4,7 @@ import './PagosAbonos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
+import { MAX_MONTO, MAX_LONGITUD_NOMBRE } from "../../utils/numerico";
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconCheck, IconEye, IconSearch, IconX, IconSettings } from "../../components/Icons";
 import Loader from "../../components/Loader";
@@ -45,7 +46,7 @@ export default function PagosAbonos() {
   };
 
   const crearMetodo = async () => {
-    if (!nuevoMetodo.trim()) return;
+    if (!nuevoMetodo.trim()) { showToast("error", "Escribe un nombre para el método de pago."); return; }
     try {
       await api.post("/metodos-pago", { nombre: nuevoMetodo.trim() });
       setNuevoMetodo("");
@@ -92,10 +93,24 @@ export default function PagosAbonos() {
 
   const totalPaginas = Math.ceil(totalPagos / FILAS_POR_PAGINA) || 1;
 
+  const restanteVentaSeleccionada = () => {
+    const venta = ventas.find(v => String(v.id_venta) === String(form.id_venta));
+    if (!venta) return null;
+    return Number(venta.total || 0) - Number(venta.total_pagado || 0);
+  };
+
+  const errorMonto = (monto) => {
+    if (!monto || Number(monto) <= 0) return "El monto es obligatorio";
+    const restante = restanteVentaSeleccionada();
+    if (restante !== null && Number(monto) > restante) return "El monto no puede ser mayor al saldo de la venta";
+    return "";
+  };
+
   const guardar = async () => {
     const e = {};
     if (!form.id_venta) e.id_venta = "Selecciona una venta";
-    if (!form.monto || Number(form.monto) <= 0) e.monto = "El monto es obligatorio";
+    const msgMonto = errorMonto(form.monto);
+    if (msgMonto) e.monto = msgMonto;
     if (!form.fecha) e.fecha = "La fecha es obligatoria";
     setErrores(e);
     if (Object.keys(e).length > 0) return;
@@ -295,13 +310,17 @@ export default function PagosAbonos() {
                     <label className="pagosabonos-form-label">Monto (COP)</label>
                     <input
                       type="number"
+                      min="0"
+                      max={MAX_MONTO}
                       className={`pagosabonos-form-input${errores.monto ? " input-error" : ""}`}
                       placeholder="Ej: 50000"
                       value={form.monto}
                       onChange={(e) => {
-                        setForm({ ...form, monto: e.target.value });
-                        if (errores.monto) setErrores(prev => ({ ...prev, monto: "" }));
+                        const monto = e.target.value;
+                        setForm({ ...form, monto });
+                        if (errores.monto) setErrores(prev => ({ ...prev, monto: errorMonto(monto) }));
                       }}
+                      onBlur={() => setErrores(prev => ({ ...prev, monto: errorMonto(form.monto) }))}
                     />
                     {errores.monto && <span className="pagosabonos-field-error">{errores.monto}</span>}
                   </div>
@@ -411,6 +430,7 @@ export default function PagosAbonos() {
                   <input
                     className="pagosabonos-form-input"
                     placeholder="Ej: Nequi"
+                    maxLength={MAX_LONGITUD_NOMBRE}
                     value={nuevoMetodo}
                     onChange={(e) => setNuevoMetodo(e.target.value)}
                     onKeyDown={(e) => { if (e.key === "Enter") crearMetodo(); }}

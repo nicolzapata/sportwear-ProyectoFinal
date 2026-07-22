@@ -5,6 +5,7 @@ import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmContext";
+import { validarMonto, MAX_MONTO, MAX_LONGITUD_CODIGO, MAX_LONGITUD_TEXTO_LIBRE } from "../../utils/numerico";
 import './Compras.css';
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
@@ -237,6 +238,8 @@ export default function Compras() {
   }, 0);
   const totalCompra = subtotal - (Number(form.descuento) || 0) + (Number(form.impuesto) || 0);
 
+  const MAX_CANTIDAD = 9999;
+
   const validar = () => {
     const e = {};
     if (!form.id_proveedor) e.id_proveedor = "El proveedor es obligatorio";
@@ -246,9 +249,17 @@ export default function Compras() {
       const producto = productos.find((p) => String(p.id_producto) === String(it.id_producto));
       const variantesActivas = (producto?.variantes || []).filter((v) => v.estado === "Activo");
       if (variantesActivas.length > 0 && !it.id_variante) e[`item_${i}_variante`] = "Selecciona talla y color";
-      if (!it.cantidad || Number(it.cantidad) <= 0) e[`item_${i}_cantidad`] = "Cantidad inválida";
-      if (!it.precio_unitario || Number(it.precio_unitario) <= 0) e[`item_${i}_precio`] = "Precio inválido";
+      const msgCantidad = errorItemCantidad(it.cantidad);
+      if (msgCantidad) e[`item_${i}_cantidad`] = msgCantidad;
+      const msgPrecio = errorItemPrecio(it.precio_unitario);
+      if (msgPrecio) e[`item_${i}_precio`] = msgPrecio;
+      const msgDescLinea = errorItemDescuento(it.descuento_linea, it.cantidad, it.precio_unitario);
+      if (msgDescLinea) e[`item_${i}_descuento`] = msgDescLinea;
     });
+    const msgDescGeneral = errorDescuentoGeneral(form.descuento);
+    if (msgDescGeneral) e.descuento = msgDescGeneral;
+    const msgImpuesto = errorImpuestoGeneral(form.impuesto);
+    if (msgImpuesto) e.impuesto = msgImpuesto;
     setErrores(e);
     return Object.keys(e).length === 0;
   };
@@ -260,8 +271,32 @@ export default function Compras() {
     const variantesActivas = (producto?.variantes || []).filter((v) => v.estado === "Activo");
     return variantesActivas.length > 0 && !idVariante ? "Selecciona talla y color" : "";
   };
-  const errorItemCantidad = (cantidad) => (!cantidad || Number(cantidad) <= 0 ? "Cantidad inválida" : "");
-  const errorItemPrecio = (precio) => (!precio || Number(precio) <= 0 ? "Precio inválido" : "");
+  const errorItemCantidad = (cantidad) => {
+    if (!cantidad || Number(cantidad) <= 0) return "Cantidad inválida";
+    if (!Number.isInteger(Number(cantidad))) return "Debe ser un número entero";
+    if (Number(cantidad) > MAX_CANTIDAD) return `No puede ser mayor a ${MAX_CANTIDAD}`;
+    return "";
+  };
+  const errorItemPrecio = (precio) => validarMonto(precio, { mensajeVacio: "Precio inválido" });
+  const errorItemDescuento = (descuento, cantidad, precioUnitario) => {
+    const d = Number(descuento) || 0;
+    if (d < 0) return "No puede ser negativo";
+    const subtotalLinea = (Number(cantidad) || 0) * (Number(precioUnitario) || 0);
+    if (d > subtotalLinea) return "No puede ser mayor al subtotal de la línea";
+    return "";
+  };
+  const errorDescuentoGeneral = (descuento) => {
+    const d = Number(descuento) || 0;
+    if (d < 0) return "No puede ser negativo";
+    if (d > subtotal) return "No puede ser mayor al subtotal";
+    return "";
+  };
+  const errorImpuestoGeneral = (impuesto) => {
+    const i = Number(impuesto) || 0;
+    if (i < 0) return "No puede ser negativo";
+    if (i > MAX_MONTO) return `No puede ser mayor a ${MAX_MONTO.toLocaleString("es-CO")}`;
+    return "";
+  };
 
   const guardar = async () => {
     if (!validar()) return;
@@ -535,6 +570,7 @@ export default function Compras() {
                   <label className="compras-form-label">N° de orden (opcional)</label>
                   <input
                     type="text"
+                    maxLength={MAX_LONGITUD_CODIGO}
                     className="compras-form-input"
                     value={form.numero_orden}
                     onChange={(e) => setForm({ ...form, numero_orden: e.target.value })}
@@ -642,6 +678,8 @@ export default function Compras() {
                         <input
                           type="number"
                           min="1"
+                          max={MAX_CANTIDAD}
+                          step={1}
                           placeholder="Cant."
                           className={`compras-form-input${errores[`item_${i}_cantidad`] ? " input-error" : ""}`}
                           value={item.cantidad}
@@ -659,6 +697,7 @@ export default function Compras() {
                         <input
                           type="number"
                           min="0"
+                          max={MAX_MONTO}
                           placeholder="Precio unit."
                           className={`compras-form-input${errores[`item_${i}_precio`] ? " input-error" : ""}`}
                           value={item.precio_unitario}
@@ -676,10 +715,18 @@ export default function Compras() {
                         <input
                           type="number"
                           min="0"
+                          max={MAX_MONTO}
                           placeholder="Descuento (opcional)"
-                          className="compras-form-input"
+                          className={`compras-form-input${errores[`item_${i}_descuento`] ? " input-error" : ""}`}
                           value={item.descuento_linea}
-                          onChange={(e) => actualizarItem(i, "descuento_linea", e.target.value)}
+                          onChange={(e) => {
+                            const valor = e.target.value;
+                            actualizarItem(i, "descuento_linea", valor);
+                            if (errores[`item_${i}_descuento`]) {
+                              setErrores((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(valor, item.cantidad, item.precio_unitario) }));
+                            }
+                          }}
+                          onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(item.descuento_linea, item.cantidad, item.precio_unitario) }))}
                         />
                       </div>
                       <div className="compras-item-subtotal">{fmt(lineaTotal)}</div>
@@ -703,9 +750,15 @@ export default function Compras() {
                   <input
                     type="number"
                     min="0"
-                    className="compras-form-input"
+                    max={MAX_MONTO}
+                    className={`compras-form-input${errores.descuento ? " input-error" : ""}`}
                     value={form.descuento}
-                    onChange={(e) => setForm({ ...form, descuento: e.target.value })}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      setForm({ ...form, descuento: valor });
+                      if (errores.descuento) setErrores((prev) => ({ ...prev, descuento: errorDescuentoGeneral(valor) }));
+                    }}
+                    onBlur={() => setErrores((prev) => ({ ...prev, descuento: errorDescuentoGeneral(form.descuento) }))}
                   />
                 </div>
                 <div className="compras-form-group">
@@ -713,9 +766,15 @@ export default function Compras() {
                   <input
                     type="number"
                     min="0"
-                    className="compras-form-input"
+                    max={MAX_MONTO}
+                    className={`compras-form-input${errores.impuesto ? " input-error" : ""}`}
                     value={form.impuesto}
-                    onChange={(e) => setForm({ ...form, impuesto: e.target.value })}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      setForm({ ...form, impuesto: valor });
+                      if (errores.impuesto) setErrores((prev) => ({ ...prev, impuesto: errorImpuestoGeneral(valor) }));
+                    }}
+                    onBlur={() => setErrores((prev) => ({ ...prev, impuesto: errorImpuestoGeneral(form.impuesto) }))}
                   />
                 </div>
               </div>
@@ -725,6 +784,7 @@ export default function Compras() {
                 <textarea
                   className="compras-form-input compras-form-textarea"
                   rows={2}
+                  maxLength={MAX_LONGITUD_TEXTO_LIBRE}
                   value={form.observaciones}
                   onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
                 />

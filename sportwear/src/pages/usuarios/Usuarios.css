@@ -166,21 +166,25 @@
 
 /* .tabla-status vive ahora en index.css (sistema global de tablas) */
 
-/* Action buttons */
-.usuarios-action-cell { display: flex; gap: 4px; }
-.usuarios-action-btn {
-  width: 30px; height: 30px;
-  border-radius: 6px;
+/* Action buttons — mismo diseño en todas las tablas de la página
+   (36x36, radio 10px); "usuarios-" y "clientes-" comparten regla porque
+   ambas pestañas de esta página usan el mismo patrón de botones. */
+.usuarios-action-cell,
+.clientes-action-cell { display: flex; gap: 6px; align-items: center; }
+.usuarios-action-btn,
+.clientes-action-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
   border: 1px solid var(--dvna-border);
-  background: transparent;
+  background: var(--dvna-white);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
+  transition: all 0.2s ease;
   color: var(--dvna-muted);
+  flex-shrink: 0;
 }
-.usuarios-action-btn svg { width: 13px; height: 13px; }
-.usuarios-view-btn:hover       { color: var(--dvna-circle);  border-color: var(--dvna-mid); background: var(--dvna-pale); }
-.usuarios-edit-btn:hover       { color: var(--dvna-circle);  border-color: var(--dvna-mid); background: var(--dvna-pale); }
+.usuarios-view-btn:hover, .clientes-view-btn:hover { color: var(--dvna-circle);  border-color: var(--dvna-mid); background: var(--dvna-pale); }
+.usuarios-edit-btn:hover, .clientes-edit-btn:hover  { color: var(--dvna-circle);  border-color: var(--dvna-mid); background: var(--dvna-pale); }
 .usuarios-deactivate-btn:hover { color: var(--danger);  border-color: rgba(184,50,50,0.3); background: rgba(184,50,50,0.06); }
 .usuarios-activate-btn:hover   { color: var(--success); border-color: rgba(58,102,72,0.3);  background: rgba(58,102,72,0.06); }
 

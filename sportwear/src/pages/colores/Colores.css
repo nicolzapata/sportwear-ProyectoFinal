@@ -22,7 +22,7 @@
 .colores-title {
   font-size: 2rem;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--dvna-charcoal);
   margin: 0 0 0.25rem 0;
   letter-spacing: -0.02em;
   text-transform: none;
@@ -30,7 +30,7 @@
 
 .colores-subtitle {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--dvna-muted);
   margin: 0;
   font-weight: 300;
   text-transform: none;
@@ -38,11 +38,11 @@
 
 .colores-date {
   font-size: 0.85rem;
-  color: #666;
-  background: #f5f5f5;
+  color: var(--dvna-muted);
+  background: var(--dvna-pale);
   padding: 0.5rem 1.2rem;
   border-radius: 40px;
-  border: 1px solid #eaeaea;
+  border: 1px solid var(--dvna-border);
   text-transform: capitalize;
 }
 
@@ -61,7 +61,7 @@
   display: flex;
   align-items: center;
   gap: 1.2rem;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--dvna-pale);
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
@@ -81,7 +81,7 @@
   align-items: center;
   justify-content: center;
   font-size: 1.8rem;
-  color: #333;
+  color: var(--dvna-charcoal);
 }
 
 .colores-stat-content {
@@ -90,7 +90,7 @@
 
 .colores-stat-label {
   font-size: 0.7rem;
-  color: #888;
+  color: var(--dvna-muted);
   margin-bottom: 0.2rem;
   display: block;
   
@@ -100,7 +100,7 @@
 .colores-stat-value {
   font-size: 1.8rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--dvna-charcoal);
   line-height: 1.2;
 }
 
@@ -119,6 +119,29 @@
   gap: 1rem;
 }
 
+.colores-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Action buttons — mismo diseño en todas las tablas de la página. */
+.colores-action-cell { display: flex; gap: 6px; align-items: center; }
+.colores-action-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--dvna-border, #e5e5e5);
+  background: var(--dvna-white, #fff);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+  color: var(--dvna-muted);
+  flex-shrink: 0;
+}
+.colores-action-btn:hover { border-color: var(--dvna-mid, #c8ab96); background: var(--dvna-pale, #f4f4f4); }
+.colores-edit-btn:hover { color: var(--dvna-circle, #b49780); }
+.colores-deactivate-btn:hover { border-color: rgba(184,50,50,0.3); background: rgba(184,50,50,0.06); }
+
 .colores-search-wrapper {
   position: relative;
   width: 320px;
@@ -130,13 +153,13 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 1rem;
-  color: #999;
+  color: var(--dvna-muted);
 }
 
 .colores-search-input {
   width: 100%;
   padding: 0.8rem 1rem 0.8rem 2.5rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--dvna-border);
   border-radius: 40px;
   font-size: 0.9rem;
   transition: all 0.2s ease;
@@ -145,7 +168,7 @@
 
 .colores-search-input:focus {
   outline: none;
-  border-color: #1a1a1a;
+  border-color: var(--dvna-charcoal);
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
 }
 
@@ -156,7 +179,7 @@
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #999;
+  color: var(--dvna-muted);
   cursor: pointer;
   font-size: 0.8rem;
   padding: 4px;
@@ -169,8 +192,8 @@
 }
 
 .colores-search-clear:hover {
-  background: #f0f0f0;
-  color: #333;
+  background: var(--dvna-pale);
+  color: var(--dvna-charcoal);
 }
 
 /* Buttons */
@@ -198,26 +221,26 @@
 
 .colores-btn-secondary {
   background: white;
-  color: #333;
-  border: 1px solid #e0e0e0;
+  color: var(--dvna-charcoal);
+  border: 1px solid var(--dvna-border);
   padding: 0.8rem 2rem;
   border-radius: 40px;
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--dvna-border);
 }
 
 .colores-btn-secondary:hover {
-  border-color: #1a1a1a;
+  border-color: var(--dvna-charcoal);
   background: #fafafa;
 }
 
 /* Results */
 .colores-results-count {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--dvna-muted);
   margin-bottom: 1rem;
   padding-left: 0.5rem;
 }
@@ -227,7 +250,7 @@
   display: flex;
   gap: 0;
   background: white;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--dvna-border);
   border-radius: 40px;
   padding: 4px;
   width: fit-content;
@@ -240,7 +263,7 @@
   background: transparent;
   font-size: 0.85rem;
   font-weight: 500;
-  color: #888;
+  color: var(--dvna-muted);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -259,8 +282,8 @@
 }
 
 .colores-tab-btn:not(.active):hover {
-  color: #1a1a1a;
-  background: #f5f5f5;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-pale);
 }
 
 /* Grid de colores */
@@ -274,7 +297,7 @@
 .colores-grid-item {
   background: white;
   border-radius: 16px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--dvna-pale);
   overflow: hidden;
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
@@ -288,7 +311,7 @@
 
 .colores-grid-sample {
   height: 100px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--dvna-pale);
 }
 
 .colores-grid-info {
@@ -297,14 +320,14 @@
 
 .colores-grid-name {
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--dvna-charcoal);
   font-size: 0.9rem;
   margin-bottom: 0.2rem;
 }
 
 .colores-grid-hex {
   font-size: 0.7rem;
-  color: #888;
+  color: var(--dvna-muted);
   font-family: monospace;
 }
 
@@ -333,12 +356,12 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--dvna-pale);
 }
 
 .colores-modal-header {
   padding: 1.5rem;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--dvna-pale);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -351,14 +374,14 @@
 .colores-modal-title {
   font-size: 1.2rem;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--dvna-charcoal);
   margin: 0;
   text-transform: none;
 }
 
 .colores-modal-close {
   background: none;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--dvna-border);
   border-radius: 40px;
   width: 36px;
   height: 36px;
@@ -368,12 +391,12 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  color: #666;
+  color: var(--dvna-muted);
 }
 
 .colores-modal-close:hover {
-  background: #f0f0f0;
-  border-color: #999;
+  background: var(--dvna-pale);
+  border-color: var(--dvna-muted);
 }
 
 .colores-modal-body {
@@ -382,7 +405,7 @@
 
 .colores-modal-footer {
   padding: 1.5rem;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--dvna-pale);
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
@@ -407,7 +430,7 @@
   display: block;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #555;
+  color: var(--dvna-muted);
   margin-bottom: 0.3rem;
   text-transform: none;
   letter-spacing: normal;
@@ -417,7 +440,7 @@
 .colores-form-select {
   width: 100%;
   padding: 0.8rem 1rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--dvna-border);
   border-radius: 12px;
   font-size: 0.9rem;
   transition: all 0.2s ease;
@@ -427,7 +450,7 @@
 .colores-form-input:focus,
 .colores-form-select:focus {
   outline: none;
-  border-color: #1a1a1a;
+  border-color: var(--dvna-charcoal);
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
 }
 
@@ -441,7 +464,7 @@
 .colores-color-picker {
   width: 50px;
   height: 44px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--dvna-border);
   border-radius: 12px;
   cursor: pointer;
   padding: 4px;
@@ -450,7 +473,7 @@
 .colores-color-value {
   font-family: monospace;
   font-size: 0.9rem;
-  color: #555;
+  color: var(--dvna-muted);
 }
 
 /* Preview */
@@ -459,12 +482,12 @@
   padding: 1rem;
   background: #fafafa;
   border-radius: 16px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--dvna-pale);
 }
 
 .colores-preview-label {
   font-size: 0.7rem;
-  color: #888;
+  color: var(--dvna-muted);
   margin-bottom: 0.5rem;
   
   letter-spacing: 0.3px;
@@ -494,14 +517,14 @@
 .colores-loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #f0f0f0;
-  border-top-color: #1a1a1a;
+  border: 3px solid var(--dvna-pale);
+  border-top-color: var(--dvna-charcoal);
   border-radius: 50%;
   animation: colores-spin 1s linear infinite;
 }
 
 .colores-loading-text {
-  color: #666;
+  color: var(--dvna-muted);
   font-size: 0.9rem;
 }
 

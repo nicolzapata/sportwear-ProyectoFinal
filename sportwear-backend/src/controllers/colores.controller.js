@@ -38,4 +38,13 @@ const toggleEstado = async (req, res) => {
   }
 };
 
-module.exports = { getColores, crearColor, actualizarColor, toggleEstado };
+const eliminarColor = async (req, res) => {
+  try {
+    const data = await coloresService.eliminarColor(req.params.id);
+    res.json({ ok: true, ...data });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+module.exports = { getColores, crearColor, actualizarColor, toggleEstado, eliminarColor };

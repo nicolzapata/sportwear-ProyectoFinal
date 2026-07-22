@@ -1,10 +1,21 @@
 /* src/pages/productos/GestProductos.css */
 
 .gestproductos-container {
-  max-width: 1400px;
+  max-width: 1680px;
   margin: 0 auto;
   padding: 2rem;
   font-family: var(--font-body);
+}
+
+/* Red de seguridad: si la suma de columnas no cabe en el ancho disponible,
+   aparece scroll horizontal en vez de que una celda quede tapada por la
+   celda vecina (ver .gestproductos-th-variantes). El margen negativo deja
+   que la tabla use también el padding lateral del contenedor, ganando ancho
+   extra sin achicar el resto de la página. */
+.gestproductos-table-container {
+  overflow-x: auto;
+  margin: 0 -2rem;
+  padding: 0 1rem;
 }
 
 /* Header */
@@ -309,17 +320,20 @@
   border-radius: 16px;
 }
 
-/* Action buttons - más compactos */
+/* Action buttons — mismo diseño en todas las tablas de la página
+   (36x36, radio 10px, hover neutro para ver/editar, tinte rojo/verde
+   para eliminar/activar). */
 .gestproductos-action-cell {
   display: flex;
-  gap: 0.3rem;
+  gap: 6px;
+  align-items: center;
   justify-content: center;
 }
 
 .gestproductos-action-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   border: 1px solid var(--dvna-border);
   background: var(--dvna-white);
   cursor: pointer;
@@ -327,20 +341,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
   color: var(--dvna-muted);
+  flex-shrink: 0;
 }
 
 .gestproductos-action-btn:hover {
-  border-color: var(--brown);
+  border-color: var(--dvna-mid);
   background: var(--dvna-pale);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .gestproductos-delete-btn:hover {
-  border-color: #b83232;
-  background: rgba(184, 50, 50, 0.08);
-  color: #b83232;
+  border-color: rgba(184, 50, 50, 0.3);
+  background: rgba(184, 50, 50, 0.06);
 }
 
 /* Modal */
@@ -579,6 +591,20 @@
 .gestproductos-form-select.input-error:focus {
   border-color: var(--danger);
   box-shadow: 0 0 0 3px rgba(209, 58, 47, 0.08);
+}
+
+/* Selector "Ordenar por" de la pestaña Categorías: más angosto que el resto de selects del formulario */
+.gestproductos-orden-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.gestproductos-orden-select {
+  width: auto;
+  min-width: 200px;
+  padding: 0.5rem 0.8rem;
+  font-family: var(--font-body);
 }
 
 /* Mensaje de error por campo */
@@ -1000,23 +1026,147 @@
   padding: 2px;
 }
 
-/* Product name in table */
+/* Chips de Tallas/Colores en la tabla de productos: un chip por COLOR (no
+   por combinación color+talla), con las tallas de ese color concatenadas
+   COMPLETAS adentro (nunca se corta el texto de un chip a la mitad). El
+   JSX mide el ancho real de cada chip (canvas) y solo incluye un chip si
+   entra completo — reservando siempre espacio para el chip "+N más" — así
+   que la suma nunca debería superar el ancho de la columna; el
+   overflow:hidden queda como garantía dura de ese límite (incluye el "+N
+   más": si ni el primer color entra completo, se resume ahí también). */
+.gestproductos-th-variantes {
+  width: 200px;
+  max-width: 200px;
+}
+
+.gestproductos-variantes-cell {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  max-width: 200px;
+  overflow: hidden;
+}
+.gestproductos-variante-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+}
+.gestproductos-variante-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+}
+.gestproductos-sin-variantes {
+  font-size: 11px;
+  color: var(--dvna-muted);
+  font-style: italic;
+}
+
+/* "+N más": mismo chip base, sin swatch de color — representa colores
+   adicionales ocultos, nunca una talla extra de un color puntual. Ahora es
+   el trigger de un dropdown (mismo patrón visual que el selector de estado
+   de Compras/Pedidos): pill + chevron, abre un panel con el detalle de los
+   colores ocultos. */
+.gestproductos-variante-mas {
+  color: var(--dvna-muted);
+  background: var(--dvna-white);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.gestproductos-variante-mas svg {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+.gestproductos-variante-mas:hover {
+  border-color: var(--dvna-mid);
+  color: var(--dvna-charcoal);
+  background: var(--dvna-pale);
+}
+
+/* Panel del dropdown "+N más" — portal a document.body, posicionado en
+   fixed vía JS (coords calculadas desde el trigger), mismo lenguaje visual
+   que .compras-estado-panel para mantener consistencia entre módulos. */
+.gestproductos-variantes-panel {
+  z-index: 999;
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: gestproductos-panel-in 0.12s ease;
+}
+@keyframes gestproductos-panel-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.gestproductos-variantes-panel-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.5rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--dvna-charcoal);
+}
+.gestproductos-variantes-panel-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+.gestproductos-variantes-panel-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Product name in table: truncado con elipsis + tooltip (title) al hover.
+   La categoría va debajo, como subtítulo — así no necesita su propia
+   columna aparte y esa ancho se recupera para el resto de la tabla. */
 .gestproductos-product-name {
   font-family: var(--font-body);
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--dvna-charcoal);
+  max-width: 195px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* .tabla-status vive ahora en index.css (sistema global de tablas) */
 
-/* Categoria text - plain with outline */
+/* Categoria text - subtítulo debajo del nombre del producto */
 .tabla-categoria {
+  display: block;
   font-family: var(--font-body);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 500;
-  color: var(--dvna-charcoal);
-  text-shadow: 0 0 0 1px var(--dvna-charcoal);
+  color: var(--dvna-muted);
+  max-width: 195px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
 }
 
 /* Stock text - plain with outline */
@@ -1025,9 +1175,27 @@
   font-size: 0.75rem;
   font-weight: 500;
 }
-.tabla-stock.normal { color: var(--success); text-shadow: 0 0 0 1px var(--success); }
-.tabla-stock.bajo { color: var(--warning); text-shadow: 0 0 0 1px var(--warning); }
-.tabla-stock.agotado { color: var(--danger); text-shadow: 0 0 0 1px var(--danger); }
+/* Los tres estados (normal/bajo/agotado) comparten el mismo padding de
+   badge — antes "normal" era texto plano sin relleno, mucho más angosto
+   que los otros dos, y esa diferencia de ancho entre filas es la que se
+   veía como "espacio de sobra" en la columna (el ancho de columna tiene
+   que cubrir el peor caso, "Agotado"). Con los tres del mismo tamaño de
+   badge, la variación entre filas es solo la del texto, no la del padding. */
+.tabla-stock.normal,
+.tabla-stock.bajo,
+.tabla-stock.agotado {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+.tabla-stock.normal  { color: var(--success); background: rgba(58, 102, 72, 0.08); }
+.tabla-stock.bajo    { color: var(--warning); background: rgba(122, 85, 0, 0.1); }
+.tabla-stock.agotado { color: var(--danger); background: var(--danger-bg); }
+.tabla-stock.bajo svg,
+.tabla-stock.agotado svg { width: 11px; height: 11px; }
 
 /* Precio cell */
 .gestproductos-precio-cell {
@@ -1036,6 +1204,70 @@
   color: var(--dvna-charcoal);
   font-size: 0.85rem;
 }
+
+/* Con table-layout:auto, el ancho de columna lo decide un algoritmo que
+   mira TODAS las celdas de esa columna y puede ignorar max-width si lo
+   necesita para acomodar la fila — por eso los topes anteriores (width:1%,
+   max-width) no se sostenían pese a tener más especificidad que la regla
+   global. La única forma confiable de fijar anchos reales es table-layout:
+   fixed con anchos explícitos en el header, aplicado solo a ESTA tabla
+   (clase propia) para no afectar el resto de tablas que comparten .tbl.
+   width:auto (en vez del width:100% que impone table.tbl globalmente) es
+   clave: si no, el navegador reparte el sobrante entre 100% y la suma de
+   columnas inflando cada una proporcionalmente — el mismo hueco de nuevo,
+   solo que ahora repartido "parejo" en vez de todo en una columna. */
+table.tbl.gestproductos-tabla {
+  table-layout: fixed !important;
+  width: auto !important;
+}
+/* Presupuesto de ancho apretado a propósito: el objetivo es que quepa sin
+   scroll incluso en un monitor de 1280px, con sidebar y padding del
+   contenedor y una eventual scrollbar vertical descontados.
+   min-width explícito en cada uno: le gana a width/max-width sin importar
+   los !important que se le pongan a estos otros dos, así que se declara
+   siempre junto a width. */
+th.gestproductos-th-imagen    { width: 90px  !important; min-width: 80px  !important; }
+th.gestproductos-th-producto  { width: 310px !important; min-width: 210px !important; }
+th.gestproductos-th-precio    { width: 95px  !important; min-width: 95px  !important; }
+th.gestproductos-th-stock     { width: 95px  !important; min-width: 95px  !important; }
+th.gestproductos-th-variantes { width: 180px !important; min-width: 180px !important; max-width: 180px !important; }
+th.gestproductos-th-toggle    { width: 100px  !important; min-width: 68px  !important; }
+th.gestproductos-th-acciones  { width: 155px !important; min-width: 155px !important; }
+/* Refuerzo en el <td> además del <th>: table-layout:fixed solo debería
+   necesitar el ancho en la fila de headers, pero cuesta cero reforzarlo
+   acá también dado el bug de arriba. Publicado y Estado quedan separados en
+   sus propias columnas (cada uno con su switch en tamaño compacto --sm) en
+   vez de compartir una sola columna, para no perder la distinción visual
+   entre ambos estados. */
+td.gestproductos-td-toggle {
+  width: 68px !important;
+  min-width: 68px !important;
+  max-width: 68px !important;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+  text-align: center !important;
+}
+
+/* Precio y Stock son columnas numéricas cortas: no necesitan el padding
+   horizontal completo del resto de la tabla. */
+th.gestproductos-th-compacto,
+td.gestproductos-td-compacto {
+  white-space: nowrap !important;
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+}
+/* Precio: SOLO el valor va alineado a la derecha (convención para
+   montos) — el header se deja alineado a la izquierda como el resto de
+   los headers de la tabla. */
+td.gestproductos-precio-cell {
+  text-align: right !important;
+}
+/* Stock: solo el badge va centrado — mismo criterio que Precio, el
+   header se mantiene alineado a la izquierda como los demás. */
+td.gestproductos-stock-cell {
+  text-align: center !important;
+}
+
 .gestproductos-toggle-publicado {
   background: transparent;
   border: 1px solid var(--dvna-border);
@@ -1155,7 +1387,8 @@
 
 .catproductos-action-cell {
   display: flex;
-  gap: 0.4rem;
+  gap: 6px;
+  align-items: center;
 }
 
 .catproductos-action-btn {
@@ -1169,28 +1402,23 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
   color: var(--dvna-muted);
+  flex-shrink: 0;
 }
 
 .catproductos-action-btn:hover {
-  border-color: var(--brown);
+  border-color: var(--dvna-mid);
   background: var(--dvna-pale);
 }
 
-.catproductos-edit-btn:hover {
-  border-color: #1976d2;
-  color: #1976d2;
-}
-
 .catproductos-deactivate-btn:hover {
-  border-color: var(--danger);
-  color: var(--danger);
+  border-color: rgba(184, 50, 50, 0.3);
+  background: rgba(184, 50, 50, 0.06);
 }
 
 .catproductos-activate-btn:hover {
-  border-color: var(--success);
-  color: var(--success);
+  border-color: rgba(58, 102, 72, 0.3);
+  background: rgba(58, 102, 72, 0.06);
 }
 
 /* ── NUEVO: distintivo de "Destacado" (Nuevo/Promoción) sobre la miniatura —

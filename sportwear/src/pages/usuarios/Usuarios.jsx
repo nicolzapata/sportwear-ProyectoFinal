@@ -7,7 +7,7 @@ import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO, MAX_LONGITUD_NOMBRE, MAX_LONGITUD_DIRECCION, MAX_LONGITUD_CONTRASENA } from "../../utils/numerico";
 import './Usuarios.css';
 import { IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconSearch, IconX } from "../../components/Icons";
 
@@ -490,6 +490,7 @@ export default function Usuarios() {
             <input type={showPassword ? "text" : "password"}
               className={`usuarios-form-input${errores.contrasena ? " input-error" : ""}`}
               placeholder={editar ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"}
+              maxLength={MAX_LONGITUD_CONTRASENA}
               value={form.contrasena}
               onChange={e => {
                 const contrasena = e.target.value;
@@ -510,6 +511,7 @@ export default function Usuarios() {
           <input type="password"
             className={`usuarios-form-input${errores.confirmar ? " input-error" : ""}`}
             placeholder="Repite la contraseña"
+            maxLength={MAX_LONGITUD_CONTRASENA}
             value={form.confirmar}
             onChange={e => {
               const confirmar = e.target.value;
@@ -526,7 +528,7 @@ export default function Usuarios() {
   // ── Paso 2 (combinado): Ubicación + Rol ───────────────────────────────────
   const PasosUbicacionRol = (
     <div>
-      <div className="usuarios-form-group"><label className="usuarios-form-label">Ciudad</label><input className="usuarios-form-input" placeholder="Medellín" value={form.ciudad} onChange={e => setForm({ ...form, ciudad: e.target.value })} /></div>
+      <div className="usuarios-form-group"><label className="usuarios-form-label">Ciudad</label><input className="usuarios-form-input" placeholder="Medellín" maxLength={MAX_LONGITUD_NOMBRE} value={form.ciudad} onChange={e => setForm({ ...form, ciudad: e.target.value })} /></div>
       <div className="usuarios-form-row">
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">Barrio <span className="usuarios-req">*</span></label>
@@ -544,7 +546,7 @@ export default function Usuarios() {
         </div>
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">Dirección <span className="usuarios-req">*</span></label>
-          <input className={`usuarios-form-input${errores.direccion ? " input-error" : ""}`} placeholder="Cra 43A # 10-20 Apto 301" value={form.direccion}
+          <input className={`usuarios-form-input${errores.direccion ? " input-error" : ""}`} placeholder="Cra 43A # 10-20 Apto 301" maxLength={MAX_LONGITUD_DIRECCION} value={form.direccion}
             onChange={e => {
               const direccion = e.target.value;
               setForm({ ...form, direccion });
@@ -849,7 +851,7 @@ export default function Usuarios() {
 
           <div className="usuarios-factura-seccion">
             <h3 className="usuarios-factura-titulo">Ubicación y clasificación</h3>
-            <div className="usuarios-form-group"><label className="usuarios-form-label">Ciudad <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.ciudad ? " input-error" : ""}`} placeholder="Medellín" value={clienteForm.ciudad}
+            <div className="usuarios-form-group"><label className="usuarios-form-label">Ciudad <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.ciudad ? " input-error" : ""}`} placeholder="Medellín" maxLength={MAX_LONGITUD_NOMBRE} value={clienteForm.ciudad}
               onChange={e => { const ciudad = e.target.value; setClienteForm({ ...clienteForm, ciudad }); if (erroresCliente.ciudad) setErroresCliente(prev => ({ ...prev, ciudad: errorCiudadCliente(ciudad) })); }}
               onBlur={() => setErroresCliente(prev => ({ ...prev, ciudad: errorCiudadCliente(clienteForm.ciudad) }))} />{erroresCliente.ciudad && <span className="usuarios-form-error">{erroresCliente.ciudad}</span>}</div>
             <div className="usuarios-form-row">
@@ -869,7 +871,7 @@ export default function Usuarios() {
               </div>
               <div className="usuarios-form-group">
                 <label className="usuarios-form-label">Dirección completa <span className="usuarios-req">*</span></label>
-                <input className={`usuarios-form-input${erroresCliente.direccion ? " input-error" : ""}`} placeholder="Cra 70 # 48-15 Apto 201" value={clienteForm.direccion}
+                <input className={`usuarios-form-input${erroresCliente.direccion ? " input-error" : ""}`} placeholder="Cra 70 # 48-15 Apto 201" maxLength={MAX_LONGITUD_DIRECCION} value={clienteForm.direccion}
                   onChange={e => {
                     const direccion = e.target.value;
                     setClienteForm({ ...clienteForm, direccion });
@@ -882,7 +884,7 @@ export default function Usuarios() {
 
             {!editar && (
               <div className="usuarios-form-row">
-                <div className="usuarios-form-group"><label className="usuarios-form-label">Contraseña <span className="usuarios-req">*</span></label><input type="password" className={`usuarios-form-input${erroresCliente.contrasena ? " input-error" : ""}`} placeholder="Mín. 6 caracteres" value={clienteForm.contrasena}
+                <div className="usuarios-form-group"><label className="usuarios-form-label">Contraseña <span className="usuarios-req">*</span></label><input type="password" className={`usuarios-form-input${erroresCliente.contrasena ? " input-error" : ""}`} placeholder="Mín. 6 caracteres" maxLength={MAX_LONGITUD_CONTRASENA} value={clienteForm.contrasena}
                   onChange={e => {
                     const contrasena = e.target.value;
                     setClienteForm({ ...clienteForm, contrasena });
@@ -890,7 +892,7 @@ export default function Usuarios() {
                     if (erroresCliente.confirmar) setErroresCliente(prev => ({ ...prev, confirmar: revisarConfirmarCliente(clienteForm.confirmar, contrasena) }));
                   }}
                   onBlur={() => setErroresCliente(prev => ({ ...prev, contrasena: revisarContrasenaCliente(clienteForm.contrasena) }))} />{erroresCliente.contrasena && <span className="usuarios-form-error">{erroresCliente.contrasena}</span>}</div>
-                <div className="usuarios-form-group"><label className="usuarios-form-label">Confirmar contraseña <span className="usuarios-req">*</span></label><input type="password" className={`usuarios-form-input${erroresCliente.confirmar ? " input-error" : ""}`} placeholder="Repite la contraseña" value={clienteForm.confirmar}
+                <div className="usuarios-form-group"><label className="usuarios-form-label">Confirmar contraseña <span className="usuarios-req">*</span></label><input type="password" className={`usuarios-form-input${erroresCliente.confirmar ? " input-error" : ""}`} placeholder="Repite la contraseña" maxLength={MAX_LONGITUD_CONTRASENA} value={clienteForm.confirmar}
                   onChange={e => {
                     const confirmar = e.target.value;
                     setClienteForm({ ...clienteForm, confirmar });

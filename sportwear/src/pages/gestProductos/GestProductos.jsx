@@ -5,6 +5,7 @@ import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
+import { validarMonto, MAX_MONTO, MAX_LONGITUD_NOMBRE, MAX_LONGITUD_TEXTO_LIBRE } from "../../utils/numerico";
 import GaleriaImagenes from "../../components/GaleriaImagenes";
 import GestVariantes from "../../components/GestVariantes";
 import ModalSteps from "../../components/ModalSteps";
@@ -152,6 +153,7 @@ export default function GestProductos() {
   const [pendingImagenes,  setPendingImagenes]  = useState([]);
   const [coloresSinFotos,  setColoresSinFotos]  = useState([]);
   const [coloresAPurgar,   setColoresAPurgar]   = useState([]);
+  const [coloresAPurgarFotos, setColoresAPurgarFotos] = useState([]);
   const [tab,              setTab]              = useState("productos");
   const [paginaProductos,  setPaginaProductos]  = useState(1);
   const [paginaCategorias, setPaginaCategorias] = useState(1);
@@ -254,12 +256,21 @@ export default function GestProductos() {
     setPendingVariantes([]); setPendingImagenes([]); setModal(true);
   };
 
+  const validarNombreProducto = (valor) => {
+    const texto = valor.trim();
+    if (!texto) return "El nombre del producto es obligatorio.";
+    if (texto.length < 3) return "El nombre debe tener al menos 3 caracteres.";
+    if (texto.length > MAX_LONGITUD_NOMBRE) return `No puede tener más de ${MAX_LONGITUD_NOMBRE} caracteres.`;
+    return "";
+  };
+
   const validarPasoDatos = () => {
     const e = { ...ERRORES_INICIALES }; let ok = true;
-    if (!form.nombre.trim()) { e.nombre = "El nombre del producto es obligatorio."; ok = false; }
-    else if (form.nombre.trim().length < 3) { e.nombre = "El nombre debe tener al menos 3 caracteres."; ok = false; }
+    const msgNombre = validarNombreProducto(form.nombre);
+    if (msgNombre) { e.nombre = msgNombre; ok = false; }
     if (!form.id_categoria) { e.id_categoria = "Selecciona una categoría."; ok = false; }
-    if (!form.precio || Number(form.precio) <= 0) { e.precio = "El precio debe ser mayor a $0."; ok = false; }
+    const msgPrecio = validarMonto(form.precio, { mensajeVacio: "El precio debe ser mayor a $0." });
+    if (msgPrecio) { e.precio = msgPrecio; ok = false; }
     setErrores(e); return ok;
   };
 
@@ -360,6 +371,12 @@ export default function GestProductos() {
     guardarProducto();
   };
 
+  // Se dispara desde GestVariantes cuando el usuario, al eliminar la última
+  // talla de un color, elige también eliminar las fotos de ese color —
+  // GaleriaImagenes hace el borrado real (API o local) al reaccionar a la prop.
+  const eliminarFotosDeColor = (id_color) => setColoresAPurgarFotos([id_color]);
+  const onFotosDeColorPurgadas = () => setColoresAPurgarFotos([]);
+
   const toggleEstadoProducto = async (id, nuevoEstado) => {
     // ── El aviso de éxito/error ya lo muestra StatusToggle centralizadamente —
     // mostrarlo también aquí duplicaba el mensaje en pantalla. ──
@@ -396,7 +413,7 @@ export default function GestProductos() {
     if (guardando) return;
     setModal(false); setErrores(ERRORES_INICIALES); setProductoId(null);
     setPendingVariantes([]); setPendingImagenes([]);
-    setColoresSinFotos([]); setColoresAPurgar([]);
+    setColoresSinFotos([]); setColoresAPurgar([]); setColoresAPurgarFotos([]);
     cargar();
   };
 
@@ -404,9 +421,15 @@ export default function GestProductos() {
   const abrirRegistrarCategoria = () => { setEditarCategoria(null); setFormCategoria({ nombre: "", descripcion: "", icono: "tag" }); setErroresCategoria({ nombre: "" }); setModal(true); };
   const abrirEditarCategoria    = (c) => { setEditarCategoria(c.id_categoria); setFormCategoria({ nombre: c.nombre, descripcion: c.descripcion || "", icono: c.icono || "tag" }); setErroresCategoria({ nombre: "" }); setModal(true); };
 
+  const validarNombreCategoria = (valor) => {
+    const texto = (valor ?? "").trim();
+    if (!texto) return "El nombre de la categoría es obligatorio";
+    if (texto.length > MAX_LONGITUD_NOMBRE) return `No puede tener más de ${MAX_LONGITUD_NOMBRE} caracteres.`;
+    return "";
+  };
+
   const validarPasoCategoriaForm = () => {
-    const e = { nombre: "" };
-    if (!formCategoria.nombre?.trim()) { e.nombre = "El nombre de la categoría es obligatorio"; }
+    const e = { nombre: validarNombreCategoria(formCategoria.nombre) };
     setErroresCategoria(e);
     return !e.nombre;
   };
@@ -482,19 +505,19 @@ export default function GestProductos() {
       <div className="gestproductos-form-group">
         <label className="gestproductos-form-label">Nombre de la categoría <span className="gestproductos-required">*</span></label>
         <input type="text" className={`gestproductos-form-input${erroresCategoria.nombre ? " input-error" : ""}`} placeholder="Ej: Ropa Deportiva"
-          value={formCategoria.nombre}
+          value={formCategoria.nombre} maxLength={MAX_LONGITUD_NOMBRE}
           onChange={e => {
             const nombre = e.target.value;
             setFormCategoria({ ...formCategoria, nombre });
-            if (erroresCategoria.nombre) setErroresCategoria(prev => ({ ...prev, nombre: nombre.trim() ? "" : prev.nombre }));
+            if (erroresCategoria.nombre) setErroresCategoria(prev => ({ ...prev, nombre: validarNombreCategoria(nombre) }));
           }}
-          onBlur={() => setErroresCategoria(prev => ({ ...prev, nombre: formCategoria.nombre?.trim() ? "" : "El nombre de la categoría es obligatorio" }))} />
+          onBlur={() => setErroresCategoria(prev => ({ ...prev, nombre: validarNombreCategoria(formCategoria.nombre) }))} />
         {erroresCategoria.nombre && <p className="gestproductos-field-error">{erroresCategoria.nombre}</p>}
       </div>
       <div className="gestproductos-form-group">
         <label className="gestproductos-form-label">Descripción</label>
         <textarea className="gestproductos-form-input" rows={3} placeholder="Descripción breve de la categoría (opcional)"
-          value={formCategoria.descripcion || ""}
+          value={formCategoria.descripcion || ""} maxLength={MAX_LONGITUD_TEXTO_LIBRE}
           onChange={e => setFormCategoria({ ...formCategoria, descripcion: e.target.value })} />
       </div>
     </div>
@@ -644,7 +667,6 @@ export default function GestProductos() {
               <tr>
                 <th className="tbl-th gestproductos-th-imagen">Imagen</th>
                 <th className="tbl-th gestproductos-th-producto">Producto</th>
-                <th className="tbl-th gestproductos-th-categoria">Categoría</th>
                 <th className="tbl-th gestproductos-th-compacto gestproductos-th-precio">Precio</th>
                 <th className="tbl-th gestproductos-th-compacto gestproductos-th-stock">Stock</th>
                 <th className="tbl-th gestproductos-th-variantes">Tallas/Colores</th>
@@ -655,7 +677,7 @@ export default function GestProductos() {
             </thead>
             <tbody className="tbl-body">
               {datos.length === 0 ? (
-                <tr><td colSpan={9} className="gestproductos-empty-row">No se encontraron productos.</td></tr>
+                <tr><td colSpan={8} className="gestproductos-empty-row">No se encontraron productos.</td></tr>
               ) : datos.map((p) => (
                 <tr key={p.id_producto} className="tbl-row">
                   <td className="tbl-td">
@@ -669,8 +691,8 @@ export default function GestProductos() {
                   </td>
                   <td className="tbl-td">
                     <div className="gestproductos-product-name" title={p.nombre}>{p.nombre}</div>
+                    <span className="tabla-categoria" title={p.categoria}>{p.categoria}</span>
                   </td>
-                  <td className="tbl-td"><span className="tabla-categoria" title={p.categoria}>{p.categoria}</span></td>
                   <td className="tbl-td gestproductos-td-compacto gestproductos-precio-cell">{fmt(p.precio)}</td>
                   <td className="tbl-td gestproductos-td-compacto gestproductos-stock-cell">{stockBadge(p.stock ?? 0)}</td>
                   <td className="tbl-td">
@@ -730,12 +752,13 @@ export default function GestProductos() {
                         onToggle={(id) => togglePublicado(id)}
                         showConfirmation={false}
                         labels={{ activo: "Sí", inactivo: "No" }}
+                        size="sm"
                       />
                     </td>
                   )}
                   {tienePerm('Productos.estado') && (
                     <td className="tbl-td gestproductos-td-toggle">
-                      <StatusToggle id={p.id_producto} estado={p.estado} onToggle={toggleEstadoProducto} showConfirmation={true} />
+                      <StatusToggle id={p.id_producto} estado={p.estado} onToggle={toggleEstadoProducto} showConfirmation={true} size="sm" />
                     </td>
                   )}
                   <td className="tbl-td">
@@ -843,22 +866,13 @@ export default function GestProductos() {
                 <div className="gestproductos-form-group">
                   <label className="gestproductos-form-label">Nombre <span className="gestproductos-required">*</span></label>
                   <input className={`gestproductos-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Camiseta Deportiva" value={form.nombre}
+                    maxLength={MAX_LONGITUD_NOMBRE}
                     onChange={e => {
                       const nombre = e.target.value;
                       setForm({ ...form, nombre });
-                      if (errores.nombre) {
-                        let msg = "";
-                        if (!nombre.trim()) msg = "El nombre del producto es obligatorio.";
-                        else if (nombre.trim().length < 3) msg = "El nombre debe tener al menos 3 caracteres.";
-                        setErrores(p => ({ ...p, nombre: msg }));
-                      }
+                      if (errores.nombre) setErrores(p => ({ ...p, nombre: validarNombreProducto(nombre) }));
                     }}
-                    onBlur={() => {
-                      let msg = "";
-                      if (!form.nombre.trim()) msg = "El nombre del producto es obligatorio.";
-                      else if (form.nombre.trim().length < 3) msg = "El nombre debe tener al menos 3 caracteres.";
-                      setErrores(p => ({ ...p, nombre: msg }));
-                    }} />
+                    onBlur={() => setErrores(p => ({ ...p, nombre: validarNombreProducto(form.nombre) }))} />
                   {errores.nombre && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.nombre}</p>}
                 </div>
 
@@ -880,13 +894,13 @@ export default function GestProductos() {
 
                   <div className="gestproductos-form-group">
                     <label className="gestproductos-form-label">Precio (COP) <span className="gestproductos-required">*</span></label>
-                    <input type="number" min={0} className={`gestproductos-form-input${errores.precio ? " input-error" : ""}`} placeholder="0" value={form.precio}
+                    <input type="number" min={0} max={MAX_MONTO} className={`gestproductos-form-input${errores.precio ? " input-error" : ""}`} placeholder="0" value={form.precio}
                       onChange={e => {
                         const precio = e.target.value;
                         setForm({ ...form, precio });
-                        if (errores.precio) setErrores(p => ({ ...p, precio: (precio && Number(precio) > 0) ? "" : p.precio }));
+                        if (errores.precio) setErrores(p => ({ ...p, precio: validarMonto(precio, { mensajeVacio: "El precio debe ser mayor a $0." }) }));
                       }}
-                      onBlur={() => setErrores(p => ({ ...p, precio: (form.precio && Number(form.precio) > 0) ? "" : "El precio debe ser mayor a $0." }))} />
+                      onBlur={() => setErrores(p => ({ ...p, precio: validarMonto(form.precio, { mensajeVacio: "El precio debe ser mayor a $0." }) }))} />
                     {errores.precio && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.precio}</p>}
                   </div>
                 </div>
@@ -934,12 +948,16 @@ export default function GestProductos() {
                 <GestVariantes
                   idProducto={editar || productoId} estadoProducto={form.estado} onPendingChange={setPendingVariantes}
                   coloresAPurgar={coloresAPurgar} onColoresPurgados={onColoresPurgados}
+                  imagenesPendientes={pendingImagenes} onEliminarFotosDeColor={eliminarFotosDeColor}
                 />
               </div>
 
               <div className="gestproductos-factura-seccion">
                 <h3 className="gestproductos-factura-titulo">Imágenes</h3>
-                <GaleriaImagenes tipoReferencia="Producto" idReferencia={productoId} onPendingChange={setPendingImagenes} coloresPendientes={coloresPendientes} />
+                <GaleriaImagenes
+                  tipoReferencia="Producto" idReferencia={productoId} onPendingChange={setPendingImagenes} coloresPendientes={coloresPendientes}
+                  coloresAPurgar={coloresAPurgarFotos} onColoresPurgados={onFotosDeColorPurgadas}
+                />
               </div>
             </div>
 

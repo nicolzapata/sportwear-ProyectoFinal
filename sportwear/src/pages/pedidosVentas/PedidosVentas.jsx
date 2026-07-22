@@ -5,6 +5,7 @@ import './PedidosVentas.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
+import { validarMonto, MAX_MONTO, MAX_LONGITUD_TEXTO_LIBRE, MAX_LONGITUD_DIRECCION } from "../../utils/numerico";
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconDollar, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
@@ -297,23 +298,52 @@ export default function PedidosVentas() {
   }, 0);
   const totalVenta = subtotalVenta - (Number(formVenta.descuento) || 0) + (Number(formVenta.impuesto) || 0);
 
+  const MAX_CANTIDAD = 9999;
+  const MAX_NUM_CUOTAS = 60;
+
+  const errorItemCantidad = (cantidad) => {
+    if (!cantidad || Number(cantidad) <= 0) return "Cantidad inválida";
+    if (!Number.isInteger(Number(cantidad))) return "Debe ser un número entero";
+    if (Number(cantidad) > MAX_CANTIDAD) return `No puede ser mayor a ${MAX_CANTIDAD}`;
+    return "";
+  };
+  const errorItemPrecio = (precio) => validarMonto(precio, { mensajeVacio: "Precio inválido" });
+  const errorItemDescuento = (descuento, cantidad, precioUnitario) => {
+    const d = Number(descuento) || 0;
+    if (d < 0) return "No puede ser negativo";
+    const subtotalLinea = (Number(cantidad) || 0) * (Number(precioUnitario) || 0);
+    if (d > subtotalLinea) return "No puede ser mayor al subtotal de la línea";
+    return "";
+  };
+
   const validarVenta = () => {
     const e = {};
     if (!formVenta.id_cliente) e.id_cliente = "El cliente es obligatorio";
     if (!formVenta.fecha) e.fecha = "La fecha es obligatoria";
-    if (formVenta.tipo_pago === "cuotas" && (!formVenta.num_cuotas || Number(formVenta.num_cuotas) < 2)) {
-      e.num_cuotas = "Indica el número de cuotas (mínimo 2)";
+    if (formVenta.tipo_pago === "cuotas") {
+      const n = Number(formVenta.num_cuotas);
+      if (!formVenta.num_cuotas || n < 2) e.num_cuotas = "Indica el número de cuotas (mínimo 2)";
+      else if (!Number.isInteger(n)) e.num_cuotas = "Debe ser un número entero";
+      else if (n > MAX_NUM_CUOTAS) e.num_cuotas = `No puede ser mayor a ${MAX_NUM_CUOTAS} cuotas`;
     }
     if (Number(formVenta.descuento) > 0 && !formVenta.motivo_descuento?.trim()) {
       e.motivo_descuento = "Indica el motivo del descuento";
     }
+    if (Number(formVenta.descuento) < 0) e.descuento = "No puede ser negativo";
+    else if (Number(formVenta.descuento) > subtotalVenta) e.descuento = "No puede ser mayor al subtotal";
+    if (Number(formVenta.impuesto) < 0) e.impuesto = "No puede ser negativo";
+    else if (Number(formVenta.impuesto) > MAX_MONTO) e.impuesto = `No puede ser mayor a ${MAX_MONTO.toLocaleString("es-CO")}`;
     formVenta.items.forEach((it, i) => {
       if (!it.id_producto) e[`item_${i}_producto`] = "Selecciona un producto";
       const producto = productos.find((p) => String(p.id_producto) === String(it.id_producto));
       const variantesActivas = (producto?.variantes || []).filter((v) => v.estado === "Activo");
       if (variantesActivas.length > 0 && !it.id_variante) e[`item_${i}_variante`] = "Selecciona talla y color";
-      if (!it.cantidad || Number(it.cantidad) <= 0) e[`item_${i}_cantidad`] = "Cantidad inválida";
-      if (!it.precio_unitario || Number(it.precio_unitario) <= 0) e[`item_${i}_precio`] = "Precio inválido";
+      const msgCantidad = errorItemCantidad(it.cantidad);
+      if (msgCantidad) e[`item_${i}_cantidad`] = msgCantidad;
+      const msgPrecio = errorItemPrecio(it.precio_unitario);
+      if (msgPrecio) e[`item_${i}_precio`] = msgPrecio;
+      const msgDescLinea = errorItemDescuento(it.descuento_linea, it.cantidad, it.precio_unitario);
+      if (msgDescLinea) e[`item_${i}_descuento`] = msgDescLinea;
     });
     setErroresVenta(e);
     return Object.keys(e).length === 0;
@@ -809,6 +839,8 @@ export default function PedidosVentas() {
                     <input
                       type="number"
                       min="2"
+                      max={MAX_NUM_CUOTAS}
+                      step={1}
                       className={`pedidosventas-form-input${erroresVenta.num_cuotas ? " input-error" : ""}`}
                       value={formVenta.num_cuotas}
                       onChange={(e) => { setFormVenta({ ...formVenta, num_cuotas: e.target.value }); setErroresVenta((prev) => ({ ...prev, num_cuotas: "" })); }}
@@ -904,30 +936,46 @@ export default function PedidosVentas() {
                         <input
                           type="number"
                           min="1"
+                          max={MAX_CANTIDAD}
+                          step={1}
                           placeholder="Cant."
                           className={`pedidosventas-form-input${erroresVenta[`item_${i}_cantidad`] ? " input-error" : ""}`}
                           value={item.cantidad}
-                          onChange={(e) => actualizarItemVenta(i, "cantidad", e.target.value)}
+                          onChange={(e) => {
+                            actualizarItemVenta(i, "cantidad", e.target.value);
+                            if (erroresVenta[`item_${i}_cantidad`]) setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: errorItemCantidad(e.target.value) }));
+                          }}
+                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: errorItemCantidad(item.cantidad) }))}
                         />
                       </div>
                       <div>
                         <input
                           type="number"
                           min="0"
+                          max={MAX_MONTO}
                           placeholder="Precio"
                           className={`pedidosventas-form-input${erroresVenta[`item_${i}_precio`] ? " input-error" : ""}`}
                           value={item.precio_unitario}
-                          onChange={(e) => actualizarItemVenta(i, "precio_unitario", e.target.value)}
+                          onChange={(e) => {
+                            actualizarItemVenta(i, "precio_unitario", e.target.value);
+                            if (erroresVenta[`item_${i}_precio`]) setErroresVenta((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(e.target.value) }));
+                          }}
+                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(item.precio_unitario) }))}
                         />
                       </div>
                       <div>
                         <input
                           type="number"
                           min="0"
+                          max={MAX_MONTO}
                           placeholder="Desc."
-                          className="pedidosventas-form-input"
+                          className={`pedidosventas-form-input${erroresVenta[`item_${i}_descuento`] ? " input-error" : ""}`}
                           value={item.descuento_linea}
-                          onChange={(e) => actualizarItemVenta(i, "descuento_linea", e.target.value)}
+                          onChange={(e) => {
+                            actualizarItemVenta(i, "descuento_linea", e.target.value);
+                            if (erroresVenta[`item_${i}_descuento`]) setErroresVenta((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(e.target.value, item.cantidad, item.precio_unitario) }));
+                          }}
+                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(item.descuento_linea, item.cantidad, item.precio_unitario) }))}
                         />
                       </div>
                       <div className="pedidosventas-item-subtotal">{fmt(lineaTotal)}</div>
@@ -951,7 +999,8 @@ export default function PedidosVentas() {
                   <input
                     type="number"
                     min="0"
-                    className="pedidosventas-form-input"
+                    max={MAX_MONTO}
+                    className={`pedidosventas-form-input${erroresVenta.descuento ? " input-error" : ""}`}
                     value={formVenta.descuento}
                     onChange={(e) => {
                       const descuento = e.target.value;
@@ -959,18 +1008,32 @@ export default function PedidosVentas() {
                       if (erroresVenta.motivo_descuento && Number(descuento) === 0) {
                         setErroresVenta((prev) => ({ ...prev, motivo_descuento: "" }));
                       }
+                      if (erroresVenta.descuento) {
+                        const msg = Number(descuento) < 0 ? "No puede ser negativo" : Number(descuento) > subtotalVenta ? "No puede ser mayor al subtotal" : "";
+                        setErroresVenta((prev) => ({ ...prev, descuento: msg }));
+                      }
                     }}
                   />
+                  {erroresVenta.descuento && <span className="pedidosventas-field-error">{erroresVenta.descuento}</span>}
                 </div>
                 <div className="pedidosventas-form-group">
                   <label className="pedidosventas-form-label">Impuesto (COP)</label>
                   <input
                     type="number"
                     min="0"
-                    className="pedidosventas-form-input"
+                    max={MAX_MONTO}
+                    className={`pedidosventas-form-input${erroresVenta.impuesto ? " input-error" : ""}`}
                     value={formVenta.impuesto}
-                    onChange={(e) => setFormVenta({ ...formVenta, impuesto: e.target.value })}
+                    onChange={(e) => {
+                      const impuesto = e.target.value;
+                      setFormVenta({ ...formVenta, impuesto });
+                      if (erroresVenta.impuesto) {
+                        const msg = Number(impuesto) < 0 ? "No puede ser negativo" : Number(impuesto) > MAX_MONTO ? `No puede ser mayor a ${MAX_MONTO.toLocaleString("es-CO")}` : "";
+                        setErroresVenta((prev) => ({ ...prev, impuesto: msg }));
+                      }
+                    }}
                   />
+                  {erroresVenta.impuesto && <span className="pedidosventas-field-error">{erroresVenta.impuesto}</span>}
                 </div>
               </div>
 
@@ -979,6 +1042,7 @@ export default function PedidosVentas() {
                   <label className="pedidosventas-form-label">Motivo del descuento</label>
                   <input
                     type="text"
+                    maxLength={MAX_LONGITUD_TEXTO_LIBRE}
                     placeholder="Ej: Cliente frecuente, producto con detalle menor, promoción..."
                     className={`pedidosventas-form-input${erroresVenta.motivo_descuento ? " input-error" : ""}`}
                     value={formVenta.motivo_descuento}
@@ -996,6 +1060,7 @@ export default function PedidosVentas() {
                 <label className="pedidosventas-form-label">Dirección de entrega (opcional)</label>
                 <input
                   type="text"
+                  maxLength={MAX_LONGITUD_DIRECCION}
                   placeholder="Ej: Cra 43A # 18-20 Apto 302 — déjalo vacío si la venta es en persona"
                   className="pedidosventas-form-input"
                   value={formVenta.direccion_entrega}
@@ -1008,6 +1073,7 @@ export default function PedidosVentas() {
                 <textarea
                   className="pedidosventas-form-input"
                   rows={2}
+                  maxLength={MAX_LONGITUD_TEXTO_LIBRE}
                   value={formVenta.observaciones}
                   onChange={(e) => setFormVenta({ ...formVenta, observaciones: e.target.value })}
                 />

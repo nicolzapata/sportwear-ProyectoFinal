@@ -58,14 +58,36 @@ export const validarTelefono = (telefono) => {
 // Longitud mínima válida para cada palabra de un nombre (evita iniciales sueltas como "J").
 export const LONGITUD_MIN_PALABRA_NOMBRE = 2;
 
-// Valida que un nombre de persona sea obligatorio y que cada nombre/apellido
-// (cada palabra separada por espacios) tenga al menos LONGITUD_MIN_PALABRA_NOMBRE letras.
+// Topes de longitud reutilizados en toda la app — un solo lugar para ajustarlos
+// y que el límite del <input maxLength> siempre coincida con el del mensaje de error.
+export const MAX_LONGITUD_NOMBRE     = 60;  // nombres, apellidos, razón social, banco, etc.
+export const MAX_LONGITUD_DIRECCION  = 150; // direcciones, ciudad, barrio
+export const MAX_LONGITUD_TEXTO_LIBRE = 300; // observaciones, descripciones, motivos (textarea)
+export const MAX_LONGITUD_CODIGO     = 30;  // números de orden, referencias cortas
+export const MAX_LONGITUD_CONTRASENA = 72;  // límite práctico de bcrypt
+
+// Valida que un nombre de persona/entidad sea obligatorio, que cada palabra tenga
+// al menos LONGITUD_MIN_PALABRA_NOMBRE letras y que no supere `maxLongitud`.
 // `mensajeVacio` permite reusar el texto de "obligatorio" que ya usaba cada formulario.
-export const validarNombre = (valor, mensajeVacio = "El nombre es obligatorio") => {
+export const validarNombre = (valor, mensajeVacio = "El nombre es obligatorio", maxLongitud = MAX_LONGITUD_NOMBRE) => {
   const texto = (valor ?? "").toString().trim();
   if (!texto) return mensajeVacio;
+  if (texto.length > maxLongitud) return `No puede tener más de ${maxLongitud} caracteres.`;
   const palabraCorta = texto.split(/\s+/).some((p) => p.length < LONGITUD_MIN_PALABRA_NOMBRE);
   if (palabraCorta) return "Cada nombre o apellido debe tener al menos 2 letras.";
+  return "";
+};
+
+// Tope superior razonable para montos en COP (evita errores de tecleo tipo un
+// cero de más) y validación genérica reutilizable en precios/pagos/descuentos.
+export const MAX_MONTO = 999999999; // 999.999.999 COP
+
+export const validarMonto = (valor, { requerido = true, max = MAX_MONTO, mensajeVacio = "El monto es obligatorio" } = {}) => {
+  const num = Number(valor);
+  if (valor === "" || valor === null || valor === undefined) return requerido ? mensajeVacio : "";
+  if (Number.isNaN(num)) return "Ingresa un número válido.";
+  if (num <= 0) return "Debe ser mayor a 0.";
+  if (num > max) return `No puede ser mayor a ${max.toLocaleString("es-CO")}.`;
   return "";
 };
 

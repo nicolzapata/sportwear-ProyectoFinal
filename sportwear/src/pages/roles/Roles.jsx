@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";  // ← AGREGAR
+import { MAX_LONGITUD_NOMBRE } from "../../utils/numerico";
 import './Roles.css';
 import { IconX, IconSearch } from "../../components/Icons";
 
@@ -54,6 +55,13 @@ const MODULOS_FALLBACK = [
 const esRolProtegido = (nombre = "") => {
   const n = nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   return n === "administrador" || n === "admin";
+};
+
+const validarNombreRol = (valor) => {
+  const texto = (valor ?? "").trim();
+  if (!texto) return "El nombre es obligatorio";
+  if (texto.length > MAX_LONGITUD_NOMBRE) return `No puede tener m\u00e1s de ${MAX_LONGITUD_NOMBRE} caracteres.`;
+  return "";
 };
 
 const getRoleIcon = (nombre = "") => {
@@ -332,9 +340,9 @@ function RolModal({ titulo, form, setForm, errores, setErrores, modulosDisponibl
         <div className="roles-modal-body roles-form-body">
           <div className="ms-form-group">
             <label className="ms-form-label">Nombre del rol <span className="ms-req">*</span></label>
-            <input type="text" className={`ms-form-input${errores.nombre ? ' error' : ''}`} placeholder="Ej: Vendedor" value={form.nombre}
-              onChange={e => { const nombre = e.target.value; setForm(prev => ({ ...prev, nombre })); if (errores.nombre) setErrores(prev => ({ ...prev, nombre: nombre.trim() ? '' : prev.nombre })); }}
-              onBlur={() => setErrores(prev => ({ ...prev, nombre: form.nombre.trim() ? '' : 'El nombre es obligatorio' }))} />
+            <input type="text" maxLength={MAX_LONGITUD_NOMBRE} className={`ms-form-input${errores.nombre ? ' error' : ''}`} placeholder="Ej: Vendedor" value={form.nombre}
+              onChange={e => { const nombre = e.target.value; setForm(prev => ({ ...prev, nombre })); if (errores.nombre) setErrores(prev => ({ ...prev, nombre: validarNombreRol(nombre) })); }}
+              onBlur={() => setErrores(prev => ({ ...prev, nombre: validarNombreRol(form.nombre) }))} />
             {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
           </div>
 
@@ -446,7 +454,8 @@ export default function Roles() {
 
   const validar = () => {
     const e = {};
-    if (!form.nombre.trim())        e.nombre   = "El nombre es obligatorio";
+    const msgNombre = validarNombreRol(form.nombre);
+    if (msgNombre) e.nombre = msgNombre;
     if (form.permisos.length === 0) e.permisos = "Selecciona al menos un permiso";
     setErrores(e);
     return e;

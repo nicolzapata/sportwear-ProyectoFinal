@@ -1,7 +1,7 @@
 .status-toggle-btn {
   position: relative;
-  width: 46px;
-  height: 26px;
+  width: 55px;
+  height: 30px;
   border: none;
   border-radius: 999px;
   background: transparent;
@@ -44,10 +44,10 @@
 
 .status-toggle-thumb {
   position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 22px;
-  height: 22px;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
   border-radius: 999px;
   background: #ffffff;
   border: 1px solid rgba(15, 23, 42, 0.12);
@@ -59,12 +59,12 @@
 }
 
 .status-toggle-btn.activo .status-toggle-thumb {
-  transform: translateX(20px);
+  transform: translateX(25px);
 }
 
 .status-toggle-thumb svg {
-  width: 12px;
-  height: 12px;
+  width: 13px;
+  height: 13px;
   color: var(--muted, #6b7280);
 }
 
@@ -74,6 +74,29 @@
 
 .status-toggle-btn.inactivo .status-toggle-thumb svg {
   color: var(--danger, #dc2626);
+}
+
+/* Variante compacta — misma lógica visual, escalada para tablas con
+   presupuesto de ancho apretado (ver GestProductos: Publicado + Estado en
+   columnas angostas). El thumb redeclara top/left además de width/height:
+   si no, hereda la posición del thumb base y queda descentrado dentro del
+   riel más angosto. */
+.status-toggle-btn--sm {
+  width: 50px;
+  height: 25px;
+}
+.status-toggle-btn--sm .status-toggle-thumb {
+  top: 2.5px;
+  left: 2.5px;
+  width: 20px;
+  height: 20px;
+}
+.status-toggle-btn--sm.activo .status-toggle-thumb {
+  transform: translateX(25px);
+}
+.status-toggle-btn--sm .status-toggle-thumb svg {
+  width: 11px;
+  height: 11px;
 }
 
 .status-toggle-spinner {

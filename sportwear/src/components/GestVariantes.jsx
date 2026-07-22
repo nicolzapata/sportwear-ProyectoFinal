@@ -5,6 +5,7 @@ import { useConfirm } from "../context/ConfirmContext";
 import "./GestVariantes.css";
 
 const TALLAS = ["XS","S","M","L","XL","XXL","Única","28","30","32","34","36","38","40","42","44"];
+const MAX_STOCK = 100000; // tope razonable, evita errores de tecleo (un cero de más)
 
 const IconPlus = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
@@ -50,7 +51,7 @@ function ChipsColorList({ grupos, esEditandoTalla, valorEdicion, onIniciarEdicio
                 <span key={talla} className={`gv-talla-tag${stock === 0 ? " agotada" : ""}`}>
                   {enEdicion ? (
                     <input
-                      type="number" min={0} autoFocus className="gv-talla-tag-input"
+                      type="number" min={0} max={MAX_STOCK} step={1} autoFocus className="gv-talla-tag-input"
                       value={valorEdicion}
                       onChange={e => onCambiarValor(e.target.value)}
                       onBlur={onGuardarEdicion}
@@ -85,7 +86,10 @@ function ChipsColorList({ grupos, esEditandoTalla, valorEdicion, onIniciarEdicio
  * 2. idProducto null/undefined → modo local: acumula variantes pendientes y
  *    las emite por `onPendingChange(pendingList)` cada vez que cambian.
  */
-export default function GestVariantes({ idProducto, estadoProducto, onPendingChange, coloresAPurgar = [], onColoresPurgados }) {
+export default function GestVariantes({
+  idProducto, estadoProducto, onPendingChange, coloresAPurgar = [], onColoresPurgados,
+  imagenesPendientes = [], onEliminarFotosDeColor,
+}) {
   const confirmar = useConfirm();
 
   // ── Estado modo conectado ──────────────────────────────────────────────────
@@ -208,7 +212,7 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
   const setStock = (id_color, talla, valor) =>
     setMatriz(prev => ({
       ...prev,
-      [id_color]: { ...(prev[id_color] || {}), [talla]: Math.max(0, Number(valor) || 0) },
+      [id_color]: { ...(prev[id_color] || {}), [talla]: Math.min(MAX_STOCK, Math.max(0, Number(valor) || 0)) },
     }));
 
   // ── Guardar nuevas variantes (modo conectado) ──────────────────────────────
@@ -277,8 +281,28 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
     setModoAgregar(false);
   };
 
-  const eliminarPendiente = (id_color, talla) => {
+  // Pregunta qué hacer con las fotos de un color cuando la variante que se
+  // elimina era la última talla de ese color y ese color tiene fotos —
+  // el usuario elige entre eliminarlas también o conservarlas.
+  const preguntarPorFotosDelColor = async (id_color, fotos) => {
+    if (!id_color || fotos.length === 0) return;
+    const n = fotos.length;
+    const eliminarFotos = await confirmar({
+      title: "Fotos de este color",
+      message: `Ya no quedan tallas de este color en el producto. Tiene ${n} foto${n > 1 ? "s" : ""} asociada${n > 1 ? "s" : ""}. ¿Deseas eliminarla${n > 1 ? "s" : ""} también o conservarla${n > 1 ? "s" : ""}?`,
+      confirmLabel: `Eliminar también la${n > 1 ? "s" : ""} foto${n > 1 ? "s" : ""}`,
+      cancelLabel: `Conservar la${n > 1 ? "s" : ""} foto${n > 1 ? "s" : ""}`,
+    });
+    if (eliminarFotos) onEliminarFotosDeColor?.(id_color);
+  };
+
+  const eliminarPendiente = async (id_color, talla) => {
     const updated = pendingVariantes.filter(v => !(v.id_color === id_color && v.talla === talla));
+    const quedanOtras = updated.some(v => v.id_color === id_color);
+    if (!quedanOtras) {
+      const fotos = imagenesPendientes.filter(i => String(i.id_color) === String(id_color));
+      await preguntarPorFotosDelColor(id_color, fotos);
+    }
     setPendingVariantes(updated);
     onPendingChange?.(updated);
   };
@@ -286,7 +310,7 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
   const actualizarStockPendiente = (id_color, talla, nuevoStock) => {
     const updated = pendingVariantes.map(v =>
       v.id_color === id_color && v.talla === talla
-        ? { ...v, stock: Math.max(0, Number(nuevoStock) || 0) }
+        ? { ...v, stock: Math.min(MAX_STOCK, Math.max(0, Number(nuevoStock) || 0)) }
         : v
     );
     setPendingVariantes(updated);
@@ -312,7 +336,7 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
   // stock, directamente en la celda de la matriz — no un panel aparte.
   const guardarStockInline = async () => {
     if (!editandoInline) return;
-    const nuevoStock = Math.max(0, Number(editandoInline.stock) || 0);
+    const nuevoStock = Math.min(MAX_STOCK, Math.max(0, Number(editandoInline.stock) || 0));
     try {
       await api.put(`/variantes/${editandoInline.id_variante}`, {
         id_color: editandoInline.id_color,
@@ -335,11 +359,21 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
     }
   };
 
-  const eliminarVariante = async (id_variante) => {
+  const eliminarVariante = async (id_variante, id_color) => {
     const ok = await confirmar({ title: "Eliminar variante", message: "¿Eliminar esta variante?", confirmLabel: "Sí, eliminar" });
     if (!ok) return;
-    try { await api.delete(`/variantes/${id_variante}`); cargar(); }
-    catch { setError("No se pudo eliminar."); }
+    try {
+      await api.delete(`/variantes/${id_variante}`);
+      const quedanOtras = variantes.some(v => v.id_variante !== id_variante && v.id_color === id_color);
+      if (!quedanOtras) {
+        try {
+          const { data } = await api.get(`/imagenes?tipo=Producto&id=${idProducto}`);
+          const fotos = data.filter(i => String(i.id_color) === String(id_color));
+          await preguntarPorFotosDelColor(id_color, fotos);
+        } catch { /* si falla la verificación, se conservan las fotos sin preguntar */ }
+      }
+      cargar();
+    } catch { setError("No se pudo eliminar."); }
   };
 
   // ── Construir vistas: mismo agrupamiento por color, separado en con-stock /
@@ -458,7 +492,7 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
           onIniciarEdicion={(id_color, talla, stock, id_variante) => setEditandoInline({ id_variante, id_color, talla, stock })}
           onCambiarValor={(v) => setEditandoInline(prev => ({ ...prev, stock: v }))}
           onGuardarEdicion={guardarStockInline}
-          onEliminar={(g, talla, id_variante) => eliminarVariante(id_variante)}
+          onEliminar={(g, talla, id_variante) => eliminarVariante(id_variante, g.id_color)}
           onAgregarTalla={(g) => agregarTallaAColor(g, variantes.filter(v => v.id_color === g.id_color).map(v => v.talla))}
         />
       )}
@@ -472,7 +506,7 @@ export default function GestVariantes({ idProducto, estadoProducto, onPendingCha
             onIniciarEdicion={(id_color, talla, stock, id_variante) => setEditandoInline({ id_variante, id_color, talla, stock })}
             onCambiarValor={(v) => setEditandoInline(prev => ({ ...prev, stock: v }))}
             onGuardarEdicion={guardarStockInline}
-            onEliminar={(g, talla, id_variante) => eliminarVariante(id_variante)}
+            onEliminar={(g, talla, id_variante) => eliminarVariante(id_variante, g.id_color)}
             onAgregarTalla={(g) => agregarTallaAColor(g, variantes.filter(v => v.id_color === g.id_color).map(v => v.talla))}
           />
         </>
@@ -578,7 +612,7 @@ function EditorNuevas({ colores, coloresSel, toggleColor, tallasSel, toggleTalla
                     {tallasSel.map(t => (
                       <td key={t} className="gv-td-stock">
                         <input
-                          type="number" min={0} className="gv-stock-input"
+                          type="number" min={0} max={MAX_STOCK} step={1} className="gv-stock-input"
                           value={matriz[c.id_color]?.[t] ?? 0}
                           onChange={e => setStock(c.id_color, t, e.target.value)}
                         />

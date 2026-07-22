@@ -7,7 +7,7 @@ import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../utils/numerico";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO, MAX_LONGITUD_NOMBRE } from "../../utils/numerico";
 import './Proveedores.css';
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
@@ -143,6 +143,15 @@ export default function Proveedores() {
   const validarCampoCiudad = (v) => (!v.trim() ? "La ciudad es obligatoria" : "");
   const validarCampoDireccion = (v) => (!v.trim() ? "La dirección es obligatoria" : "");
   const validarCampoEmail = (v) => validarEmail(v, "El correo es obligatorio");
+  const MAX_PLAZO_PAGO_DIAS = 365;
+  const validarCampoPlazoPago = (v) => {
+    if (v === "" || v === null || v === undefined) return "";
+    const n = Number(v);
+    if (Number.isNaN(n) || n < 0) return "Debe ser un número válido";
+    if (!Number.isInteger(n)) return "Debe ser un número entero de días";
+    if (n > MAX_PLAZO_PAGO_DIAS) return `No puede ser mayor a ${MAX_PLAZO_PAGO_DIAS} días`;
+    return "";
+  };
 
   const validar = () => {
     const e = {};
@@ -163,6 +172,8 @@ export default function Proveedores() {
     if (!form.direccion.trim()) e.direccion = "La dirección es obligatoria";
     const errorEmailContacto = validarCampoEmail(form.email_contacto);
     if (errorEmailContacto) e.email_contacto = errorEmailContacto;
+    const errorPlazoPago = validarCampoPlazoPago(form.plazo_pago_dias);
+    if (errorPlazoPago) e.plazo_pago_dias = errorPlazoPago;
     setErrores(e);
     return Object.keys(e).length === 0;
   };
@@ -404,6 +415,7 @@ export default function Proveedores() {
                     <label className="proveedores-form-label">Razón social <span className="proveedores-req">*</span></label>
                     <input
                       type="text"
+                      maxLength={120}
                       className={`proveedores-form-input${errores.razon_social ? " input-error" : ""}`}
                       placeholder="Ej: Distribuidora Textil S.A."
                       value={form.razon_social}
@@ -420,6 +432,7 @@ export default function Proveedores() {
                     <label className="proveedores-form-label">Nombre comercial (opcional)</label>
                     <input
                       type="text"
+                      maxLength={MAX_LONGITUD_NOMBRE}
                       className="proveedores-form-input"
                       placeholder="Nombre con el que se conoce comercialmente"
                       value={form.nombre_comercial}
@@ -431,7 +444,7 @@ export default function Proveedores() {
                 <div className="proveedores-form-row">
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Departamento</label>
-                    <input type="text" className="proveedores-form-input" placeholder="Ej: Antioquia" value={form.departamento} onChange={(e) => set("departamento", e.target.value)} />
+                    <input type="text" maxLength={MAX_LONGITUD_NOMBRE} className="proveedores-form-input" placeholder="Ej: Antioquia" value={form.departamento} onChange={(e) => set("departamento", e.target.value)} />
                   </div>
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Dirección <span className="proveedores-req">*</span></label>
@@ -489,7 +502,7 @@ export default function Proveedores() {
                   </div>
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Cargo</label>
-                    <input type="text" className="proveedores-form-input" value={form.cargo_contacto} onChange={(e) => set("cargo_contacto", e.target.value)} />
+                    <input type="text" maxLength={MAX_LONGITUD_NOMBRE} className="proveedores-form-input" value={form.cargo_contacto} onChange={(e) => set("cargo_contacto", e.target.value)} />
                   </div>
                 </div>
 
@@ -545,7 +558,7 @@ export default function Proveedores() {
                 <div className="proveedores-form-row-3">
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Banco</label>
-                    <input type="text" className="proveedores-form-input" value={form.banco} onChange={(e) => set("banco", e.target.value)} />
+                    <input type="text" maxLength={MAX_LONGITUD_NOMBRE} className="proveedores-form-input" value={form.banco} onChange={(e) => set("banco", e.target.value)} />
                   </div>
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Tipo de cuenta</label>
@@ -557,18 +570,29 @@ export default function Proveedores() {
                   </div>
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Número de cuenta</label>
-                    <input type="text" inputMode="numeric" className="proveedores-form-input" value={form.numero_cuenta} onChange={(e) => set("numero_cuenta", soloDigitos(e.target.value))} />
+                    <input type="text" inputMode="numeric" maxLength={20} className="proveedores-form-input" value={form.numero_cuenta} onChange={(e) => set("numero_cuenta", soloDigitos(e.target.value))} />
                   </div>
                 </div>
 
                 <div className="proveedores-form-row">
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Titular de la cuenta</label>
-                    <input type="text" className="proveedores-form-input" value={form.titular_cuenta} onChange={(e) => set("titular_cuenta", e.target.value)} />
+                    <input type="text" maxLength={MAX_LONGITUD_NOMBRE} className="proveedores-form-input" value={form.titular_cuenta} onChange={(e) => set("titular_cuenta", e.target.value)} />
                   </div>
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Plazo de pago (días)</label>
-                    <input type="number" min="0" className="proveedores-form-input" value={form.plazo_pago_dias} onChange={(e) => set("plazo_pago_dias", e.target.value)} />
+                    <input
+                      type="number" min="0" max={MAX_PLAZO_PAGO_DIAS} step={1}
+                      className={`proveedores-form-input${errores.plazo_pago_dias ? " input-error" : ""}`}
+                      value={form.plazo_pago_dias}
+                      onChange={(e) => {
+                        const valor = e.target.value;
+                        set("plazo_pago_dias", valor);
+                        if (errores.plazo_pago_dias) setErrores((prev) => ({ ...prev, plazo_pago_dias: validarCampoPlazoPago(valor) }));
+                      }}
+                      onBlur={() => setErrores((prev) => ({ ...prev, plazo_pago_dias: validarCampoPlazoPago(form.plazo_pago_dias) }))}
+                    />
+                    {errores.plazo_pago_dias && <span className="proveedores-field-error">{errores.plazo_pago_dias}</span>}
                   </div>
                 </div>
 

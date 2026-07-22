@@ -17,6 +17,8 @@ export default function GaleriaImagenes({
   soloLectura = false,
   onPendingChange,
   coloresPendientes = [],
+  coloresAPurgar = [],
+  onColoresPurgados,
 }) {
   const [imagenes,         setImagenes]         = useState([]);
   const [coloresVariantes, setColoresVariantes] = useState([]);
@@ -69,6 +71,29 @@ export default function GaleriaImagenes({
   };
 
   useEffect(() => { cargar(); }, [idReferencia]);
+
+  // ── Purga externa: se pidió eliminar todas las fotos de ciertos colores
+  // (p. ej. al eliminar la última talla de un color desde GestVariantes y el
+  // usuario elige "eliminar también las fotos"). Borra las imágenes de esos
+  // colores — vía API si están conectadas, filtro local si son pendientes. ──
+  useEffect(() => {
+    if (!coloresAPurgar || coloresAPurgar.length === 0) return;
+    const idsAPurgar = coloresAPurgar.map(String);
+    const purgar = async () => {
+      if (idReferencia) {
+        const aEliminar = imagenes.filter(i => idsAPurgar.includes(String(i.id_color)));
+        await Promise.all(aEliminar.map(img => api.delete(`/imagenes/${img.id_imagen}`).catch(() => {})));
+        await cargar();
+      } else {
+        const updated = imagenesLocales.filter(i => !idsAPurgar.includes(String(i.id_color)));
+        setImagenesLocales(updated);
+        onPendingChange?.(updated);
+      }
+      onColoresPurgados?.();
+    };
+    purgar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coloresAPurgar]);
 
   // ── Helpers de color ───────────────────────────────────────────────────────
   // Fuente de colores según el modo (conectado vs local)

@@ -84,8 +84,10 @@ export default function Colores() {
     } catch (err) { console.error(err); return false; }
   };
 
+  const MAX_LONGITUD_NOMBRE_COLOR = 40;
+
   const validarPasoColor = () => {
-    if (!form.codigo_hex) {
+    if (!form.codigo_hex || !/^#[0-9A-Fa-f]{6}$/.test(form.codigo_hex)) {
       setErrores(prev => ({ ...prev, codigo_hex: "Selecciona un color válido" }));
       return false;
     }
@@ -93,13 +95,17 @@ export default function Colores() {
     return true;
   };
 
+  const mensajeErrorNombreColor = (valor) => {
+    const texto = (valor ?? "").trim();
+    if (!texto) return "El nombre del color es obligatorio";
+    if (texto.length > MAX_LONGITUD_NOMBRE_COLOR) return `No puede tener más de ${MAX_LONGITUD_NOMBRE_COLOR} caracteres.`;
+    return "";
+  };
+
   const validarPasoDatos = () => {
-    if (!form.nombre.trim()) {
-      setErrores(prev => ({ ...prev, nombre: "El nombre del color es obligatorio" }));
-      return false;
-    }
-    setErrores(prev => ({ ...prev, nombre: "" }));
-    return true;
+    const msg = mensajeErrorNombreColor(form.nombre);
+    setErrores(prev => ({ ...prev, nombre: msg }));
+    return !msg;
   };
 
   const validarPasoCompleto = () => {
@@ -124,11 +130,13 @@ export default function Colores() {
     }
   };
 
+  // Sin try/catch propio: si el backend rechaza el cambio (p. ej. el color
+  // sigue asociado a productos), el error debe propagarse para que
+  // StatusToggle lo capture y muestre el mensaje real — si se atrapara aquí,
+  // StatusToggle no vería ningún rechazo y mostraría igual un toast de éxito.
   const toggleEstado = async (id) => {
-    try {
-      await api.patch(`/colores/${id}/estado`);
-      cargar(); cargarLista();
-    } catch { showToast("error", "Error al cambiar estado"); }
+    await api.patch(`/colores/${id}/estado`);
+    cargar(); cargarLista();
   };
 
   if (loading) return (
@@ -171,15 +179,16 @@ export default function Colores() {
         <label className="ms-form-label">Nombre del color <span className="ms-req">*</span></label>
         <input
           type="text"
+          maxLength={MAX_LONGITUD_NOMBRE_COLOR}
           className={`ms-form-input${errores.nombre ? " input-error" : ""}`}
           placeholder="Ej: Rojo Intenso"
           value={form.nombre}
           onChange={e => {
             const nombre = e.target.value;
             setForm({ ...form, nombre });
-            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: nombre.trim() ? "" : prev.nombre }));
+            if (errores.nombre) setErrores(prev => ({ ...prev, nombre: mensajeErrorNombreColor(nombre) }));
           }}
-          onBlur={() => setErrores(prev => ({ ...prev, nombre: form.nombre.trim() ? "" : "El nombre del color es obligatorio" }))}
+          onBlur={() => validarPasoDatos()}
         />
         {errores.nombre && <span className="ms-form-error">{errores.nombre}</span>}
       </div>

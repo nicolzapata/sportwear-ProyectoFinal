@@ -6,35 +6,35 @@
 .pedidos-actions-right { display: flex; align-items: center; gap: 0.75rem; }
 
 .pedidos-search-wrapper { position: relative; width: 320px; }
-.pedidos-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999; }
+.pedidos-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--dvna-muted); }
 .pedidos-search-input {
   width: 100%; padding: 0.8rem 1rem 0.8rem 2.5rem;
-  border: 1px solid #e0e0e0; border-radius: 40px; font-size: 0.9rem; background: white;
+  border: 1px solid var(--dvna-border); border-radius: 40px; font-size: 0.9rem; background: white;
 }
 .pedidos-search-clear {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-  background: none; border: none; color: #999; cursor: pointer;
+  background: none; border: none; color: var(--dvna-muted); cursor: pointer;
   width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; border-radius: 50%;
 }
-.pedidos-search-clear:hover { background: #f0f0f0; color: #333; }
+.pedidos-search-clear:hover { background: var(--dvna-pale); color: var(--dvna-charcoal); }
 
-.pedidos-results-count { font-size: 0.8rem; color: #666; margin-bottom: 1rem; padding-left: 0.5rem; }
+.pedidos-results-count { font-size: 0.8rem; color: var(--dvna-muted); margin-bottom: 1rem; padding-left: 0.5rem; }
 
 .pedidos-producto-cell { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .pedidos-badge { display: inline-flex; align-items: center; font-size: 0.8rem; font-weight: 400; }
-.pedidos-badge-active   { color: #2e7d32; }
+.pedidos-badge-active   { color: var(--success); }
 .pedidos-badge-pending  { color: #ff8c42; }
 .pedidos-badge-inactive { color: #757575; }
 .pedidos-badge-info     { color: #1976d2; }
 
-.pedidos-action-cell { display: flex; gap: 0.4rem; align-items: center; }
+.pedidos-action-cell { display: flex; gap: 6px; align-items: center; }
 .pedidos-action-btn {
-  width: 36px; height: 36px; border-radius: 10px; border: 1px solid #eaeaea; background: white;
-  cursor: pointer; display: flex; align-items: center; justify-content: center; color: #555;
-  transition: all 0.2s ease;
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--dvna-border, #e5e5e5); background: var(--dvna-white, #fff);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--dvna-muted);
+  transition: all 0.2s ease; flex-shrink: 0;
 }
-.pedidos-action-btn:hover { border-color: #1a1a1a; background: #fafafa; }
+.pedidos-action-btn:hover { border-color: var(--dvna-mid, #c8ab96); background: var(--dvna-pale, #f4f4f4); }
 
 /* ── Ancho fijo de la columna "Estado" (5ª columna) para que no empuje
      el resto de la tabla cuando el texto del estado cambia de largo ── */
@@ -48,16 +48,16 @@
 
 .pedidos-estado-trigger {
   display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;
-  border: 1px solid #e0e0e0; background: white; border-radius: 20px;
+  border: 1px solid var(--dvna-border); background: white; border-radius: 20px;
   padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 500; cursor: pointer;
   transition: all 0.15s ease;
   min-width: 150px;      /* ancho fijo: evita que la tabla "salte" al cambiar de estado */
   white-space: nowrap;
 }
 .pedidos-estado-trigger:disabled { cursor: default; opacity: 0.85; }
-.pedidos-estado-trigger:not(:disabled):hover { border-color: #1a1a1a; background: #fafafa; }
+.pedidos-estado-trigger:not(:disabled):hover { border-color: var(--dvna-charcoal); background: #fafafa; }
 
-.pedidos-estado-trigger.pedidos-badge-active   { border-color: #bfe0c4; color: #2e7d32; background: #f0f9f1; }
+.pedidos-estado-trigger.pedidos-badge-active   { border-color: #bfe0c4; color: var(--success); background: #f0f9f1; }
 .pedidos-estado-trigger.pedidos-badge-pending  { border-color: #ffd7b5; color: #b96422; background: #fff6ee; }
 .pedidos-estado-trigger.pedidos-badge-info     { border-color: #bcd8f2; color: #1976d2; background: #eff6fd; }
 .pedidos-estado-trigger.pedidos-badge-inactive { border-color: #ddd; color: #757575; background: #f7f7f7; }
@@ -66,7 +66,7 @@
    así que aquí solo van estilos visuales, no de posición. */
 .pedidos-estado-panel {
   z-index: 999;
-  background: white; border: 1px solid #eaeaea; border-radius: 14px;
+  background: white; border: 1px solid var(--dvna-border); border-radius: 14px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.14);
   padding: 0.4rem;
   display: flex; flex-direction: column; gap: 2px;
@@ -80,25 +80,25 @@
 .pedidos-estado-item {
   display: flex; align-items: center; gap: 10px;
   border: none; background: none; text-align: left;
-  padding: 0.55rem 0.6rem; border-radius: 8px; font-size: 0.82rem; color: #999;
+  padding: 0.55rem 0.6rem; border-radius: 8px; font-size: 0.82rem; color: var(--dvna-muted);
   cursor: not-allowed; width: 100%;
 }
-.pedidos-estado-item.done    { color: #2e7d32; }
-.pedidos-estado-item.current { color: #1a1a1a; font-weight: 600; background: #f5f5f5; }
-.pedidos-estado-item.clickable { color: #1a1a1a; cursor: pointer; }
-.pedidos-estado-item.clickable:hover { background: #f0f0f0; }
+.pedidos-estado-item.done    { color: var(--success); }
+.pedidos-estado-item.current { color: var(--dvna-charcoal); font-weight: 600; background: var(--dvna-pale); }
+.pedidos-estado-item.clickable { color: var(--dvna-charcoal); cursor: pointer; }
+.pedidos-estado-item.clickable:hover { background: var(--dvna-pale); }
 
 .pedidos-estado-dot {
   width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   border: 1.5px solid #ddd; color: white;
 }
-.pedidos-estado-item.done .pedidos-estado-dot    { background: #2e7d32; border-color: #2e7d32; }
-.pedidos-estado-item.current .pedidos-estado-dot { background: #1a1a1a; border-color: #1a1a1a; }
+.pedidos-estado-item.done .pedidos-estado-dot    { background: var(--success); border-color: var(--success); }
+.pedidos-estado-item.current .pedidos-estado-dot { background: var(--dvna-charcoal); border-color: var(--dvna-charcoal); }
 
 .pedidos-estado-divider { height: 1px; background: #eee; margin: 4px 2px; }
 
-.pedidos-estado-item-cancelar { color: #b83232; }
+.pedidos-estado-item-cancelar { color: var(--danger); }
 .pedidos-estado-item-cancelar.clickable:hover { background: #fbeaea; }
 .pedidos-estado-item-cancelar .pedidos-estado-dot { border-color: #e0b3b3; }
 
@@ -114,21 +114,21 @@
   background: white; border-radius: 24px; width: 90%; max-width: 600px;
   max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
   box-shadow: 0 25px 50px rgba(0,0,0,0.2);
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--dvna-pale);
 }
 .pedidos-modal-factura { max-width: 650px; }
 .pedidos-modal-header {
-  padding: 1.5rem; border-bottom: 1px solid #f0f0f0; display: flex;
+  padding: 1.5rem; border-bottom: 1px solid var(--dvna-pale); display: flex;
   justify-content: space-between; align-items: center; background: #fafafa;
   flex-shrink: 0;
 }
-.pedidos-modal-title { font-size: 1.2rem; font-weight: 500; color: #1a1a1a; margin: 0; }
-.pedidos-modal-subtitulo { font-size: 0.78rem; color: #888; margin: 2px 0 0; font-weight: 300; }
+.pedidos-modal-title { font-size: 1.2rem; font-weight: 500; color: var(--dvna-charcoal); margin: 0; }
+.pedidos-modal-subtitulo { font-size: 0.78rem; color: var(--dvna-muted); margin: 2px 0 0; font-weight: 300; }
 .pedidos-modal-close {
-  background: none; border: 1px solid #e0e0e0; border-radius: 40px;
-  width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #666;
+  background: none; border: 1px solid var(--dvna-border); border-radius: 40px;
+  width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--dvna-muted);
 }
-.pedidos-modal-close:hover { background: #f0f0f0; border-color: #999; }
+.pedidos-modal-close:hover { background: var(--dvna-pale); border-color: var(--dvna-muted); }
 .pedidos-modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; min-height: 0; }
 .pedidos-factura-body {}
 .pedidos-factura-seccion { padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px dashed #e5e5e5; }
@@ -138,23 +138,23 @@
   text-transform: uppercase; letter-spacing: 0.06em;
 }
 .pedidos-detalle-item-linea {
-  display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.85rem;
+  display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--dvna-pale); font-size: 0.85rem;
 }
 .pedidos-detalle-item-linea:last-child { border-bottom: none; }
 .pedidos-modal-footer {
-  padding: 1.5rem; border-top: 1px solid #f0f0f0; display: flex; justify-content: flex-end;
+  padding: 1.5rem; border-top: 1px solid var(--dvna-pale); display: flex; justify-content: flex-end;
   background: #fafafa; flex-shrink: 0;
 }
 .pedidos-btn-secondary {
-  background: white; color: #333; border: 1px solid #e0e0e0; padding: 0.7rem 1.6rem;
+  background: white; color: var(--dvna-charcoal); border: 1px solid var(--dvna-border); padding: 0.7rem 1.6rem;
   border-radius: 40px; font-size: 0.9rem; font-weight: 500; cursor: pointer;
 }
-.pedidos-btn-secondary:hover { border-color: #1a1a1a; background: #fafafa; }
+.pedidos-btn-secondary:hover { border-color: var(--dvna-charcoal); background: #fafafa; }
 
 /* ── Skeleton de carga (mientras cargan los pedidos) ── */
 .pedidos-skeleton-cell {
   height: 14px; border-radius: 6px; width: 80%;
-  background: linear-gradient(90deg, #f0f0f0 25%, #f7f7f7 37%, #f0f0f0 63%);
+  background: linear-gradient(90deg, var(--dvna-pale) 25%, #f7f7f7 37%, var(--dvna-pale) 63%);
   background-size: 400% 100%;
   animation: pedidos-shimmer 1.4s ease infinite;
 }
@@ -166,13 +166,13 @@
 /* ── Banner de error ── */
 .pedidos-error-banner {
   display: flex; align-items: center; gap: 0.5rem;
-  background: #fdecea; border: 1px solid #f0b8b3; color: #b83232;
+  background: #fdecea; border: 1px solid #f0b8b3; color: var(--danger);
   padding: 1rem 1.2rem; border-radius: 12px; font-size: 0.85rem; margin-top: 1rem;
 }
 
 /* ── Estado vacío pulido (icono + mensaje, en vez de texto plano) ── */
 .pedidos-empty-state {
-  text-align: center; padding: 3rem 1rem; color: #999;
+  text-align: center; padding: 3rem 1rem; color: var(--dvna-muted);
   display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
 }
 .pedidos-empty-state svg { width: 30px; height: 30px; opacity: 0.5; }

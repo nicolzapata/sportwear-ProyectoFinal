@@ -20,20 +20,25 @@
   box-shadow: 4px 0 24px rgba(44, 34, 24, 0.25);
 }
 
-/* ── Logo ── */
+/* ── Logo ──
+   Centrado siempre: colapsado, el nombre no ocupa ancho (max-width/margin en
+   0), así que el único contenido del flex row es la imagen y queda
+   perfectamente en la mitad de la barra angosta. Al expandir (hover), el
+   nombre gana ancho y margen progresivamente y el conjunto imagen+nombre
+   queda centrado en la barra ancha. */
 .sidebar-logo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 6px;
+  justify-content: center;
+  padding: 8px 6px;
   border-bottom: 1px solid rgba(255,255,255,0.07);
-  min-height: 88px;
+  min-height: 60px;
   overflow: hidden;
 }
 
 .logo-img {
-  width: 66px;
-  height: 66px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
   flex-shrink: 0;
   filter: brightness(0) invert(1);
@@ -48,14 +53,19 @@
   color: #fff;
   white-space: nowrap;
   opacity: 0;
+  max-width: 0;
+  margin-left: 0;
+  overflow: hidden;
   transform: translateX(-8px);
-  transition: opacity 0.2s 0.06s, transform 0.2s 0.06s;
+  transition: opacity 0.2s 0.06s, transform 0.2s 0.06s, max-width 0.25s, margin-left 0.25s;
   pointer-events: none;
 }
 .logo-name span { color: var(--taupe); }
 
 .sidebar:hover .logo-name {
   opacity: 1;
+  max-width: 160px;
+  margin-left: 12px;
   transform: translateX(0);
 }
 

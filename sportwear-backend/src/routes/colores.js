@@ -1,7 +1,7 @@
 // src/routes/colores.js
 const router = require('express').Router();
 const {
-  getColores, crearColor, actualizarColor, toggleEstado
+  getColores, crearColor, actualizarColor, toggleEstado, eliminarColor
 } = require('../controllers/colores.controller');
 const { verificarToken, tieneModulo } = require('../middlewares/auth.middleware');
 
@@ -9,6 +9,6 @@ router.get('/', getColores); // público
 router.post('/',            verificarToken, tieneModulo('Colores', 'crear'),  crearColor);
 router.put('/:id',          verificarToken, tieneModulo('Colores', 'editar'), actualizarColor);
 router.patch('/:id/estado', verificarToken, tieneModulo('Colores', 'estado'), toggleEstado);
-// DELETE se agrega cuando el controller tenga eliminarColor
+router.delete('/:id',       verificarToken, tieneModulo('Colores', 'eliminar'), eliminarColor);
 
 module.exports = router;

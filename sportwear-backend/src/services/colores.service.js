@@ -59,15 +59,48 @@ const actualizarColor = async (id, { nombre, codigo_hex, estado }) => {
   return result.rows[0];
 };
 
+// Cuenta en cuántos productos distintos se usa el color (vía sus variantes),
+// para bloquear desactivar/eliminar con un mensaje claro en vez de un error genérico.
+const contarProductosAsociados = async (id) => {
+  const result = await pool.query(
+    `SELECT COUNT(DISTINCT id_producto) AS total FROM "ProductoVariantes" WHERE id_color = $1`,
+    [id]
+  );
+  return Number(result.rows[0]?.total || 0);
+};
+
 const toggleEstado = async (id) => {
+  const actual = await pool.query(`SELECT estado FROM "Colores" WHERE id_color = $1`, [id]);
+  if (!actual.rows[0]) throw { status: 404, message: 'No encontrado' };
+
+  // Solo se restringe al desactivar (activar un color siempre es seguro).
+  if (actual.rows[0].estado === 'Activo') {
+    const asociados = await contarProductosAsociados(id);
+    if (asociados > 0) {
+      throw { status: 409, message: `No se puede desactivar este color: está asociado a ${asociados} producto${asociados > 1 ? 's' : ''}.` };
+    }
+  }
+
   const result = await pool.query(
     `UPDATE "Colores"
      SET estado = CASE WHEN estado = 'Activo' THEN 'Inactivo' ELSE 'Activo' END
      WHERE id_color = $1 RETURNING id_color, estado`,
     [id]
   );
+  return result.rows[0];
+};
+
+const eliminarColor = async (id) => {
+  const asociados = await contarProductosAsociados(id);
+  if (asociados > 0) {
+    throw { status: 409, message: `No se puede eliminar este color: está asociado a ${asociados} producto${asociados > 1 ? 's' : ''}.` };
+  }
+  const result = await pool.query(
+    `DELETE FROM "Colores" WHERE id_color = $1 RETURNING id_color`,
+    [id]
+  );
   if (!result.rows[0]) throw { status: 404, message: 'No encontrado' };
   return result.rows[0];
 };
 
-module.exports = { getColores, crearColor, actualizarColor, toggleEstado };
+module.exports = { getColores, crearColor, actualizarColor, toggleEstado, eliminarColor };

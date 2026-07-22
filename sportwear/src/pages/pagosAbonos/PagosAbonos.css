@@ -1,15 +1,9 @@
 /* src/pages/pagos/PagosAbonos.css */
 
-.pagosabonos-container,
-.pagosabonos-container * {
-  --font-display: 'DM Sans', system-ui, sans-serif;
-}
 .pagosabonos-container h1,
 .pagosabonos-container h2,
 .pagosabonos-container h3,
 .pagosabonos-container h4 {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  text-transform: none;
   font-weight: 400;
 }
 
@@ -17,7 +11,7 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 2rem;
-  font-family: 'DM Sans';
+  font-family: var(--font-body);
 }
 
 /* Header */
@@ -35,7 +29,7 @@
 .pagosabonos-title {
   font-size: 2rem;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--dvna-charcoal);
   margin: 0 0 0.25rem 0;
   letter-spacing: -0.02em;
   text-transform: none;
@@ -43,7 +37,7 @@
 
 .pagosabonos-subtitle {
   font-size: 0.9rem;
-  color: #666;
+  color: var(--dvna-muted);
   margin: 0;
   font-weight: 300;
   text-transform: none;
@@ -51,11 +45,11 @@
 
 .pagosabonos-date {
   font-size: 0.85rem;
-  color: #666;
-  background: #f5f5f5;
+  color: var(--dvna-muted);
+  background: var(--dvna-pale);
   padding: 0.5rem 1.2rem;
   border-radius: 40px;
-  border: 1px solid #eaeaea;
+  border: 1px solid var(--dvna-border);
   text-transform: capitalize;
 }
 
@@ -74,7 +68,7 @@
   display: flex;
   align-items: center;
   gap: 1.2rem;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--dvna-pale);
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
@@ -94,7 +88,7 @@
   align-items: center;
   justify-content: center;
   font-size: 1.8rem;
-  color: #333;
+  color: var(--dvna-charcoal);
 }
 
 .pagosabonos-stat-content {
@@ -103,7 +97,7 @@
 
 .pagosabonos-stat-label {
   font-size: 0.7rem;
-  color: #888;
+  color: var(--dvna-muted);
   margin-bottom: 0.2rem;
   display: block;
   letter-spacing: 0.3px;
@@ -112,7 +106,7 @@
 .pagosabonos-stat-value {
   font-size: 1.8rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--dvna-charcoal);
   line-height: 1.2;
 }
 
@@ -132,6 +126,23 @@
 .pagosabonos-actions-left { display: flex; align-items: center; gap: 1rem; }
 .pagosabonos-actions-right { display: flex; align-items: center; gap: 0.75rem; }
 
+/* Action buttons — mismo diseño en todas las tablas de la página. */
+.pagosabonos-action-cell { display: flex; gap: 6px; align-items: center; }
+.pagosabonos-action-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--dvna-border, #e5e5e5);
+  background: var(--dvna-white, #fff);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s ease;
+  color: var(--dvna-muted);
+  flex-shrink: 0;
+}
+.pagosabonos-action-btn:hover { border-color: var(--dvna-mid, #c8ab96); background: var(--dvna-pale, #f4f4f4); }
+.pagosabonos-register-btn:hover { border-color: rgba(58,102,72,0.3); background: rgba(58,102,72,0.06); }
+.pagosabonos-cancel-btn:hover { border-color: rgba(184,50,50,0.3); background: rgba(184,50,50,0.06); }
+
 .print-button-container { display: none; }
 
 .pagosabonos-search-wrapper {
@@ -145,13 +156,13 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 1rem;
-  color: #999;
+  color: var(--dvna-muted);
 }
 
 .pagosabonos-search-input {
   width: 100%;
   padding: 0.8rem 1rem 0.8rem 2.5rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--dvna-border);
   border-radius: 40px;
   font-size: 0.9rem;
   transition: all 0.2s ease;
@@ -160,7 +171,7 @@
 
 .pagosabonos-search-input:focus {
   outline: none;
-  border-color: #1a1a1a;
+  border-color: var(--dvna-charcoal);
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
 }
 
@@ -171,7 +182,7 @@
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #999;
+  color: var(--dvna-muted);
   cursor: pointer;
   font-size: 0.8rem;
   padding: 4px;
@@ -184,8 +195,8 @@
 }
 
 .pagosabonos-search-clear:hover {
-  background: #f0f0f0;
-  color: #333;
+  background: var(--dvna-pale);
+  color: var(--dvna-charcoal);
 }
 
 /* Buttons */
@@ -213,8 +224,8 @@
 
 .pagosabonos-btn-secondary {
   background: white;
-  color: #333;
-  border: 1px solid #e0e0e0;
+  color: var(--dvna-charcoal);
+  border: 1px solid var(--dvna-border);
   padding: 0.8rem 2rem;
   border-radius: 40px;
   font-size: 0.9rem;
@@ -224,14 +235,14 @@
 }
 
 .pagosabonos-btn-secondary:hover {
-  border-color: #1a1a1a;
+  border-color: var(--dvna-charcoal);
   background: #fafafa;
 }
 
 /* Results */
 .pagosabonos-results-count {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--dvna-muted);
   margin-bottom: 1rem;
   padding-left: 0.5rem;
 }
@@ -262,7 +273,7 @@
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--dvna-pale);
 }
 
 .pagosabonos-modal-sm {
@@ -290,7 +301,6 @@
 }
 
 .pagosabonos-factura-titulo {
-  font-family: 'DM Sans';
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--brown, #b49780);
@@ -301,7 +311,7 @@
 
 .pagosabonos-modal-subtitulo {
   font-size: 0.78rem;
-  color: #888;
+  color: var(--dvna-muted);
   margin: 2px 0 0;
   font-weight: 300;
 }
@@ -312,7 +322,7 @@
 
 .pagosabonos-modal-header {
   padding: 1.5rem;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--dvna-pale);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -323,15 +333,14 @@
 .pagosabonos-modal-title {
   font-size: 1.2rem;
   font-weight: 500;
-  font-family: 'DM Sans';
-  color: #1a1a1a;
+  color: var(--dvna-charcoal);
   margin: 0;
   text-transform: none;
 }
 
 .pagosabonos-modal-close {
   background: none;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--dvna-border);
   border-radius: 40px;
   width: 36px;
   height: 36px;
@@ -341,12 +350,12 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  color: #666;
+  color: var(--dvna-muted);
 }
 
 .pagosabonos-modal-close:hover {
-  background: #f0f0f0;
-  border-color: #999;
+  background: var(--dvna-pale);
+  border-color: var(--dvna-muted);
 }
 
 .pagosabonos-modal-body {
@@ -358,7 +367,7 @@
 
 .pagosabonos-modal-footer {
   padding: 1.5rem;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--dvna-pale);
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
@@ -381,14 +390,14 @@
   display: block;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #555;
+  color: var(--dvna-muted);
   margin-bottom: 0.3rem;
   text-transform: none;
   letter-spacing: normal;
 }
 
 .pagosabonos-form-input::placeholder {
-  color: #999;
+  color: var(--dvna-muted);
   opacity: 1;
 }
 
@@ -396,24 +405,24 @@
 .pagosabonos-form-select {
   width: 100%;
   padding: 0.8rem 1rem;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--dvna-border);
   border-radius: 12px;
   font-size: 0.9rem;
-  font-family: "DM Sans";
+  font-family: var(--font-body);
   transition: all 0.2s ease;
-  background: white;
+  background: var(--dvna-white);
 }
 
 .pagosabonos-form-input:focus,
 .pagosabonos-form-select:focus {
   outline: none;
-  border-color: #1a1a1a;
+  border-color: var(--dvna-charcoal);
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
 }
 
 .pagosabonos-form-input.input-error,
 .pagosabonos-form-select.input-error {
-  border-color: #b83232;
+  border-color: var(--danger);
   box-shadow: 0 0 0 3px rgba(184, 50, 50, 0.08);
 }
 
@@ -421,19 +430,19 @@
   display: block;
   margin-top: 6px;
   font-size: 0.75rem;
-  color: #b83232;
+  color: var(--danger);
   text-transform: none;
 }
 
 .pagosabonos-detail-value {
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--dvna-charcoal);
   font-size: 0.95rem;
 }
 
 .pagosabonos-detail-currency {
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--dvna-charcoal);
 }
 
 /* Loading */
@@ -449,14 +458,14 @@
 .pagosabonos-loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #f0f0f0;
-  border-top-color: #1a1a1a;
+  border: 3px solid var(--dvna-pale);
+  border-top-color: var(--dvna-charcoal);
   border-radius: 50%;
   animation: pagosabonos-spin 1s linear infinite;
 }
 
 .pagosabonos-loading-text {
-  color: #666;
+  color: var(--dvna-muted);
   font-size: 0.9rem;
 }
 

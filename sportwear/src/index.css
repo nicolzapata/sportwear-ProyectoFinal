@@ -36,7 +36,7 @@
   --warning:     #7a5500;
 
   /* Tipografía */
-  --font-display: 'DM Sans'
+  --font-display: 'DM Sans', system-ui, sans-serif;
   --font-body:    'Jost', sans-serif;
 
   /* Radios y sombras */
@@ -148,13 +148,36 @@ svg {
   stroke: currentColor;
 }
 
-[class*="-edit-btn"]:hover,
-[class*="-view-btn"]:hover   { color: #b49780 !important; }
-[class*="-deactivate-btn"]:hover { color: #b83232 !important; }
-[class*="-activate-btn"]:hover   { color: #3a6648 !important; }
-[class*="-cancel-btn"]:hover     { color: #b83232 !important; }
-[class*="-receive-btn"]:hover    { color: #3a6648 !important; }
-[class*="-pay-btn"]:hover        { color: #3a6648 !important; }
+/* En reposo todas las acciones se ven igual (gris, del rule de arriba).
+   El color propio de cada acción (y el recuadro a juego) solo aparece al
+   pasar el mouse: ver=azul, editar=café de marca,
+   eliminar/desactivar/cancelar=rojo, activar/pagar/recibir=verde. */
+[class*="-view-btn"]:hover {
+  color: #1465b8 !important;
+  border-color: rgba(25,118,210,0.6) !important;
+  background: rgba(25,118,210,0.14) !important;
+}
+[class*="-edit-btn"]:hover {
+  color: #9a7d66 !important;
+  border-color: rgba(180,151,128,0.65) !important;
+  background: rgba(180,151,128,0.16) !important;
+}
+[class*="-deactivate-btn"]:hover,
+[class*="-delete-btn"]:hover,
+[class*="-trash-btn"]:hover,
+[class*="-cancel-btn"]:hover {
+  color: #96292a !important;
+  border-color: rgba(184,50,50,0.6) !important;
+  background: rgba(184,50,50,0.14) !important;
+}
+[class*="-activate-btn"]:hover,
+[class*="-receive-btn"]:hover,
+[class*="-pay-btn"]:hover,
+[class*="-register-btn"]:hover {
+  color: #2d4f37 !important;
+  border-color: rgba(58,102,72,0.6) !important;
+  background: rgba(58,102,72,0.14) !important;
+}
 
 .action-btn svg {
   width: 18px;

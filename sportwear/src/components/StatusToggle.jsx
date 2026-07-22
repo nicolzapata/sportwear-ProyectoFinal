@@ -4,14 +4,15 @@ import ConfirmModal from "./ConfirmModal";
 import { useToast } from "../context/ToastContext";
 import "./StatusToggle.css";
 
-export default function StatusToggle({ 
-  id, 
-  estado, 
-  onToggle, 
+export default function StatusToggle({
+  id,
+  estado,
+  onToggle,
   disabled = false,
   disabledReason = null,
   showConfirmation = true,
-  labels = { activo: "Activo", inactivo: "Inactivo" }
+  labels = { activo: "Activo", inactivo: "Inactivo" },
+  size = "md"
 }) {
   const [loading, setLoading] = useState(false);
   const [pendingEstado, setPendingEstado] = useState(null);
@@ -56,7 +57,7 @@ export default function StatusToggle({
     <>
       <button
         type="button"
-        className={`status-toggle-btn ${estado === "Activo" ? "activo" : "inactivo"} ${loading ? "loading" : ""} ${disabled ? "disabled" : ""}`}
+        className={`status-toggle-btn ${size === "sm" ? "status-toggle-btn--sm" : ""} ${estado === "Activo" ? "activo" : "inactivo"} ${loading ? "loading" : ""} ${disabled ? "disabled" : ""}`}
         onClick={handleClick}
         disabled={disabled || loading}
         role="switch"

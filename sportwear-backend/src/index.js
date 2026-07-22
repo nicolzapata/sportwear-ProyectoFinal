@@ -17,8 +17,32 @@ app.use(express.urlencoded({ extended: true }));
 // ── Archivos estáticos ────────────────────────────────────────
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-app.get("/", (req, res) => {
-  res.send("API funcionando correctamente 🚀");
+app.get("/api", (req, res) => {
+  res.json({
+    success: true,
+    message: "Bienvenido a la API de Sportwear 🚀",
+    endpoints: [
+      "/api/auth",
+      "/api/roles",
+      "/api/usuarios",
+      "/api/barrios",
+      "/api/clientes",
+      "/api/colores",
+      "/api/categorias",
+      "/api/productos",
+      "/api/proveedores",
+      "/api/compras",
+      "/api/detalle-compra",
+      "/api/ventas",
+      "/api/detalle-venta",
+      "/api/pedidos",
+      "/api/pagos",
+      "/api/metodos-pago",
+      "/api/dashboard",
+      "/api/imagenes",
+      "/api/variantes"
+    ]
+  });
 });
 // ── Rutas ─────────────────────────────────────────────────────
 app.use('/api/auth',           require('./routes/auth'));
