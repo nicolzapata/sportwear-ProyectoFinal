@@ -19,8 +19,10 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get("/api", (req, res) => {
   res.json({
-    success: true,
-    message: "Bienvenido a la API de Sportwear 🚀"
+    "succes": true,
+    "message": "SportWear API",
+    "version": "1.0.0",
+      "status": "OK"
   });
 });
 // ── Rutas ─────────────────────────────────────────────────────
@@ -48,7 +50,8 @@ app.use('/api/variantes',      require('./routes/variantes'));
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: `La ruta ${req.originalUrl} no existe.`
+    message: "El recurso solicitado no fue encontrado.",
+    status: 404
   });
 });
 

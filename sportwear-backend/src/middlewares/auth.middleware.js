@@ -6,7 +6,11 @@ const verificarToken = (req, res, next) => {
   const token      = authHeader && authHeader.split(' ')[1]; // Bearer <token>
 
   if (!token) {
-    return res.status(401).json({ message: 'Acceso denegado. Token requerido.' });
+    return res.status(401).json({ 
+      "success": false,
+      "message": "Se requiere autenticación para acceder a este recurso.",
+      "status": 401
+    });
   }
 
   try {
