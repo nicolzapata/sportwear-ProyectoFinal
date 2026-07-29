@@ -72,12 +72,21 @@ const getCompraById = async (id) => {
 };
 
 const crearCompra = async (datos) => {
-  const { id_proveedor, numero_orden, descuento, impuesto, estado, fecha, observaciones, items } = datos;
+  const { id_proveedor, numero_orden, descuento, estado, fecha, observaciones, items } = datos;
   if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
   if (!id_proveedor) throw { status: 400, message: 'El proveedor es requerido' };
 
-  const subtotal = items.reduce((a, i) => a + i.cantidad * i.precio_unitario - (i.descuento_linea || 0), 0);
-  const total    = subtotal - (descuento || 0) + (impuesto || 0);
+  // ── NUEVO: no se permiten compras con fecha futura ──
+  const fechaCompra = fecha ? new Date(fecha) : new Date();
+  const hoy = new Date(); hoy.setHours(23, 59, 59, 999); // permite cualquier hora del día de hoy
+  if (fechaCompra > hoy) throw { status: 400, message: 'La fecha de la compra no puede ser futura.' };
+
+  // ── CORREGIDO: "impuesto" ya no se pide en el formulario — siempre 0 para
+  // compras nuevas (se deja la columna en la BD por si algo más la referencia). ──
+  const impuesto = 0;
+
+  const subtotal = items.reduce((a, i) => a + i.cantidad * i.precio_unitario, 0);
+  const total    = subtotal - (descuento || 0) + impuesto;
 
   const client = await pool.connect();
   try {
@@ -86,16 +95,18 @@ const crearCompra = async (datos) => {
       INSERT INTO "Compras"
         (id_proveedor, numero_orden, subtotal, descuento, impuesto, total, estado, fecha, observaciones)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *
-    `, [id_proveedor, numero_orden || null, subtotal, descuento || 0, impuesto || 0, total,
+    `, [id_proveedor, numero_orden || null, subtotal, descuento || 0, impuesto, total,
         estado || 'Pendiente', fecha || new Date(), observaciones || null]);
 
     const id_compra = compra.rows[0].id_compra;
     for (const item of items) {
-      const subtotalLinea = item.cantidad * item.precio_unitario - (item.descuento_linea || 0);
+      // ── NUEVO: "descuento_linea" ya no se usa como descuento — esa celda ahora
+      // es "Valor de venta" (precio_venta), el precio al que se venderá la unidad. ──
+      const subtotalLinea = item.cantidad * item.precio_unitario;
       await client.query(`
-        INSERT INTO "DetalleCompra" (id_compra, id_producto, id_variante, cantidad, precio_unitario, descuento_linea, subtotal)
+        INSERT INTO "DetalleCompra" (id_compra, id_producto, id_variante, cantidad, precio_unitario, precio_venta, subtotal)
         VALUES ($1,$2,$3,$4,$5,$6,$7)
-      `, [id_compra, item.id_producto, item.id_variante || null, item.cantidad, item.precio_unitario, item.descuento_linea || 0, subtotalLinea]);
+      `, [id_compra, item.id_producto, item.id_variante || null, item.cantidad, item.precio_unitario, item.precio_venta || null, subtotalLinea]);
     }
     await client.query('COMMIT');
     return { ...compra.rows[0], items };
@@ -107,12 +118,19 @@ const crearCompra = async (datos) => {
 
 // ── NUEVO: edición completa de una compra (solo si NO está Recibida ni Anulada) ──
 const actualizarCompra = async (id, datos) => {
-  const { id_proveedor, numero_orden, descuento, impuesto, fecha, observaciones, items } = datos;
+  const { id_proveedor, numero_orden, descuento, fecha, observaciones, items } = datos;
   if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
   if (!id_proveedor) throw { status: 400, message: 'El proveedor es requerido' };
 
-  const subtotal = items.reduce((a, i) => a + i.cantidad * i.precio_unitario - (i.descuento_linea || 0), 0);
-  const total    = subtotal - (descuento || 0) + (impuesto || 0);
+  if (fecha) {
+    const fechaCompra = new Date(fecha);
+    const hoy = new Date(); hoy.setHours(23, 59, 59, 999);
+    if (fechaCompra > hoy) throw { status: 400, message: 'La fecha de la compra no puede ser futura.' };
+  }
+
+  const impuesto = 0;
+  const subtotal = items.reduce((a, i) => a + i.cantidad * i.precio_unitario, 0);
+  const total    = subtotal - (descuento || 0) + impuesto;
 
   const client = await pool.connect();
   try {
@@ -133,18 +151,18 @@ const actualizarCompra = async (id, datos) => {
     await client.query(`DELETE FROM "DetalleCompra" WHERE id_compra=$1`, [id]);
 
     for (const item of items) {
-      const subtotalLinea = item.cantidad * item.precio_unitario - (item.descuento_linea || 0);
+      const subtotalLinea = item.cantidad * item.precio_unitario;
       await client.query(`
-        INSERT INTO "DetalleCompra" (id_compra, id_producto, id_variante, cantidad, precio_unitario, descuento_linea, subtotal)
+        INSERT INTO "DetalleCompra" (id_compra, id_producto, id_variante, cantidad, precio_unitario, precio_venta, subtotal)
         VALUES ($1,$2,$3,$4,$5,$6,$7)
-      `, [id, item.id_producto, item.id_variante || null, item.cantidad, item.precio_unitario, item.descuento_linea || 0, subtotalLinea]);
+      `, [id, item.id_producto, item.id_variante || null, item.cantidad, item.precio_unitario, item.precio_venta || null, subtotalLinea]);
     }
 
     const result = await client.query(`
       UPDATE "Compras"
       SET id_proveedor=$1, numero_orden=$2, subtotal=$3, descuento=$4, impuesto=$5, total=$6, fecha=$7, observaciones=$8
       WHERE id_compra=$9 RETURNING *
-    `, [id_proveedor, numero_orden || null, subtotal, descuento || 0, impuesto || 0, total,
+    `, [id_proveedor, numero_orden || null, subtotal, descuento || 0, impuesto, total,
         fecha || actual.rows[0].fecha, observaciones || null, id]);
 
     await client.query('COMMIT');
@@ -178,17 +196,27 @@ const cambiarEstado = async (id, estado) => {
     );
 
     // Al recibir la compra (y solo la primera vez), sumar las existencias al inventario
+    // y actualizar el precio de venta del producto con el registrado en la compra.
     if (estado === 'Recibido' && estadoAnterior !== 'Recibido') {
       const detalles = await client.query(
-        `SELECT id_variante, cantidad FROM "DetalleCompra" WHERE id_compra=$1`,
+        `SELECT id_producto, id_variante, cantidad, precio_venta FROM "DetalleCompra" WHERE id_compra=$1`,
         [id]
       );
       for (const item of detalles.rows) {
-        if (!item.id_variante) continue;
-        await client.query(
-          `UPDATE "ProductoVariantes" SET stock = stock + $1 WHERE id_variante = $2`,
-          [item.cantidad, item.id_variante]
-        );
+        if (item.id_variante) {
+          await client.query(
+            `UPDATE "ProductoVariantes" SET stock = stock + $1 WHERE id_variante = $2`,
+            [item.cantidad, item.id_variante]
+          );
+        }
+        // ── NUEVO: el precio de venta registrado en la compra pasa a ser el
+        // precio oficial del producto en el catálogo. ──
+        if (item.precio_venta !== null && item.precio_venta !== undefined) {
+          await client.query(
+            `UPDATE "Productos" SET precio = $1 WHERE id_producto = $2`,
+            [item.precio_venta, item.id_producto]
+          );
+        }
       }
     }
 

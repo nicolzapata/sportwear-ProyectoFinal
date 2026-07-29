@@ -99,9 +99,36 @@ const notificarAbono = async (db, id_venta, monto) => {
   }
 };
 
-// ── NUEVO: dentro de la transacción, solo evalúa y marca "Pagado" si corresponde —
-// NO envía nada todavía (el envío se hace después del COMMIT, en cada punto de llamada,
-// para no leer datos sin confirmar ni disparar correos si la transacción termina en ROLLBACK). ──
+// ── NUEVO (Inventario): si el stock de esta venta todavía no se había
+// descontado (pedidos pagados por transferencia/tarjeta, que no descuentan
+// stock al crearse sino hasta que se confirma el pago), se descuenta ahora,
+// línea por línea, dentro de la misma transacción, y se marca para no
+// volver a descontarlo. Los pagos contraentrega ya llegan con
+// stock_descontado=true desde que se creó el pedido, así que aquí no hacen nada. ──
+const descontarStockSiHaceFalta = async (client, id_venta) => {
+  const ventaRes = await client.query(
+    `SELECT stock_descontado FROM "Ventas" WHERE id_venta=$1`,
+    [id_venta]
+  );
+  if (!ventaRes.rows.length || ventaRes.rows[0].stock_descontado) return;
+
+  const detalle = await client.query(
+    `SELECT id_variante, cantidad FROM "DetalleVenta" WHERE id_venta=$1 AND id_variante IS NOT NULL`,
+    [id_venta]
+  );
+  for (const item of detalle.rows) {
+    await client.query(
+      `UPDATE "ProductoVariantes" SET stock=stock-$1 WHERE id_variante=$2`,
+      [item.cantidad, item.id_variante]
+    );
+  }
+  await client.query(`UPDATE "Ventas" SET stock_descontado=true WHERE id_venta=$1`, [id_venta]);
+};
+
+// ── NUEVO: dentro de la transacción, solo evalúa y marca "Pagado" si corresponde,
+// y descuenta el stock diferido si hacía falta — NO envía nada todavía (el envío
+// se hace después del COMMIT, en cada punto de llamada, para no leer datos sin
+// confirmar ni disparar correos si la transacción termina en ROLLBACK). ──
 const evaluarYMarcarPagada = async (client, id_venta) => {
   const { total, totalPagado } = await getSaldoPendiente(client, id_venta);
   if (totalPagado >= total) {
@@ -109,6 +136,7 @@ const evaluarYMarcarPagada = async (client, id_venta) => {
       `UPDATE "Ventas" SET estado='Pagado' WHERE id_venta=$1 AND estado != 'Anulado'`,
       [id_venta]
     );
+    await descontarStockSiHaceFalta(client, id_venta);
     return 'completo';
   }
   return 'parcial';

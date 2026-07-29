@@ -266,7 +266,10 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
           </Link>
         )}
 
-        {!esAdmin && usuario && (
+        {/* ── CORREGIDO: antes exigía "usuario" (sesión) además de "!esAdmin"
+            para mostrar el ícono del carrito — por eso desaparecía sin login.
+            El carrito ahora se ve sin sesión; solo se oculta para admins. ── */}
+        {!esAdmin && (
           <>
             <div className="navbar-divider" />
 

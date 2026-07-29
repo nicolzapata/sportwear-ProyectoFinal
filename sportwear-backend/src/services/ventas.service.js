@@ -184,11 +184,16 @@ const crearVenta = async (datos) => {
   try {
     await client.query('BEGIN');
 
+    // Esta es la ruta de venta creada directamente por el admin (no el checkout
+    // del cliente) — aquí el stock siempre se descuenta de inmediato, como ya
+    // pasaba antes, por lo que se marca stock_descontado=true desde ya, para
+    // que si más adelante esta venta pasa a "Pagado" por el módulo de Pagos,
+    // no se vuelva a descontar el stock por segunda vez.
     const venta = await client.query(`
       INSERT INTO "Ventas"
         (id_cliente, subtotal, descuento, impuesto, total, estado, fecha, observaciones,
-         tipo_pago, num_cuotas, metodo_pago, motivo_descuento, direccion_entrega)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+         tipo_pago, num_cuotas, metodo_pago, motivo_descuento, direccion_entrega, stock_descontado)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,true)
       RETURNING *
     `, [
       id_cliente, subtotal, descuento || 0, impuesto || 0, total,
@@ -302,6 +307,24 @@ const cambiarEstado = async (id, estado) => {
       `, [id, saldo, venta.metodo_pago || 'Efectivo', new Date()]);
     }
 
+    // ── NUEVO (Inventario): si el stock de esta venta todavía no se había
+    // descontado (pedidos pagados por transferencia/tarjeta, que no descuentan
+    // stock al crearse sino hasta que se confirma el pago), se descuenta ahora,
+    // línea por línea, y se marca para no volver a descontarlo. ──
+    if (!venta.stock_descontado) {
+      const detalle = await pool.query(
+        `SELECT id_variante, cantidad FROM "DetalleVenta" WHERE id_venta=$1 AND id_variante IS NOT NULL`,
+        [id]
+      );
+      for (const item of detalle.rows) {
+        await pool.query(
+          `UPDATE "ProductoVariantes" SET stock=stock-$1 WHERE id_variante=$2`,
+          [item.cantidad, item.id_variante]
+        );
+      }
+      await pool.query(`UPDATE "Ventas" SET stock_descontado=true WHERE id_venta=$1`, [id]);
+    }
+
     // ── NUEVO: si la venta pasó a estar pagada, enviar el comprobante por correo ──
     notificarComprobantePago(id);
   }
@@ -325,7 +348,6 @@ const notificarPedidoRecibido = async (id_venta, metodo_pago) => {
     const instrucciones = {
       'Efectivo':      'Pagarás en efectivo al momento de recibir tu pedido. Nuestro equipo se pondrá en contacto para coordinar la entrega.',
       'Transferencia': `Realiza la transferencia a la cuenta Ahorros N° 000-000000-00 del Banco X, a nombre de DVNA SportWear S.A.S. (NIT 000.000.000-0), y envía el comprobante al WhatsApp 300 000 0000. Confirmaremos tu pedido en cuanto la recibamos.`,
-      'Tarjeta':       'Completa el pago con tarjeta para confirmar tu pedido.',
     };
 
     enviarCorreo({
@@ -361,6 +383,13 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
     await validarCupoCredito(id_cliente, total);
   }
 
+  // ── NUEVO (Inventario): el stock solo se descuenta de inmediato cuando el
+  // pago es contraentrega (Efectivo). Con Transferencia, el pedido se registra
+  // pero el stock queda sin descontar hasta que el administrador confirme el
+  // pago desde el módulo de Pagos — ahí es donde
+  // `evaluarYMarcarPagada` (pagos.service.js) hace el descuento diferido. ──
+  const esContraentrega = metodo_pago === 'Efectivo';
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -368,14 +397,15 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
     const venta = await client.query(`
       INSERT INTO "Ventas"
         (id_cliente, subtotal, descuento, impuesto, total, estado, fecha,
-         direccion_entrega, metodo_pago, tipo_pago, num_cuotas)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+         direccion_entrega, metodo_pago, tipo_pago, num_cuotas, stock_descontado)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
       RETURNING *
     `, [
       id_cliente, total, 0, 0, total,
       estado || 'Confirmado', fecha || new Date(),
       direccion_entrega || null, metodo_pago || null,
       tipo_pago || 'completo', num_cuotas || null,
+      esContraentrega,
     ]);
 
     const ventaRow = venta.rows[0];
@@ -431,10 +461,15 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
       `, [id_venta, item.id_producto, item.id_variante,
           item.cantidad, item.precio, 0, subtotalLinea]);
 
-      await client.query(
-        `UPDATE "ProductoVariantes" SET stock=stock-$1 WHERE id_variante=$2`,
-        [item.cantidad, item.id_variante]
-      );
+      // ── NUEVO (Inventario): solo se descuenta ahora si es contraentrega.
+      // Si es transferencia/tarjeta, el stock se queda igual hasta que el
+      // pago se confirme (ver evaluarYMarcarPagada en pagos.service.js). ──
+      if (esContraentrega) {
+        await client.query(
+          `UPDATE "ProductoVariantes" SET stock=stock-$1 WHERE id_variante=$2`,
+          [item.cantidad, item.id_variante]
+        );
+      }
     }
 
     if (tipo_pago === 'cuotas' && num_cuotas) {

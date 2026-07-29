@@ -347,7 +347,6 @@ export default function Checkout() {
             >
               <option value="Efectivo">Efectivo (contra entrega)</option>
               <option value="Transferencia">Transferencia bancaria</option>
-              <option value="Tarjeta">Tarjeta débito / crédito</option>
             </select>
             {erroresPaso.metodo && <div className="checkout-error-message">{erroresPaso.metodo}</div>}
           </div>

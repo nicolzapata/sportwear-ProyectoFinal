@@ -8,25 +8,26 @@ import { useConfirm } from "../../context/ConfirmContext";
 import { validarMonto, MAX_MONTO, MAX_LONGITUD_CODIGO, MAX_LONGITUD_TEXTO_LIBRE } from "../../utils/numerico";
 import './Compras.css';
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
-import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
+import { IconAlertTriangle, IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;
 
-const nuevoItem = () => ({ id_producto: "", id_variante: "", cantidad: 1, precio_unitario: "", descuento_linea: 0 });
+const nuevoItem = () => ({ id_producto: "", id_variante: "", cantidad: 1, precio_unitario: "", precio_venta: "" });
 
 const formInicial = () => ({
   id_proveedor: "",
   numero_orden: "",
   descuento: 0,
-  impuesto: 0,
   estado: "Pendiente",
   fecha: new Date().toISOString().split("T")[0],
   observaciones: "",
   items: [nuevoItem()],
 });
+
+const HOY_ISO = new Date().toISOString().split("T")[0];
 
 // ── Dropdown de estado con colores (mismo patrón que Pedidos/Ventas) ──
 const ESTADOS_ORDEN_COMPRA = ['Pendiente', 'En Tránsito', 'Recibido'];
@@ -233,17 +234,17 @@ export default function Compras() {
   const subtotal = form.items.reduce((acc, it) => {
     const cant = Number(it.cantidad) || 0;
     const precio = Number(it.precio_unitario) || 0;
-    const desc = Number(it.descuento_linea) || 0;
-    return acc + (cant * precio - desc);
+    return acc + (cant * precio);
   }, 0);
-  const totalCompra = subtotal - (Number(form.descuento) || 0) + (Number(form.impuesto) || 0);
+  const totalCompra = subtotal - (Number(form.descuento) || 0);
 
   const MAX_CANTIDAD = 9999;
 
   const validar = () => {
     const e = {};
     if (!form.id_proveedor) e.id_proveedor = "El proveedor es obligatorio";
-    if (!form.fecha) e.fecha = "La fecha es obligatoria";
+    const msgFecha = errorFecha(form.fecha);
+    if (msgFecha) e.fecha = msgFecha;
     form.items.forEach((it, i) => {
       if (!it.id_producto) e[`item_${i}_producto`] = "Selecciona un producto";
       const producto = productos.find((p) => String(p.id_producto) === String(it.id_producto));
@@ -253,18 +254,21 @@ export default function Compras() {
       if (msgCantidad) e[`item_${i}_cantidad`] = msgCantidad;
       const msgPrecio = errorItemPrecio(it.precio_unitario);
       if (msgPrecio) e[`item_${i}_precio`] = msgPrecio;
-      const msgDescLinea = errorItemDescuento(it.descuento_linea, it.cantidad, it.precio_unitario);
-      if (msgDescLinea) e[`item_${i}_descuento`] = msgDescLinea;
+      const msgPrecioVenta = errorItemPrecioVenta(it.precio_venta);
+      if (msgPrecioVenta) e[`item_${i}_precio_venta`] = msgPrecioVenta;
     });
     const msgDescGeneral = errorDescuentoGeneral(form.descuento);
     if (msgDescGeneral) e.descuento = msgDescGeneral;
-    const msgImpuesto = errorImpuestoGeneral(form.impuesto);
-    if (msgImpuesto) e.impuesto = msgImpuesto;
     setErrores(e);
     return Object.keys(e).length === 0;
   };
 
   // ── Validaciones puntuales (en tiempo real, por campo) ──
+  const errorFecha = (fecha) => {
+    if (!fecha) return "La fecha es obligatoria";
+    if (fecha > HOY_ISO) return "La fecha no puede ser futura";
+    return "";
+  };
   const errorItemProducto = (idProducto) => (!idProducto ? "Selecciona un producto" : "");
   const errorItemVariante = (idProducto, idVariante) => {
     const producto = productos.find((p) => String(p.id_producto) === String(idProducto));
@@ -278,23 +282,11 @@ export default function Compras() {
     return "";
   };
   const errorItemPrecio = (precio) => validarMonto(precio, { mensajeVacio: "Precio inválido" });
-  const errorItemDescuento = (descuento, cantidad, precioUnitario) => {
-    const d = Number(descuento) || 0;
-    if (d < 0) return "No puede ser negativo";
-    const subtotalLinea = (Number(cantidad) || 0) * (Number(precioUnitario) || 0);
-    if (d > subtotalLinea) return "No puede ser mayor al subtotal de la línea";
-    return "";
-  };
+  const errorItemPrecioVenta = (precioVenta) => validarMonto(precioVenta, { mensajeVacio: "El valor de venta es obligatorio" });
   const errorDescuentoGeneral = (descuento) => {
     const d = Number(descuento) || 0;
     if (d < 0) return "No puede ser negativo";
     if (d > subtotal) return "No puede ser mayor al subtotal";
-    return "";
-  };
-  const errorImpuestoGeneral = (impuesto) => {
-    const i = Number(impuesto) || 0;
-    if (i < 0) return "No puede ser negativo";
-    if (i > MAX_MONTO) return `No puede ser mayor a ${MAX_MONTO.toLocaleString("es-CO")}`;
     return "";
   };
 
@@ -306,7 +298,6 @@ export default function Compras() {
         id_proveedor: Number(form.id_proveedor),
         numero_orden: form.numero_orden || null,
         descuento: Number(form.descuento) || 0,
-        impuesto: Number(form.impuesto) || 0,
         estado: form.estado,
         fecha: form.fecha,
         observaciones: form.observaciones || null,
@@ -315,7 +306,7 @@ export default function Compras() {
           id_variante: it.id_variante ? Number(it.id_variante) : null,
           cantidad: Number(it.cantidad),
           precio_unitario: Number(it.precio_unitario),
-          descuento_linea: Number(it.descuento_linea) || 0,
+          precio_venta: Number(it.precio_venta),
         })),
       };
       await api.post("/compras", payload);
@@ -583,14 +574,15 @@ export default function Compras() {
                   <label className="compras-form-label">Fecha</label>
                   <input
                     type="date"
+                    max={HOY_ISO}
                     className={`compras-form-input${errores.fecha ? " input-error" : ""}`}
                     value={form.fecha}
                     onChange={(e) => {
                       const valor = e.target.value;
                       setForm({ ...form, fecha: valor });
-                      if (errores.fecha) setErrores((prev) => ({ ...prev, fecha: valor ? "" : prev.fecha }));
+                      if (errores.fecha) setErrores((prev) => ({ ...prev, fecha: errorFecha(valor) }));
                     }}
-                    onBlur={() => setErrores((prev) => ({ ...prev, fecha: form.fecha ? "" : "La fecha es obligatoria" }))}
+                    onBlur={() => setErrores((prev) => ({ ...prev, fecha: errorFecha(form.fecha) }))}
                   />
                   {errores.fecha && <span className="compras-field-error">{errores.fecha}</span>}
                 </div>
@@ -614,9 +606,9 @@ export default function Compras() {
                   <span>Producto</span>
                   <span>Talla / Color</span>
                   <span>Cantidad</span>
-                  <span>Precio unitario</span>
-                  <span title="Descuento aplicado solo a este producto, no a toda la compra">
-                    Descuento producto <span className="compras-item-titulo-ayuda">ⓘ</span>
+                  <span>Precio de costo</span>
+                  <span title="Precio al que se va a vender esta unidad en el catálogo">
+                    Valor de venta <span className="compras-item-titulo-ayuda">ⓘ</span>
                   </span>
                   <span className="compras-item-titulos-subtotal">Subtotal</span>
                   <span></span>
@@ -625,10 +617,14 @@ export default function Compras() {
                 {form.items.map((item, i) => {
                   const cant = Number(item.cantidad) || 0;
                   const precio = Number(item.precio_unitario) || 0;
-                  const desc = Number(item.descuento_linea) || 0;
-                  const lineaTotal = cant * precio - desc;
+                  const lineaTotal = cant * precio;
                   const productoSel = productos.find((p) => String(p.id_producto) === String(item.id_producto));
                   const variantesActivas = (productoSel?.variantes || []).filter((v) => v.estado === "Activo");
+                  const costo = Number(item.precio_unitario) || 0;
+                  const venta = Number(item.precio_venta) || 0;
+                  const ventaIngresada = item.precio_venta !== "" && item.precio_venta !== null && item.precio_venta !== undefined;
+                  const alertaMenor = ventaIngresada && costo > 0 && venta < costo;
+                  const alertaIgual  = ventaIngresada && costo > 0 && venta === costo;
                   return (
                     <div className="compras-item-row" key={i}>
                       <div className="compras-item-field compras-item-field-producto">
@@ -698,7 +694,7 @@ export default function Compras() {
                           type="number"
                           min="0"
                           max={MAX_MONTO}
-                          placeholder="Precio unit."
+                          placeholder="Precio de costo"
                           className={`compras-form-input${errores[`item_${i}_precio`] ? " input-error" : ""}`}
                           value={item.precio_unitario}
                           onChange={(e) => {
@@ -716,18 +712,25 @@ export default function Compras() {
                           type="number"
                           min="0"
                           max={MAX_MONTO}
-                          placeholder="Descuento (opcional)"
-                          className={`compras-form-input${errores[`item_${i}_descuento`] ? " input-error" : ""}`}
-                          value={item.descuento_linea}
+                          placeholder="Valor de venta"
+                          className={`compras-form-input${errores[`item_${i}_precio_venta`] ? " input-error" : ""}${alertaMenor || alertaIgual ? " compras-input-warning" : ""}`}
+                          value={item.precio_venta}
                           onChange={(e) => {
                             const valor = e.target.value;
-                            actualizarItem(i, "descuento_linea", valor);
-                            if (errores[`item_${i}_descuento`]) {
-                              setErrores((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(valor, item.cantidad, item.precio_unitario) }));
+                            actualizarItem(i, "precio_venta", valor);
+                            if (errores[`item_${i}_precio_venta`]) {
+                              setErrores((prev) => ({ ...prev, [`item_${i}_precio_venta`]: errorItemPrecioVenta(valor) }));
                             }
                           }}
-                          onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(item.descuento_linea, item.cantidad, item.precio_unitario) }))}
+                          onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_precio_venta`]: errorItemPrecioVenta(item.precio_venta) }))}
                         />
+                        {errores[`item_${i}_precio_venta`] && <span className="compras-field-error">{errores[`item_${i}_precio_venta`]}</span>}
+                        {alertaMenor && (
+                          <span className="compras-field-warning"><IconAlertTriangle /> Estás vendiendo más barato de lo que te costó.</span>
+                        )}
+                        {!alertaMenor && alertaIgual && (
+                          <span className="compras-field-warning"><IconAlertTriangle /> El valor de venta es igual al costo — no hay ganancia.</span>
+                        )}
                       </div>
                       <div className="compras-item-subtotal">{fmt(lineaTotal)}</div>
                       <button
@@ -760,22 +763,7 @@ export default function Compras() {
                     }}
                     onBlur={() => setErrores((prev) => ({ ...prev, descuento: errorDescuentoGeneral(form.descuento) }))}
                   />
-                </div>
-                <div className="compras-form-group">
-                  <label className="compras-form-label">Impuesto (COP)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max={MAX_MONTO}
-                    className={`compras-form-input${errores.impuesto ? " input-error" : ""}`}
-                    value={form.impuesto}
-                    onChange={(e) => {
-                      const valor = e.target.value;
-                      setForm({ ...form, impuesto: valor });
-                      if (errores.impuesto) setErrores((prev) => ({ ...prev, impuesto: errorImpuestoGeneral(valor) }));
-                    }}
-                    onBlur={() => setErrores((prev) => ({ ...prev, impuesto: errorImpuestoGeneral(form.impuesto) }))}
-                  />
+                  {errores.descuento && <span className="compras-field-error">{errores.descuento}</span>}
                 </div>
               </div>
 
@@ -858,7 +846,12 @@ export default function Compras() {
                 {(verDetalle.items || []).map((it, i) => (
                   <div key={i} className="compras-detalle-item-linea">
                     <span>{it.producto} {it.talla ? `(${it.talla}${it.color ? " · " + it.color : ""})` : ""} × {it.cantidad}</span>
-                    <span>{fmt(it.cantidad * it.precio_unitario - (it.descuento_linea || 0))}</span>
+                    <span className="compras-detalle-item-precios">
+                      {it.precio_venta != null && (
+                        <span className="compras-detalle-item-venta">Venta: {fmt(it.precio_venta)}</span>
+                      )}
+                      {fmt(it.cantidad * it.precio_unitario)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -868,7 +861,6 @@ export default function Compras() {
                 <div className="compras-total-resumen compras-total-resumen-detalle">
                   <span>Subtotal: {fmt(verDetalle.subtotal)}</span>
                   <span>Descuento: {fmt(verDetalle.descuento)}</span>
-                  <span>Impuesto: {fmt(verDetalle.impuesto)}</span>
                   <span className="compras-total-final">Total: {fmt(verDetalle.total)}</span>
                 </div>
               </div>

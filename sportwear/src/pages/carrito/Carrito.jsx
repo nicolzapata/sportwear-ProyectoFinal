@@ -31,25 +31,11 @@ export default function Carrito() {
   // Calcular valor de cada cuota
   const valorCuota = tipoPago === "cuotas" ? Math.ceil(total / numCuotas) : null;
 
-  // ── Pantalla: no autenticado ───────────────────────────────────────────
-  if (!usuario) {
-    return (
-      <div className="carrito-vacio">
-        <div className="carrito-vacio-icono">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
-            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-            <line x1="3" y1="6" x2="21" y2="6"/>
-            <path d="M16 10a4 4 0 0 1-8 0"/>
-          </svg>
-        </div>
-        <h2 className="carrito-vacio-titulo">Inicia sesión para ver tu carrito</h2>
-        <p className="carrito-vacio-texto">Para acceder a tu carrito debes iniciar sesión.</p>
-        <button className="btn btn-primary" onClick={() => navigate("/login")}>
-          Iniciar sesión
-        </button>
-      </div>
-    );
-  }
+  // ── CORREGIDO: antes esta página exigía sesión solo para VER el carrito,
+  // lo cual es más estricto que la regla de negocio ("Exigir inicio de sesión
+  // únicamente al momento de finalizar la compra"). El carrito ahora se puede
+  // ver y armar sin sesión; el login se pide recién al hacer clic en
+  // "Finalizar compra" (ver irACheckout más abajo). ──
 
   // ── Pantalla: carrito vacío ────────────────────────────────────────────
   if (items.length === 0) {
@@ -68,9 +54,11 @@ export default function Carrito() {
           <button className="btn btn-primary" onClick={() => navigate("/catalogo")}>
             Ir al catálogo
           </button>
-          <button className="btn btn-outline" onClick={() => navigate("/dashboard")}>
-            Mis pedidos
-          </button>
+          {usuario && (
+            <button className="btn btn-outline" onClick={() => navigate("/dashboard")}>
+              Mis pedidos
+            </button>
+          )}
         </div>
       </div>
     );
@@ -78,6 +66,12 @@ export default function Carrito() {
 
   // ── Ir a checkout ─────────────────────────────────────────────────────
   const irACheckout = () => {
+    // ── NUEVO: aquí es donde de verdad se exige iniciar sesión — no antes,
+    // al solo ver o armar el carrito. ──
+    if (!usuario) {
+      navigate("/login");
+      return;
+    }
     yendoACheckout.current = true;
     // Guardar tipo de pago en sessionStorage para pasarlo al checkout
     sessionStorage.setItem("tipoPago", tipoPago);
@@ -94,9 +88,11 @@ export default function Carrito() {
             {totalItems} {totalItems === 1 ? "producto" : "productos"}
           </span>
         </div>
-        <button className="btn btn-outline" onClick={() => navigate("/dashboard")}>
-          Mis pedidos
-        </button>
+        {usuario && (
+          <button className="btn btn-outline" onClick={() => navigate("/dashboard")}>
+            Mis pedidos
+          </button>
+        )}
       </div>
 
       <div className="carrito-layout">
@@ -179,7 +175,7 @@ export default function Carrito() {
             <span>{fmt(total)}</span>
           </div>
 
-          {permisoCuotas && (
+          {usuario && permisoCuotas && (
             <div className="carrito-opcion-pago" style={{ marginBottom: '15px' }}>
               <label style={{ fontWeight: 500, marginBottom: '8px', display: 'block' }}>Opción de pago:</label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
