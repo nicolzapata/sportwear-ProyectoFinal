@@ -12,6 +12,7 @@ import { IconDollar, IconEye, IconPrint, IconSearch, IconX } from "../../compone
 
 const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;
+const HOY_ISO = new Date().toISOString().split("T")[0];
 
 const nuevoItem = () => ({ id_producto: "", id_variante: "", cantidad: 1, precio_unitario: "", descuento_linea: 0 });
 
@@ -333,6 +334,7 @@ export default function PedidosVentas() {
     const e = {};
     if (!formVenta.id_cliente) e.id_cliente = "El cliente es obligatorio";
     if (!formVenta.fecha) e.fecha = "La fecha es obligatoria";
+    else if (formVenta.fecha > HOY_ISO) e.fecha = "La fecha no puede ser futura";
     if (formVenta.tipo_pago === "cuotas") {
       const n = Number(formVenta.num_cuotas);
       if (!formVenta.num_cuotas || n < 2) e.num_cuotas = "Indica el número de cuotas (mínimo 2)";
@@ -429,6 +431,7 @@ export default function PedidosVentas() {
       else if (Number(formAbono.monto) > restante) e.monto = "El monto no puede ser mayor al saldo";
     }
     if (!formAbono.fecha) e.fecha = "La fecha es obligatoria";
+    else if (formAbono.fecha > HOY_ISO) e.fecha = "La fecha no puede ser futura";
     setErroresAbono(e);
     if (Object.keys(e).length > 0 || !abonosModal) return;
 
@@ -742,6 +745,7 @@ export default function PedidosVentas() {
                       <label className="pedidosventas-form-label">Fecha</label>
                       <input
                         type="date"
+                        max={HOY_ISO}
                         className={`pedidosventas-form-input${erroresAbono.fecha ? " input-error" : ""}`}
                         value={formAbono.fecha}
                         onChange={(e) => {
@@ -804,6 +808,7 @@ export default function PedidosVentas() {
                   <label className="pedidosventas-form-label">Fecha</label>
                   <input
                     type="date"
+                    max={HOY_ISO}
                     className={`pedidosventas-form-input${erroresVenta.fecha ? " input-error" : ""}`}
                     value={formVenta.fecha}
                     onChange={(e) => { setFormVenta({ ...formVenta, fecha: e.target.value }); setErroresVenta((prev) => ({ ...prev, fecha: "" })); }}

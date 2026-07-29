@@ -30,6 +30,7 @@ import Compras       from "../pages/compras/Compras";
 import Pedidos       from "../pages/pedidos/Pedidos";
 import PedidosVentas from "../pages/pedidosVentas/PedidosVentas";
 import PagosAbonos   from "../pages/pagosAbonos/PagosAbonos";
+import NotFound      from "../pages/notFound/NotFound";
 
 const MODULOS_CLIENTE = ['dashboard', 'catalogo', 'categorias'];
 
@@ -97,6 +98,8 @@ export default function AppRouter() {
               <Route path="/ventas"          element={<P k="ventas">         <PedidosVentas /> </P>} />
               <Route path="/pagos"           element={<P k="pagos">          <PagosAbonos />   </P>} />
             </Route>
+
+            <Route path="*" element={<NotFound />} />
 
           </Routes>
         </BrowserRouter>

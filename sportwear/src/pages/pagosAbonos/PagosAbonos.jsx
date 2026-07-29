@@ -12,6 +12,7 @@ import ExportButtons from "../../components/ExportButtons";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;
+const HOY_ISO = new Date().toISOString().split("T")[0];
 
 export default function PagosAbonos() {
   const { usuario } = useAuth();
@@ -114,6 +115,7 @@ export default function PagosAbonos() {
     const msgMonto = errorMonto(form.monto);
     if (msgMonto) e.monto = msgMonto;
     if (!form.fecha) e.fecha = "La fecha es obligatoria";
+    else if (form.fecha > HOY_ISO) e.fecha = "La fecha no puede ser futura";
     setErrores(e);
     if (Object.keys(e).length > 0) return;
     setGuardando(true);
@@ -351,6 +353,7 @@ export default function PagosAbonos() {
                     <label className="pagosabonos-form-label">Fecha</label>
                     <input
                       type="date"
+                      max={HOY_ISO}
                       className={`pagosabonos-form-input${errores.fecha ? " input-error" : ""}`}
                       value={form.fecha}
                       onChange={(e) => {

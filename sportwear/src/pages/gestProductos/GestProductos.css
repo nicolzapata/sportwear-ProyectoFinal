@@ -1235,8 +1235,8 @@ table.tbl.gestproductos-tabla {
    los !important que se le pongan a estos otros dos, así que se declara
    siempre junto a width. */
 th.gestproductos-th-imagen    { width: 90px  !important; min-width: 80px  !important; }
-th.gestproductos-th-producto  { width: 310px !important; min-width: 210px !important; }
-th.gestproductos-th-precio    { width: 9  5px  !important; min-width: 95px  !important; }
+th.gestproductos-th-producto  { width: 280px !important; min-width: 210px !important; }
+th.gestproductos-th-precio    { width: 95px  !important; min-width: 95px  !important; }
 th.gestproductos-th-stock     { width: 95px  !important; min-width: 95px  !important; }
 th.gestproductos-th-variantes { width: 180px !important; min-width: 180px !important; max-width: 180px !important; }
 th.gestproductos-th-toggle    { width: 100px  !important; min-width: 68px  !important; }
@@ -1247,6 +1247,10 @@ th.gestproductos-th-acciones  { width: 155px !important; min-width: 155px !impor
    sus propias columnas (cada uno con su switch en tamaño compacto --sm) en
    vez de compartir una sola columna, para no perder la distinción visual
    entre ambos estados. */
+th.gestproductos-th-acciones {
+    text-align: center !important;
+}
+
 td.gestproductos-td-toggle {
   width: 68px !important;
   min-width: 68px !important;
@@ -1263,17 +1267,6 @@ td.gestproductos-td-compacto {
   white-space: nowrap !important;
   padding-left: 10px !important;
   padding-right: 10px !important;
-}
-/* Precio: SOLO el valor va alineado a la derecha (convención para
-   montos) — el header se deja alineado a la izquierda como el resto de
-   los headers de la tabla. */
-td.gestproductos-precio-cell {
-  text-align: right !important;
-}
-/* Stock: solo el badge va centrado — mismo criterio que Precio, el
-   header se mantiene alineado a la izquierda como los demás. */
-td.gestproductos-stock-cell {
-  text-align: center !important;
 }
 
 .gestproductos-toggle-publicado {
