@@ -12,7 +12,7 @@ import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelef
 import "./Clientes.css";
 import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 
-const FORM_VACIO = { nombres: "", apellidos: "", tipo_doc: "CC", documento: "", telefono: "", email: "", ciudad: "Medellín", id_barrio: "", direccion: "", contrasena: "", confirmar: "", permiso_cuotas: 1, estado: "Activo" };
+const FORM_VACIO = { nombres: "", apellidos: "", tipo_doc: "CC", documento: "", telefono: "", email: "", ciudad: "Medellín", id_barrio: "", direccion: "", contrasena: "", confirmar: "", permiso_cuotas: 0, estado: "Activo" };
 
 // "nombre" completo (BD) -> primer palabra = nombres, resto = apellidos.
 const dividirNombre = (nombreCompleto) => {
@@ -66,6 +66,18 @@ export default function Clientes() {
     }
   };
 
+  // Igual que verificarEmailDuplicado pero para el documento.
+  const verificarDocumentoDuplicado = async (documento) => {
+    try {
+      const { data } = await api.get("/auth/check-documento", { params: { documento } });
+      if (data?.existe && formRef.current.documento.trim() === documento) {
+        setErrores(prev => ({ ...prev, documento: "Este documento ya está registrado." }));
+      }
+    } catch {
+      // Si falla la verificación en tiempo real, el submit igual rechaza duplicados (409).
+    }
+  };
+
   const cargarClientes = async (pag = pagina, q = busquedaDebounced) => {
     try {
       const { data } = await api.get("/clientes/con-ventas", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
@@ -112,7 +124,7 @@ export default function Clientes() {
   const abrirRegistrar = () => { setEditar(null); setForm(FORM_VACIO); setBarFiltrados(barrios); setPasoModal(0); setModal(true); };
   const abrirEditar    = (c) => {
     setEditar(c.id_cliente);
-    setForm({ ...dividirNombre(c.nombre), tipo_doc: c.tipo_doc, documento: c.documento, telefono: c.telefono || "", email: c.email || "", ciudad: c.ciudad || "Medellín", id_barrio: c.id_barrio || "", direccion: c.direccion || "", contrasena: "", confirmar: "", permiso_cuotas: c.permiso_cuotas || 1, estado: c.estado });
+    setForm({ ...dividirNombre(c.nombre), tipo_doc: c.tipo_doc, documento: c.documento, telefono: c.telefono || "", email: c.email || "", ciudad: c.ciudad || "Medellín", id_barrio: c.id_barrio || "", direccion: c.direccion || "", contrasena: "", confirmar: "", permiso_cuotas: c.permiso_cuotas ? 1 : 0, estado: c.estado });
     setBarFiltrados(barrios);
     setPasoModal(0);
     setModal(true);
@@ -162,14 +174,17 @@ export default function Clientes() {
   };
   const errorCiudad = (valor) => (!valor.trim() ? "La ciudad es obligatoria" : "");
   const errorEmail = (valor) => validarEmail(valor, "El correo es obligatorio");
+  // Al editar, dejar la contraseña vacía significa "no cambiarla"; al crear sigue siendo obligatoria.
   const errorContrasena = (valor) => {
-    if (!valor) return "La contraseña es obligatoria";
+    if (!editar && !valor) return "La contraseña es obligatoria";
+    if (!valor) return "";
     if (valor.length < 6) return "Debe tener al menos 6 caracteres";
     // eslint-disable-next-line no-useless-escape
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(valor)) return "Debe contener al menos un símbolo";
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(valor)) return "Debe contener un carácter especial (!*&#).";
     return "";
   };
   const errorConfirmar = (valor, contrasena) => {
+    if (!contrasena && !valor) return "";
     if (!valor) return "Confirma la contraseña";
     if (valor !== contrasena) return "Las contraseñas no coinciden";
     return "";
@@ -198,7 +213,6 @@ export default function Clientes() {
   };
 
   const validarPasoClasificacion = () => {
-    if (editar) return true;
     const eContrasena = errorContrasena(form.contrasena);
     const eConfirmar = errorConfirmar(form.confirmar, form.contrasena);
     setErrores(prev => ({ ...prev, contrasena: eContrasena, confirmar: eConfirmar }));
@@ -214,12 +228,19 @@ export default function Clientes() {
 
   const PasoDatos = (<div>
     <div className="ms-form-row">
-      <div className="ms-form-group"><label className="ms-form-label">Nombres <span className="ms-req">*</span></label><input className={`ms-form-input${errores.nombres ? " input-error" : ""}`} placeholder="Ej: Juan" value={form.nombres} onChange={e => { const nombres = e.target.value; setForm({ ...form, nombres }); if (errores.nombres) setErrores(prev => ({ ...prev, nombres: errorNombres(nombres) })); }} onBlur={() => setErrores(prev => ({ ...prev, nombres: errorNombres(form.nombres) }))} />{errores.nombres && <span className="ms-form-error">{errores.nombres}</span>}</div>
-      <div className="ms-form-group"><label className="ms-form-label">Apellidos <span className="ms-req">*</span></label><input className={`ms-form-input${errores.apellidos ? " input-error" : ""}`} placeholder="Ej: Pérez" value={form.apellidos} onChange={e => { const apellidos = e.target.value; setForm({ ...form, apellidos }); if (errores.apellidos) setErrores(prev => ({ ...prev, apellidos: errorApellidos(apellidos) })); }} onBlur={() => setErrores(prev => ({ ...prev, apellidos: errorApellidos(form.apellidos) }))} />{errores.apellidos && <span className="ms-form-error">{errores.apellidos}</span>}</div>
+      <div className="ms-form-group"><label className="ms-form-label">Tipo documento{editar && <span className="ms-campo-bloqueado"> (no editable)</span>}</label><select className="ms-form-select" value={form.tipo_doc} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={e => { const tipo_doc = e.target.value; setForm({ ...form, tipo_doc }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(tipo_doc, form.documento) })); }}>{["CC","CE","TI","NIT","Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
+      <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span>{editar && <span className="ms-campo-bloqueado"> (no editable)</span>}</label><input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="123456789" inputMode={form.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(form.tipo_doc)} value={form.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={e => { const documento = form.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value); setForm({ ...form, documento }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(form.tipo_doc, documento) })); }} onBlur={() => {
+        const msg = errorDocumento(form.tipo_doc, form.documento);
+        setErrores(prev => ({ ...prev, documento: msg }));
+        if (!editar && !msg) {
+          const valor = form.documento.trim();
+          if (valor) verificarDocumentoDuplicado(valor);
+        }
+      }} />{errores.documento && <span className="ms-form-error">{errores.documento}</span>}</div>
     </div>
     <div className="ms-form-row">
-      <div className="ms-form-group"><label className="ms-form-label">Tipo documento{editar && <span className="ms-campo-bloqueado"> (no editable)</span>}</label><select className="ms-form-select" value={form.tipo_doc} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={e => { const tipo_doc = e.target.value; setForm({ ...form, tipo_doc }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(tipo_doc, form.documento) })); }}>{["CC","CE","TI","NIT","Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
-      <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span>{editar && <span className="ms-campo-bloqueado"> (no editable)</span>}</label><input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="123456789" inputMode={form.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(form.tipo_doc)} value={form.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={e => { const documento = form.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value); setForm({ ...form, documento }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(form.tipo_doc, documento) })); }} onBlur={() => setErrores(prev => ({ ...prev, documento: errorDocumento(form.tipo_doc, form.documento) }))} />{errores.documento && <span className="ms-form-error">{errores.documento}</span>}</div>
+      <div className="ms-form-group"><label className="ms-form-label">Nombres <span className="ms-req">*</span></label><input className={`ms-form-input${errores.nombres ? " input-error" : ""}`} placeholder="Ej: Juan" value={form.nombres} onChange={e => { const nombres = e.target.value; setForm({ ...form, nombres }); if (errores.nombres) setErrores(prev => ({ ...prev, nombres: errorNombres(nombres) })); }} onBlur={() => setErrores(prev => ({ ...prev, nombres: errorNombres(form.nombres) }))} />{errores.nombres && <span className="ms-form-error">{errores.nombres}</span>}</div>
+      <div className="ms-form-group"><label className="ms-form-label">Apellidos <span className="ms-req">*</span></label><input className={`ms-form-input${errores.apellidos ? " input-error" : ""}`} placeholder="Ej: Pérez" value={form.apellidos} onChange={e => { const apellidos = e.target.value; setForm({ ...form, apellidos }); if (errores.apellidos) setErrores(prev => ({ ...prev, apellidos: errorApellidos(apellidos) })); }} onBlur={() => setErrores(prev => ({ ...prev, apellidos: errorApellidos(form.apellidos) }))} />{errores.apellidos && <span className="ms-form-error">{errores.apellidos}</span>}</div>
     </div>
     <div className="ms-form-row">
       <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${errores.telefono ? " input-error" : ""}`} inputMode="numeric" maxLength={LONGITUD_TELEFONO} placeholder="3001234567" value={form.telefono} onChange={e => { const telefono = soloDigitos(e.target.value); setForm({ ...form, telefono }); if (errores.telefono) setErrores(prev => ({ ...prev, telefono: validarTelefono(telefono) })); }} onBlur={() => setErrores(prev => ({ ...prev, telefono: validarTelefono(form.telefono) }))} />{errores.telefono && <span className="ms-form-error">{errores.telefono}</span>}</div>
@@ -236,22 +257,24 @@ export default function Clientes() {
 
   const PasoUbicacion = (<div>
     <div className="ms-form-row">
-      <div className="ms-form-group"><label className="ms-form-label">Ciudad <span className="ms-req">*</span></label><input className={`ms-form-input${errores.ciudad ? " input-error" : ""}`} placeholder="Medellín" value={form.ciudad} onChange={e => { const ciudad = e.target.value; setForm({ ...form, ciudad }); if (errores.ciudad) setErrores(prev => ({ ...prev, ciudad: errorCiudad(ciudad) })); }} onBlur={() => setErrores(prev => ({ ...prev, ciudad: errorCiudad(form.ciudad) }))} />{errores.ciudad && <span className="ms-form-error">{errores.ciudad}</span>}</div>
+      <div className="ms-form-group">
+        <label className="ms-form-label">Ciudad</label>
+        <input className="ms-form-input" value="Medellín" disabled title="Por ahora solo se hacen envíos a Medellín" />
+        <span className="ms-form-hint">Por ahora solo se hacen envíos dentro de Medellín.</span>
+      </div>
       <div className="ms-form-group"><label className="ms-form-label">Zona / Área</label><select className="ms-form-select" onChange={e => handleZona(e.target.value)}><option value="">— Todas las zonas —</option>{zonas.map(z => <option key={z} value={z}>{z}</option>)}</select></div>
     </div>
     <div className="ms-form-row">
-      <div className="ms-form-group"><label className="ms-form-label">Barrio / Comuna</label><select className="ms-form-select" value={form.id_barrio} onChange={e => setForm({ ...form, id_barrio: Number(e.target.value) })}><option value="">— Seleccionar —</option>{barFiltrados.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} — {b.comuna}</option>)}</select></div>
+      <div className="ms-form-group"><label className="ms-form-label">Barrio</label><select className="ms-form-select" value={form.id_barrio} onChange={e => setForm({ ...form, id_barrio: Number(e.target.value) })}><option value="">— Seleccionar —</option>{barFiltrados.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} ({b.zona})</option>)}</select></div>
       <div className="ms-form-group"><label className="ms-form-label">Dirección completa</label><input className="ms-form-input" placeholder="Cra 70 # 48-15 Apto 201" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })} /></div>
     </div>
   </div>);
 
   const PasoClasificacion = (<div>
-    {!editar && (
-      <div className="ms-form-row">
-        <div className="ms-form-group"><label className="ms-form-label">Contraseña <span className="ms-req">*</span></label><input type="password" className={`ms-form-input${errores.contrasena ? " input-error" : ""}`} placeholder="Mín. 6 caracteres" value={form.contrasena} onChange={e => { const contrasena = e.target.value; setForm({ ...form, contrasena }); if (errores.contrasena) setErrores(prev => ({ ...prev, contrasena: errorContrasena(contrasena) })); if (errores.confirmar) setErrores(prev => ({ ...prev, confirmar: errorConfirmar(form.confirmar, contrasena) })); }} onBlur={() => setErrores(prev => ({ ...prev, contrasena: errorContrasena(form.contrasena) }))} />{errores.contrasena && <span className="ms-form-error">{errores.contrasena}</span>}</div>
-        <div className="ms-form-group"><label className="ms-form-label">Confirmar contraseña <span className="ms-req">*</span></label><input type="password" className={`ms-form-input${errores.confirmar ? " input-error" : ""}`} placeholder="Repite la contraseña" value={form.confirmar} onChange={e => { const confirmar = e.target.value; setForm({ ...form, confirmar }); if (errores.confirmar) setErrores(prev => ({ ...prev, confirmar: errorConfirmar(confirmar, form.contrasena) })); }} onBlur={() => setErrores(prev => ({ ...prev, confirmar: errorConfirmar(form.confirmar, form.contrasena) }))} />{errores.confirmar && <span className="ms-form-error">{errores.confirmar}</span>}</div>
-      </div>
-    )}
+    <div className="ms-form-row">
+      <div className="ms-form-group"><label className="ms-form-label">Contraseña {!editar && <span className="ms-req">*</span>}</label><input type="password" className={`ms-form-input${errores.contrasena ? " input-error" : ""}`} placeholder={editar ? "Dejar vacío para no cambiar" : "Mín. 6 caracteres"} value={form.contrasena} onChange={e => { const contrasena = e.target.value; setForm({ ...form, contrasena }); if (errores.contrasena) setErrores(prev => ({ ...prev, contrasena: errorContrasena(contrasena) })); if (errores.confirmar) setErrores(prev => ({ ...prev, confirmar: errorConfirmar(form.confirmar, contrasena) })); }} onBlur={() => setErrores(prev => ({ ...prev, contrasena: errorContrasena(form.contrasena) }))} />{errores.contrasena && <span className="ms-form-error">{errores.contrasena}</span>}</div>
+      <div className="ms-form-group"><label className="ms-form-label">Confirmar contraseña {(!editar || form.contrasena) && <span className="ms-req">*</span>}</label><input type="password" className={`ms-form-input${errores.confirmar ? " input-error" : ""}`} placeholder="Repite la contraseña" value={form.confirmar} onChange={e => { const confirmar = e.target.value; setForm({ ...form, confirmar }); if (errores.confirmar) setErrores(prev => ({ ...prev, confirmar: errorConfirmar(confirmar, form.contrasena) })); }} onBlur={() => setErrores(prev => ({ ...prev, confirmar: errorConfirmar(form.confirmar, form.contrasena) }))} />{errores.confirmar && <span className="ms-form-error">{errores.confirmar}</span>}</div>
+    </div>
     {editar ? (
       <div className="ms-form-row">
         <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><select className="ms-form-select" value={form.permiso_cuotas} onChange={e => setForm({ ...form, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
@@ -274,7 +297,7 @@ export default function Clientes() {
 
   const DetalleUbicacion = c && (<DetalleSeccion><DetalleGrid>
     <DetalleItem label="Ciudad"    value={c.ciudad} />
-    <DetalleItem label="Barrio"    value={c.barrio_nombre ? `${c.barrio_nombre} (${c.comuna})` : null} />
+    <DetalleItem label="Barrio"    value={c.barrio_nombre ? `${c.barrio_nombre} (${c.zona})` : null} />
     <DetalleItem label="Dirección" value={c.direccion} full />
   </DetalleGrid></DetalleSeccion>);
 
@@ -306,7 +329,7 @@ export default function Clientes() {
                 { header: "Cliente", key: "nombre" },
                 { header: "Documento", value: (c) => `${c.tipo_doc} ${c.documento}` },
                 { header: "Teléfono", value: (c) => c.telefono || "—" },
-                { header: "Barrio", value: (c) => (c.barrio_nombre ? `${c.barrio_nombre} (${c.comuna})` : "—") },
+                { header: "Barrio", value: (c) => (c.barrio_nombre ? `${c.barrio_nombre} (${c.zona})` : "—") },
                 { header: "Compras", value: (c) => c.total_compras || 0 },
                 { header: "Total gastado", value: (c) => `$${Number(c.total_gastado || 0).toLocaleString("es-CO")}` },
                 ...(tienePerm('Clientes.estado') ? [{ header: "Estado", key: "estado" }] : []),

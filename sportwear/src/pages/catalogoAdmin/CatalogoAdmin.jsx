@@ -5,6 +5,7 @@ import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import ExportButtons from "../../components/ExportButtons";
+import Loader from "../../components/Loader";
 import { IconSearch, IconX, IconBox, IconEdit, IconEye, IconAlertTriangle } from "../../components/Icons";
 import "./CatalogoAdmin.css";
 
@@ -170,6 +171,7 @@ export default function CatalogoAdmin() {
   const stockPct = (stock) => Math.min(100, Math.round(((stock ?? 0) / STOCK_REFERENCIA) * 100));
   const stockClase = (stock) => stock === 0 ? "agotado" : stock < 5 ? "bajo" : stock < 15 ? "medio" : "alto";
 
+  if (loading) return <Loader text="Cargando catálogo..." />;
   if (error) return <div className="catadmin-error-banner"><IconAlertTriangle /> {error}</div>;
 
   return (
@@ -180,46 +182,44 @@ export default function CatalogoAdmin() {
           <span className="catadmin-kpi-icon catadmin-kpi-icon-neutral"><IconLayers /></span>
           <div>
             <span className="catadmin-kpi-label">Productos totales</span>
-            <span className="catadmin-kpi-value">{loading ? "—" : kpis.total}</span>
+            <span className="catadmin-kpi-value">{kpis.total}</span>
           </div>
         </div>
         <div className="catadmin-kpi-card">
           <span className="catadmin-kpi-icon catadmin-kpi-icon-success"><IconGlobe /></span>
           <div>
             <span className="catadmin-kpi-label">Publicados</span>
-            <span className="catadmin-kpi-value">{loading ? "—" : kpis.publicados}</span>
+            <span className="catadmin-kpi-value">{kpis.publicados}</span>
           </div>
         </div>
         <div className="catadmin-kpi-card">
           <span className="catadmin-kpi-icon catadmin-kpi-icon-warning"><IconAlertTriangle /></span>
           <div>
             <span className="catadmin-kpi-label">Bajo stock</span>
-            <span className="catadmin-kpi-value">{loading ? "—" : kpis.bajoStock}</span>
+            <span className="catadmin-kpi-value">{kpis.bajoStock}</span>
           </div>
         </div>
         <div className="catadmin-kpi-card">
           <span className="catadmin-kpi-icon catadmin-kpi-icon-danger"><IconEyeOff /></span>
           <div>
             <span className="catadmin-kpi-label">Agotados</span>
-            <span className="catadmin-kpi-value">{loading ? "—" : kpis.agotados}</span>
+            <span className="catadmin-kpi-value">{kpis.agotados}</span>
           </div>
         </div>
       </div>
 
       {/* ── Chips de categoría con conteo ── */}
-      {!loading && (
-        <div className="catadmin-chips-row">
-          {categoriaChips.map((c) => (
-            <button
-              key={c.nombre}
-              className={`catadmin-chip${filtroCategoria === c.nombre ? " active" : ""}`}
-              onClick={() => setFiltroCategoria(c.nombre)}
-            >
-              {c.nombre} <span className="catadmin-chip-count">{c.total}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="catadmin-chips-row">
+        {categoriaChips.map((c) => (
+          <button
+            key={c.nombre}
+            className={`catadmin-chip${filtroCategoria === c.nombre ? " active" : ""}`}
+            onClick={() => setFiltroCategoria(c.nombre)}
+          >
+            {c.nombre} <span className="catadmin-chip-count">{c.total}</span>
+          </button>
+        ))}
+      </div>
 
       {/* ── Filtros ── */}
       <div className="catadmin-filtros-bar">
@@ -277,27 +277,14 @@ export default function CatalogoAdmin() {
       </div>
 
       <div className="catadmin-results-count">
-        {loading ? "Cargando..." : `${filtrados.length} producto${filtrados.length !== 1 ? "s" : ""} ${hayFiltroActivo ? "encontrado" + (filtrados.length !== 1 ? "s" : "") : "en el catálogo"}`}
-        {!loading && hayFiltroActivo && (
+        {`${filtrados.length} producto${filtrados.length !== 1 ? "s" : ""} ${hayFiltroActivo ? "encontrado" + (filtrados.length !== 1 ? "s" : "") : "en el catálogo"}`}
+        {hayFiltroActivo && (
           <button className="catadmin-limpiar-filtros" onClick={limpiarFiltros}>Limpiar filtros</button>
         )}
       </div>
 
       {/* ── Vitrina ── */}
-      {loading ? (
-        <div className="catadmin-grid">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="catadmin-card catadmin-skeleton">
-              <div className="catadmin-skeleton-img" />
-              <div className="catadmin-skeleton-body">
-                <div className="catadmin-skeleton-line short" />
-                <div className="catadmin-skeleton-line" />
-                <div className="catadmin-skeleton-line medium" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : filtrados.length === 0 ? (
+      {filtrados.length === 0 ? (
         <div className="catadmin-empty-state">
           <IconBox />
           <p>No hay productos que coincidan con estos filtros.</p>

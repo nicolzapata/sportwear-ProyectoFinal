@@ -6,6 +6,7 @@ import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
+import Loader from "../../components/Loader";
 import { IconEye, IconPrint, IconSearch, IconX, IconBox } from "../../components/Icons";
 
 const FILAS_POR_PAGINA = 10;
@@ -201,6 +202,8 @@ export default function Pedidos() {
     }
   };
 
+  if (cargando) return <Loader text="Cargando pedidos..." />;
+
   if (errorMsg) return (
     <div className="pedidos-container">
       <div className="pedidos-error-banner"><IconX /> {errorMsg}</div>
@@ -233,7 +236,7 @@ export default function Pedidos() {
       </div>
 
       <div className="pedidos-results-count">
-        {cargando ? "Cargando..." : `${filtrados.length} pedido${filtrados.length !== 1 ? 's' : ''} encontrado${filtrados.length !== 1 ? 's' : ''}`}
+        {`${filtrados.length} pedido${filtrados.length !== 1 ? 's' : ''} encontrado${filtrados.length !== 1 ? 's' : ''}`}
       </div>
 
       <div className="tbl-container pedidos-tbl-container">
@@ -249,15 +252,7 @@ export default function Pedidos() {
             </tr>
           </thead>
           <tbody className="tbl-body">
-            {cargando ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} className="tbl-row">
-                  {Array.from({ length: 6 }).map((__, j) => (
-                    <td className="tbl-td" key={j}><div className="pedidos-skeleton-cell" /></td>
-                  ))}
-                </tr>
-              ))
-            ) : filtradosPagina.map((p) => (
+            {filtradosPagina.map((p) => (
               <tr key={p.id_pedido} className="tbl-row">
                 <td className="tbl-td">{p.cliente}</td>
                 <td className="tbl-td pedidos-producto-cell">
@@ -284,7 +279,7 @@ export default function Pedidos() {
                 </td>
               </tr>
             ))}
-            {!cargando && filtrados.length === 0 && (
+            {filtrados.length === 0 && (
               <tr><td colSpan={6} style={{ padding: 0 }}>
                 <div className="pedidos-empty-state"><IconBox /><p>No hay pedidos registrados.</p></div>
               </td></tr>

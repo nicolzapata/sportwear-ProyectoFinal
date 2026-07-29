@@ -111,6 +111,19 @@ export default function Registro() {
     }
   };
 
+  // Igual que verificarEmailDuplicado pero para el documento.
+  const verificarDocumentoDuplicado = async (documento) => {
+    try {
+      const { data } = await api.get("/auth/check-documento", { params: { documento } });
+      if (data?.existe && formRef.current.documento.trim() === documento) {
+        setErrores(prev => ({ ...prev, documento: "Este documento ya está registrado." }));
+      }
+    } catch {
+      // Si la verificación falla (red, etc.) no bloqueamos al usuario; el submit
+      // igual rechaza duplicados con el 409 del backend.
+    }
+  };
+
   // Calcula TODOS los errores del formulario a partir de un estado dado, sin tocar el state.
   const calcularErrores = (formValue) => {
     const e = {};
@@ -181,6 +194,10 @@ export default function Registro() {
     if (e.target.name === "email") {
       const valor = e.target.value.trim();
       if (valor && !validarEmail(valor)) verificarEmailDuplicado(valor);
+    }
+    if (e.target.name === "documento") {
+      const valor = e.target.value.trim();
+      if (valor && !validarNumeroDocumento(form.tipo_doc, valor)) verificarDocumentoDuplicado(valor);
     }
   };
 

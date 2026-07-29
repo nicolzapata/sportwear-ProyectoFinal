@@ -77,18 +77,11 @@ const togglePermisoCuotas = async (req, res) => {
 const getMiPerfil = async (req, res) => {
   try {
     const id_cliente = req.usuario.id_cliente;
+    // getClienteById ya trae permiso_cuotas correcto desde "Clientes" (la tabla
+    // que de verdad actualiza el admin al bloquear/permitir cuotas); antes esto
+    // se sobreescribía leyendo "Usuarios".permiso_cuotas, una columna que nunca
+    // se actualiza, dejando el bloqueo del admin sin efecto en el checkout.
     const data = await clientesService.getClienteById(id_cliente);
-    // Agregar permiso_cuotas desde la tabla Usuarios
-    if (req.usuario.id_usuario) {
-      const pool = require('../config/db');
-      const usuarioRes = await pool.query(
-        `SELECT permiso_cuotas FROM "Usuarios" WHERE id_usuario = $1`,
-        [req.usuario.id_usuario]
-      );
-      if (usuarioRes.rows.length) {
-        data.permiso_cuotas = usuarioRes.rows[0].permiso_cuotas;
-      }
-    }
     res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });

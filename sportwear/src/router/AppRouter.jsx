@@ -25,7 +25,6 @@ import Roles         from "../pages/roles/Roles";
 import Usuarios      from "../pages/usuarios/Usuarios";
 import GestProductos from "../pages/gestProductos/GestProductos";
 import CatalogoAdmin from "../pages/catalogoAdmin/CatalogoAdmin";
-import Colores       from "../pages/colores/Colores";
 import Proveedores   from "../pages/proveedores/Proveedores";
 import Compras       from "../pages/compras/Compras";
 import Pedidos       from "../pages/pedidos/Pedidos";
@@ -92,7 +91,6 @@ export default function AppRouter() {
               <Route path="/usuarios"        element={<P k="usuarios">       <Usuarios />      </P>} />
               <Route path="/productos"       element={<P k="productos">      <GestProductos /> </P>} />
               <Route path="/catalogo-admin"  element={<P k="catalogo-admin"> <CatalogoAdmin /> </P>} />
-              <Route path="/colores"         element={<P k="colores">        <Colores />       </P>} />
               <Route path="/proveedores"     element={<P k="proveedores">    <Proveedores />   </P>} />
               <Route path="/compras"         element={<P k="compras">        <Compras />       </P>} />
               <Route path="/pedidos"         element={<P k="pedidos">        <Pedidos />       </P>} />

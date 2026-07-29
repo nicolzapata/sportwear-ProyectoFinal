@@ -355,7 +355,7 @@ export default function Proveedores() {
 
                 <div className="proveedores-form-row-3">
                   <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Tipo de documento <span className="proveedores-req">*</span></label>
+                    <label className="proveedores-form-label">Tipo de documento <span className="proveedores-req">*</span>{editar && <span className="proveedores-opcional"> (no editable)</span>}</label>
                     <select
                       className="proveedores-form-select"
                       value={form.tipo_doc}
@@ -377,7 +377,7 @@ export default function Proveedores() {
                     </select>
                   </div>
                   <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Número de documento <span className="proveedores-req">*</span></label>
+                    <label className="proveedores-form-label">Número de documento <span className="proveedores-req">*</span>{editar && <span className="proveedores-opcional"> (no editable)</span>}</label>
                     <input
                       type="text"
                       inputMode="numeric"

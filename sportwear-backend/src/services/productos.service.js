@@ -197,11 +197,15 @@ const getHistorialPrecios = async (id_producto) => {
   return result.rows;
 };
 
+// Al desactivar un producto también se despublica (no puede quedar visible en el
+// catálogo un producto inactivo). Al reactivarlo, el estado de publicación no se
+// restaura automáticamente: el admin decide cuándo volver a publicarlo.
 const toggleEstado = async (id) => {
   const result = await pool.query(`
     UPDATE "Productos"
-    SET estado = CASE WHEN estado='Activo' THEN 'Inactivo' ELSE 'Activo' END
-    WHERE id_producto=$1 RETURNING id_producto, estado
+    SET estado = CASE WHEN estado='Activo' THEN 'Inactivo' ELSE 'Activo' END,
+        publicado = CASE WHEN estado='Activo' THEN false ELSE publicado END
+    WHERE id_producto=$1 RETURNING id_producto, estado, publicado
   `, [id]);
   if (!result.rows[0]) throw { status: 404, message: 'No encontrado' };
   return result.rows[0];

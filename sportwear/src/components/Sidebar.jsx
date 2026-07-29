@@ -5,7 +5,7 @@ import { MENU_ITEMS, PERMISOS } from "../config/permisos";
 import logo from "../assets/LOGO.png";
 import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,
-  IconShoppingBag, IconPalette, IconBox, IconTruck, IconCart,
+  IconShoppingBag, IconBox, IconTruck, IconCart,
   IconDollar, IconHeart, IconCreditCard, IconSettings, IconLogOut, IconX,
 } from "./Icons";
 import "./Sidebar.css";
@@ -16,7 +16,6 @@ const NAV_ICONS = {
   "/usuarios":       <IconUsers />,
   "/productos":      <IconShoppingBag />,
   "/catalogo-admin": <IconBox />,
-  "/colores":        <IconPalette />,
   "/catalogo":       <IconTag />,
   "/proveedores":    <IconTruck />,
   "/compras":        <IconCart />,

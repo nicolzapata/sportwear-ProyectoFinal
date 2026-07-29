@@ -7,6 +7,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { validarMonto, MAX_MONTO, MAX_LONGITUD_TEXTO_LIBRE, MAX_LONGITUD_DIRECCION } from "../../utils/numerico";
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
+import Loader from "../../components/Loader";
 import { IconDollar, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
 
 const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
@@ -451,6 +452,8 @@ export default function PedidosVentas() {
     }
   };
 
+  if (cargando) return <Loader text="Cargando ventas..." />;
+
   if (errorMsg) return (
     <div className="pedidosventas-container">
       <div className="pedidosventas-error-banner"><IconX /> {errorMsg}</div>
@@ -478,7 +481,7 @@ export default function PedidosVentas() {
       </div>
 
       <div className="pedidosventas-results-count">
-        {cargando ? "Cargando..." : `${filtrados.length} venta${filtrados.length !== 1 ? 's' : ''} encontrada${filtrados.length !== 1 ? 's' : ''}`}
+        {`${filtrados.length} venta${filtrados.length !== 1 ? 's' : ''} encontrada${filtrados.length !== 1 ? 's' : ''}`}
       </div>
 
       <div className="tbl-container pedidosventas-tbl-container">
@@ -496,15 +499,7 @@ export default function PedidosVentas() {
             </tr>
           </thead>
           <tbody className="tbl-body">
-            {cargando ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} className="tbl-row">
-                  {Array.from({ length: 8 }).map((__, j) => (
-                    <td className="tbl-td" key={j}><div className="pedidosventas-skeleton-cell" /></td>
-                  ))}
-                </tr>
-              ))
-            ) : filtradosPagina.map((v) => {
+            {filtradosPagina.map((v) => {
               const cantTotal = v.items?.reduce((sum, i) => sum + i.cantidad, 0) || 0;
               const saldo = v.total - (v.total_pagado || 0);
               const pct = v.total > 0 ? Math.min(100, Math.round(((v.total_pagado || 0) / v.total) * 100)) : 0;
@@ -554,7 +549,7 @@ export default function PedidosVentas() {
               </tr>
               );
             })}
-            {!cargando && filtrados.length === 0 && (
+            {filtrados.length === 0 && (
               <tr><td colSpan={8} style={{ padding: 0 }}>
                 <div className="pedidosventas-empty-state"><IconDollar /><p>No hay ventas registradas.</p></div>
               </td></tr>

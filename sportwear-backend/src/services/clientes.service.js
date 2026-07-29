@@ -105,7 +105,9 @@ const crearCliente = async (datos) => {
     `, [
       nombre, tipo_doc || 'CC', documento, telefono || null, email,
       ciudad || 'Medellín', id_barrio || null, direccion || null,
-      permiso_cuotas !== undefined ? permiso_cuotas : true,
+      // El pago por cuotas nunca se otorga automáticamente: el admin lo habilita
+      // manualmente después, desde la gestión de clientes.
+      permiso_cuotas !== undefined ? permiso_cuotas : false,
       estado || 'Activo',
     ]);
     const cliente = nuevoCliente.rows[0];
@@ -135,7 +137,7 @@ const crearCliente = async (datos) => {
 
 const actualizarCliente = async (id, datos) => {
   // La identificación (tipo_doc/documento) y el email no se pueden modificar una vez creados.
-  const { nombre, telefono, id_barrio, direccion, permiso_cuotas, estado } = datos;
+  const { nombre, telefono, id_barrio, direccion, permiso_cuotas, estado, contrasena } = datos;
   validarCamposNumericos({ teléfono: telefono });
   const campos = [];
   const valores = [];
@@ -146,7 +148,20 @@ const actualizarCliente = async (id, datos) => {
   if (direccion !== undefined) { campos.push(`direccion = $${idx++}`); valores.push(direccion); }
   if (permiso_cuotas !== undefined) { campos.push(`permiso_cuotas = $${idx++}`); valores.push(permiso_cuotas); }
   if (estado !== undefined) { campos.push(`estado = $${idx++}`); valores.push(estado); }
-  if (campos.length === 0) return { id_cliente: id };
+
+  // La contraseña vive en "Usuarios" (vinculado por id_cliente), no en "Clientes".
+  if (contrasena) {
+    await pool.query(
+      `UPDATE "Usuarios" SET password_hash = crypt($1, gen_salt('bf',12)) WHERE id_cliente = $2`,
+      [contrasena, id]
+    );
+  }
+
+  if (campos.length === 0) {
+    const actual = await pool.query(`SELECT * FROM "Clientes" WHERE id_cliente = $1`, [id]);
+    if (!actual.rows.length) throw { status: 404, message: 'Cliente no encontrado' };
+    return actual.rows[0];
+  }
   valores.push(id);
   const query = `UPDATE "Clientes" SET ${campos.join(', ')} WHERE id_cliente = $${idx} RETURNING *`;
   const result = await pool.query(query, valores);
@@ -161,6 +176,15 @@ const toggleEstado = async (id) => {
     WHERE id_cliente = $1 RETURNING id_cliente, estado
   `, [id]);
   if (!result.rows.length) throw { status: 404, message: 'No encontrado' };
+
+  // Si este cliente tiene una cuenta de acceso con rol Cliente vinculada,
+  // su estado se mantiene sincronizado en ambas tablas.
+  await pool.query(`
+    UPDATE "Usuarios" u SET estado = $1
+    FROM "Roles" r
+    WHERE u.id_rol = r.id_rol AND LOWER(r.nombre) = 'cliente' AND u.id_cliente = $2
+  `, [result.rows[0].estado, id]);
+
   return result.rows[0];
 };
 

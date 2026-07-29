@@ -93,4 +93,13 @@ const checkEmail = async (req, res) => {
   }
 };
 
-module.exports = { login, registro, crearUsuario, actualizarUsuario, perfil, recuperar, restablecer, checkEmail };
+const checkDocumento = async (req, res) => {
+  try {
+    const existe = await authService.existeDocumento(req.query.documento);
+    res.json({ existe });
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message || 'Error interno del servidor' });
+  }
+};
+
+module.exports = { login, registro, crearUsuario, actualizarUsuario, perfil, recuperar, restablecer, checkEmail, checkDocumento };

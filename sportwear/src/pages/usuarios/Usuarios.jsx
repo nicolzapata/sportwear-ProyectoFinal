@@ -62,7 +62,7 @@ export default function Usuarios() {
   const [clienteForm, setClienteForm] = useState({
     nombres: "", apellidos: "", tipo_doc: "CC", documento: "", telefono: "", email: "",
     ciudad: "Medellín", id_barrio: "", direccion: "",
-    contrasena: "", confirmar: "", permiso_cuotas: 1, estado: "Activo"
+    contrasena: "", confirmar: "", permiso_cuotas: 0, estado: "Activo"
   });
   const [erroresCliente, setErroresCliente] = useState({ nombres: "", apellidos: "", documento: "", telefono: "", email: "", ciudad: "", direccion: "", id_barrio: "", contrasena: "", confirmar: "" });
 
@@ -86,6 +86,18 @@ export default function Usuarios() {
       const { data } = await api.get("/auth/check-email", { params: { email } });
       if (data?.existe && formRefActual.current.email.trim() === email) {
         setErroresFn(prev => ({ ...prev, email: "Este correo ya está registrado." }));
+      }
+    } catch {
+      // Si falla la verificación en tiempo real, el submit igual rechaza duplicados (409).
+    }
+  };
+
+  // Igual que verificarEmailDuplicado pero para el documento.
+  const verificarDocumentoDuplicado = async (tipo_doc, documento, setErroresFn, formRefActual) => {
+    try {
+      const { data } = await api.get("/auth/check-documento", { params: { tipo_doc, documento } });
+      if (data?.existe && formRefActual.current.documento.trim() === documento) {
+        setErroresFn(prev => ({ ...prev, documento: "Este documento ya está registrado." }));
       }
     } catch {
       // Si falla la verificación en tiempo real, el submit igual rechaza duplicados (409).
@@ -182,7 +194,7 @@ export default function Usuarios() {
   const abrirRegistrarCliente = () => {
     setEditar(null);
     setErroresCliente({ nombres: "", apellidos: "", documento: "", telefono: "", email: "", ciudad: "", direccion: "", id_barrio: "", contrasena: "", confirmar: "" });
-    setClienteForm({ nombres: "", apellidos: "", tipo_doc: "CC", documento: "", telefono: "", email: "", ciudad: "Medellín", id_barrio: "", direccion: "", contrasena: "", confirmar: "", permiso_cuotas: 1, estado: "Activo" });
+    setClienteForm({ nombres: "", apellidos: "", tipo_doc: "CC", documento: "", telefono: "", email: "", ciudad: "Medellín", id_barrio: "", direccion: "", contrasena: "", confirmar: "", permiso_cuotas: 0, estado: "Activo" });
     setModal(true);
   };
 
@@ -204,7 +216,7 @@ export default function Usuarios() {
   const abrirEditarCliente = (c) => {
     setEditar(c.id_cliente);
     setErroresCliente({ nombres: "", apellidos: "", documento: "", telefono: "", email: "", ciudad: "", direccion: "", id_barrio: "", contrasena: "", confirmar: "" });
-    setClienteForm({ ...dividirNombre(c.nombre), tipo_doc: c.tipo_doc, documento: c.documento, telefono: c.telefono || "", email: c.email || "", ciudad: c.ciudad || "Medellín", id_barrio: c.id_barrio || "", direccion: c.direccion || "", contrasena: "", confirmar: "", permiso_cuotas: c.permiso_cuotas || 1, estado: c.estado });
+    setClienteForm({ ...dividirNombre(c.nombre), tipo_doc: c.tipo_doc, documento: c.documento, telefono: c.telefono || "", email: c.email || "", ciudad: c.ciudad || "Medellín", id_barrio: c.id_barrio || "", direccion: c.direccion || "", contrasena: "", confirmar: "", permiso_cuotas: c.permiso_cuotas ? 1 : 0, estado: c.estado });
     setModal(true);
   };
 
@@ -317,12 +329,12 @@ export default function Usuarios() {
     if (eCiudad) e.ciudad = eCiudad;
     if (!clienteForm.id_barrio) e.id_barrio = "Selecciona un barrio";
     if (!clienteForm.direccion.trim()) e.direccion = "La dirección es obligatoria";
-    if (!editar) {
-      const eContrasena = revisarContrasenaCliente(clienteForm.contrasena);
-      if (eContrasena) e.contrasena = eContrasena;
-      const eConfirmar = revisarConfirmarCliente(clienteForm.confirmar, clienteForm.contrasena);
-      if (eConfirmar) e.confirmar = eConfirmar;
-    }
+    // Al editar, dejar la contraseña vacía significa "no cambiarla" (revisarContrasenaCliente
+    // ya lo permite); al crear, sigue siendo obligatoria.
+    const eContrasena = revisarContrasenaCliente(clienteForm.contrasena);
+    if (eContrasena) e.contrasena = eContrasena;
+    const eConfirmar = revisarConfirmarCliente(clienteForm.confirmar, clienteForm.contrasena);
+    if (eConfirmar) e.confirmar = eConfirmar;
     setErroresCliente(prev => ({
       ...prev, ...e,
       ...(!e.ciudad && { ciudad: "" }), ...(!e.id_barrio && { id_barrio: "" }), ...(!e.direccion && { direccion: "" }),
@@ -389,8 +401,8 @@ export default function Usuarios() {
 
   if (loading) return <Loader text="Cargando usuarios..." />;
 
-  // ── Paso 1 (combinado): Documento + Cuenta ────────────────────────────────
-  const PasosDatosCuenta = (
+  // ── Sección: Datos personales (documento primero, como en Registro) ───────
+  const PasoPersonal = (
     <div>
       <div className="usuarios-form-row">
         <div className="usuarios-form-group">
@@ -425,6 +437,10 @@ export default function Usuarios() {
             onBlur={() => {
               const msg = !form.documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(form.tipo_doc, form.documento);
               setErrores(prev => ({ ...prev, documento: msg }));
+              if (!editar && !msg) {
+                const valor = form.documento.trim();
+                if (valor) verificarDocumentoDuplicado(form.tipo_doc, valor, setErrores, formRef);
+              }
             }} />
           {errores.documento && <span className="usuarios-form-error">{errores.documento}</span>}
         </div>
@@ -453,7 +469,12 @@ export default function Usuarios() {
           {errores.apellidos && <span className="usuarios-form-error">{errores.apellidos}</span>}
         </div>
       </div>
+    </div>
+  );
 
+  // ── Sección: Datos de contacto ─────────────────────────────────────────────
+  const PasoContacto = (
+    <div>
       <div className="usuarios-form-row">
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">Correo electrónico <span className="usuarios-req">*</span>{editar && <span className="usuarios-campo-bloqueado"> (no editable)</span>}</label>
@@ -486,53 +507,11 @@ export default function Usuarios() {
           {errores.telefono && <span className="usuarios-form-error">{errores.telefono}</span>}
         </div>
       </div>
-      {!editar && (
-        <div className="usuarios-form-group">
-          <label className="usuarios-form-label">Contraseña {!editar && <span className="usuarios-req">*</span>}</label>
-          <div className="input-wrapper">
-            <span className="input-icon"><IconLock /></span>
-            <input type={showPassword ? "text" : "password"}
-              className={`usuarios-form-input${errores.contrasena ? " input-error" : ""}`}
-              placeholder={editar ? "Dejar vacío para no cambiar" : "Mínimo 6 caracteres"}
-              maxLength={MAX_LONGITUD_CONTRASENA}
-              value={form.contrasena}
-              onChange={e => {
-                const contrasena = e.target.value;
-                setForm({ ...form, contrasena });
-                if (errores.contrasena) setErrores(prev => ({ ...prev, contrasena: revisarContrasena(contrasena) }));
-                if (errores.confirmar) setErrores(prev => ({ ...prev, confirmar: revisarConfirmar(form.confirmar, contrasena) }));
-              }}
-              onBlur={() => setErrores(prev => ({ ...prev, contrasena: revisarContrasena(form.contrasena) }))} />
-            <div className="input-bar" />
-            <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <IconEyeOpen /> : <IconEyeClosed />}</span>
-          </div>
-          {errores.contrasena && <span className="usuarios-form-error">{errores.contrasena}</span>}
-        </div>
-      )}
-      {!editar && (
-        <div className="usuarios-form-group">
-          <label className="usuarios-form-label">Confirmar contraseña {(!editar || form.contrasena) && <span className="usuarios-req">*</span>}</label>
-          <input type="password"
-            className={`usuarios-form-input${errores.confirmar ? " input-error" : ""}`}
-            placeholder="Repite la contraseña"
-            maxLength={MAX_LONGITUD_CONTRASENA}
-            value={form.confirmar}
-            onChange={e => {
-              const confirmar = e.target.value;
-              setForm({ ...form, confirmar });
-              if (errores.confirmar) setErrores(prev => ({ ...prev, confirmar: revisarConfirmar(confirmar, form.contrasena) }));
-            }}
-            onBlur={() => setErrores(prev => ({ ...prev, confirmar: revisarConfirmar(form.confirmar, form.contrasena) }))} />
-          {errores.confirmar && <span className="usuarios-form-error">{errores.confirmar}</span>}
-        </div>
-      )}
-    </div>
-  );
-
-  // ── Paso 2 (combinado): Ubicación + Rol ───────────────────────────────────
-  const PasosUbicacionRol = (
-    <div>
-      <div className="usuarios-form-group"><label className="usuarios-form-label">Ciudad</label><input className="usuarios-form-input" placeholder="Medellín" maxLength={MAX_LONGITUD_NOMBRE} value={form.ciudad} onChange={e => setForm({ ...form, ciudad: e.target.value })} /></div>
+      <div className="usuarios-form-group">
+        <label className="usuarios-form-label">Ciudad</label>
+        <input className="usuarios-form-input" value="Medellín" disabled title="Por ahora solo se hacen envíos a Medellín" />
+        <span className="usuarios-form-hint">Por ahora solo se hacen envíos dentro de Medellín.</span>
+      </div>
       <div className="usuarios-form-row">
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">Barrio <span className="usuarios-req">*</span></label>
@@ -560,38 +539,83 @@ export default function Usuarios() {
           {errores.direccion && <span className="usuarios-form-error">{errores.direccion}</span>}
         </div>
       </div>
+    </div>
+  );
 
-      {editar ? (
-        <div className="usuarios-form-row">
-          <div className="usuarios-form-group">
-            <label className="usuarios-form-label">Rol</label>
-            <select className="usuarios-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
-              {roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}
-            </select>
-          </div>
-          <div className="usuarios-form-group">
-            <label className="usuarios-form-label">Estado</label>
-            <select
-              className="usuarios-form-select"
-              value={esRolAdmin(form.id_rol) ? "Activo" : form.estado}
-              disabled={esRolAdmin(form.id_rol)}
-              title={esRolAdmin(form.id_rol) ? "Un administrador siempre permanece activo" : undefined}
-              onChange={e => setForm({ ...form, estado: e.target.value })}
-            >
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-            </select>
-          </div>
+  // ── Sección: Seguridad (solo al crear) ─────────────────────────────────────
+  const PasoSeguridad = !editar && (
+    <div className="usuarios-form-row">
+      <div className="usuarios-form-group">
+        <label className="usuarios-form-label">Contraseña <span className="usuarios-req">*</span></label>
+        <div className="input-wrapper">
+          <span className="input-icon"><IconLock /></span>
+          <input type={showPassword ? "text" : "password"}
+            className={`usuarios-form-input${errores.contrasena ? " input-error" : ""}`}
+            placeholder="Mínimo 6 caracteres"
+            maxLength={MAX_LONGITUD_CONTRASENA}
+            value={form.contrasena}
+            onChange={e => {
+              const contrasena = e.target.value;
+              setForm({ ...form, contrasena });
+              if (errores.contrasena) setErrores(prev => ({ ...prev, contrasena: revisarContrasena(contrasena) }));
+              if (errores.confirmar) setErrores(prev => ({ ...prev, confirmar: revisarConfirmar(form.confirmar, contrasena) }));
+            }}
+            onBlur={() => setErrores(prev => ({ ...prev, contrasena: revisarContrasena(form.contrasena) }))} />
+          <div className="input-bar" />
+          <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>{showPassword ? <IconEyeOpen /> : <IconEyeClosed />}</span>
         </div>
-      ) : (
+        {errores.contrasena && <span className="usuarios-form-error">{errores.contrasena}</span>}
+      </div>
+      <div className="usuarios-form-group">
+        <label className="usuarios-form-label">Confirmar contraseña <span className="usuarios-req">*</span></label>
+        <input type="password"
+          className={`usuarios-form-input${errores.confirmar ? " input-error" : ""}`}
+          placeholder="Repite la contraseña"
+          maxLength={MAX_LONGITUD_CONTRASENA}
+          value={form.confirmar}
+          onChange={e => {
+            const confirmar = e.target.value;
+            setForm({ ...form, confirmar });
+            if (errores.confirmar) setErrores(prev => ({ ...prev, confirmar: revisarConfirmar(confirmar, form.contrasena) }));
+          }}
+          onBlur={() => setErrores(prev => ({ ...prev, confirmar: revisarConfirmar(form.confirmar, form.contrasena) }))} />
+        {errores.confirmar && <span className="usuarios-form-error">{errores.confirmar}</span>}
+      </div>
+    </div>
+  );
+
+  // ── Sección: Rol y estado (solo administración) ────────────────────────────
+  const PasoRolEstado = (
+    editar ? (
+      <div className="usuarios-form-row">
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">Rol</label>
           <select className="usuarios-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
             {roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}
           </select>
         </div>
-      )}
-    </div>
+        <div className="usuarios-form-group">
+          <label className="usuarios-form-label">Estado</label>
+          <select
+            className="usuarios-form-select"
+            value={esRolAdmin(form.id_rol) ? "Activo" : form.estado}
+            disabled={esRolAdmin(form.id_rol)}
+            title={esRolAdmin(form.id_rol) ? "Un administrador siempre permanece activo" : undefined}
+            onChange={e => setForm({ ...form, estado: e.target.value })}
+          >
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+      </div>
+    ) : (
+      <div className="usuarios-form-group">
+        <label className="usuarios-form-label">Rol</label>
+        <select className="usuarios-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
+          {roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}
+        </select>
+      </div>
+    )
   );
 
   const DetalleDatosCuenta = detalle && (
@@ -627,7 +651,7 @@ export default function Usuarios() {
         <div className="usuarios-actions-left">
           <div className="usuarios-search-wrapper">
             <span className="usuarios-search-icon"><IconSearch /></span>
-            <input type="text" className="usuarios-search-input" placeholder={filterType === 'usuarios' ? "Buscar por nombre, email o ID..." : "Buscar por nombre o documento..."} value={busqueda}
+            <input type="text" className="usuarios-search-input" placeholder={filterType === 'usuarios' ? "Buscar por nombre, email o documento..." : "Buscar por nombre o documento..."} value={busqueda}
               onChange={e => setBusqueda(e.target.value)} />
             {busqueda && <button className="usuarios-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
           </div>
@@ -654,6 +678,7 @@ export default function Usuarios() {
               return data;
             }}
             columnas={filterType === 'usuarios' ? [
+              { header: "Documento", value: (u) => u.documento ? `${u.tipo_doc} ${u.documento}` : "—" },
               { header: "Usuario", key: "nombre" },
               { header: "Email", key: "email" },
               { header: "Rol", key: "rol" },
@@ -677,6 +702,7 @@ export default function Usuarios() {
           <thead className="tbl-header">
             {filterType === 'usuarios' ? (
               <tr>
+                <th className="tbl-th">Documento</th>
                 <th className="tbl-th">Usuario</th>
                 <th className="tbl-th">Email</th>
                 <th className="tbl-th">Rol</th>
@@ -700,6 +726,7 @@ export default function Usuarios() {
             ) : filterType === 'usuarios' ? (
               filtradosPagina.map(u => (
                 <tr key={u.id_usuario} className="tbl-row">
+                  <td className="tbl-td">{u.documento ? <span className="clientes-doc-badge">{u.tipo_doc} {u.documento}</span> : "—"}</td>
                   <td className="tbl-td"><div className="usuarios-user-info"><div className="usuarios-user-name">{u.nombre}</div></div></td>
                   <td className="tbl-td usuarios-email-cell">{u.email}</td>
                   <td className="tbl-td"><span className="tabla-rol">{u.rol || getRoleName(u.id_rol)}</span></td>
@@ -776,12 +803,22 @@ export default function Usuarios() {
 
             <div className="usuarios-modal-body usuarios-factura-body">
               <div className="usuarios-factura-seccion">
-                <h3 className="usuarios-factura-titulo">Datos y cuenta</h3>
-                {PasosDatosCuenta}
+                <h3 className="usuarios-factura-titulo">Datos personales</h3>
+                {PasoPersonal}
               </div>
               <div className="usuarios-factura-seccion">
-                <h3 className="usuarios-factura-titulo">Ubicación y rol</h3>
-                {PasosUbicacionRol}
+                <h3 className="usuarios-factura-titulo">Datos de contacto</h3>
+                {PasoContacto}
+              </div>
+              {PasoSeguridad && (
+                <div className="usuarios-factura-seccion">
+                  <h3 className="usuarios-factura-titulo">Seguridad</h3>
+                  {PasoSeguridad}
+                </div>
+              )}
+              <div className="usuarios-factura-seccion">
+                <h3 className="usuarios-factura-titulo">Rol y estado</h3>
+                {PasoRolEstado}
               </div>
             </div>
 
@@ -828,6 +865,10 @@ export default function Usuarios() {
                 onBlur={() => {
                   const msg = !clienteForm.documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(clienteForm.tipo_doc, clienteForm.documento);
                   setErroresCliente(prev => ({ ...prev, documento: msg }));
+                  if (!editar && !msg) {
+                    const valor = clienteForm.documento.trim();
+                    if (valor) verificarDocumentoDuplicado(clienteForm.tipo_doc, valor, setErroresCliente, clienteFormRef);
+                  }
                 }} />{erroresCliente.documento && <span className="usuarios-form-error">{erroresCliente.documento}</span>}</div>
             </div>
             <div className="usuarios-form-row">
@@ -855,9 +896,11 @@ export default function Usuarios() {
 
           <div className="usuarios-factura-seccion">
             <h3 className="usuarios-factura-titulo">Ubicación y clasificación</h3>
-            <div className="usuarios-form-group"><label className="usuarios-form-label">Ciudad <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.ciudad ? " input-error" : ""}`} placeholder="Medellín" maxLength={MAX_LONGITUD_NOMBRE} value={clienteForm.ciudad}
-              onChange={e => { const ciudad = e.target.value; setClienteForm({ ...clienteForm, ciudad }); if (erroresCliente.ciudad) setErroresCliente(prev => ({ ...prev, ciudad: errorCiudadCliente(ciudad) })); }}
-              onBlur={() => setErroresCliente(prev => ({ ...prev, ciudad: errorCiudadCliente(clienteForm.ciudad) }))} />{erroresCliente.ciudad && <span className="usuarios-form-error">{erroresCliente.ciudad}</span>}</div>
+            <div className="usuarios-form-group">
+              <label className="usuarios-form-label">Ciudad</label>
+              <input className="usuarios-form-input" value="Medellín" disabled title="Por ahora solo se hacen envíos a Medellín" />
+              <span className="usuarios-form-hint">Por ahora solo se hacen envíos dentro de Medellín.</span>
+            </div>
             <div className="usuarios-form-row">
               <div className="usuarios-form-group">
                 <label className="usuarios-form-label">Barrio <span className="usuarios-req">*</span></label>
@@ -886,25 +929,23 @@ export default function Usuarios() {
               </div>
             </div>
 
-            {!editar && (
-              <div className="usuarios-form-row">
-                <div className="usuarios-form-group"><label className="usuarios-form-label">Contraseña <span className="usuarios-req">*</span></label><input type="password" className={`usuarios-form-input${erroresCliente.contrasena ? " input-error" : ""}`} placeholder="Mín. 6 caracteres" maxLength={MAX_LONGITUD_CONTRASENA} value={clienteForm.contrasena}
-                  onChange={e => {
-                    const contrasena = e.target.value;
-                    setClienteForm({ ...clienteForm, contrasena });
-                    if (erroresCliente.contrasena) setErroresCliente(prev => ({ ...prev, contrasena: revisarContrasenaCliente(contrasena) }));
-                    if (erroresCliente.confirmar) setErroresCliente(prev => ({ ...prev, confirmar: revisarConfirmarCliente(clienteForm.confirmar, contrasena) }));
-                  }}
-                  onBlur={() => setErroresCliente(prev => ({ ...prev, contrasena: revisarContrasenaCliente(clienteForm.contrasena) }))} />{erroresCliente.contrasena && <span className="usuarios-form-error">{erroresCliente.contrasena}</span>}</div>
-                <div className="usuarios-form-group"><label className="usuarios-form-label">Confirmar contraseña <span className="usuarios-req">*</span></label><input type="password" className={`usuarios-form-input${erroresCliente.confirmar ? " input-error" : ""}`} placeholder="Repite la contraseña" maxLength={MAX_LONGITUD_CONTRASENA} value={clienteForm.confirmar}
-                  onChange={e => {
-                    const confirmar = e.target.value;
-                    setClienteForm({ ...clienteForm, confirmar });
-                    if (erroresCliente.confirmar) setErroresCliente(prev => ({ ...prev, confirmar: revisarConfirmarCliente(confirmar, clienteForm.contrasena) }));
-                  }}
-                  onBlur={() => setErroresCliente(prev => ({ ...prev, confirmar: revisarConfirmarCliente(clienteForm.confirmar, clienteForm.contrasena) }))} />{erroresCliente.confirmar && <span className="usuarios-form-error">{erroresCliente.confirmar}</span>}</div>
-              </div>
-            )}
+            <div className="usuarios-form-row">
+              <div className="usuarios-form-group"><label className="usuarios-form-label">Contraseña {!editar && <span className="usuarios-req">*</span>}</label><input type="password" className={`usuarios-form-input${erroresCliente.contrasena ? " input-error" : ""}`} placeholder={editar ? "Dejar vacío para no cambiar" : "Mín. 6 caracteres"} maxLength={MAX_LONGITUD_CONTRASENA} value={clienteForm.contrasena}
+                onChange={e => {
+                  const contrasena = e.target.value;
+                  setClienteForm({ ...clienteForm, contrasena });
+                  if (erroresCliente.contrasena) setErroresCliente(prev => ({ ...prev, contrasena: revisarContrasenaCliente(contrasena) }));
+                  if (erroresCliente.confirmar) setErroresCliente(prev => ({ ...prev, confirmar: revisarConfirmarCliente(clienteForm.confirmar, contrasena) }));
+                }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, contrasena: revisarContrasenaCliente(clienteForm.contrasena) }))} />{erroresCliente.contrasena && <span className="usuarios-form-error">{erroresCliente.contrasena}</span>}</div>
+              <div className="usuarios-form-group"><label className="usuarios-form-label">Confirmar contraseña {(!editar || clienteForm.contrasena) && <span className="usuarios-req">*</span>}</label><input type="password" className={`usuarios-form-input${erroresCliente.confirmar ? " input-error" : ""}`} placeholder="Repite la contraseña" maxLength={MAX_LONGITUD_CONTRASENA} value={clienteForm.confirmar}
+                onChange={e => {
+                  const confirmar = e.target.value;
+                  setClienteForm({ ...clienteForm, confirmar });
+                  if (erroresCliente.confirmar) setErroresCliente(prev => ({ ...prev, confirmar: revisarConfirmarCliente(confirmar, clienteForm.contrasena) }));
+                }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, confirmar: revisarConfirmarCliente(clienteForm.confirmar, clienteForm.contrasena) }))} />{erroresCliente.confirmar && <span className="usuarios-form-error">{erroresCliente.confirmar}</span>}</div>
+            </div>
             {editar ? (
               <div className="usuarios-form-row">
                 <div className="usuarios-form-group"><label className="usuarios-form-label">Pago por cuotas</label><select className="usuarios-form-select" value={clienteForm.permiso_cuotas} onChange={e => setClienteForm({ ...clienteForm, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>

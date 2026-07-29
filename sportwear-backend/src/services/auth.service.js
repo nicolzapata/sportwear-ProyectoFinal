@@ -121,8 +121,10 @@ const registro = async (datos) => {
     await client.query('BEGIN');
 
     const nuevoCliente = await client.query(
-      `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id_cliente`,
+      // El pago por cuotas nunca se otorga automáticamente: el admin lo habilita
+      // manualmente después, desde la gestión de clientes.
+      `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion, permiso_cuotas)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,false) RETURNING id_cliente`,
       [nombre, tipo_doc || 'CC', documento, telefono || null, email, ciudad || 'Medellín', id_barrio || null, direccion || null]
     );
     const id_cliente = nuevoCliente.rows[0].id_cliente;
@@ -169,23 +171,24 @@ const crearUsuario = async ({
   if (emailExiste.rows.length > 0)
     throw { status: 409, message: 'El email ya está registrado' };
 
-  const rolResult = await pool.query(`SELECT nombre FROM "Roles" WHERE id_rol = $1`, [id_rol]);
-  const esCliente = rolResult.rows[0]?.nombre?.toLowerCase() === 'cliente';
-
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     let id_cliente = null;
 
-    if (esCliente && documento) {
+    // Se registra la identidad (documento) sin importar el rol: no solo los
+    // usuarios con rol Cliente necesitan tener su documento guardado.
+    if (documento) {
       const docExiste = await client.query(`SELECT id_cliente FROM "Clientes" WHERE documento = $1`, [documento]);
       if (docExiste.rows.length > 0)
         throw { status: 409, message: 'El documento ya está registrado' };
 
       const nuevoCliente = await client.query(
-        `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id_cliente`,
+        // El pago por cuotas nunca se otorga automáticamente: el admin lo habilita
+        // manualmente después, desde la gestión de clientes.
+        `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion, permiso_cuotas)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false) RETURNING id_cliente`,
         [
           nombre, tipo_doc || 'CC', documento, telefono || null, email,
           ciudad || 'Medellín', id_barrio || null, direccion || null,
@@ -267,8 +270,8 @@ const actualizarUsuario = async (id, datos, usuarioActual) => {
       );
     } else if (documento) {
       const nuevoCliente = await client.query(
-        `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id_cliente`,
+        `INSERT INTO "Clientes" (nombre, tipo_doc, documento, telefono, email, ciudad, id_barrio, direccion, permiso_cuotas)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,false) RETURNING id_cliente`,
         [nombre, tipo_doc || 'CC', documento, telefono || null, email,
          ciudad || 'Medellín', id_barrio || null, direccion || null]
       );
@@ -397,4 +400,16 @@ const existeEmail = async (emailCrudo) => {
   return result.rows.length > 0;
 };
 
-module.exports = { login, registro, crearUsuario, actualizarUsuario, getPerfil, recuperarContrasena, restablecerContrasena, existeEmail };
+// Igual que existeEmail pero para el documento. El documento solo vive en
+// "Clientes" (Usuarios no tiene columna propia, ver crearUsuario/actualizarUsuario).
+const existeDocumento = async (documentoCrudo) => {
+  const documento = (documentoCrudo || '').trim();
+  if (!documento) return false;
+  const result = await pool.query(
+    `SELECT 1 FROM "Clientes" WHERE documento = $1 LIMIT 1`,
+    [documento]
+  );
+  return result.rows.length > 0;
+};
+
+module.exports = { login, registro, crearUsuario, actualizarUsuario, getPerfil, recuperarContrasena, restablecerContrasena, existeEmail, existeDocumento };

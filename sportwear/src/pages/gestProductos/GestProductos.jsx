@@ -14,8 +14,11 @@ import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
 import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
-import { IconAlertTriangle, IconEdit, IconEye, IconSearch, IconX, IconBox, IconTag, IconTrash } from "../../components/Icons";
+import { IconAlertTriangle, IconEdit, IconEye, IconSearch, IconX, IconBox, IconTag, IconTrash, IconPalette } from "../../components/Icons";
 import "./GestProductos.css";
+// Reutiliza los estilos del selector de color / vista previa (picker, preview) tal
+// cual como en la antigua página de Colores — evita duplicar esas reglas acá.
+import "../colores/Colores.css";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const ERRORES_INICIALES = { nombre: "", id_categoria: "", precio: "", general: "" };
@@ -167,6 +170,15 @@ export default function GestProductos() {
   const [ordenCategorias,  setOrdenCategorias]  = useState("nombre");
   const [verDetalleCategoria, setVerDetalleCategoria] = useState(null);
 
+  // ── Colores (mismo patrón que Categorías: gestión embebida en esta página) ──
+  const [coloresPagina,   setColoresPagina]   = useState([]);
+  const [totalColores,    setTotalColores]    = useState(0);
+  const [paginaColores,   setPaginaColores]   = useState(1);
+  const [formColor,       setFormColor]       = useState({ nombre: "", codigo_hex: "#000000", estado: "Activo" });
+  const [editarColor,     setEditarColor]     = useState(null);
+  const [erroresColor,    setErroresColor]    = useState({ nombre: "", codigo_hex: "" });
+  const [eliminarColorId, setEliminarColorId] = useState(null);
+
   // Listado completo de categorías (sin paginar): alimenta el <select> del formulario de producto.
   const cargarCategoriasCompletas = async () => {
     try {
@@ -205,10 +217,19 @@ export default function GestProductos() {
     finally { setLoading(false); }
   };
 
+  const cargarColoresPagina = async (pagina = paginaColores, q = busquedaDebounced) => {
+    try {
+      const { data } = await api.get("/colores", { params: { page: pagina, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      setColoresPagina(data.data);
+      setTotalColores(data.total);
+    } catch { mostrarToast("error", "No se pudo cargar."); }
+    finally { setLoading(false); }
+  };
+
   const cargar = async () => {
     await Promise.all([
       cargarCategoriasCompletas(),
-      tab === 'productos' ? cargarProductos() : cargarCategoriasPagina(),
+      tab === 'productos' ? cargarProductos() : tab === 'categorias' ? cargarCategoriasPagina() : cargarColoresPagina(),
     ]);
   };
 
@@ -232,16 +253,19 @@ export default function GestProductos() {
     return () => clearTimeout(t);
   }, [busqueda]);
 
-  // Al cambiar de búsqueda vuelve a la página 1 de ambas pestañas.
-  useEffect(() => { setPaginaProductos(1); setPaginaCategorias(1); }, [busquedaDebounced]);
+  // Al cambiar de búsqueda vuelve a la página 1 de todas las pestañas.
+  useEffect(() => { setPaginaProductos(1); setPaginaCategorias(1); setPaginaColores(1); }, [busquedaDebounced]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'productos') cargarProductos(paginaProductos, busquedaDebounced); }, [tab, paginaProductos, busquedaDebounced]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'categorias') cargarCategoriasPagina(paginaCategorias, busquedaDebounced); }, [tab, paginaCategorias, busquedaDebounced, ordenCategorias]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (tab === 'colores') cargarColoresPagina(paginaColores, busquedaDebounced); }, [tab, paginaColores, busquedaDebounced]);
 
   const totalPaginasProductos  = Math.ceil(totalProductos / FILAS_POR_PAGINA) || 1;
   const totalPaginasCategorias = Math.ceil(totalCategorias / FILAS_POR_PAGINA) || 1;
+  const totalPaginasColores    = Math.ceil(totalColores / FILAS_POR_PAGINA) || 1;
 
   // ── Productos ──────────────────────────────────────────────────────────────
   const abrirRegistrar = () => {
@@ -380,8 +404,10 @@ export default function GestProductos() {
   const toggleEstadoProducto = async (id, nuevoEstado) => {
     // ── El aviso de éxito/error ya lo muestra StatusToggle centralizadamente —
     // mostrarlo también aquí duplicaba el mensaje en pantalla. ──
-    await api.patch(`/productos/${id}/estado`);
-    setDatos(prev => prev.map(p => p.id_producto === id ? { ...p, estado: nuevoEstado } : p));
+    const { data } = await api.patch(`/productos/${id}/estado`);
+    // Al desactivar, el backend también despublica el producto (no puede quedar
+    // visible en el catálogo estando inactivo) — se refleja aquí sin esperar un refetch.
+    setDatos(prev => prev.map(p => p.id_producto === id ? { ...p, estado: nuevoEstado, publicado: data?.publicado ?? p.publicado } : p));
   };
 
   const togglePublicado = async (id) => {
@@ -471,6 +497,60 @@ export default function GestProductos() {
     setCategorias(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
   };
 
+  // ── Colores ────────────────────────────────────────────────────────────────
+  const getBrightness = (hex) => {
+    const r = parseInt(hex.substring(1, 3), 16), g = parseInt(hex.substring(3, 5), 16), b = parseInt(hex.substring(5, 7), 16);
+    return (r * 299 + g * 587 + b * 114) / 1000;
+  };
+  const MAX_LONGITUD_NOMBRE_COLOR = 40;
+
+  const abrirRegistrarColor = () => { setEditarColor(null); setFormColor({ nombre: "", codigo_hex: "#000000", estado: "Activo" }); setErroresColor({ nombre: "", codigo_hex: "" }); setModal(true); };
+  const abrirEditarColor    = (c) => { setEditarColor(c.id_color); setFormColor({ nombre: c.nombre, codigo_hex: c.codigo_hex, estado: c.estado }); setErroresColor({ nombre: "", codigo_hex: "" }); setModal(true); };
+
+  const mensajeErrorNombreColor = (valor) => {
+    const texto = (valor ?? "").trim();
+    if (!texto) return "El nombre del color es obligatorio";
+    if (texto.length > MAX_LONGITUD_NOMBRE_COLOR) return `No puede tener más de ${MAX_LONGITUD_NOMBRE_COLOR} caracteres.`;
+    return "";
+  };
+
+  const validarPasoColorForm = () => {
+    const eNombre = mensajeErrorNombreColor(formColor.nombre);
+    const eHex = (!formColor.codigo_hex || !/^#[0-9A-Fa-f]{6}$/.test(formColor.codigo_hex)) ? "Selecciona un color válido" : "";
+    setErroresColor({ nombre: eNombre, codigo_hex: eHex });
+    return !eNombre && !eHex;
+  };
+
+  const guardarColor = async () => {
+    if (!validarPasoColorForm()) return;
+    try {
+      if (editarColor) await api.put(`/colores/${editarColor}`, formColor);
+      else             await api.post("/colores", formColor);
+      setModal(false); cargar();
+      mostrarToast("exito", editarColor ? "Color actualizado." : "Color creado.");
+    } catch (err) {
+      mostrarToast("error", err.response?.data?.message || "No se pudo guardar el color.");
+    }
+  };
+
+  const cambiarEstadoColor = async (id, nuevoEstado) => {
+    // ── El aviso de éxito/error ya lo muestra StatusToggle centralizadamente. ──
+    await api.patch(`/colores/${id}/estado`);
+    setColoresPagina(prev => prev.map(c => c.id_color === id ? { ...c, estado: nuevoEstado } : c));
+  };
+
+  const confirmarEliminarColor = async () => {
+    const id = eliminarColorId;
+    setEliminarColorId(null);
+    try {
+      await api.delete(`/colores/${id}`);
+      cargarColoresPagina();
+      mostrarToast("exito", "Color eliminado.");
+    } catch (err) {
+      mostrarToast("error", err.response?.data?.message || "No se pudo eliminar el color.");
+    }
+  };
+
   const stockBadge = (stock) => {
     if (stock === 0) return <span className="tabla-stock agotado"><IconAlertTriangle /> Agotado</span>;
     if (stock <= 6)  return <span className="tabla-stock bajo"><IconAlertTriangle /> {stock} uds</span>;
@@ -519,6 +599,45 @@ export default function GestProductos() {
         <textarea className="gestproductos-form-input" rows={3} placeholder="Descripción breve de la categoría (opcional)"
           value={formCategoria.descripcion || ""} maxLength={MAX_LONGITUD_TEXTO_LIBRE}
           onChange={e => setFormCategoria({ ...formCategoria, descripcion: e.target.value })} />
+      </div>
+    </div>
+  );
+
+  const PasoColorForm = (
+    <div>
+      <div className="gestproductos-form-group">
+        <label className="gestproductos-form-label">Color HEX <span className="gestproductos-required">*</span></label>
+        <div className="colores-color-picker-wrapper">
+          <input
+            type="color"
+            className={`colores-color-picker${erroresColor.codigo_hex ? " input-error" : ""}`}
+            value={formColor.codigo_hex}
+            onChange={e => {
+              setFormColor({ ...formColor, codigo_hex: e.target.value });
+              if (erroresColor.codigo_hex) setErroresColor(prev => ({ ...prev, codigo_hex: "" }));
+            }}
+          />
+          <span className="colores-color-value">{formColor.codigo_hex}</span>
+        </div>
+        {erroresColor.codigo_hex && <p className="gestproductos-field-error">{erroresColor.codigo_hex}</p>}
+      </div>
+      <div className="colores-preview" style={{ marginTop: 8 }}>
+        <div className="colores-preview-label">Vista previa</div>
+        <div className="colores-preview-sample" style={{ backgroundColor: formColor.codigo_hex }}>
+          <span style={{ color: getBrightness(formColor.codigo_hex) > 128 ? '#000' : '#fff' }}>{formColor.nombre || 'Color'}</span>
+        </div>
+      </div>
+      <div className="gestproductos-form-group">
+        <label className="gestproductos-form-label">Nombre del color <span className="gestproductos-required">*</span></label>
+        <input type="text" className={`gestproductos-form-input${erroresColor.nombre ? " input-error" : ""}`} placeholder="Ej: Rojo Intenso"
+          value={formColor.nombre} maxLength={MAX_LONGITUD_NOMBRE_COLOR}
+          onChange={e => {
+            const nombre = e.target.value;
+            setFormColor({ ...formColor, nombre });
+            if (erroresColor.nombre) setErroresColor(prev => ({ ...prev, nombre: mensajeErrorNombreColor(nombre) }));
+          }}
+          onBlur={() => setErroresColor(prev => ({ ...prev, nombre: mensajeErrorNombreColor(formColor.nombre) }))} />
+        {erroresColor.nombre && <p className="gestproductos-field-error">{erroresColor.nombre}</p>}
       </div>
     </div>
   );
@@ -610,13 +729,14 @@ export default function GestProductos() {
         <div className="gestproductos-actions-left">
           <div className="gestproductos-search-wrapper">
             <span className="gestproductos-search-icon"><IconSearch /></span>
-            <input className="gestproductos-search-input" placeholder={tab === 'productos' ? "Buscar por nombre, código o categoría..." : "Buscar categoría por nombre..."} value={busqueda}
+            <input className="gestproductos-search-input" placeholder={tab === 'productos' ? "Buscar por nombre, código o categoría..." : tab === 'categorias' ? "Buscar categoría por nombre..." : "Buscar color por nombre..."} value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)} />
             {busqueda && <button className="gestproductos-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
           </div>
           <div className="gestproductos-tabs-bar">
             <button className={`gestproductos-tab-btn${tab === 'productos' ? ' active' : ''}`} onClick={() => setTab('productos')}><IconBox /> Productos</button>
             <button className={`gestproductos-tab-btn${tab === 'categorias' ? ' active' : ''}`} onClick={() => setTab('categorias')}><IconTag /> Categorías</button>
+            <button className={`gestproductos-tab-btn${tab === 'colores' ? ' active' : ''}`} onClick={() => setTab('colores')}><IconPalette /> Colores</button>
           </div>
         </div>
         <div className="gestproductos-actions-right">
@@ -625,6 +745,9 @@ export default function GestProductos() {
           )}
           {tab === 'categorias' && tienePerm('Categorias.crear') && (
             <button className="gestproductos-btn-primary" onClick={abrirRegistrarCategoria}><span>+</span> Nueva categoría</button>
+          )}
+          {tab === 'colores' && tienePerm('Colores.crear') && (
+            <button className="gestproductos-btn-primary" onClick={abrirRegistrarColor}><span>+</span> Nuevo color</button>
           )}
           {tab === 'productos' ? (
             <ExportButtons
@@ -643,7 +766,7 @@ export default function GestProductos() {
               nombreArchivo="productos"
               titulo="Productos"
             />
-          ) : (
+          ) : tab === 'categorias' ? (
             <ExportButtons
               obtenerDatos={async () => {
                 const { data } = await api.get("/categorias", { params: { q: busquedaDebounced || undefined } });
@@ -655,6 +778,20 @@ export default function GestProductos() {
               ]}
               nombreArchivo="categorias"
               titulo="Categorías"
+            />
+          ) : (
+            <ExportButtons
+              obtenerDatos={async () => {
+                const { data } = await api.get("/colores", { params: { q: busquedaDebounced || undefined } });
+                return data;
+              }}
+              columnas={[
+                { header: "Nombre", key: "nombre" },
+                { header: "HEX", key: "codigo_hex" },
+                { header: "Estado", key: "estado" },
+              ]}
+              nombreArchivo="colores"
+              titulo="Colores"
             />
           )}
         </div>
@@ -788,7 +925,7 @@ export default function GestProductos() {
             </div>
           )}
         </div>
-      ) : (
+      ) : tab === 'categorias' ? (
         <div className="gestproductos-table-container">
           <div className="gestproductos-orden-bar">
             <select id="ordenCategorias" className="gestproductos-form-select gestproductos-orden-select" value={ordenCategorias} onChange={e => setOrdenCategorias(e.target.value)}>
@@ -843,6 +980,50 @@ export default function GestProductos() {
               ))}
               <button className="paginador-btn" onClick={() => setPaginaCategorias(p => Math.min(p + 1, totalPaginasCategorias))} disabled={paginaCategorias === totalPaginasCategorias}>›</button>
               <span className="paginador-info">Página {paginaCategorias} de {totalPaginasCategorias} · {totalCategorias} registros</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="gestproductos-table-container">
+          {coloresPagina.length === 0 ? (
+            <p style={{ color: "var(--dvna-muted)", fontSize: 13, padding: 24 }}>No se encontraron colores.</p>
+          ) : (
+            <div className="colores-grid">
+              {coloresPagina.map((c) => (
+                <div key={c.id_color} className="colores-grid-item">
+                  <div className="colores-grid-sample" style={{ backgroundColor: c.codigo_hex }} />
+                  <div className="colores-grid-info">
+                    <div className="colores-grid-name">{c.nombre}</div>
+                    <div className="colores-grid-hex">{c.codigo_hex}</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, gap: 6 }}>
+                      {tienePerm('Colores.estado') ? (
+                        <StatusToggle id={c.id_color} estado={c.estado} onToggle={cambiarEstadoColor} showConfirmation={true} size="sm" />
+                      ) : (
+                        <span className={`tabla-status ${c.estado === "Activo" ? "activo" : "inactivo"}`}>{c.estado}</span>
+                      )}
+                      <div style={{ display: "flex", gap: 4 }}>
+                        {tienePerm('Colores.editar') && (
+                          <button className="catproductos-action-btn catproductos-edit-btn" style={{ width: 28, height: 28 }} onClick={() => abrirEditarColor(c)} title="Editar"><IconEdit /></button>
+                        )}
+                        {tienePerm('Colores.eliminar') && (
+                          <button className="catproductos-action-btn catproductos-deactivate-btn" style={{ width: 28, height: 28 }} onClick={() => setEliminarColorId(c.id_color)} title="Eliminar"><IconTrash /></button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {totalPaginasColores > 1 && (
+            <div className="paginador">
+              <button className="paginador-btn" onClick={() => setPaginaColores(p => Math.max(p - 1, 1))} disabled={paginaColores === 1}>‹</button>
+              {Array.from({ length: totalPaginasColores }, (_, i) => i + 1).map(n => (
+                <button key={n} className={`paginador-btn ${n === paginaColores ? "paginador-btn-active" : ""}`} onClick={() => setPaginaColores(n)}>{n}</button>
+              ))}
+              <button className="paginador-btn" onClick={() => setPaginaColores(p => Math.min(p + 1, totalPaginasColores))} disabled={paginaColores === totalPaginasColores}>›</button>
+              <span className="paginador-info">Página {paginaColores} de {totalPaginasColores} · {totalColores} registros</span>
             </div>
           )}
         </div>
@@ -981,6 +1162,28 @@ export default function GestProductos() {
         >
           {PasoCategoriaForm}
         </ModalSteps>
+      )}
+
+      {modal && tab === 'colores' && (
+        <ModalSteps
+          titulo={editarColor ? "Editar color" : "Nuevo color"}
+          pasos={["Color y nombre"]}
+          onClose={() => setModal(false)} onGuardar={guardarColor}
+          validaciones={[validarPasoColorForm]}
+          labelGuardar={editarColor ? "Actualizar" : "Registrar"}
+        >
+          {PasoColorForm}
+        </ModalSteps>
+      )}
+
+      {eliminarColorId && (
+        <ConfirmModal
+          title="Eliminar color"
+          message="¿Eliminar este color? Se eliminarán las variantes asociadas."
+          onCancel={() => setEliminarColorId(null)}
+          onConfirm={confirmarEliminarColor}
+          confirmLabel="Sí, eliminar"
+        />
       )}
 
       {/* ── Modal ver detalle: panel único tipo factura, igual al resto de módulos ── */}
