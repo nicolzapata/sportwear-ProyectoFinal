@@ -280,6 +280,7 @@ export default function Usuarios() {
       else         await api.put(`/usuarios/${editar}`, payload);
       cargarUsuarios();
       setModal(false);
+      showToast("exito", editar ? "Usuario actualizado correctamente." : "Usuario registrado correctamente.");
     } catch (err) {
       if (!atenderErrorCampo(err, setErrores)) {
         showToast("error", err.response?.data?.message || "Error al guardar usuario");
@@ -394,8 +395,9 @@ export default function Usuarios() {
 
   const toggleClientePermisoCuotas = async (id) => {
     try {
-      await api.patch(`/clientes/${id}/permiso-cuotas`);
-      setClientes(prev => prev.map(c => c.id_cliente === id ? { ...c, permiso_cuotas: !c.permiso_cuotas } : c));
+      const { data } = await api.patch(`/clientes/${id}/permiso-cuotas`);
+      setClientes(prev => prev.map(c => c.id_cliente === id ? { ...c, permiso_cuotas: data.permiso_cuotas } : c));
+      showToast("exito", data.permiso_cuotas ? "Pago por cuotas permitido." : "Pago por cuotas bloqueado.");
     } catch { showToast("error", "Error al cambiar permiso de cuotas"); }
   };
 

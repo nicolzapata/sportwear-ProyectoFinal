@@ -1236,7 +1236,7 @@ table.tbl.gestproductos-tabla {
    siempre junto a width. */
 th.gestproductos-th-imagen    { width: 90px  !important; min-width: 80px  !important; }
 th.gestproductos-th-producto  { width: 310px !important; min-width: 210px !important; }
-th.gestproductos-th-precio    { width: 95px  !important; min-width: 95px  !important; }
+th.gestproductos-th-precio    { width: 9  5px  !important; min-width: 95px  !important; }
 th.gestproductos-th-stock     { width: 95px  !important; min-width: 95px  !important; }
 th.gestproductos-th-variantes { width: 180px !important; min-width: 180px !important; max-width: 180px !important; }
 th.gestproductos-th-toggle    { width: 100px  !important; min-width: 68px  !important; }
@@ -1427,6 +1427,61 @@ td.gestproductos-stock-cell {
 .catproductos-activate-btn:hover {
   border-color: rgba(58, 102, 72, 0.3);
   background: rgba(58, 102, 72, 0.06);
+}
+
+/* ── Pestaña Colores: grid de muestras propio de esta página (no reutiliza
+   las clases de la vieja Colores.css) — así el ancho mínimo de columna se
+   calibra para lo que esta tarjeta necesita: toggle + editar + eliminar en
+   una sola fila (~142px con padding). El breakpoint de Colores.css bajaba
+   ese mínimo a 130px, más angosto de lo que la fila de acciones necesita,
+   y los controles quedaban amontonados/solapados en pantallas angostas. ── */
+.gestproductos-colores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.gestproductos-colores-card {
+  background: var(--dvna-white);
+  border-radius: 16px;
+  border: 1px solid var(--dvna-pale);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+.gestproductos-colores-swatch {
+  height: 100px;
+  border-bottom: 1px solid var(--dvna-pale);
+}
+.gestproductos-colores-info { padding: 0.8rem; }
+.gestproductos-colores-name {
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
+}
+.gestproductos-colores-hex {
+  font-size: 0.7rem;
+  color: var(--dvna-muted);
+  font-family: monospace;
+}
+.gestproductos-colores-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  gap: 6px;
+}
+.gestproductos-colores-actions-btns {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  /* En una sola columna hay ancho de sobra: nunca hace falta angostar más
+     abajo de 170px, así que no se toca el minmax acá. */
+  .gestproductos-colores-actions { justify-content: center; }
 }
 
 /* ── NUEVO: distintivo de "Destacado" (Nuevo/Promoción) sobre la miniatura —

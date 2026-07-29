@@ -98,6 +98,7 @@ export default function CatalogoAdmin() {
       await api.patch(`/productos/${p.id_producto}/publicar`);
       setProductos(prev => prev.map(x => x.id_producto === p.id_producto ? { ...x, publicado: !x.publicado } : x));
       if (verRapido?.id_producto === p.id_producto) setVerRapido(prev => ({ ...prev, publicado: !prev.publicado }));
+      showToast("exito", p.publicado ? "Producto despublicado." : "Producto publicado en el catálogo.");
     } catch (err) {
       showToast("error", err.response?.data?.message || "No se pudo cambiar la publicación.");
     }
@@ -108,6 +109,7 @@ export default function CatalogoAdmin() {
       await api.patch(`/productos/${p.id_producto}/estado`);
       const nuevoEstado = p.estado === "Activo" ? "Inactivo" : "Activo";
       setProductos(prev => prev.map(x => x.id_producto === p.id_producto ? { ...x, estado: nuevoEstado, publicado: nuevoEstado === "Inactivo" ? false : x.publicado } : x));
+      showToast("exito", `Producto marcado como "${nuevoEstado}".`);
     } catch (err) {
       showToast("error", err.response?.data?.message || "No se pudo cambiar el estado.");
     }

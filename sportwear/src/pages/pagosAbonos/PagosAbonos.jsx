@@ -51,6 +51,7 @@ export default function PagosAbonos() {
       await api.post("/metodos-pago", { nombre: nuevoMetodo.trim() });
       setNuevoMetodo("");
       cargarMetodos();
+      showToast("exito", "Método de pago creado correctamente.");
     } catch (err) { showToast("error", err.response?.data?.message ?? "Error al crear el método de pago."); }
   };
 
@@ -58,6 +59,7 @@ export default function PagosAbonos() {
     try {
       await api.patch(`/metodos-pago/${id}/estado`);
       cargarMetodos();
+      showToast("exito", "Estado del método de pago actualizado.");
     } catch (err) { showToast("error", err.response?.data?.message ?? "Error al cambiar el estado del método."); }
   };
 
@@ -126,6 +128,7 @@ export default function PagosAbonos() {
       });
       cargar();
       setModal(false);
+      showToast("exito", "Pago registrado correctamente.");
     } catch (err) {
       showToast("error", err.response?.data?.message ?? "Error al registrar el pago.");
     } finally {
@@ -137,6 +140,7 @@ export default function PagosAbonos() {
     try {
       await api.patch(`/pagos/${id}/estado`, { estado: "Confirmado" });
       setDatos(prev => prev.map(p => p.id_pago === id ? { ...p, estado: "Confirmado" } : p));
+      showToast("exito", "Pago confirmado correctamente.");
     } catch (err) { showToast("error", err.response?.data?.message ?? "Error al registrar el pago."); }
   };
 
@@ -144,6 +148,7 @@ export default function PagosAbonos() {
     try {
       await api.patch(`/pagos/${id}/estado`, { estado: "Anulado" });
       setDatos(prev => prev.map(p => p.id_pago === id ? { ...p, estado: "Anulado" } : p));
+      showToast("exito", "Pago anulado correctamente.");
     } catch (err) { showToast("error", err.response?.data?.message ?? "Error al cancelar el pago."); }
   };
 

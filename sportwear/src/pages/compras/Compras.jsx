@@ -170,7 +170,9 @@ export default function Compras() {
   const [error, setError] = useState("");
 
   const [busqueda, setBusqueda] = useState("");
+  const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [pagina, setPagina] = useState(1);
+  const [totalCompras, setTotalCompras] = useState(0);
   const [modal, setModal] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [verDetalle, setVerDetalle] = useState(null);
@@ -182,22 +184,12 @@ export default function Compras() {
   const [filaAbierta, setFilaAbierta] = useState(null);
   const [cambiandoEstadoTabla, setCambiandoEstadoTabla] = useState(false);
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
-
-  const cargarDatos = async () => {
+  const cargarCompras = async (pag = pagina, q = busquedaDebounced) => {
     setCargando(true);
-    setError("");
     try {
-      const [comprasRes, proveedoresRes, productosRes] = await Promise.all([
-        api.get("/compras"),
-        api.get("/proveedores"),
-        api.get("/productos"),
-      ]);
-      setCompras(comprasRes.data || []);
-      setProveedores(proveedoresRes.data || []);
-      setProductos((productosRes.data || []).filter((p) => p.estado === "Activo"));
+      const { data } = await api.get("/compras", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      setCompras(data.data || []);
+      setTotalCompras(data.total || 0);
     } catch (err) {
       setError(err.response?.data?.message || "No se pudo cargar la información de compras. Verifica tu conexión o tus permisos.");
     } finally {
@@ -205,14 +197,24 @@ export default function Compras() {
     }
   };
 
-  const filtradosAll = compras.filter((c) =>
-    c.proveedor?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    c.nombre_comercial?.toLowerCase().includes(busqueda.toLowerCase()) ||
-    String(c.id_compra).includes(busqueda) ||
-    c.numero_orden?.toLowerCase().includes(busqueda.toLowerCase())
-  );
-  const totalPaginas = Math.ceil(filtradosAll.length / FILAS_POR_PAGINA) || 1;
-  const filtrados = filtradosAll.slice((pagina - 1) * FILAS_POR_PAGINA, pagina * FILAS_POR_PAGINA);
+  useEffect(() => {
+    setError("");
+    api.get("/proveedores").then(({ data }) => setProveedores(data)).catch(() => {});
+    api.get("/productos").then(({ data }) => setProductos((data || []).filter((p) => p.estado === "Activo"))).catch(() => {});
+  }, []);
+
+  // Buscador con debounce: evita disparar una petición por cada tecla.
+  useEffect(() => {
+    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
+    return () => clearTimeout(t);
+  }, [busqueda]);
+
+  useEffect(() => { setPagina(1); }, [busquedaDebounced]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cargarCompras(pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
+
+  const totalPaginas = Math.ceil(totalCompras / FILAS_POR_PAGINA) || 1;
 
   // ── Manejo de líneas de producto dentro del formulario ──
   const actualizarItem = (index, campo, valor) => {
@@ -321,7 +323,8 @@ export default function Compras() {
       await api.post("/compras", payload);
       setModal(false);
       setForm(formInicial());
-      cargarDatos();
+      cargarCompras();
+      showToast("exito", "Compra registrada correctamente.");
     } catch (err) {
       showToast("error", err.response?.data?.message || "Error al registrar la compra");
     } finally {
@@ -356,6 +359,7 @@ export default function Compras() {
         await api.patch(`/compras/${id}/estado`, { estado });
       }
       setCompras((prev) => prev.map((c) => (c.id_compra === id ? { ...c, estado } : c)));
+      showToast("exito", `Compra marcada como "${estado}".`);
     } catch (err) {
       showToast("error", err.response?.data?.message || "Error al cambiar el estado de la compra");
     } finally {
@@ -370,6 +374,7 @@ export default function Compras() {
       const res = await api.patch(`/compras/${verDetalle.id_compra}/estado`, { estado: estadoEditado });
       setCompras((prev) => prev.map((c) => (c.id_compra === verDetalle.id_compra ? { ...c, estado: res.data.estado } : c)));
       cerrarDetalle();
+      showToast("exito", `Compra marcada como "${res.data.estado}".`);
     } catch (err) {
       showToast("error", err.response?.data?.message || "Error al actualizar el estado de la compra");
     } finally {
@@ -383,6 +388,7 @@ export default function Compras() {
     try {
       await api.patch(`/compras/${id}/anular`);
       setCompras((prev) => prev.map((c) => (c.id_compra === id ? { ...c, estado: "Anulado" } : c)));
+      showToast("exito", "Compra anulada correctamente.");
     } catch (err) {
       showToast("error", err.response?.data?.message || "Error al anular la compra");
     }
@@ -405,6 +411,8 @@ export default function Compras() {
     }
   };
 
+  if (cargando) return <Loader text="Cargando compras..." />;
+
   return (
     <div className="compras-container">
       {error && <div className="compras-error-banner"><IconX /> {error}</div>}
@@ -418,10 +426,10 @@ export default function Compras() {
               className="compras-search-input"
               placeholder="Buscar por proveedor, N° orden o ID..."
               value={busqueda}
-              onChange={(e) => { setBusqueda(e.target.value); setPagina(1); }}
+              onChange={(e) => setBusqueda(e.target.value)}
             />
             {busqueda && (
-              <button className="compras-search-clear" onClick={() => { setBusqueda(""); setPagina(1); }}>
+              <button className="compras-search-clear" onClick={() => setBusqueda("")}>
                 <IconX />
               </button>
             )}
@@ -437,7 +445,10 @@ export default function Compras() {
             </button>
           )}
           <ExportButtons
-            datos={filtradosAll}
+            obtenerDatos={async () => {
+              const { data } = await api.get("/compras", { params: { q: busquedaDebounced || undefined } });
+              return data;
+            }}
             columnas={[
               { header: "Proveedor", key: "proveedor" },
               { header: "N° Orden", key: "numero_orden" },
@@ -453,7 +464,7 @@ export default function Compras() {
       </div>
 
       <div className="compras-results-count">
-        {cargando ? "Cargando..." : `${filtradosAll.length} compra${filtradosAll.length !== 1 ? 's' : ''} encontrada${filtradosAll.length !== 1 ? 's' : ''}`}
+        {`${totalCompras} compra${totalCompras !== 1 ? 's' : ''} encontrada${totalCompras !== 1 ? 's' : ''}`}
       </div>
 
       <div className="tbl-container compras-tbl-container">
@@ -470,15 +481,7 @@ export default function Compras() {
             </tr>
           </thead>
           <tbody className="tbl-body">
-            {cargando ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <tr key={i} className="tbl-row">
-                  {Array.from({ length: 7 }).map((__, j) => (
-                    <td className="tbl-td" key={j}><div className="compras-skeleton-cell" /></td>
-                  ))}
-                </tr>
-              ))
-            ) : filtrados.map((c) => (
+            {compras.map((c) => (
               <tr key={c.id_compra} className="tbl-row">
                 <td className="tbl-td"><span className="compras-proveedor-name">{c.proveedor}</span></td>
                 <td className="tbl-td">{c.numero_orden || "—"}</td>
@@ -509,7 +512,7 @@ export default function Compras() {
                 </td>
               </tr>
             ))}
-            {!cargando && filtradosAll.length === 0 && (
+            {compras.length === 0 && (
               <tr>
                 <td colSpan={7} style={{ padding: 0 }}>
                   <div className="compras-empty-state"><IconSearch /><p>No hay compras que coincidan con la búsqueda.</p></div>
@@ -526,7 +529,7 @@ export default function Compras() {
               <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
             ))}
             <button className="paginador-btn" onClick={() => setPagina((p) => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-            <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtradosAll.length} registros</span>
+            <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalCompras} registros</span>
           </div>
         )}
       </div>
