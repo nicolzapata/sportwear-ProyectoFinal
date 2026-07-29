@@ -476,10 +476,12 @@ export default function Roles() {
       if (editar) await api.put(`/roles/${editar}`, form);
       else        await api.post("/roles", form);
       setModal(false); cargar();
+      showToast('exito', editar ? 'Rol actualizado correctamente.' : 'Rol creado correctamente.');
     } catch (err) {
       const backendErrors = err.response?.data?.errors;
       if (backendErrors) setErrores(prev => ({ ...prev, ...backendErrors }));
       else setErrores(prev => ({ ...prev, _general: err.response?.data?.message || 'Ocurrió un error al guardar.' }));
+      showToast('error', err.response?.data?.message || 'Ocurrió un error al guardar el rol.');
     }
   };
 

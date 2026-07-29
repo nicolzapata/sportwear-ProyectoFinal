@@ -396,6 +396,7 @@ export default function Catalogo() {
     try {
       await api.patch(`/productos/${p.id_producto}/publicar`);
       cargar();
+      showToast("exito", p.publicado ? "Producto despublicado." : "Producto publicado en el catálogo.");
     } catch {
       showToast("error", "Error al cambiar estado de publicación.");
     }

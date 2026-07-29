@@ -8,7 +8,8 @@ const getVentas = async ({ page, limit, q } = {}) => {
   let busquedaSql = '';
   if (q) {
     params.push(`%${q}%`);
-    busquedaSql = `AND c.nombre ILIKE $${params.length}`;
+    busquedaSql = `AND (c.nombre ILIKE $${params.length} OR CAST(v.id_venta AS TEXT) = $${params.length + 1})`;
+    params.push(q);
   }
 
   const paginar = page !== undefined;
@@ -22,20 +23,24 @@ const getVentas = async ({ page, limit, q } = {}) => {
   }
 
   const cab = await pool.query(`
-    SELECT v.*, c.nombre AS cliente, c.email AS cliente_email
+    SELECT v.*, c.nombre AS cliente, c.email AS cliente_email,
+           COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) AS total_pagado
            ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "Ventas" v
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
+    LEFT JOIN "PagosAbonos" pa ON v.id_venta=pa.id_venta
     WHERE v.estado != 'Abandonado' ${busquedaSql}
+    GROUP BY v.id_venta, c.nombre, c.email
     ORDER BY v.id_venta DESC
     ${limitOffsetSql}
   `, params);
 
   const total = cab.rows[0] ? Number(cab.rows[0].total_count) : 0;
-  const filas = cab.rows.map(({ total_count, ...r }) => r);
+  const filas = cab.rows.map(({ total_count, ...r }) => ({ ...r, total_pagado: parseFloat(r.total_pagado) || 0 }));
 
   const ids = filas.map(v => v.id_venta);
   let detalles = [];
+  let abonos = [];
   if (ids.length) {
     const det = await pool.query(`
       SELECT dv.*, p.nombre AS producto, pv.talla, pv.stock
@@ -45,8 +50,17 @@ const getVentas = async ({ page, limit, q } = {}) => {
       WHERE dv.id_venta=ANY($1::int[])
     `, [ids]);
     detalles = det.rows;
+
+    const abonosRes = await pool.query(`
+      SELECT * FROM "PagosAbonos" WHERE id_venta=ANY($1::int[]) ORDER BY num_cuota ASC
+    `, [ids]);
+    abonos = abonosRes.rows;
   }
-  const data = filas.map(v => ({ ...v, items: detalles.filter(d => d.id_venta === v.id_venta) }));
+  const data = filas.map(v => ({
+    ...v,
+    items: detalles.filter(d => d.id_venta === v.id_venta),
+    abonos: abonos.filter(a => a.id_venta === v.id_venta),
+  }));
 
   if (!paginar) return data;
   return { data, total };

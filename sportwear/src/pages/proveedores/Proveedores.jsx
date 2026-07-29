@@ -181,6 +181,7 @@ export default function Proveedores() {
       else        await api.post("/proveedores", payload);
       cargarProveedores();
       setModal(false);
+      showToast("exito", editar ? "Proveedor actualizado correctamente." : "Proveedor registrado correctamente.");
     } catch (err) {
       showToast("error", err.response?.data?.message || "Error al guardar el proveedor");
     } finally {
@@ -188,13 +189,13 @@ export default function Proveedores() {
     }
   };
 
+  // El aviso de éxito/error ya lo muestra <StatusToggle> centralmente a partir de
+  // lo que esta función resuelva o rechace — por eso NO se atrapa el error acá
+  // (antes se atrapaba y no se re-lanzaba, así que StatusToggle nunca se enteraba
+  // del fallo y mostraba igual un toast de éxito encima del de error).
   const toggleEstado = async (id) => {
-    try {
-      const res = await api.patch(`/proveedores/${id}/estado`);
-      setDatos((prev) => prev.map((p) => (p.id_proveedor === id ? { ...p, estado: res.data.estado } : p)));
-    } catch (err) {
-      showToast("error", err.response?.data?.message || "Error al cambiar el estado del proveedor");
-    }
+    const res = await api.patch(`/proveedores/${id}/estado`);
+    setDatos((prev) => prev.map((p) => (p.id_proveedor === id ? { ...p, estado: res.data.estado } : p)));
   };
 
 

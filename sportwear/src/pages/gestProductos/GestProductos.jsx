@@ -167,6 +167,7 @@ export default function GestProductos() {
   const [paginaCategorias, setPaginaCategorias] = useState(1);
   const [variantesDropdownAbierto, setVariantesDropdownAbierto] = useState(null);
   const FILAS_POR_PAGINA = 10;
+  const COLORES_POR_PAGINA = 18; // grid de muestras: cabe más por página que una tabla
 
   const [formCategoria,    setFormCategoria]    = useState({ nombre: "", icono: "tag" });
   const [editarCategoria,  setEditarCategoria]  = useState(null);
@@ -224,7 +225,7 @@ export default function GestProductos() {
 
   const cargarColoresPagina = async (pagina = paginaColores, q = busquedaDebounced) => {
     try {
-      const { data } = await api.get("/colores", { params: { page: pagina, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      const { data } = await api.get("/colores", { params: { page: pagina, limit: COLORES_POR_PAGINA, q: q || undefined } });
       setColoresPagina(data.data);
       setTotalColores(data.total);
     } catch { mostrarToast("error", "No se pudo cargar."); }
@@ -270,7 +271,7 @@ export default function GestProductos() {
 
   const totalPaginasProductos  = Math.ceil(totalProductos / FILAS_POR_PAGINA) || 1;
   const totalPaginasCategorias = Math.ceil(totalCategorias / FILAS_POR_PAGINA) || 1;
-  const totalPaginasColores    = Math.ceil(totalColores / FILAS_POR_PAGINA) || 1;
+  const totalPaginasColores    = Math.ceil(totalColores / COLORES_POR_PAGINA) || 1;
 
   // ── Productos ──────────────────────────────────────────────────────────────
   const abrirRegistrar = () => {
@@ -355,6 +356,13 @@ export default function GestProductos() {
 
   // Se ejecuta al confirmar el guardado — se separó de `guardar` para poder
   // reintentarlo automáticamente tras purgar los colores sin fotos.
+  //
+  // ── FIX: este bloque tenía un try/catch/finally duplicado y mal pegado
+  // (restos de un merge sin limpiar): después del finally correcto había
+  // otras 4 líneas sueltas seguidas de un segundo `} finally { ... }` sin
+  // `try` al que pertenecer. Eso rompía la compilación (SyntaxError) y,
+  // aunque no lo hiciera, referenciaba `err` fuera de su scope. Se dejó un
+  // único try/catch/finally con toda la lógica consolidada. ──
   const guardarProducto = async () => {
     setGuardando(true);
     let huboExito = false;
@@ -1024,20 +1032,20 @@ export default function GestProductos() {
           {coloresPagina.length === 0 ? (
             <p style={{ color: "var(--dvna-muted)", fontSize: 13, padding: 24 }}>No se encontraron colores.</p>
           ) : (
-            <div className="colores-grid">
+            <div className="gestproductos-colores-grid">
               {coloresPagina.map((c) => (
-                <div key={c.id_color} className="colores-grid-item">
-                  <div className="colores-grid-sample" style={{ backgroundColor: c.codigo_hex }} />
-                  <div className="colores-grid-info">
-                    <div className="colores-grid-name">{c.nombre}</div>
-                    <div className="colores-grid-hex">{c.codigo_hex}</div>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10, gap: 6 }}>
+                <div key={c.id_color} className="gestproductos-colores-card">
+                  <div className="gestproductos-colores-swatch" style={{ backgroundColor: c.codigo_hex }} />
+                  <div className="gestproductos-colores-info">
+                    <div className="gestproductos-colores-name">{c.nombre}</div>
+                    <div className="gestproductos-colores-hex">{c.codigo_hex}</div>
+                    <div className="gestproductos-colores-actions">
                       {tienePerm('Colores.estado') ? (
                         <StatusToggle id={c.id_color} estado={c.estado} onToggle={cambiarEstadoColor} showConfirmation={true} size="sm" />
                       ) : (
                         <span className={`tabla-status ${c.estado === "Activo" ? "activo" : "inactivo"}`}>{c.estado}</span>
                       )}
-                      <div style={{ display: "flex", gap: 4 }}>
+                      <div className="gestproductos-colores-actions-btns">
                         {tienePerm('Colores.editar') && (
                           <button className="catproductos-action-btn catproductos-edit-btn" style={{ width: 28, height: 28 }} onClick={() => abrirEditarColor(c)} title="Editar"><IconEdit /></button>
                         )}
@@ -1236,7 +1244,7 @@ export default function GestProductos() {
       {eliminarColorId && (
         <ConfirmModal
           title="Eliminar color"
-          message="¿Eliminar este color? Se eliminarán las variantes asociadas."
+          message="¿Eliminar este color? No se podrá eliminar si está asociado a algún producto."
           onCancel={() => setEliminarColorId(null)}
           onConfirm={confirmarEliminarColor}
           confirmLabel="Sí, eliminar"
