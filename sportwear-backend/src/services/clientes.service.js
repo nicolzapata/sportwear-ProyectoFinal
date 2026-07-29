@@ -1,7 +1,7 @@
 // src/services/clientes.service.js
 const pool = require('../config/db');
 const { validarCamposNumericos } = require('../utils/validarNumerico');
-const { enviarCorreo } = require('./mailer.service');
+const { enviarCorreo, plantillaBienvenida } = require('./mailer.service');
 
 const getClientes = async () => {
   const result = await pool.query(`
@@ -121,19 +121,7 @@ const crearCliente = async (datos) => {
     enviarCorreo({
       to: email,
       subject: 'Bienvenido a DVNA SportWear',
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:auto">
-          <h2 style="color:#b49780">DVNA SportWear</h2>
-          <p>Hola ${nombre},</p>
-          <p>Tu cuenta fue creada exitosamente con el correo <strong>${email}</strong>.</p>
-          <p>Ya puedes iniciar sesión y comenzar a comprar en nuestro catálogo.</p>
-          <a href="${process.env.FRONTEND_URL}/login"
-             style="display:inline-block;padding:12px 24px;background:#b49780;color:#fff;
-                    border-radius:6px;text-decoration:none;margin:16px 0">
-            Ir a mi cuenta
-          </a>
-        </div>
-      `,
+      html: plantillaBienvenida({ nombre, email, documento, fecha: new Date() }),
     });
 
     return cliente;

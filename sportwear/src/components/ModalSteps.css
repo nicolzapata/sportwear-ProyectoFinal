@@ -294,6 +294,14 @@
   color: var(--dvna-muted, #999);
 }
 .ms-req { color: var(--dvna-circle, #b49780); }
+.ms-campo-bloqueado {
+  font-size: 9px;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: normal;
+  color: var(--dvna-muted, #999);
+  text-transform: none;
+}
 
 .ms-form-input::placeholder {
   color: var(--dvna-muted, #999);

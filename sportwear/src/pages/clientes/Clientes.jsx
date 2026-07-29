@@ -6,6 +6,7 @@ import ModalSteps from "../../components/ModalSteps";
 import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
 import Toast from "../../components/Toast";
+import Loader from "../../components/Loader";
 import ExportButtons from "../../components/ExportButtons";
 import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../utils/numerico";
 import "./Clientes.css";
@@ -217,12 +218,12 @@ export default function Clientes() {
       <div className="ms-form-group"><label className="ms-form-label">Apellidos <span className="ms-req">*</span></label><input className={`ms-form-input${errores.apellidos ? " input-error" : ""}`} placeholder="Ej: Pérez" value={form.apellidos} onChange={e => { const apellidos = e.target.value; setForm({ ...form, apellidos }); if (errores.apellidos) setErrores(prev => ({ ...prev, apellidos: errorApellidos(apellidos) })); }} onBlur={() => setErrores(prev => ({ ...prev, apellidos: errorApellidos(form.apellidos) }))} />{errores.apellidos && <span className="ms-form-error">{errores.apellidos}</span>}</div>
     </div>
     <div className="ms-form-row">
-      <div className="ms-form-group"><label className="ms-form-label">Tipo documento</label><select className="ms-form-select" value={form.tipo_doc} onChange={e => { const tipo_doc = e.target.value; setForm({ ...form, tipo_doc }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(tipo_doc, form.documento) })); }}>{["CC","CE","TI","NIT","Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
-      <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span></label><input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="123456789" inputMode={form.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(form.tipo_doc)} value={form.documento} onChange={e => { const documento = form.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value); setForm({ ...form, documento }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(form.tipo_doc, documento) })); }} onBlur={() => setErrores(prev => ({ ...prev, documento: errorDocumento(form.tipo_doc, form.documento) }))} />{errores.documento && <span className="ms-form-error">{errores.documento}</span>}</div>
+      <div className="ms-form-group"><label className="ms-form-label">Tipo documento{editar && <span className="ms-campo-bloqueado"> (no editable)</span>}</label><select className="ms-form-select" value={form.tipo_doc} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={e => { const tipo_doc = e.target.value; setForm({ ...form, tipo_doc }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(tipo_doc, form.documento) })); }}>{["CC","CE","TI","NIT","Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
+      <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span>{editar && <span className="ms-campo-bloqueado"> (no editable)</span>}</label><input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="123456789" inputMode={form.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(form.tipo_doc)} value={form.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={e => { const documento = form.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value); setForm({ ...form, documento }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(form.tipo_doc, documento) })); }} onBlur={() => setErrores(prev => ({ ...prev, documento: errorDocumento(form.tipo_doc, form.documento) }))} />{errores.documento && <span className="ms-form-error">{errores.documento}</span>}</div>
     </div>
     <div className="ms-form-row">
       <div className="ms-form-group"><label className="ms-form-label">Teléfono <span className="ms-req">*</span></label><input className={`ms-form-input${errores.telefono ? " input-error" : ""}`} inputMode="numeric" maxLength={LONGITUD_TELEFONO} placeholder="3001234567" value={form.telefono} onChange={e => { const telefono = soloDigitos(e.target.value); setForm({ ...form, telefono }); if (errores.telefono) setErrores(prev => ({ ...prev, telefono: validarTelefono(telefono) })); }} onBlur={() => setErrores(prev => ({ ...prev, telefono: validarTelefono(form.telefono) }))} />{errores.telefono && <span className="ms-form-error">{errores.telefono}</span>}</div>
-      <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span></label><input type="email" className={`ms-form-input${errores.email ? " input-error" : ""}`} disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined} placeholder="ejemplo@correo.com" value={form.email} onChange={e => { const email = e.target.value; setForm({ ...form, email }); if (errores.email) setErrores(prev => ({ ...prev, email: errorEmail(email) })); }} onBlur={() => {
+      <div className="ms-form-group"><label className="ms-form-label">Correo electrónico <span className="ms-req">*</span>{editar && <span className="ms-campo-bloqueado"> (no editable)</span>}</label><input type="email" className={`ms-form-input${errores.email ? " input-error" : ""}`} disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined} placeholder="ejemplo@correo.com" value={form.email} onChange={e => { const email = e.target.value; setForm({ ...form, email }); if (errores.email) setErrores(prev => ({ ...prev, email: errorEmail(email) })); }} onBlur={() => {
         const mensaje = errorEmail(form.email);
         setErrores(prev => ({ ...prev, email: mensaje }));
         if (!editar && !mensaje) {
@@ -281,6 +282,7 @@ export default function Clientes() {
     <DetalleItem label="Estado" value={c.estado} />
   </DetalleGrid></DetalleSeccion>);
 
+  if (loading) return <Loader text="Cargando clientes..." />;
   if (error) return <div style={{ padding: 32, color: "var(--danger)" }}>{error}</div>;
 
   return (
@@ -329,9 +331,7 @@ export default function Clientes() {
             </tr>
           </thead>
           <tbody className="tbl-body">
-            {loading ? (
-              <tr><td colSpan="8" className="tbl-td">Cargando clientes...</td></tr>
-            ) : datos.length === 0 ? (
+            {datos.length === 0 ? (
               <tr><td colSpan="8" className="tbl-td">No hay clientes con compras registradas</td></tr>
             ) : datos.map((c) => (
               <tr key={c.id_cliente} className="tbl-row">

@@ -187,6 +187,8 @@ export default function Usuarios() {
   };
 
   const abrirEditar = async (u) => {
+    // Un administrador no puede editar su propio usuario, solo visualizarlo.
+    if (u.id_usuario === usuario?.id_usuario) { abrirDetalle(u); return; }
     setEditar(u.id_usuario);
     setErrores({ nombres: "", apellidos: "", documento: "", email: "", contrasena: "", confirmar: "", telefono: "", direccion: "", id_barrio: "" });
     setForm({ ...dividirNombre(u.nombre), email: u.email || "", contrasena: "", confirmar: "", id_rol: u.id_rol || roles[0]?.id_rol || 1, estado: u.estado || "Activo", tipo_doc: u.tipo_doc || "CC", documento: u.documento || "", telefono: u.telefono || "", ciudad: u.ciudad || "Medellín", id_barrio: u.id_barrio || "", direccion: u.direccion || "" });
@@ -226,7 +228,7 @@ export default function Usuarios() {
     if (errorTelefono) e.telefono = errorTelefono;
     if (!editar && !form.contrasena) e.contrasena = "La contraseña es obligatoria";
     if (form.contrasena && form.contrasena.length < 6) e.contrasena = "La contraseña debe tener al menos 6 caracteres";
-    if (form.contrasena && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) e.contrasena = "La contraseña debe contener un símbolo";
+    if (form.contrasena && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(form.contrasena)) e.contrasena = "Debe contener un carácter especial (!*&#).";
     const errorConfirmar = revisarConfirmar(form.confirmar, form.contrasena);
     if (errorConfirmar) e.confirmar = errorConfirmar;
     setErrores(prev => ({ ...prev, ...e, ...(!e.documento && { documento: "" }), ...(!e.nombres && { nombres: "" }), ...(!e.apellidos && { apellidos: "" }), ...(!e.email && { email: "" }), ...(!e.telefono && { telefono: "" }), ...(!e.contrasena && { contrasena: "" }), ...(!e.confirmar && { confirmar: "" }) }));
@@ -238,7 +240,7 @@ export default function Usuarios() {
     let msg = "";
     if (!editar && !valor) msg = "La contraseña es obligatoria";
     if (valor && valor.length < 6) msg = "La contraseña debe tener al menos 6 caracteres";
-    if (valor && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(valor)) msg = "La contraseña debe contener un símbolo";
+    if (valor && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(valor)) msg = "Debe contener un carácter especial (!*&#).";
     return msg;
   };
 
@@ -280,7 +282,7 @@ export default function Usuarios() {
   const revisarContrasenaCliente = (valor) => {
     if (!editar && !valor) return "La contraseña es obligatoria";
     if (valor && valor.length < 6) return "Debe tener al menos 6 caracteres";
-    if (valor && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(valor)) return "Debe contener al menos un símbolo";
+    if (valor && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]+/.test(valor)) return "Debe contener un carácter especial (!*&#).";
     return "";
   };
   const revisarConfirmarCliente = (valor, contrasena) => {
@@ -392,8 +394,9 @@ export default function Usuarios() {
     <div>
       <div className="usuarios-form-row">
         <div className="usuarios-form-group">
-          <label className="usuarios-form-label">Tipo doc. <span className="usuarios-req">*</span></label>
+          <label className="usuarios-form-label">Tipo doc. <span className="usuarios-req">*</span>{editar && <span className="usuarios-campo-bloqueado"> (no editable)</span>}</label>
           <select className="usuarios-form-select" value={form.tipo_doc}
+            disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined}
             onChange={e => {
               const tipo_doc = e.target.value;
               setForm({ ...form, tipo_doc });
@@ -406,10 +409,11 @@ export default function Usuarios() {
           </select>
         </div>
         <div className="usuarios-form-group">
-          <label className="usuarios-form-label">N° documento <span className="usuarios-req">*</span></label>
+          <label className="usuarios-form-label">N° documento <span className="usuarios-req">*</span>{editar && <span className="usuarios-campo-bloqueado"> (no editable)</span>}</label>
           <input className={`usuarios-form-input${errores.documento ? " input-error" : ""}`} placeholder="1001234567" value={form.documento}
             inputMode={form.tipo_doc === "PP" ? "text" : "numeric"}
             maxLength={maxLongitudDocumento(form.tipo_doc)}
+            disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined}
             onChange={e => {
               const documento = form.tipo_doc === "PP" ? e.target.value : soloDigitos(e.target.value);
               setForm({ ...form, documento });
@@ -452,7 +456,7 @@ export default function Usuarios() {
 
       <div className="usuarios-form-row">
         <div className="usuarios-form-group">
-          <label className="usuarios-form-label">Correo electrónico <span className="usuarios-req">*</span></label>
+          <label className="usuarios-form-label">Correo electrónico <span className="usuarios-req">*</span>{editar && <span className="usuarios-campo-bloqueado"> (no editable)</span>}</label>
           <input type="email" className={`usuarios-form-input${errores.email ? " input-error" : ""}`} placeholder="ejemplo@correo.com" value={form.email}
             disabled={!!editar} title={editar ? "El correo no se puede modificar" : undefined}
             onChange={e => {
@@ -482,7 +486,7 @@ export default function Usuarios() {
           {errores.telefono && <span className="usuarios-form-error">{errores.telefono}</span>}
         </div>
       </div>
-      {(!editar || editar === usuario?.id_usuario) && (
+      {!editar && (
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">Contraseña {!editar && <span className="usuarios-req">*</span>}</label>
           <div className="input-wrapper">
@@ -505,7 +509,7 @@ export default function Usuarios() {
           {errores.contrasena && <span className="usuarios-form-error">{errores.contrasena}</span>}
         </div>
       )}
-      {(!editar || editar === usuario?.id_usuario) && (
+      {!editar && (
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">Confirmar contraseña {(!editar || form.contrasena) && <span className="usuarios-req">*</span>}</label>
           <input type="password"
@@ -655,8 +659,8 @@ export default function Usuarios() {
               { header: "Rol", key: "rol" },
               { header: "Estado", key: "estado" },
             ] : [
-              { header: "Cliente", key: "nombre" },
               { header: "Documento", key: "documento" },
+              { header: "Cliente", key: "nombre" },
               { header: "Teléfono", key: "telefono" },
               { header: "Barrio", key: "barrio_nombre" },
               { header: "Cuotas", value: (c) => c.permiso_cuotas !== false ? "Sí" : "No" },
@@ -681,8 +685,8 @@ export default function Usuarios() {
               </tr>
             ) : (
               <tr>
-                <th className="tbl-th">Cliente</th>
                 <th className="tbl-th">Documento</th>
+                <th className="tbl-th">Cliente</th>
                 <th className="tbl-th">Teléfono</th>
                 <th className="tbl-th">Cuotas</th>
                 {tienePerm('Clientes.estado') && <th className="tbl-th">Estado</th>}
@@ -714,7 +718,7 @@ export default function Usuarios() {
                   <td className="tbl-td">
                     <div className="usuarios-action-cell">
                       <button className="usuarios-action-btn usuarios-view-btn" onClick={() => abrirDetalle(u)} title="Ver detalles"><IconEyeOpen /></button>
-                      {tienePerm('Usuarios.editar') && (
+                      {tienePerm('Usuarios.editar') && u.id_usuario !== usuario?.id_usuario && (
                         <button className="usuarios-action-btn usuarios-edit-btn" onClick={() => abrirEditar(u)} title="Editar"><IconEdit /></button>
                       )}
                     </div>
@@ -724,8 +728,8 @@ export default function Usuarios() {
             ) : (
               filtradosPagina.map(c => (
                 <tr key={c.id_cliente} className="tbl-row">
-                  <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
                   <td className="tbl-td"><span className="clientes-doc-badge">{c.tipo_doc} {c.documento}</span></td>
+                  <td className="tbl-td"><div className="clientes-user-info"><div className="clientes-user-name">{c.nombre}</div><div className="clientes-user-email">{c.email}</div></div></td>
                   <td className="tbl-td clientes-phone-cell">{c.telefono || '—'}</td>
                   <td className="tbl-td">
                     {tienePerm('Clientes.editar')
@@ -803,15 +807,7 @@ export default function Usuarios() {
           <div className="usuarios-factura-seccion">
             <h3 className="usuarios-factura-titulo">Datos personales</h3>
             <div className="usuarios-form-row">
-              <div className="usuarios-form-group"><label className="usuarios-form-label">Nombres <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.nombres ? " input-error" : ""}`} placeholder="Ej: Juan" value={clienteForm.nombres}
-                onChange={e => { const nombres = e.target.value; setClienteForm({ ...clienteForm, nombres }); if (erroresCliente.nombres) setErroresCliente(prev => ({ ...prev, nombres: validarNombre(nombres) })); }}
-                onBlur={() => setErroresCliente(prev => ({ ...prev, nombres: validarNombre(clienteForm.nombres) }))} />{erroresCliente.nombres && <span className="usuarios-form-error">{erroresCliente.nombres}</span>}</div>
-              <div className="usuarios-form-group"><label className="usuarios-form-label">Apellidos <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.apellidos ? " input-error" : ""}`} placeholder="Ej: Pérez" value={clienteForm.apellidos}
-                onChange={e => { const apellidos = e.target.value; setClienteForm({ ...clienteForm, apellidos }); if (erroresCliente.apellidos) setErroresCliente(prev => ({ ...prev, apellidos: validarNombre(apellidos, "El apellido es obligatorio") })); }}
-                onBlur={() => setErroresCliente(prev => ({ ...prev, apellidos: validarNombre(clienteForm.apellidos, "El apellido es obligatorio") }))} />{erroresCliente.apellidos && <span className="usuarios-form-error">{erroresCliente.apellidos}</span>}</div>
-            </div>
-            <div className="usuarios-form-row">
-              <div className="usuarios-form-group"><label className="usuarios-form-label">Tipo documento</label><select className="usuarios-form-select" value={clienteForm.tipo_doc} disabled={!!editar}
+              <div className="usuarios-form-group"><label className="usuarios-form-label">Tipo documento{editar && <span className="usuarios-campo-bloqueado"> (no editable)</span>}</label><select className="usuarios-form-select" value={clienteForm.tipo_doc} disabled={!!editar}
                 onChange={e => {
                   const tipo_doc = e.target.value;
                   setClienteForm({ ...clienteForm, tipo_doc });
@@ -820,7 +816,7 @@ export default function Usuarios() {
                     setErroresCliente(prev => ({ ...prev, documento: msg }));
                   }
                 }}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
-              <div className="usuarios-form-group"><label className="usuarios-form-label">N° documento <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode={clienteForm.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(clienteForm.tipo_doc)}
+              <div className="usuarios-form-group"><label className="usuarios-form-label">N° documento <span className="usuarios-req">*</span>{editar && <span className="usuarios-campo-bloqueado"> (no editable)</span>}</label><input className={`usuarios-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode={clienteForm.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(clienteForm.tipo_doc)}
                 onChange={e => {
                   const documento = clienteForm.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value);
                   setClienteForm({ ...clienteForm, documento });
@@ -833,6 +829,14 @@ export default function Usuarios() {
                   const msg = !clienteForm.documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(clienteForm.tipo_doc, clienteForm.documento);
                   setErroresCliente(prev => ({ ...prev, documento: msg }));
                 }} />{erroresCliente.documento && <span className="usuarios-form-error">{erroresCliente.documento}</span>}</div>
+            </div>
+            <div className="usuarios-form-row">
+              <div className="usuarios-form-group"><label className="usuarios-form-label">Nombres <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.nombres ? " input-error" : ""}`} placeholder="Ej: Juan" value={clienteForm.nombres}
+                onChange={e => { const nombres = e.target.value; setClienteForm({ ...clienteForm, nombres }); if (erroresCliente.nombres) setErroresCliente(prev => ({ ...prev, nombres: validarNombre(nombres) })); }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, nombres: validarNombre(clienteForm.nombres) }))} />{erroresCliente.nombres && <span className="usuarios-form-error">{erroresCliente.nombres}</span>}</div>
+              <div className="usuarios-form-group"><label className="usuarios-form-label">Apellidos <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.apellidos ? " input-error" : ""}`} placeholder="Ej: Pérez" value={clienteForm.apellidos}
+                onChange={e => { const apellidos = e.target.value; setClienteForm({ ...clienteForm, apellidos }); if (erroresCliente.apellidos) setErroresCliente(prev => ({ ...prev, apellidos: validarNombre(apellidos, "El apellido es obligatorio") })); }}
+                onBlur={() => setErroresCliente(prev => ({ ...prev, apellidos: validarNombre(clienteForm.apellidos, "El apellido es obligatorio") }))} />{erroresCliente.apellidos && <span className="usuarios-form-error">{erroresCliente.apellidos}</span>}</div>
             </div>
             <div className="usuarios-form-group"><label className="usuarios-form-label">Teléfono <span className="usuarios-req">*</span></label><input className={`usuarios-form-input${erroresCliente.telefono ? " input-error" : ""}`} placeholder="3001234567" value={clienteForm.telefono} inputMode="numeric" maxLength={LONGITUD_TELEFONO}
               onChange={e => { const telefono = soloDigitos(e.target.value); setClienteForm({ ...clienteForm, telefono }); if (erroresCliente.telefono) setErroresCliente(prev => ({ ...prev, telefono: validarTelefono(telefono) })); }}
@@ -940,7 +944,7 @@ export default function Usuarios() {
 
             <div className="usuarios-modal-footer">
               <button className="usuarios-btn-secondary" onClick={() => setDetalle(null)}>Cerrar</button>
-              {tienePerm('Usuarios.editar') && (
+              {tienePerm('Usuarios.editar') && detalle.id_usuario !== usuario?.id_usuario && (
                 <button className="usuarios-btn-primary" onClick={() => { setDetalle(null); abrirEditar(detalle); }}>
                   <IconEdit /> Editar
                 </button>
@@ -965,9 +969,9 @@ export default function Usuarios() {
               <div className="usuarios-factura-seccion">
                 <h3 className="usuarios-factura-titulo">Datos personales</h3>
                 <DetalleGrid>
-                  <DetalleItem label="Nombre completo"    value={clienteDetalle.nombre} full />
                   <DetalleItem label="Tipo documento"     value={clienteDetalle.tipo_doc} />
                   <DetalleItem label="N° documento"       value={clienteDetalle.documento} />
+                  <DetalleItem label="Nombre completo"    value={clienteDetalle.nombre} full />
                   <DetalleItem label="Teléfono"           value={clienteDetalle.telefono} />
                   <DetalleItem label="Correo electrónico" value={clienteDetalle.email} />
                 </DetalleGrid>

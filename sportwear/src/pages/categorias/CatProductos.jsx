@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import api from "../../services/api";
 import ModalSteps from "../../components/ModalSteps";
 import StatusToggle from "../../components/StatusToggle";
+import Loader from "../../components/Loader";
 import './CatProductos.css';
 import { IconBan, IconCheck, IconEdit, IconSearch, IconX } from "../../components/Icons";
 
@@ -86,12 +87,7 @@ export default function CatProductos() {
     } catch (err) { console.error(err); }
   };
 
-  if (loading) return (
-    <div className="catproductos-loading-container">
-      <div className="catproductos-loading-spinner"></div>
-      <p className="catproductos-loading-text">Cargando categorías...</p>
-    </div>
-  );
+  if (loading) return <Loader text="Cargando categorías..." />;
 
   // ── Pasos ──────────────────────────────────────────────────────────────────
   const PasoIcono = (

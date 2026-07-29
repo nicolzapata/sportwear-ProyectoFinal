@@ -82,9 +82,8 @@ export default function Registro() {
   const [form, setForm] = useState({
     nombres: "", apellidos: "", tipo_doc: "CC", documento: "",
     telefono: "", email: "", contrasena: "",
-    confirmar: "", ciudad: "Medellín", id_barrio: "", direccion: "",
+    confirmar: "", direccion: "",
   });
-  const [barrios, setBarrios] = useState([]);
   const [error, setError]     = useState("");
   const [errores, setErrores] = useState({});
   const [tocado, setTocado]   = useState({});
@@ -97,12 +96,6 @@ export default function Registro() {
   // mientras la verificación estaba en vuelo (evita marcar un error obsoleto).
   const formRef = useRef(form);
   useEffect(() => { formRef.current = form; }, [form]);
-
-  useEffect(() => {
-    api.get("/barrios")
-      .then(({ data }) => setBarrios(data))
-      .catch(() => setBarrios([]));
-  }, []);
 
   // Verificación en tiempo real (onBlur): si el correo ya existe, lo avisa de una vez
   // en vez de esperar a que el usuario complete todo el formulario y lo envíe.
@@ -134,13 +127,11 @@ export default function Registro() {
     if (errorTelefono) e.telefono = errorTelefono;
     const errorEmail = validarEmail(formValue.email, "El correo es obligatorio.");
     if (errorEmail) e.email = errorEmail;
-    if (!formValue.ciudad.trim()) e.ciudad = "La ciudad es obligatoria.";
-    if (!formValue.id_barrio) e.id_barrio = "Selecciona un barrio.";
     if (!formValue.direccion.trim()) e.direccion = "La dirección es obligatoria.";
     if (!formValue.contrasena) e.contrasena = "La contraseña es obligatoria.";
     else if (formValue.contrasena.length < 6) e.contrasena = "Debe tener al menos 6 caracteres.";
     // eslint-disable-next-line no-useless-escape
-    else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(formValue.contrasena)) e.contrasena = "Debe contener al menos un signo (símbolo).";
+    else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(formValue.contrasena)) e.contrasena = "Debe contener un carácter especial (!*&#).";
     if (!formValue.confirmar) e.confirmar = "Confirma tu contraseña.";
     else if (formValue.contrasena !== formValue.confirmar) e.confirmar = "Las contraseñas no coinciden.";
     return e;
@@ -205,8 +196,6 @@ export default function Registro() {
         nombre: `${form.nombres} ${form.apellidos}`.trim(), tipo_doc: form.tipo_doc,
         documento: form.documento, telefono: form.telefono,
         email: form.email, contrasena: form.contrasena,
-        ciudad: form.ciudad,
-        id_barrio: form.id_barrio,
         direccion: form.direccion,
       });
       setSuccess(true);
@@ -214,9 +203,11 @@ export default function Registro() {
     } catch (err) {
       const mensaje = err.response?.data?.message || "Error al crear la cuenta.";
       if (err.response?.status === 409) {
-        // El backend ya rechaza correos duplicados; lo mostramos junto al campo, no como banner genérico.
-        setErrores(prev => ({ ...prev, email: mensaje }));
-        setTocado(prev => ({ ...prev, email: true }));
+        // El backend rechaza tanto correo como documento duplicado; se detecta cuál
+        // fue según el mensaje para pegarlo al campo real, no siempre al correo.
+        const campo = /documento/i.test(mensaje) ? "documento" : "email";
+        setErrores(prev => ({ ...prev, [campo]: mensaje }));
+        setTocado(prev => ({ ...prev, [campo]: true }));
       } else {
         setError(mensaje);
       }
@@ -258,17 +249,7 @@ export default function Registro() {
         ) : (
           <form onSubmit={handleSubmit}>
 
-            <div className="registro-row">
-              <Field icon={<IconUser />} name="nombres" label="Nombres"
-                placeholder="Ana Sofía" required
-                value={form.nombres} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-                error={errores.nombres} />
-
-              <Field icon={<IconUser />} name="apellidos" label="Apellidos"
-                placeholder="López Ríos" required
-                value={form.apellidos} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-                error={errores.apellidos} />
-            </div>
+            <h3 className="registro-section-titulo">Datos personales</h3>
 
             <div className="registro-row">
               <div className="form-group">
@@ -292,6 +273,20 @@ export default function Registro() {
               </div>
             </div>
 
+            <div className="registro-row">
+              <Field icon={<IconUser />} name="nombres" label="Nombres"
+                placeholder="Ana Sofía" required
+                value={form.nombres} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+                error={errores.nombres} />
+
+              <Field icon={<IconUser />} name="apellidos" label="Apellidos"
+                placeholder="López Ríos" required
+                value={form.apellidos} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+                error={errores.apellidos} />
+            </div>
+
+            <h3 className="registro-section-titulo">Datos de contacto</h3>
+
             <Field icon={<IconMail />} name="email" type="email" label="Correo electrónico"
               placeholder="correo@ejemplo.com" required
               value={form.email} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
@@ -302,31 +297,12 @@ export default function Registro() {
               value={form.telefono} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
               error={errores.telefono} />
 
-            <div className="registro-row">
-              <Field icon={<IconLocation />} name="ciudad" label="Ciudad" required
-                placeholder="Medellín"
-                value={form.ciudad} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-                error={errores.ciudad} />
-
-              <div className="form-group">
-                <label><IconLocation /> Barrio <span className="req">*</span></label>
-                <select name="id_barrio" className="form-control"
-                  value={form.id_barrio} onChange={handleChange} onBlur={onBlur}>
-                  <option value="">— Selecciona un barrio —</option>
-                  {barrios.map(b => (
-                    <option key={b.id_barrio} value={b.id_barrio}>
-                      {b.nombre}
-                    </option>
-                  ))}
-                </select>
-                {errores.id_barrio && <span className="field-error">{errores.id_barrio}</span>}
-              </div>
-            </div>
-
             <Field icon={<IconLocation />} name="direccion" label="Dirección" required
               placeholder="Cra 43A # 10-20 Apto 301"
               value={form.direccion} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
               error={errores.direccion} />
+
+            <h3 className="registro-section-titulo">Seguridad</h3>
 
             <div className="registro-row">
               <div className="form-group">

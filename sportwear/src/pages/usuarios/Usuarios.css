@@ -353,6 +353,12 @@
 }
 
 .usuarios-req { color: var(--dvna-circle); font-size: 13px; }
+.usuarios-campo-bloqueado {
+  font-size: 10px;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--dvna-muted);
+}
 .usuarios-form-hint {
   font-family: var(--font-body);
   font-size: 10px;

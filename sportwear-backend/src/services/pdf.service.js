@@ -59,6 +59,9 @@ const dibujarComprobante = (doc, { venta, items }) => {
   doc.fontSize(8).fillColor(MUTED).text('ESTADO', col1, cajaY + 38);
   doc.fontSize(10).fillColor(estadoColor).text(venta.estado, col1, cajaY + 38, { continued: false, indent: 42 });
 
+  doc.fontSize(8).fillColor(MUTED).text('DOCUMENTO', col2, cajaY + 38);
+  doc.fontSize(10).fillColor(CHARCOAL).text(venta.cliente_documento || '—', col2, cajaY + 38, { continued: false, indent: 60 });
+
   doc.y = cajaY + 70;
 
   // ── Tabla de productos — anchos calculados a partir del ancho real de la tabla,

@@ -1,7 +1,7 @@
 // src/services/ventas.service.js
 const pool = require('../config/db');
 const { generarComprobanteVentaBuffer } = require('./pdf.service');
-const { enviarCorreo } = require('./mailer.service');
+const { enviarCorreo, formatearFecha, filasDatos } = require('./mailer.service');
 
 const getVentas = async ({ page, limit, q } = {}) => {
   const params = [];
@@ -54,7 +54,7 @@ const getVentas = async ({ page, limit, q } = {}) => {
 
 const getVentaById = async (id) => {
   const cab = await pool.query(`
-    SELECT v.*, c.nombre AS cliente, c.email AS cliente_email
+    SELECT v.*, c.nombre AS cliente, c.email AS cliente_email, c.documento AS cliente_documento
     FROM "Ventas" v JOIN "Clientes" c ON v.id_cliente=c.id_cliente
     WHERE v.id_venta=$1
   `, [id]);
@@ -87,6 +87,11 @@ const notificarComprobantePago = async (id_venta) => {
           <p>Hola ${venta.cliente || ''},</p>
           <p>Adjunto encontrarás el comprobante de tu compra #${id_venta} por un total de
              ${Number(venta.total || 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}.</p>
+          ${filasDatos([
+            ['Fecha', formatearFecha(venta.fecha)],
+            ['Nombre del cliente', venta.cliente],
+            ['Documento', venta.cliente_documento],
+          ])}
           <hr style="border:none; border-top:1px solid #eee; margin: 20px 0;" />
           <p style="color:#aaa; font-size: 12px;">DVNA SportWear</p>
         </div>
@@ -310,12 +315,12 @@ const cambiarEstado = async (id, estado) => {
 const notificarPedidoRecibido = async (id_venta, metodo_pago) => {
   try {
     const info = await pool.query(`
-      SELECT c.nombre, c.email
+      SELECT c.nombre, c.email, c.documento, v.fecha
       FROM "Ventas" v JOIN "Clientes" c ON v.id_cliente = c.id_cliente
       WHERE v.id_venta = $1
     `, [id_venta]);
     if (!info.rows.length || !info.rows[0].email) return;
-    const { nombre, email } = info.rows[0];
+    const { nombre, email, documento, fecha } = info.rows[0];
 
     const instrucciones = {
       'Efectivo':      'Pagarás en efectivo al momento de recibir tu pedido. Nuestro equipo se pondrá en contacto para coordinar la entrega.',
@@ -331,6 +336,11 @@ const notificarPedidoRecibido = async (id_venta, metodo_pago) => {
           <h2 style="color:#1a1a1a;">¡Recibimos tu pedido!</h2>
           <p>Hola ${nombre || ''},</p>
           <p>Tu pedido <strong>#${id_venta}</strong> quedó registrado y está pendiente de confirmación de pago.</p>
+          ${filasDatos([
+            ['Fecha', formatearFecha(fecha)],
+            ['Nombre del cliente', nombre],
+            ['Documento', documento],
+          ])}
           <p>${instrucciones[metodo_pago] || 'Te avisaremos apenas se confirme tu pago.'}</p>
           <hr style="border:none; border-top:1px solid #eee; margin: 20px 0;" />
           <p style="color:#aaa; font-size: 12px;">DVNA SportWear</p>

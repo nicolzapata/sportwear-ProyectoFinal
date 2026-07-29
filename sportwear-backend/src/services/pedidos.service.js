@@ -1,6 +1,6 @@
 // src/services/pedidos.service.js
 const pool = require('../config/db');
-const { enviarCorreo } = require('./mailer.service');
+const { enviarCorreo, formatearFecha, filasDatos } = require('./mailer.service');
 
 const ESTADOS_VALIDOS = ['Pendiente', 'En preparación', 'Enviado', 'Entregado', 'Cancelado'];
 
@@ -122,7 +122,7 @@ const notificarCambioEstado = async (id_pedido, nuevoEstado) => {
   if (!mensaje) return; // sin plantilla para ese estado (ej. "Pendiente" no notifica)
 
   const clienteRes = await pool.query(`
-    SELECT c.nombre, c.email
+    SELECT c.nombre, c.email, c.documento
     FROM "Pedidos" p
     JOIN "Ventas" v   ON p.id_venta = v.id_venta
     JOIN "Clientes" c ON v.id_cliente = c.id_cliente
@@ -140,6 +140,11 @@ const notificarCambioEstado = async (id_pedido, nuevoEstado) => {
         <h2 style="color:#1a1a1a;">${mensaje.titulo}</h2>
         <p>Hola ${cliente.nombre || ''},</p>
         <p>${mensaje.cuerpo}</p>
+        ${filasDatos([
+          ['Fecha', formatearFecha(new Date())],
+          ['Nombre del cliente', cliente.nombre],
+          ['Documento', cliente.documento],
+        ])}
         <p style="color:#888; font-size: 13px;">Pedido #${id_pedido} · Nuevo estado: <b>${nuevoEstado}</b></p>
         <hr style="border:none; border-top:1px solid #eee; margin: 20px 0;" />
         <p style="color:#aaa; font-size: 12px;">DVNA SportWear</p>

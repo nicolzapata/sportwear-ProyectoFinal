@@ -1,6 +1,6 @@
 // src/services/pagos.service.js
 const pool = require('../config/db');
-const { enviarCorreo } = require('./mailer.service');
+const { enviarCorreo, formatearFecha, filasDatos } = require('./mailer.service');
 const { notificarComprobantePago } = require('./ventas.service');
 
 const getPagos = async ({ page, limit, q } = {}) => {
@@ -69,12 +69,12 @@ const getSaldoPendiente = async (client, id_venta) => {
 const notificarAbono = async (db, id_venta, monto) => {
   try {
     const info = await db.query(`
-      SELECT c.nombre, c.email
+      SELECT c.nombre, c.email, c.documento
       FROM "Ventas" v JOIN "Clientes" c ON v.id_cliente = c.id_cliente
       WHERE v.id_venta = $1
     `, [id_venta]);
     if (!info.rows.length || !info.rows[0].email) return;
-    const { nombre, email } = info.rows[0];
+    const { nombre, email, documento } = info.rows[0];
     const { saldo } = await getSaldoPendiente(db, id_venta);
 
     enviarCorreo({
@@ -85,6 +85,11 @@ const notificarAbono = async (db, id_venta, monto) => {
           <h2 style="color:#b49780">DVNA SportWear</h2>
           <p>Hola ${nombre},</p>
           <p>Registramos un pago de <strong>$${Number(monto).toLocaleString('es-CO')}</strong> para tu pedido <strong>V-${String(id_venta).padStart(3, '0')}</strong>.</p>
+          ${filasDatos([
+            ['Fecha', formatearFecha(new Date())],
+            ['Nombre del cliente', nombre],
+            ['Documento', documento],
+          ])}
           <p>Saldo pendiente actual: <strong>$${saldo.toLocaleString('es-CO')}</strong>.</p>
         </div>
       `,

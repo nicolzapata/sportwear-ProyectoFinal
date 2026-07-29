@@ -4,6 +4,8 @@ import { createPortal } from "react-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";  // ← AGREGAR
 import { MAX_LONGITUD_NOMBRE } from "../../utils/numerico";
+import Loader from "../../components/Loader";
+import Toast from "../../components/Toast";
 import './Roles.css';
 import { IconX, IconSearch } from "../../components/Icons";
 
@@ -417,6 +419,12 @@ export default function Roles() {
   const [confirm,            setConfirm]            = useState(null);
   const [form,    setForm]    = useState({ nombre: "", estado: "Activo", permisos: [] });
   const [errores, setErrores] = useState({});
+  const [toast,   setToast]   = useState(null);
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   const mostrarBuscador = datos.length >= 10;
   const filtrados = mostrarBuscador
@@ -478,8 +486,14 @@ export default function Roles() {
   const solicitarCambioEstado = async (rol) => {
     if (esRolProtegido(rol.nombre)) return;
     if (rol.estado === 'Inactivo') {
-      try { await api.patch(`/roles/${rol.id_rol}/estado`); cargar(); }
-      catch (err) { console.error("Error activando rol:", err); }
+      try {
+        await api.patch(`/roles/${rol.id_rol}/estado`);
+        cargar();
+        showToast('exito', `Rol "${rol.nombre}" activado correctamente.`);
+      } catch (err) {
+        console.error("Error activando rol:", err);
+        showToast('error', err.response?.data?.message || 'Error al activar el rol.');
+      }
       return;
     }
     setConfirm({ rol, usuariosCount: null });
@@ -491,16 +505,19 @@ export default function Roles() {
 
   const confirmarCambioEstado = async () => {
     if (!confirm) return;
-    try { await api.patch(`/roles/${confirm.rol.id_rol}/estado`); setConfirm(null); cargar(); }
-    catch (err) { console.error("Error cambiando estado:", err); }
+    try {
+      await api.patch(`/roles/${confirm.rol.id_rol}/estado`);
+      const nombreRol = confirm.rol.nombre;
+      setConfirm(null);
+      cargar();
+      showToast('exito', `Rol "${nombreRol}" desactivado correctamente.`);
+    } catch (err) {
+      console.error("Error cambiando estado:", err);
+      showToast('error', err.response?.data?.message || 'Error al cambiar el estado del rol.');
+    }
   };
 
-  if (loading) return (
-    <div className="roles-loading-container">
-      <div className="roles-loading-spinner" />
-      <p className="roles-loading-text">Cargando roles...</p>
-    </div>
-  );
+  if (loading) return <Loader text="Cargando roles..." />;
 
   return (
     <div className="roles-container">
@@ -585,6 +602,7 @@ export default function Roles() {
           labelGuardar={editar ? "Actualizar" : "Registrar"}
         />
       )}
+      <Toast toast={toast} />
     </div>
   );
 }

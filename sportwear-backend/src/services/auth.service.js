@@ -3,7 +3,7 @@ const pool       = require('../config/db');
 const jwt        = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const crypto     = require('crypto');
-const { enviarCorreo } = require('./mailer.service');
+const { enviarCorreo, formatearFecha, filasDatos, plantillaBienvenida } = require('./mailer.service');
 const { esRolProtegido } = require('../utils/rolesProtegidos');
 const { validarCamposNumericos } = require('../utils/validarNumerico');
 
@@ -140,19 +140,7 @@ const registro = async (datos) => {
     enviarCorreo({
       to: email,
       subject: 'Bienvenido a DVNA SportWear',
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:auto">
-          <h2 style="color:#b49780">DVNA SportWear</h2>
-          <p>Hola ${nombre},</p>
-          <p>Tu cuenta fue creada exitosamente con el correo <strong>${email}</strong>.</p>
-          <p>Ya puedes iniciar sesión y comenzar a comprar en nuestro catálogo.</p>
-          <a href="${process.env.FRONTEND_URL}/login"
-             style="display:inline-block;padding:12px 24px;background:#b49780;color:#fff;
-                    border-radius:6px;text-decoration:none;margin:16px 0">
-            Ir a mi cuenta
-          </a>
-        </div>
-      `,
+      html: plantillaBienvenida({ nombre, email, documento, fecha: new Date() }),
     });
 
     const token = generarToken({ ...nuevoUsuario.rows[0], rol: 'Cliente', id_cliente, modulos: [], permisos: [] });
@@ -214,6 +202,14 @@ const crearUsuario = async ({
     );
 
     await client.query('COMMIT');
+
+    // Correo de bienvenida (no bloqueante, no gatea la creación).
+    enviarCorreo({
+      to: email,
+      subject: 'Bienvenido a DVNA SportWear',
+      html: plantillaBienvenida({ nombre, email, documento, fecha: new Date() }),
+    });
+
     return result.rows[0];
   } catch (err) {
     await client.query('ROLLBACK');
@@ -238,24 +234,20 @@ const actualizarUsuario = async (id, datos, usuarioActual) => {
     const { id_cliente } = usuarioExistente.rows[0];
     const esPropioUsuario = String(usuarioActual.id_usuario) === String(id);
 
+    // Un administrador no puede editar su propio usuario, solo visualizarlo.
+    if (esPropioUsuario)
+      throw { status: 403, message: 'No puedes editar tu propio usuario. Solo puedes visualizar tu información.' };
+
     // Un usuario con rol Administrador siempre permanece Activo: no se puede desactivar.
     const rolRes = await client.query(`SELECT nombre FROM "Roles" WHERE id_rol = $1`, [id_rol]);
     const estadoFinal = esRolProtegido(rolRes.rows[0]?.nombre) ? 'Activo' : estado;
 
     // El correo del usuario no se puede editar una vez creado (solo se fija al
-    // registrar), por eso no aparece en estos UPDATE. El documento sí es editable.
-    if (contrasena && esPropioUsuario) {
-      await client.query(
-        `UPDATE "Usuarios" SET nombre=$1, id_rol=$2, estado=$3,
-         password_hash=crypt($4, gen_salt('bf',12)) WHERE id_usuario=$5`,
-        [nombre, id_rol, estadoFinal, contrasena, id]
-      );
-    } else {
-      await client.query(
-        `UPDATE "Usuarios" SET nombre=$1, id_rol=$2, estado=$3 WHERE id_usuario=$4`,
-        [nombre, id_rol, estadoFinal, id]
-      );
-    }
+    // registrar), por eso no aparece en este UPDATE. El documento sí es editable.
+    await client.query(
+      `UPDATE "Usuarios" SET nombre=$1, id_rol=$2, estado=$3 WHERE id_usuario=$4`,
+      [nombre, id_rol, estadoFinal, id]
+    );
 
     if (id_cliente) {
       if (documento) {
@@ -311,13 +303,14 @@ const getPerfil = async (id_usuario) => {
 
 const recuperarContrasena = async (email) => {
   const result = await pool.query(
-    `SELECT id_usuario FROM "Usuarios" WHERE LOWER(email) = LOWER($1)`,
+    `SELECT u.id_usuario, u.nombre, cl.documento
+     FROM "Usuarios" u
+     LEFT JOIN "Clientes" cl ON u.id_cliente = cl.id_cliente
+     WHERE LOWER(u.email) = LOWER($1)`,
     [email]
   );
   const usuario = result.rows[0];
-  // No revelar si el correo existe o no (evita enumeración de cuentas):
-  // si no existe, simplemente no se envía nada y se responde igual desde el controller.
-  if (!usuario) return;
+  if (!usuario) throw { status: 404, message: 'El correo no está registrado.' };
 
   const token  = crypto.randomBytes(32).toString('hex');
   const expira = new Date(Date.now() + 3600 * 1000); // 1 hora
@@ -347,7 +340,9 @@ const recuperarContrasena = async (email) => {
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto">
           <h2 style="color:#b49780">DVNA SportWear</h2>
+          <p>Hola ${usuario.nombre || ''},</p>
           <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+          ${filasDatos([['Fecha de la solicitud', formatearFecha(new Date())], ['Documento', usuario.documento]])}
           <p>Haz clic en el botón para continuar. El enlace expira en <strong>1 hora</strong>.</p>
           <a href="${enlace}"
              style="display:inline-block;padding:12px 24px;background:#b49780;color:#fff;

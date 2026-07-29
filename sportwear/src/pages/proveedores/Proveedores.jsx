@@ -15,6 +15,7 @@ import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
 const FILAS_POR_PAGINA = 10;
 
 const FORM_VACIO = {
+  tipo_persona: "Juridica",
   tipo_doc: "NIT",
   numero_doc: "",
   razon_social: "",
@@ -28,14 +29,10 @@ const FORM_VACIO = {
   departamento: "",
   pais: "Colombia",
   direccion: "",
-  banco: "",
-  tipo_cuenta: "",
-  numero_cuenta: "",
-  titular_cuenta: "",
-  plazo_pago_dias: 30,
-  condiciones: "",
   estado: "Activo",
 };
+
+const TIPOS_DOC_POR_PERSONA = { Juridica: ["NIT"], Natural: ["CC", "CE"] };
 
 // "nombre_contacto" completo (BD) -> primer palabra = nombres, resto = apellidos.
 const dividirNombreContacto = (nombreCompleto) => {
@@ -101,6 +98,7 @@ export default function Proveedores() {
   const abrirEditar = (p) => {
     setEditar(p.id_proveedor);
     setForm({
+      tipo_persona: p.tipo_doc === "NIT" ? "Juridica" : "Natural",
       tipo_doc: p.tipo_doc || "NIT",
       numero_doc: p.numero_doc || "",
       razon_social: p.razon_social || "",
@@ -113,12 +111,6 @@ export default function Proveedores() {
       departamento: p.departamento || "",
       pais: p.pais || "Colombia",
       direccion: p.direccion || "",
-      banco: p.banco || "",
-      tipo_cuenta: p.tipo_cuenta || "",
-      numero_cuenta: p.numero_cuenta || "",
-      titular_cuenta: p.titular_cuenta || "",
-      plazo_pago_dias: p.plazo_pago_dias ?? 30,
-      condiciones: p.condiciones || "",
       estado: p.estado || "Activo",
     });
     setErrores({});
@@ -143,15 +135,6 @@ export default function Proveedores() {
   const validarCampoCiudad = (v) => (!v.trim() ? "La ciudad es obligatoria" : "");
   const validarCampoDireccion = (v) => (!v.trim() ? "La dirección es obligatoria" : "");
   const validarCampoEmail = (v) => validarEmail(v, "El correo es obligatorio");
-  const MAX_PLAZO_PAGO_DIAS = 365;
-  const validarCampoPlazoPago = (v) => {
-    if (v === "" || v === null || v === undefined) return "";
-    const n = Number(v);
-    if (Number.isNaN(n) || n < 0) return "Debe ser un número válido";
-    if (!Number.isInteger(n)) return "Debe ser un número entero de días";
-    if (n > MAX_PLAZO_PAGO_DIAS) return `No puede ser mayor a ${MAX_PLAZO_PAGO_DIAS} días`;
-    return "";
-  };
 
   const validar = () => {
     const e = {};
@@ -161,7 +144,7 @@ export default function Proveedores() {
       const errorLongitud = validarNumeroDocumento(form.tipo_doc, form.numero_doc);
       if (errorLongitud) e.numero_doc = errorLongitud;
     }
-    if (!form.razon_social.trim()) e.razon_social = "La razón social es obligatoria";
+    if (form.tipo_persona === "Juridica" && !form.razon_social.trim()) e.razon_social = "La razón social es obligatoria";
     const errorNombresContacto = validarCampoNombresContacto(form.nombres_contacto);
     if (errorNombresContacto) e.nombres_contacto = errorNombresContacto;
     const errorApellidosContacto = validarCampoApellidosContacto(form.apellidos_contacto);
@@ -172,8 +155,6 @@ export default function Proveedores() {
     if (!form.direccion.trim()) e.direccion = "La dirección es obligatoria";
     const errorEmailContacto = validarCampoEmail(form.email_contacto);
     if (errorEmailContacto) e.email_contacto = errorEmailContacto;
-    const errorPlazoPago = validarCampoPlazoPago(form.plazo_pago_dias);
-    if (errorPlazoPago) e.plazo_pago_dias = errorPlazoPago;
     setErrores(e);
     return Object.keys(e).length === 0;
   };
@@ -188,8 +169,14 @@ export default function Proveedores() {
     setConfirmarGuardar(false);
     setGuardando(true);
     try {
-      const { nombres_contacto, apellidos_contacto, ...resto } = form;
-      const payload = { ...resto, nombre_contacto: `${nombres_contacto} ${apellidos_contacto}`.trim(), plazo_pago_dias: Number(form.plazo_pago_dias) || 30 };
+      const { nombres_contacto, apellidos_contacto, tipo_persona, ...resto } = form;
+      const nombreCompletoContacto = `${nombres_contacto} ${apellidos_contacto}`.trim();
+      const payload = {
+        ...resto,
+        nombre_contacto: nombreCompletoContacto,
+        // Persona Natural: el proveedor es la propia persona, no hay razón social separada.
+        razon_social: tipo_persona === "Natural" ? nombreCompletoContacto : resto.razon_social,
+      };
       if (editar) await api.put(`/proveedores/${editar}`, payload);
       else        await api.post("/proveedores", payload);
       cargarProveedores();
@@ -251,8 +238,8 @@ export default function Proveedores() {
               return data;
             }}
             columnas={[
-              { header: "Empresa", value: (p) => p.nombre_comercial || p.razon_social },
               { header: "Documento", value: (p) => `${p.tipo_doc} ${p.numero_doc}` },
+              { header: "Empresa", value: (p) => p.nombre_comercial || p.razon_social },
               { header: "Contacto", key: "nombre_contacto" },
               { header: "Teléfono", key: "telefono_celular" },
               { header: "Email", key: "email_contacto" },
@@ -274,8 +261,8 @@ export default function Proveedores() {
         <table className="tbl">
           <thead className="tbl-header">
             <tr>
-              <th className="tbl-th">Empresa</th>
               <th className="tbl-th">Documento</th>
+              <th className="tbl-th">Empresa</th>
               <th className="tbl-th">Contacto</th>
               <th className="tbl-th">Teléfono</th>
               <th className="tbl-th">Email</th>
@@ -288,11 +275,11 @@ export default function Proveedores() {
           <tbody className="tbl-body">
             {datos.map((p) => (
               <tr key={p.id_proveedor} className="tbl-row">
+                <td className="tbl-td"><code className="proveedores-nit-code">{p.tipo_doc} {p.numero_doc}</code></td>
                 <td className="tbl-td">
                   <span className="proveedores-empresa-name">{p.razon_social}</span>
                   {p.nombre_comercial && <div className="proveedores-empresa-sub">{p.nombre_comercial}</div>}
                 </td>
-                <td className="tbl-td"><code className="proveedores-nit-code">{p.tipo_doc} {p.numero_doc}</code></td>
                 <td className="tbl-td proveedores-contacto-cell">{p.nombre_contacto || "—"}</td>
                 <td className="tbl-td proveedores-telefono-cell">{p.telefono_celular || "—"}</td>
                 <td className="tbl-td proveedores-telefono-cell">{p.email_contacto || "—"}</td>
@@ -347,6 +334,25 @@ export default function Proveedores() {
               <div className="proveedores-factura-seccion">
                 <h3 className="proveedores-factura-titulo">Datos de la empresa</h3>
 
+                <div className="proveedores-form-group">
+                  <label className="proveedores-form-label">Tipo de proveedor <span className="proveedores-req">*</span>{editar && <span className="proveedores-opcional"> (no editable)</span>}</label>
+                  <select
+                    className="proveedores-form-select"
+                    value={form.tipo_persona}
+                    disabled={!!editar}
+                    title={editar ? "El tipo de proveedor no se puede modificar" : undefined}
+                    onChange={(e) => {
+                      const tipo_persona = e.target.value;
+                      const tipo_doc = TIPOS_DOC_POR_PERSONA[tipo_persona][0];
+                      setForm((prev) => ({ ...prev, tipo_persona, tipo_doc }));
+                      setErrores((prev) => ({ ...prev, numero_doc: "", razon_social: "" }));
+                    }}
+                  >
+                    <option value="Juridica">Persona Jurídica</option>
+                    <option value="Natural">Persona Natural</option>
+                  </select>
+                </div>
+
                 <div className="proveedores-form-row-3">
                   <div className="proveedores-form-group">
                     <label className="proveedores-form-label">Tipo de documento <span className="proveedores-req">*</span></label>
@@ -365,9 +371,9 @@ export default function Proveedores() {
                         }
                       }}
                     >
-                      <option value="NIT">NIT</option>
-                      <option value="CC">Cédula de ciudadanía</option>
-                      <option value="CE">Cédula de extranjería</option>
+                      {TIPOS_DOC_POR_PERSONA[form.tipo_persona].map((t) => (
+                        <option key={t} value={t}>{t === "NIT" ? "NIT" : t === "CC" ? "Cédula de ciudadanía" : "Cédula de extranjería"}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="proveedores-form-group">
@@ -410,36 +416,38 @@ export default function Proveedores() {
                   </div>
                 </div>
 
-                <div className="proveedores-form-row">
-                  <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Razón social <span className="proveedores-req">*</span></label>
-                    <input
-                      type="text"
-                      maxLength={120}
-                      className={`proveedores-form-input${errores.razon_social ? " input-error" : ""}`}
-                      placeholder="Ej: Distribuidora Textil S.A."
-                      value={form.razon_social}
-                      onChange={(e) => {
-                        const valor = e.target.value;
-                        setForm((prev) => ({ ...prev, razon_social: valor }));
-                        if (errores.razon_social) setErrores((prev) => ({ ...prev, razon_social: validarCampoRazonSocial(valor) }));
-                      }}
-                      onBlur={() => setErrores((prev) => ({ ...prev, razon_social: validarCampoRazonSocial(form.razon_social) }))}
-                    />
-                    {errores.razon_social && <span className="proveedores-field-error">{errores.razon_social}</span>}
+                {form.tipo_persona === "Juridica" && (
+                  <div className="proveedores-form-row">
+                    <div className="proveedores-form-group">
+                      <label className="proveedores-form-label">Razón social <span className="proveedores-req">*</span></label>
+                      <input
+                        type="text"
+                        maxLength={120}
+                        className={`proveedores-form-input${errores.razon_social ? " input-error" : ""}`}
+                        placeholder="Ej: Distribuidora Textil S.A."
+                        value={form.razon_social}
+                        onChange={(e) => {
+                          const valor = e.target.value;
+                          setForm((prev) => ({ ...prev, razon_social: valor }));
+                          if (errores.razon_social) setErrores((prev) => ({ ...prev, razon_social: validarCampoRazonSocial(valor) }));
+                        }}
+                        onBlur={() => setErrores((prev) => ({ ...prev, razon_social: validarCampoRazonSocial(form.razon_social) }))}
+                      />
+                      {errores.razon_social && <span className="proveedores-field-error">{errores.razon_social}</span>}
+                    </div>
+                    <div className="proveedores-form-group">
+                      <label className="proveedores-form-label">Nombre comercial (opcional)</label>
+                      <input
+                        type="text"
+                        maxLength={MAX_LONGITUD_NOMBRE}
+                        className="proveedores-form-input"
+                        placeholder="Nombre con el que se conoce comercialmente"
+                        value={form.nombre_comercial}
+                        onChange={(e) => set("nombre_comercial", e.target.value)}
+                      />
+                    </div>
                   </div>
-                  <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Nombre comercial (opcional)</label>
-                    <input
-                      type="text"
-                      maxLength={MAX_LONGITUD_NOMBRE}
-                      className="proveedores-form-input"
-                      placeholder="Nombre con el que se conoce comercialmente"
-                      value={form.nombre_comercial}
-                      onChange={(e) => set("nombre_comercial", e.target.value)}
-                    />
-                  </div>
-                </div>
+                )}
 
                 <div className="proveedores-form-row">
                   <div className="proveedores-form-group">
@@ -465,11 +473,11 @@ export default function Proveedores() {
               </div>
 
               <div className="proveedores-factura-seccion">
-                <h3 className="proveedores-factura-titulo">Contacto</h3>
+                <h3 className="proveedores-factura-titulo">{form.tipo_persona === "Natural" ? "Datos del proveedor" : "Contacto"}</h3>
 
                 <div className="proveedores-form-row-3">
                   <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Nombres de contacto <span className="proveedores-req">*</span></label>
+                    <label className="proveedores-form-label">{form.tipo_persona === "Natural" ? "Nombres" : "Nombres de contacto"} <span className="proveedores-req">*</span></label>
                     <input
                       type="text"
                       className={`proveedores-form-input${errores.nombres_contacto ? " input-error" : ""}`}
@@ -485,7 +493,7 @@ export default function Proveedores() {
                     {errores.nombres_contacto && <span className="proveedores-field-error">{errores.nombres_contacto}</span>}
                   </div>
                   <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Apellidos de contacto <span className="proveedores-req">*</span></label>
+                    <label className="proveedores-form-label">{form.tipo_persona === "Natural" ? "Apellidos" : "Apellidos de contacto"} <span className="proveedores-req">*</span></label>
                     <input
                       type="text"
                       className={`proveedores-form-input${errores.apellidos_contacto ? " input-error" : ""}`}
@@ -500,10 +508,12 @@ export default function Proveedores() {
                     />
                     {errores.apellidos_contacto && <span className="proveedores-field-error">{errores.apellidos_contacto}</span>}
                   </div>
-                  <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Cargo</label>
-                    <input type="text" maxLength={MAX_LONGITUD_NOMBRE} className="proveedores-form-input" value={form.cargo_contacto} onChange={(e) => set("cargo_contacto", e.target.value)} />
-                  </div>
+                  {form.tipo_persona === "Juridica" && (
+                    <div className="proveedores-form-group">
+                      <label className="proveedores-form-label">Cargo</label>
+                      <input type="text" maxLength={MAX_LONGITUD_NOMBRE} className="proveedores-form-input" value={form.cargo_contacto} onChange={(e) => set("cargo_contacto", e.target.value)} />
+                    </div>
+                  )}
                 </div>
 
                 <div className="proveedores-form-row">
@@ -551,56 +561,6 @@ export default function Proveedores() {
                   </select>
                 </div>
               </div>
-
-              <div className="proveedores-factura-seccion">
-                <h3 className="proveedores-factura-titulo">Datos bancarios <span className="proveedores-opcional">(opcional)</span></h3>
-
-                <div className="proveedores-form-row-3">
-                  <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Banco</label>
-                    <input type="text" maxLength={MAX_LONGITUD_NOMBRE} className="proveedores-form-input" value={form.banco} onChange={(e) => set("banco", e.target.value)} />
-                  </div>
-                  <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Tipo de cuenta</label>
-                    <select className="proveedores-form-select" value={form.tipo_cuenta} onChange={(e) => set("tipo_cuenta", e.target.value)}>
-                      <option value="">Seleccionar...</option>
-                      <option value="Ahorros">Ahorros</option>
-                      <option value="Corriente">Corriente</option>
-                    </select>
-                  </div>
-                  <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Número de cuenta</label>
-                    <input type="text" inputMode="numeric" maxLength={20} className="proveedores-form-input" value={form.numero_cuenta} onChange={(e) => set("numero_cuenta", soloDigitos(e.target.value))} />
-                  </div>
-                </div>
-
-                <div className="proveedores-form-row">
-                  <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Titular de la cuenta</label>
-                    <input type="text" maxLength={MAX_LONGITUD_NOMBRE} className="proveedores-form-input" value={form.titular_cuenta} onChange={(e) => set("titular_cuenta", e.target.value)} />
-                  </div>
-                  <div className="proveedores-form-group">
-                    <label className="proveedores-form-label">Plazo de pago (días)</label>
-                    <input
-                      type="number" min="0" max={MAX_PLAZO_PAGO_DIAS} step={1}
-                      className={`proveedores-form-input${errores.plazo_pago_dias ? " input-error" : ""}`}
-                      value={form.plazo_pago_dias}
-                      onChange={(e) => {
-                        const valor = e.target.value;
-                        set("plazo_pago_dias", valor);
-                        if (errores.plazo_pago_dias) setErrores((prev) => ({ ...prev, plazo_pago_dias: validarCampoPlazoPago(valor) }));
-                      }}
-                      onBlur={() => setErrores((prev) => ({ ...prev, plazo_pago_dias: validarCampoPlazoPago(form.plazo_pago_dias) }))}
-                    />
-                    {errores.plazo_pago_dias && <span className="proveedores-field-error">{errores.plazo_pago_dias}</span>}
-                  </div>
-                </div>
-
-                <div className="proveedores-form-group">
-                  <label className="proveedores-form-label">Condiciones</label>
-                  <textarea className="proveedores-form-input proveedores-form-textarea" rows={2} maxLength={300} value={form.condiciones} onChange={(e) => set("condiciones", e.target.value)} />
-                </div>
-              </div>
             </div>
 
             <div className="proveedores-modal-footer">
@@ -639,8 +599,8 @@ export default function Proveedores() {
               <div className="proveedores-factura-seccion">
                 <h3 className="proveedores-factura-titulo">Datos de la empresa</h3>
                 <DetalleGrid>
-                  <DetalleItem label="ID" value={`#${String(verDetalle.id_proveedor).padStart(3, "0")}`} />
                   <DetalleItem label="Documento" value={`${verDetalle.tipo_doc} ${verDetalle.numero_doc}`} />
+                  <DetalleItem label="ID" value={`#${String(verDetalle.id_proveedor).padStart(3, "0")}`} />
                   <DetalleItem label="Ciudad" value={verDetalle.ciudad} />
                   <DetalleItem label="Estado" value={<span className={`tabla-status${verDetalle.estado === "Activo" ? ' activo' : ' inactivo'}`}>{verDetalle.estado}</span>} />
                   <DetalleItem label="Compras realizadas" value={verDetalle.total_compras ?? 0} />
@@ -659,16 +619,6 @@ export default function Proveedores() {
                 </DetalleGrid>
               </div>
 
-              {(verDetalle.banco || verDetalle.numero_cuenta) && (
-                <div className="proveedores-factura-seccion">
-                  <h3 className="proveedores-factura-titulo">Datos bancarios</h3>
-                  <DetalleGrid>
-                    <DetalleItem label="Banco" value={verDetalle.banco} />
-                    <DetalleItem label="Tipo de cuenta" value={verDetalle.tipo_cuenta} />
-                    <DetalleItem label="N° de cuenta" value={verDetalle.numero_cuenta} />
-                  </DetalleGrid>
-                </div>
-              )}
             </div>
 
             <div className="proveedores-modal-footer">

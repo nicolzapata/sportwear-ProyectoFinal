@@ -7,6 +7,7 @@ import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
 import Toast from "../../components/Toast";
 import ExportButtons from "../../components/ExportButtons";
+import Loader from "../../components/Loader";
 import './Colores.css';
 import { IconEdit, IconPalette, IconSearch, IconTrash, IconX } from "../../components/Icons";
 
@@ -139,12 +140,7 @@ export default function Colores() {
     cargar(); cargarLista();
   };
 
-  if (loading) return (
-    <div className="colores-loading-container">
-      <div className="colores-loading-spinner"></div>
-      <p className="colores-loading-text">Cargando colores...</p>
-    </div>
-  );
+  if (loading) return <Loader text="Cargando colores..." />;
 
   const PasoColor = (
     <div>

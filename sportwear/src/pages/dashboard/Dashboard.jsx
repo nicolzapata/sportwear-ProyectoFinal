@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import api from "../../services/api";
 import MiCuenta from "../clientes/MiCuenta";
 import ExportButtons from "../../components/ExportButtons";
+import Loader from "../../components/Loader";
 import {
   IconDollar, IconShoppingCart, IconUsers, IconAlertTriangle,
   IconBox, IconTruck,
@@ -241,9 +242,7 @@ export default function Dashboard() {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
 
-  if (cargando) return (
-    <div style={{ padding: 48, color: "var(--muted)" }}>Cargando dashboard...</div>
-  );
+  if (cargando) return <Loader text="Cargando dashboard..." />;
 
   if (errorCarga) return (
     <div className="dashboard">
