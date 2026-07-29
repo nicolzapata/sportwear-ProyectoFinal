@@ -19,6 +19,7 @@ export default function GaleriaImagenes({
   coloresPendientes = [],
   coloresAPurgar = [],
   onColoresPurgados,
+  refrescarColores,
 }) {
   const [imagenes,         setImagenes]         = useState([]);
   const [coloresVariantes, setColoresVariantes] = useState([]);
@@ -70,7 +71,10 @@ export default function GaleriaImagenes({
     }
   };
 
-  useEffect(() => { cargar(); }, [idReferencia]);
+  // Se recarga también cuando `refrescarColores` cambia — eso pasa cada vez
+  // que GestVariantes agrega o quita un color, ya que ambos viven en el mismo
+  // modal pero son componentes hermanos y no comparten estado por su cuenta.
+  useEffect(() => { cargar(); }, [idReferencia, refrescarColores]);
 
   // ── Purga externa: se pidió eliminar todas las fotos de ciertos colores
   // (p. ej. al eliminar la última talla de un color desde GestVariantes y el
@@ -116,7 +120,10 @@ export default function GaleriaImagenes({
   };
 
   const totalImagenes = imagenes.length + imagenesLocales.length;
-  const necesitaColor = tieneColores && !colorSubida;
+  // Solo hace falta elegir color si hay más de uno — con un solo color no hay
+  // ambigüedad posible, así que no tiene sentido pedirle al usuario que lo
+  // seleccione: se asigna solo.
+  const necesitaColor = tieneColores && todosColores.length > 1 && !colorSubida;
   const mostrarDropzoneCompleto = totalImagenes === 0 || dropzoneAbierto;
 
   // ── Acciones sobre imágenes existentes (modo conectado) ───────────────────
@@ -144,10 +151,14 @@ export default function GaleriaImagenes({
   };
 
   // ── Subida de imágenes (común a ambos modos) ───────────────────────────────
+  // Con un solo color, se asigna automáticamente sin pedirle nada al usuario;
+  // con 2+ colores, se usa el que haya elegido en los chips (colorSubida).
+  const colorParaSubir = todosColores.length === 1 ? todosColores[0].id_color : colorSubida;
+
   const procesarArchivos = (files) => {
     const nuevas = Array.from(files).map(file => ({
       file,
-      id_color: colorSubida || null,
+      id_color: colorParaSubir || null,
       preview: URL.createObjectURL(file),
     }));
     setImagenesLocales(prev => {
@@ -217,7 +228,7 @@ export default function GaleriaImagenes({
         </div>
       ) : (
         <>
-          {tieneColores && (
+          {tieneColores && todosColores.length > 1 && (
             <div className="gi-upload-color-row">
               <span className="gi-upload-color-label">
                 <IconPalette /> Color de las fotos a subir

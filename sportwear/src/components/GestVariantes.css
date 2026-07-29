@@ -96,52 +96,6 @@
   padding: 8px 0;
 }
 
-/* ── Tabla matriz ── */
-.gv-table-wrap {
-  border: 1px solid var(--dvna-border);
-  border-radius: var(--r-md);
-  overflow: auto;
-}
-.gv-matrix-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: var(--font-body);
-  min-width: 300px;
-}
-.gv-matrix-table thead tr { background: var(--dvna-pale); }
-.gv-th-color {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--dvna-muted);
-  padding: 8px 14px;
-  text-align: left;
-  border-bottom: 1px solid var(--dvna-border);
-  white-space: nowrap;
-  min-width: 120px;
-}
-.gv-th-talla {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--dvna-muted);
-  padding: 8px 10px;
-  text-align: center;
-  border-bottom: 1px solid var(--dvna-border);
-  border-left: 1px solid var(--dvna-border);
-  min-width: 64px;
-  position: relative;
-}
-.gv-matrix-table tbody tr { transition: background 0.15s; }
-.gv-matrix-table tbody tr:hover { background: var(--dvna-pale); }
-.gv-matrix-table tbody tr:not(:last-child) td { border-bottom: 1px solid var(--dvna-border); }
-
-.gv-td-color {
-  padding: 10px 14px;
-  white-space: nowrap;
-}
 .gv-color-cell {
   display: flex;
   align-items: center;
@@ -157,11 +111,48 @@
   flex-shrink: 0;
 }
 
-.gv-td-stock {
-  padding: 6px 8px;
-  text-align: center;
-  border-left: 1px solid var(--dvna-border);
+/* ── Resumen de combinaciones a agregar (reemplaza la antigua matriz de stock:
+   el stock ya no se define aquí, siempre nace en 0) ── */
+.gv-combo-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  background: var(--dvna-white);
 }
+.gv-combo-preview-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 12px;
+}
+.gv-combo-preview-color {
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+}
+.gv-combo-preview-tallas {
+  color: var(--dvna-muted);
+}
+
+/* ── Aviso: el stock nace en 0 y se define registrando una compra ── */
+.gv-aviso-stock {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #eff6fd;
+  border: 1px solid #bcd8f2;
+  color: #1976d2;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.gv-aviso-stock svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
 
 /* Etiqueta de color fijo al agregar tallas a un color existente */
 .gv-locked-color {
@@ -178,21 +169,6 @@
   width: fit-content;
 }
 .gv-locked-color strong { font-weight: 600; }
-
-.gv-stock-input {
-  width: 54px;
-  font-family: var(--font-body);
-  font-size: 12px;
-  text-align: center;
-  color: var(--dvna-charcoal);
-  background: var(--dvna-white);
-  border: 1px solid var(--dvna-border);
-  border-radius: var(--r);
-  padding: 4px 6px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.gv-stock-input:focus { border-color: var(--dvna-circle); }
 
 /* ═══════════════════════════════════════════════════════════════
    Lista de variantes existentes: chips agrupados por color, mismo
@@ -245,13 +221,10 @@
   padding: 2px 4px 2px 4px;
 }
 .gv-talla-tag.agotada { opacity: 0.6; }
-.gv-talla-tag-btn {
+.gv-talla-tag-view {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: none;
-  background: none;
-  cursor: pointer;
   font-family: var(--font-body);
   font-size: 11px;
   font-weight: 500;
@@ -293,19 +266,6 @@
   transition: all 0.15s;
 }
 .gv-talla-tag-add:hover { border-color: var(--dvna-mid); color: var(--dvna-charcoal); background: var(--dvna-pale); }
-.gv-talla-tag-input {
-  width: 48px;
-  font-family: var(--font-body);
-  font-size: 11px;
-  text-align: center;
-  color: var(--dvna-charcoal);
-  background: var(--dvna-white);
-  border: 1px solid var(--dvna-mid);
-  border-radius: 14px;
-  padding: 3px 6px;
-  outline: none;
-}
-
 /* Mismo patrón que el divisor "Sin stock" del modal de detalle: el texto
    va arriba de una línea completa, no al costado de una línea parcial. */
 .gv-chips-divider {
@@ -458,4 +418,3 @@
 }
 .gv-btn-guardar:hover:not(:disabled) { background: var(--dvna-circle); }
 .gv-btn-guardar:disabled { opacity: 0.5; cursor: not-allowed; }
-

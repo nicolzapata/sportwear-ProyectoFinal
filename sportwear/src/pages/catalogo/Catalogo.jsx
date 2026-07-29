@@ -112,7 +112,6 @@ const filtrarImagenes = (imgs, id_color) => {
 function ProductCard({ p, onTogglePublicado, esAdmin }) {
   const navigate = useNavigate();
   const { agregarAlCarrito } = useCart();
-  const { usuario } = useAuth();
   const showToast = useToast();
 
   const [imgsData,  setImgsData]  = useState(null);
@@ -292,7 +291,10 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
                 className={`btn btn-sm btn-primary ${agregado ? "btn-success" : ""}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!usuario) { navigate("/login"); return; }
+                  // ── CORREGIDO: ya no exige sesión para agregar al carrito
+                  // desde las cards — el carrito acepta productos sin login
+                  // (se guardan en localStorage de forma anónima). El login
+                  // solo se pide al hacer clic en "Finalizar compra". ──
                   if (!colorSel || !tallaSel) {
                     showToast("error", "Por favor selecciona color y talla");
                     return;

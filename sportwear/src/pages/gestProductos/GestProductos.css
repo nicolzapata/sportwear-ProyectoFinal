@@ -1513,3 +1513,18 @@ td.gestproductos-td-compacto {
 }
 .gestproductos-badge-nuevo { background: rgba(25,118,210,0.12); color: #1976d2; }
 .gestproductos-badge-promo { background: rgba(185,100,34,0.12); color: #b96422; }
+/* ── NUEVO: aviso de que el stock/precio se registran vía Compras ── */
+.gestproductos-aviso-stock {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #eff6fd;
+  border: 1px solid #bcd8f2;
+  color: #1976d2;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+.gestproductos-aviso-stock svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }

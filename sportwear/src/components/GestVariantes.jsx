@@ -5,7 +5,6 @@ import { useConfirm } from "../context/ConfirmContext";
 import "./GestVariantes.css";
 
 const TALLAS = ["XS","S","M","L","XL","XXL","Única","28","30","32","34","36","38","40","42","44"];
-const MAX_STOCK = 100000; // tope razonable, evita errores de tecleo (un cero de más)
 
 const IconPlus = () => (
   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
@@ -22,6 +21,11 @@ const IconX = () => (
     <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 );
+const IconInfo = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.8" r="0.9" fill="currentColor" stroke="none"/>
+  </svg>
+);
 // Agrupa una lista de variantes por color — mismo criterio que el chip de
 // Tallas/Colores de la tabla y el modal de detalle de GestProductos: un
 // chip por color con sus tallas adentro, no un chip por combinación.
@@ -35,9 +39,10 @@ const agruparPorColor = (lista) => {
 };
 
 // ── Lista de chips por color (mismo lenguaje visual que "ver detalle") ──────
-// Cada talla es su propio tag: clic para editar el stock inline, "×" para
-// eliminarla; al final del chip un "+" para agregar otra talla a ese color.
-function ChipsColorList({ grupos, esEditandoTalla, valorEdicion, onIniciarEdicion, onCambiarValor, onGuardarEdicion, onEliminar, onAgregarTalla }) {
+// Cada talla es su propio tag de solo lectura (el stock nunca se edita aquí,
+// solo se ve): "×" para eliminarla; al final del chip un "+" para agregar
+// otra talla a ese color.
+function ChipsColorList({ grupos, onEliminar, onAgregarTalla }) {
   return (
     <div className="gv-chips-lista">
       {grupos.map(g => (
@@ -45,29 +50,17 @@ function ChipsColorList({ grupos, esEditandoTalla, valorEdicion, onIniciarEdicio
           <span className="gv-chip-row-swatch" style={{ background: g.codigo_hex || "#ccc" }} />
           <span className="gv-chip-row-nombre">{g.color_nombre}</span>
           <div className="gv-chip-row-tallas">
-            {g.items.map(({ talla, stock, id_variante }) => {
-              const enEdicion = esEditandoTalla(g.id_color, talla);
-              return (
-                <span key={talla} className={`gv-talla-tag${stock === 0 ? " agotada" : ""}`}>
-                  {enEdicion ? (
-                    <input
-                      type="number" min={0} max={MAX_STOCK} step={1} autoFocus className="gv-talla-tag-input"
-                      value={valorEdicion}
-                      onChange={e => onCambiarValor(e.target.value)}
-                      onBlur={onGuardarEdicion}
-                      onKeyDown={e => { if (e.key === "Enter") e.target.blur(); }}
-                    />
-                  ) : (
-                    <button type="button" className="gv-talla-tag-btn" onClick={() => onIniciarEdicion(g.id_color, talla, stock, id_variante)}>
-                      {talla} <span className="gv-talla-tag-stock">{stock === 0 ? "Agotado" : stock}</span>
-                    </button>
-                  )}
-                  <button type="button" className="gv-talla-tag-del" onClick={() => onEliminar(g, talla, id_variante)} title="Eliminar">
-                    <IconX />
-                  </button>
+            {g.items.map(({ talla, stock, id_variante }) => (
+              <span key={talla} className={`gv-talla-tag${stock === 0 ? " agotada" : ""}`}>
+                {/* El stock solo se ve aquí — se actualiza registrando una compra en el módulo Compras. */}
+                <span className="gv-talla-tag-view">
+                  {talla} <span className="gv-talla-tag-stock">{stock === 0 ? "Agotado" : stock}</span>
                 </span>
-              );
-            })}
+                <button type="button" className="gv-talla-tag-del" onClick={() => onEliminar(g, talla, id_variante)} title="Eliminar">
+                  <IconX />
+                </button>
+              </span>
+            ))}
             <button type="button" className="gv-talla-tag-add" onClick={() => onAgregarTalla(g)} title={`Agregar talla en ${g.color_nombre}`}>
               <IconPlus />
             </button>
@@ -88,7 +81,7 @@ function ChipsColorList({ grupos, esEditandoTalla, valorEdicion, onIniciarEdicio
  */
 export default function GestVariantes({
   idProducto, estadoProducto, onPendingChange, coloresAPurgar = [], onColoresPurgados,
-  imagenesPendientes = [], onEliminarFotosDeColor,
+  imagenesPendientes = [], onEliminarFotosDeColor, onVariantesChange,
 }) {
   const confirmar = useConfirm();
 
@@ -100,21 +93,15 @@ export default function GestVariantes({
   const [guardando,   setGuardando]   = useState(false);
   const [modoAgregar, setModoAgregar] = useState(false);
 
-  // ── Edición individual de variante existente (modo conectado) ──────────────
-  // Cada talla-tag del chip de su color se edita inline al hacer clic —
-  // no hace falta un panel aparte ni un menú de opciones.
-  // editandoInline: { id_variante, id_color, talla, stock } | null
-  const [editandoInline, setEditandoInline] = useState(null);
-
   // ── Estado modo local ──────────────────────────────────────────────────────
   const [pendingVariantes, setPendingVariantes] = useState([]);
-  // Edición inline del stock de una combinación pendiente puntual.
-  const [editandoPendiente,  setEditandoPendiente]  = useState(null); // { id_color, talla, stock } | null
 
   // ── Selector del editor "agregar nuevas" (compartido ambos modos) ──────────
+  // El stock nunca se define aquí (ni al crear ni al editar): siempre nace en 0
+  // y solo aumenta registrando una compra en el módulo Compras. Por eso no hay
+  // estado tipo "matriz" de stock — solo se eligen color(es) y talla(s).
   const [coloresSel, setColoresSel] = useState([]);
   const [tallasSel,  setTallasSel]  = useState([]);
-  const [matriz,     setMatriz]     = useState({});
   // Cuando se agrega talla a un color ya existente (atajo "+"), el color queda
   // fijo y no se pueden volver a ofrecer las tallas que ese color ya tiene.
   const [colorBloqueado,    setColorBloqueado]    = useState(null);
@@ -129,6 +116,10 @@ export default function GestVariantes({
       ]);
       setVariantes(vars.data);
       setColores(cols.data.filter(c => c.estado === 'Activo'));
+      // Avisa al padre que la lista de variantes cambió (se agregó/quitó un
+      // color, o se cargó por primera vez) — así GaleriaImagenes sabe que debe
+      // refrescar su propia lista de colores disponibles para subir fotos.
+      onVariantesChange?.();
     } catch {
       setError("No se pudieron cargar las variantes.");
     } finally {
@@ -180,40 +171,16 @@ export default function GestVariantes({
     const existe = coloresSel.some(c => c.id_color === color.id_color);
     if (existe) {
       setColoresSel(prev => prev.filter(c => c.id_color !== color.id_color));
-      setMatriz(prev => { const n = { ...prev }; delete n[color.id_color]; return n; });
     } else {
       setColoresSel(prev => [...prev, color]);
-      setMatriz(prev => ({
-        ...prev,
-        [color.id_color]: tallasSel.reduce((acc, t) => ({ ...acc, [t]: 0 }), {}),
-      }));
     }
   };
 
   const toggleTalla = (talla) => {
     const existe = tallasSel.includes(talla);
-    if (existe) {
-      setTallasSel(prev => prev.filter(t => t !== talla));
-      setMatriz(prev => {
-        const n = { ...prev };
-        Object.keys(n).forEach(id => { const r = { ...n[id] }; delete r[talla]; n[id] = r; });
-        return n;
-      });
-    } else {
-      setTallasSel(prev => [...prev, talla]);
-      setMatriz(prev => {
-        const n = { ...prev };
-        coloresSel.forEach(c => { n[c.id_color] = { ...(n[c.id_color] || {}), [talla]: 0 }; });
-        return n;
-      });
-    }
+    if (existe) setTallasSel(prev => prev.filter(t => t !== talla));
+    else        setTallasSel(prev => [...prev, talla]);
   };
-
-  const setStock = (id_color, talla, valor) =>
-    setMatriz(prev => ({
-      ...prev,
-      [id_color]: { ...(prev[id_color] || {}), [talla]: Math.min(MAX_STOCK, Math.max(0, Number(valor) || 0)) },
-    }));
 
   // ── Guardar nuevas variantes (modo conectado) ──────────────────────────────
   const guardarMatrizConectado = async () => {
@@ -231,7 +198,7 @@ export default function GestVariantes({
             id_producto: idProducto,
             id_color: c.id_color,
             talla: t,
-            stock: matriz[c.id_color]?.[t] ?? 0,
+            stock: 0, // el stock siempre nace en 0 — se define al registrar una compra
           }).catch(() => ({ skipped: true }))
         );
       });
@@ -246,7 +213,7 @@ export default function GestVariantes({
       await api.patch(`/productos/${idProducto}/estado`);
     }
 
-    setColoresSel([]); setTallasSel([]); setMatriz({});
+    setColoresSel([]); setTallasSel([]);
     setModoAgregar(false);
     setGuardando(false);
     cargar();
@@ -267,7 +234,7 @@ export default function GestVariantes({
           nuevas.push({
             id_color: c.id_color, color_nombre: c.nombre,
             codigo_hex: c.codigo_hex, talla: t,
-            stock: matriz[c.id_color]?.[t] ?? 0,
+            stock: 0, // el stock siempre nace en 0 — se define al registrar una compra
           });
         }
       });
@@ -277,7 +244,7 @@ export default function GestVariantes({
     const updated = [...pendingVariantes, ...nuevas];
     setPendingVariantes(updated);
     onPendingChange?.(updated);
-    setColoresSel([]); setTallasSel([]); setMatriz({});
+    setColoresSel([]); setTallasSel([]);
     setModoAgregar(false);
   };
 
@@ -307,16 +274,6 @@ export default function GestVariantes({
     onPendingChange?.(updated);
   };
 
-  const actualizarStockPendiente = (id_color, talla, nuevoStock) => {
-    const updated = pendingVariantes.map(v =>
-      v.id_color === id_color && v.talla === talla
-        ? { ...v, stock: Math.min(MAX_STOCK, Math.max(0, Number(nuevoStock) || 0)) }
-        : v
-    );
-    setPendingVariantes(updated);
-    onPendingChange?.(updated);
-  };
-
   // Atajo: agregar más tallas a un color que ya tiene variantes, sin tener
   // que volver a buscarlo y marcarlo desde cero en el selector de colores.
   // El color queda fijo y no se ofrecen las tallas que ese color ya tiene.
@@ -326,37 +283,8 @@ export default function GestVariantes({
     setColorBloqueado(colorObj);
     setTallasBloqueadas(tallasUsadas);
     setTallasSel([]);
-    setMatriz({});
     setModoAgregar(true);
     setError("");
-  };
-
-  // ── Edición inline del stock (modo conectado) ──────────────────────────────
-  // Mismo patrón que actualizarStockPendiente en modo local: se edita solo el
-  // stock, directamente en la celda de la matriz — no un panel aparte.
-  const guardarStockInline = async () => {
-    if (!editandoInline) return;
-    const nuevoStock = Math.min(MAX_STOCK, Math.max(0, Number(editandoInline.stock) || 0));
-    try {
-      await api.put(`/variantes/${editandoInline.id_variante}`, {
-        id_color: editandoInline.id_color,
-        talla:    editandoInline.talla,
-        stock:    nuevoStock,
-      });
-
-      if (nuevoStock === 0 && idProducto) {
-        const { data: todasVariantes } = await api.get(`/variantes?id_producto=${idProducto}`);
-        const stockTotal = todasVariantes.reduce((acc, v) => acc + (v.stock || 0), 0);
-        if (stockTotal === 0 && estadoProducto === 'Activo') {
-          await api.patch(`/productos/${idProducto}/estado`);
-        }
-      }
-
-      setEditandoInline(null);
-      cargar();
-    } catch (err) {
-      setError(err.response?.data?.message || "Error al guardar.");
-    }
   };
 
   const eliminarVariante = async (id_variante, id_color) => {
@@ -409,11 +337,6 @@ export default function GestVariantes({
         {gruposConStockPend.length > 0 && (
           <ChipsColorList
             grupos={gruposConStockPend}
-            esEditandoTalla={(id_color, talla) => editandoPendiente?.id_color === id_color && editandoPendiente?.talla === talla}
-            valorEdicion={editandoPendiente?.stock}
-            onIniciarEdicion={(id_color, talla, stock) => setEditandoPendiente({ id_color, talla, stock })}
-            onCambiarValor={(v) => setEditandoPendiente(prev => ({ ...prev, stock: v }))}
-            onGuardarEdicion={() => { actualizarStockPendiente(editandoPendiente.id_color, editandoPendiente.talla, editandoPendiente.stock); setEditandoPendiente(null); }}
             onEliminar={(g, talla) => eliminarPendiente(g.id_color, talla)}
             onAgregarTalla={(g) => agregarTallaAColor(g, pendingVariantes.filter(v => v.id_color === g.id_color).map(v => v.talla))}
           />
@@ -423,11 +346,6 @@ export default function GestVariantes({
             <div className="gv-chips-divider"><span>Sin stock</span></div>
             <ChipsColorList
               grupos={gruposSinStockPend}
-              esEditandoTalla={(id_color, talla) => editandoPendiente?.id_color === id_color && editandoPendiente?.talla === talla}
-              valorEdicion={editandoPendiente?.stock}
-              onIniciarEdicion={(id_color, talla, stock) => setEditandoPendiente({ id_color, talla, stock })}
-              onCambiarValor={(v) => setEditandoPendiente(prev => ({ ...prev, stock: v }))}
-              onGuardarEdicion={() => { actualizarStockPendiente(editandoPendiente.id_color, editandoPendiente.talla, editandoPendiente.stock); setEditandoPendiente(null); }}
               onEliminar={(g, talla) => eliminarPendiente(g.id_color, talla)}
               onAgregarTalla={(g) => agregarTallaAColor(g, pendingVariantes.filter(v => v.id_color === g.id_color).map(v => v.talla))}
             />
@@ -441,7 +359,7 @@ export default function GestVariantes({
         <div className="gv-editor">
           <button className="gv-toggle-editor" onClick={() => {
             setModoAgregar(p => !p); setError("");
-            setColorBloqueado(null); setTallasBloqueadas([]); setColoresSel([]); setTallasSel([]); setMatriz({});
+            setColorBloqueado(null); setTallasBloqueadas([]); setColoresSel([]); setTallasSel([]);
           }}>
             {modoAgregar ? <><IconX /> Cancelar</> : <><IconPlus /> Agregar</>}
           </button>
@@ -451,7 +369,6 @@ export default function GestVariantes({
               <EditorNuevas
                 colores={colores} coloresSel={coloresSel} toggleColor={toggleColor}
                 tallasSel={tallasSel} toggleTalla={toggleTalla}
-                matriz={matriz} setStock={setStock}
                 onGuardar={guardarMatrizLocal}
                 labelGuardar="Agregar a la lista"
                 guardando={false}
@@ -487,11 +404,6 @@ export default function GestVariantes({
       {gruposConStock.length > 0 && (
         <ChipsColorList
           grupos={gruposConStock}
-          esEditandoTalla={(id_color, talla) => editandoInline?.id_color === id_color && editandoInline?.talla === talla}
-          valorEdicion={editandoInline?.stock}
-          onIniciarEdicion={(id_color, talla, stock, id_variante) => setEditandoInline({ id_variante, id_color, talla, stock })}
-          onCambiarValor={(v) => setEditandoInline(prev => ({ ...prev, stock: v }))}
-          onGuardarEdicion={guardarStockInline}
           onEliminar={(g, talla, id_variante) => eliminarVariante(id_variante, g.id_color)}
           onAgregarTalla={(g) => agregarTallaAColor(g, variantes.filter(v => v.id_color === g.id_color).map(v => v.talla))}
         />
@@ -501,11 +413,6 @@ export default function GestVariantes({
           <div className="gv-chips-divider"><span>Sin stock</span></div>
           <ChipsColorList
             grupos={gruposSinStock}
-            esEditandoTalla={(id_color, talla) => editandoInline?.id_color === id_color && editandoInline?.talla === talla}
-            valorEdicion={editandoInline?.stock}
-            onIniciarEdicion={(id_color, talla, stock, id_variante) => setEditandoInline({ id_variante, id_color, talla, stock })}
-            onCambiarValor={(v) => setEditandoInline(prev => ({ ...prev, stock: v }))}
-            onGuardarEdicion={guardarStockInline}
             onEliminar={(g, talla, id_variante) => eliminarVariante(id_variante, g.id_color)}
             onAgregarTalla={(g) => agregarTallaAColor(g, variantes.filter(v => v.id_color === g.id_color).map(v => v.talla))}
           />
@@ -520,7 +427,7 @@ export default function GestVariantes({
       <div className="gv-editor">
         <button className="gv-toggle-editor" onClick={() => {
           setModoAgregar(p => !p); setError("");
-          setColorBloqueado(null); setTallasBloqueadas([]); setColoresSel([]); setTallasSel([]); setMatriz({});
+          setColorBloqueado(null); setTallasBloqueadas([]); setColoresSel([]); setTallasSel([]);
         }}>
           {modoAgregar ? <><IconX /> Cancelar</> : <><IconPlus /> Agregar</>}
         </button>
@@ -530,7 +437,6 @@ export default function GestVariantes({
             <EditorNuevas
               colores={colores} coloresSel={coloresSel} toggleColor={toggleColor}
               tallasSel={tallasSel} toggleTalla={toggleTalla}
-              matriz={matriz} setStock={setStock}
               onGuardar={guardarMatrizConectado}
               labelGuardar="Guardar variantes"
               guardando={guardando}
@@ -545,9 +451,12 @@ export default function GestVariantes({
 }
 
 // ── Subcomponente reutilizable: editor de nuevas variantes (matriz) ──────────
-function EditorNuevas({ colores, coloresSel, toggleColor, tallasSel, toggleTalla, matriz, setStock, onGuardar, labelGuardar, guardando, colorBloqueado, tallasBloqueadas = [] }) {
-  const tallaStepNum  = colorBloqueado ? 1 : 2;
-  const stockStepNum  = colorBloqueado ? 2 : 3;
+// El stock NUNCA se pide aquí: toda combinación nueva nace con stock 0 y solo
+// aumenta al registrar una compra en el módulo Compras (tanto al crear un
+// producto como al agregarle tallas/colores nuevos después).
+function EditorNuevas({ colores, coloresSel, toggleColor, tallasSel, toggleTalla, onGuardar, labelGuardar, guardando, colorBloqueado, tallasBloqueadas = [] }) {
+  const tallaStepNum = colorBloqueado ? 1 : 2;
+  const resumenStepNum = colorBloqueado ? 2 : 3;
   const tallasDisponibles = TALLAS.filter(t => !tallasBloqueadas.includes(t));
 
   return (
@@ -591,37 +500,19 @@ function EditorNuevas({ colores, coloresSel, toggleColor, tallasSel, toggleTalla
 
       {coloresSel.length > 0 && tallasSel.length > 0 && (
         <div className="gv-step">
-          <p className="gv-step-label"><span className="gv-step-num">{stockStepNum}</span> Define el stock por combinación</p>
-          <div className="gv-table-wrap">
-            <table className="gv-matrix-table">
-              <thead>
-                <tr>
-                  <th className="gv-th-color">Color</th>
-                  {tallasSel.map(t => <th key={t} className="gv-th-talla">{t}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {coloresSel.map(c => (
-                  <tr key={c.id_color}>
-                    <td className="gv-td-color">
-                      <div className="gv-color-cell">
-                        <span className="gv-color-dot" style={{ background: c.codigo_hex || "#ccc" }} />
-                        {c.nombre}
-                      </div>
-                    </td>
-                    {tallasSel.map(t => (
-                      <td key={t} className="gv-td-stock">
-                        <input
-                          type="number" min={0} max={MAX_STOCK} step={1} className="gv-stock-input"
-                          value={matriz[c.id_color]?.[t] ?? 0}
-                          onChange={e => setStock(c.id_color, t, e.target.value)}
-                        />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <p className="gv-step-label"><span className="gv-step-num">{resumenStepNum}</span> Combinaciones a agregar</p>
+          <div className="gv-combo-preview">
+            {coloresSel.map(c => (
+              <div key={c.id_color} className="gv-combo-preview-row">
+                <span className="gv-color-dot" style={{ background: c.codigo_hex || "#ccc" }} />
+                <span className="gv-combo-preview-color">{c.nombre}</span>
+                <span className="gv-combo-preview-tallas">{tallasSel.join(" · ")}</span>
+              </div>
+            ))}
+          </div>
+          <div className="gv-aviso-stock">
+            <IconInfo />
+            El stock de estas combinaciones inicia siempre en 0 — se define registrando una compra en el módulo Compras.
           </div>
           <button className="gv-btn-guardar" onClick={onGuardar} disabled={guardando}>
             {guardando ? "Guardando..." : <><IconCheck /> {labelGuardar}</>}

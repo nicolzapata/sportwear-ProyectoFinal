@@ -26,6 +26,26 @@ const guardarEnStorage = (items, idUsuario = null) => {
   } catch {}
 };
 
+// ── NUEVO: fusiona el carrito anónimo (lo que se agregó antes de loguearse)
+// con el carrito ya guardado a nombre del usuario que inicia sesión. Si el
+// mismo producto/variante aparece en ambos, se SUMAN las cantidades en vez de
+// perder uno de los dos — antes, iniciar sesión simplemente reemplazaba el
+// carrito anónimo por el guardado, y lo que acababas de agregar se perdía. ──
+const fusionarItems = (base, entrantes) => {
+  const resultado = [...base];
+  entrantes.forEach((item) => {
+    const idx = resultado.findIndex((i) =>
+      item.id_variante ? i.id_variante === item.id_variante : i.id === item.id
+    );
+    if (idx >= 0) {
+      resultado[idx] = { ...resultado[idx], cantidad: resultado[idx].cantidad + item.cantidad };
+    } else {
+      resultado.push(item);
+    }
+  });
+  return resultado;
+};
+
 // ── Reducer ────────────────────────────────────────────────────────────────
 const cartReducer = (state, action) => {
   switch (action.type) {
@@ -125,6 +145,13 @@ export const CartProvider = ({ children }) => {
   const [usuarioData, setUsuarioData] = useState(null); // ✅ guardar datos completos del usuario
   const [state, dispatch] = useReducer(cartReducer, { items: [], oculto: false });
 
+  // itemsRef se declara ANTES del efecto de login/logout para que este pueda
+  // leer el carrito anónimo actual (itemsRef.current) en el momento exacto en
+  // que el usuario inicia sesión, sin quedarse con el valor inicial (vacío)
+  // por culpa del closure del efecto que solo corre una vez al montar.
+  const itemsRef = useRef(state.items);
+  useEffect(() => { itemsRef.current = state.items; }, [state.items]);
+
   useEffect(() => {
     const savedUser = localStorage.getItem("sz_usuario");
     if (savedUser) {
@@ -152,14 +179,24 @@ export const CartProvider = ({ children }) => {
       setIdUsuario(userId);
       setUsuarioData(user); // ✅
       if (userId) {
-        dispatch({ type: "LOAD_ITEMS", payload: cargarDesdeStorage(userId) });
+        // ── CORREGIDO: antes esto reemplazaba el carrito anónimo por el
+        // guardado del usuario, perdiendo lo que se acababa de agregar sin
+        // sesión. Ahora se fusionan ambos, sumando cantidades si coincide
+        // el mismo producto/variante. ──
+        const carritoAnonimo = itemsRef.current;
+        const carritoUsuario = cargarDesdeStorage(userId);
+        const fusionado = fusionarItems(carritoUsuario, carritoAnonimo);
+        dispatch({ type: "LOAD_ITEMS", payload: fusionado });
         dispatch({ type: "SHOW_CART" });
       }
     };
     const handleLogout = () => {
       setIdUsuario(null);
       setUsuarioData(null); // ✅
-      dispatch({ type: "HIDE_CART" });
+      // ── CORREGIDO: antes esto ocultaba el carrito (HIDE_CART) al cerrar
+      // sesión — era un remanente de cuando el carrito exigía login para
+      // verse. Ahora el carrito debe seguir visible y usable sin sesión, así
+      // que ya no se oculta al cerrar sesión.
     };
     window.addEventListener("user-login", handleLogin);
     window.addEventListener("user-logout", handleLogout);
@@ -168,9 +205,6 @@ export const CartProvider = ({ children }) => {
       window.removeEventListener("user-logout", handleLogout);
     };
   }, []);
-
-  const itemsRef = useRef(state.items);
-  useEffect(() => { itemsRef.current = state.items; }, [state.items]);
 
   const usuarioRef = useRef(usuarioData);
   useEffect(() => { usuarioRef.current = usuarioData; }, [usuarioData]); // ✅

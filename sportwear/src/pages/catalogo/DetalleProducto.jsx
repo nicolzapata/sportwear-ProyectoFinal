@@ -1,7 +1,6 @@
 // src/pages/catalogo/DetalleProducto.jsx
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import api from "../../services/api";
 import "./DetalleProducto.css";
@@ -93,7 +92,6 @@ const filtrarImagenes = (imgs, id_color) => {
 export default function DetalleProducto() {
   const { id }      = useParams();
   const navigate    = useNavigate();
-  const { usuario } = useAuth();
   const { agregarItem } = useCart();
 
   const [producto,  setProducto]  = useState(null);
@@ -187,9 +185,11 @@ export default function DetalleProducto() {
     return () => window.removeEventListener("keydown", onKey);
   }, [total, preview]);
 
+  // ── CORREGIDO: ya no exige sesión para agregar al carrito — el carrito
+  // acepta productos sin iniciar sesión (CartContext ya los guarda en
+  // localStorage de forma anónima). El login solo se pide más adelante, al
+  // hacer clic en "Finalizar compra" (ver Carrito.jsx). ──
   const handleAgregar = () => {
-    if (!usuario) { navigate("/login"); return; }
-
     if (!colorSel || !tallaSel) {
       setError("Por favor selecciona color y talla");
       return;

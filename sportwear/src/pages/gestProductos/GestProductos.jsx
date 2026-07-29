@@ -5,7 +5,7 @@ import { useSearchParams } from "react-router-dom";
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
-import { validarMonto, MAX_MONTO, MAX_LONGITUD_NOMBRE, MAX_LONGITUD_TEXTO_LIBRE } from "../../utils/numerico";
+import { MAX_MONTO, MAX_LONGITUD_NOMBRE, MAX_LONGITUD_TEXTO_LIBRE } from "../../utils/numerico";
 import GaleriaImagenes from "../../components/GaleriaImagenes";
 import GestVariantes from "../../components/GestVariantes";
 import ModalSteps from "../../components/ModalSteps";
@@ -157,6 +157,11 @@ export default function GestProductos() {
   const [coloresSinFotos,  setColoresSinFotos]  = useState([]);
   const [coloresAPurgar,   setColoresAPurgar]   = useState([]);
   const [coloresAPurgarFotos, setColoresAPurgarFotos] = useState([]);
+  // Se incrementa cada vez que GestVariantes agrega/quita un color en modo
+  // conectado (producto ya existente) — GaleriaImagenes lo usa como disparador
+  // para refrescar su propia lista de colores disponibles para subir fotos,
+  // ya que ambos componentes son hermanos y no comparten estado por su cuenta.
+  const [variantesVersion, setVariantesVersion] = useState(0);
   const [tab,              setTab]              = useState("productos");
   const [paginaProductos,  setPaginaProductos]  = useState(1);
   const [paginaCategorias, setPaginaCategorias] = useState(1);
@@ -294,8 +299,19 @@ export default function GestProductos() {
     const msgNombre = validarNombreProducto(form.nombre);
     if (msgNombre) { e.nombre = msgNombre; ok = false; }
     if (!form.id_categoria) { e.id_categoria = "Selecciona una categoría."; ok = false; }
-    const msgPrecio = validarMonto(form.precio, { mensajeVacio: "El precio debe ser mayor a $0." });
-    if (msgPrecio) { e.precio = msgPrecio; ok = false; }
+    // ── NUEVO: el precio solo se pide al EDITAR — al crear, el producto nace
+    // sin precio ni stock; ambos se definen con la primera compra que se le
+    // registre (ver Compras). Y aun al editar, el precio es OPCIONAL: el valor
+    // real de venta lo define Compras, así que 0 o vacío es válido aquí — solo
+    // se marca error si el usuario escribió algo que no es un número válido. ──
+    if (editar) {
+      const val = form.precio;
+      if (val !== "" && val !== null && val !== undefined && (isNaN(Number(val)) || Number(val) < 0)) {
+        e.precio = "El precio debe ser un número válido, mayor o igual a $0.";
+        ok = false;
+      }
+    }
+    if (!ok) console.log("[validarPasoDatos] errores encontrados:", e);
     setErrores(e); return ok;
   };
 
@@ -327,22 +343,31 @@ export default function GestProductos() {
   };
 
   const guardar = async () => {
-    if (!validar()) return;
+    if (!validar()) { console.log("[guardar] bloqueado por validación (ver detalle arriba)"); return; }
     if (!editar) {
       if (pendingImagenes.length === 0) { setErrores(p => ({ ...p, general: "Agrega al menos una imagen del producto." })); return; }
       if (pendingVariantes.length === 0) { setErrores(p => ({ ...p, general: "Agrega al menos una talla disponible." })); return; }
     }
     const sinFotos = await obtenerColoresSinFotos();
-    if (sinFotos.length > 0) { setColoresSinFotos(sinFotos); return; }
+    if (sinFotos.length > 0) { console.log("[guardar] bloqueado por colores sin fotos:", sinFotos); setColoresSinFotos(sinFotos); return; }
+    console.log("[guardar] validación OK, llamando a guardarProducto()");
     await guardarProducto();
   };
 
   // Se ejecuta al confirmar el guardado — se separó de `guardar` para poder
   // reintentarlo automáticamente tras purgar los colores sin fotos.
+  //
+  // ── FIX: este bloque tenía un try/catch/finally duplicado y mal pegado
+  // (restos de un merge sin limpiar): después del finally correcto había
+  // otras 4 líneas sueltas seguidas de un segundo `} finally { ... }` sin
+  // `try` al que pertenecer. Eso rompía la compilación (SyntaxError) y,
+  // aunque no lo hiciera, referenciaba `err` fuera de su scope. Se dejó un
+  // único try/catch/finally con toda la lógica consolidada. ──
   const guardarProducto = async () => {
     setGuardando(true);
+    let huboExito = false;
     try {
-      const payload = { nombre: form.nombre, descripcion: form.descripcion || null, id_categoria: Number(form.id_categoria), precio: Number(form.precio), publicado: !!form.publicado, estado: form.estado, destacado: form.destacado || null };
+      const payload = { nombre: form.nombre, descripcion: form.descripcion || null, id_categoria: Number(form.id_categoria), precio: editar ? Number(form.precio) : 0, publicado: !!form.publicado, estado: form.estado, destacado: form.destacado || null };
 
       if (editar) {
         await api.put(`/productos/${editar}`, payload);
@@ -359,7 +384,7 @@ export default function GestProductos() {
         }
         setPendingVariantes([]); setPendingImagenes([]);
         mostrarToast("exito", "Producto actualizado.");
-        setModal(false); window.scrollTo(0, 0); cargar();
+        huboExito = true;
       } else {
         const { data } = await api.post("/productos", payload);
         setProductoId(data.id_producto); setEditar(data.id_producto);
@@ -376,13 +401,28 @@ export default function GestProductos() {
         }
         setPendingVariantes([]); setPendingImagenes([]);
         mostrarToast("exito", "Producto guardado con variantes e imágenes.");
-        setModal(false); window.scrollTo(0, 0); cargar();
+        huboExito = true;
       }
     } catch (err) {
-      const mensaje = err.response?.data?.message || "Error al guardar.";
-      setErrores(prev => ({ ...prev, general: mensaje }));
-      mostrarToast("error", mensaje);
-    } finally { setGuardando(false); }
+      // ── DIAGNÓSTICO TEMPORAL: si el modal no cierra, esto nos dice si en
+      // realidad SÍ está cayendo aquí (con un error que no se ve en el banner). ──
+      console.error("[guardarProducto] error real:", err);
+      const msg = err.response?.data?.message || "Error al guardar.";
+      setErrores(prev => ({ ...prev, general: msg }));
+      mostrarToast("error", msg);
+    } finally {
+      setGuardando(false);
+      // ── El cierre + refresco ahora es INCONDICIONAL si hubo éxito, sin
+      // importar cuál rama (crear/editar) se ejecutó ni qué pase después. ──
+      if (huboExito) {
+        console.log("[guardarProducto] éxito — cerrando modal y refrescando lista");
+        setModal(false);
+        window.scrollTo(0, 0);
+        cargar();
+      } else {
+        console.log("[guardarProducto] NO hubo éxito — el modal se queda abierto a propósito");
+      }
+    }
   };
 
   // Confirmar en la alerta de "colores sin fotos": se le pide a GestVariantes
@@ -443,6 +483,7 @@ export default function GestProductos() {
     setModal(false); setErrores(ERRORES_INICIALES); setProductoId(null);
     setPendingVariantes([]); setPendingImagenes([]);
     setColoresSinFotos([]); setColoresAPurgar([]); setColoresAPurgarFotos([]);
+    setVariantesVersion(0);
     cargar();
   };
 
@@ -1076,18 +1117,37 @@ export default function GestProductos() {
                     {errores.id_categoria && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.id_categoria}</p>}
                   </div>
 
-                  <div className="gestproductos-form-group">
-                    <label className="gestproductos-form-label">Precio (COP) <span className="gestproductos-required">*</span></label>
-                    <input type="number" min={0} max={MAX_MONTO} className={`gestproductos-form-input${errores.precio ? " input-error" : ""}`} placeholder="0" value={form.precio}
-                      onChange={e => {
-                        const precio = e.target.value;
-                        setForm({ ...form, precio });
-                        if (errores.precio) setErrores(p => ({ ...p, precio: validarMonto(precio, { mensajeVacio: "El precio debe ser mayor a $0." }) }));
-                      }}
-                      onBlur={() => setErrores(p => ({ ...p, precio: validarMonto(form.precio, { mensajeVacio: "El precio debe ser mayor a $0." }) }))} />
-                    {errores.precio && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.precio}</p>}
-                  </div>
+                  {/* ── NUEVO: el precio solo se edita aquí cuando el producto ya existe.
+                  Al crear, no se pide — nace en $0 y se define con la primera compra.
+                  Y es OPCIONAL incluso al editar: el valor real lo pone Compras. ── */}
+                  {editar && (
+                    <div className="gestproductos-form-group">
+                      <label className="gestproductos-form-label">Precio (COP)</label>
+                      <input type="number" min={0} max={MAX_MONTO} className={`gestproductos-form-input${errores.precio ? " input-error" : ""}`} placeholder="0" value={form.precio}
+                        onChange={e => {
+                          const precio = e.target.value;
+                          setForm({ ...form, precio });
+                          if (errores.precio) {
+                            const invalido = precio !== "" && (isNaN(Number(precio)) || Number(precio) < 0);
+                            setErrores(p => ({ ...p, precio: invalido ? "El precio debe ser un número válido, mayor o igual a $0." : "" }));
+                          }
+                        }}
+                        onBlur={() => {
+                          const invalido = form.precio !== "" && (isNaN(Number(form.precio)) || Number(form.precio) < 0);
+                          setErrores(p => ({ ...p, precio: invalido ? "El precio debe ser un número válido, mayor o igual a $0." : "" }));
+                        }} />
+                      {errores.precio && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.precio}</p>}
+                    </div>
+                  )}
                 </div>
+
+                {!editar && (
+                  <div className="gestproductos-aviso-stock">
+                    <IconAlertTriangle />
+                    El stock y el precio de venta de este producto se registran al hacer la primera compra
+                    (módulo Compras) — aquí solo defines sus datos generales y sus tallas/colores.
+                  </div>
+                )}
 
                 <div className="gestproductos-form-row">
                   {editar && (
@@ -1133,6 +1193,7 @@ export default function GestProductos() {
                   idProducto={editar || productoId} estadoProducto={form.estado} onPendingChange={setPendingVariantes}
                   coloresAPurgar={coloresAPurgar} onColoresPurgados={onColoresPurgados}
                   imagenesPendientes={pendingImagenes} onEliminarFotosDeColor={eliminarFotosDeColor}
+                  onVariantesChange={() => setVariantesVersion(v => v + 1)}
                 />
               </div>
 
@@ -1141,6 +1202,7 @@ export default function GestProductos() {
                 <GaleriaImagenes
                   tipoReferencia="Producto" idReferencia={productoId} onPendingChange={setPendingImagenes} coloresPendientes={coloresPendientes}
                   coloresAPurgar={coloresAPurgarFotos} onColoresPurgados={onFotosDeColorPurgadas}
+                  refrescarColores={variantesVersion}
                 />
               </div>
             </div>

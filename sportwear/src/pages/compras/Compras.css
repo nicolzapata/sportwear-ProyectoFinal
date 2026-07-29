@@ -910,3 +910,29 @@
     font-size: 0.9rem;
   }
 }
+/* ── NUEVO: advertencias de "Valor de venta" en Compras ── */
+.compras-input-warning {
+  border-color: #b96422 !important;
+  box-shadow: 0 0 0 3px rgba(185,100,34,0.08) !important;
+}
+.compras-field-warning {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: #b96422;
+  font-weight: 500;
+}
+.compras-field-warning svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+.compras-detalle-item-precios {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.compras-detalle-item-venta {
+  font-size: 0.75rem;
+  color: #2e7d32;
+  font-weight: 500;
+}
