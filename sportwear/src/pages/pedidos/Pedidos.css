@@ -1,11 +1,11 @@
 /* src/pages/pedidos/Pedidos.css */
 .pedidos-container { max-width: 1400px; margin: 0 auto; padding: 2rem; font-family: var(--font-body); }
 
-.pedidos-actions-bar { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-.pedidos-actions-left { display: flex; align-items: center; gap: 1rem; }
-.pedidos-actions-right { display: flex; align-items: center; gap: 0.75rem; }
+.pedidos-actions-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.pedidos-actions-left { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
+.pedidos-actions-right { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
 
-.pedidos-search-wrapper { position: relative; width: 320px; }
+.pedidos-search-wrapper { position: relative; width: 320px; max-width: 100%; }
 .pedidos-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--dvna-muted); }
 .pedidos-search-input {
   width: 100%; padding: 0.8rem 1rem 0.8rem 2.5rem;
@@ -179,7 +179,16 @@
 .pedidos-empty-state p { margin: 0; font-style: italic; font-size: 0.9rem; }
 
 @media (max-width: 1024px) { .pedidos-container { padding: 1.5rem; } }
+
+@media (max-width: 768px) {
+  /* Buscador + botón imprimir comparten la fila. Solo responsive. */
+  .pedidos-actions-bar { align-items: center; justify-content: flex-start; row-gap: 10px; }
+  .pedidos-actions-left { display: contents; }
+  .pedidos-actions-right { display: contents; }
+  .pedidos-search-wrapper { order: 1; flex: 1 1 140px; min-width: 120px; width: auto; }
+  .pedidos-actions-right .btn-print { order: 2; }
+}
+
 @media (max-width: 480px) {
   .pedidos-search-wrapper { width: 100%; }
-  .pedidos-actions-bar { flex-direction: column; align-items: stretch; gap: 1rem; }
 }

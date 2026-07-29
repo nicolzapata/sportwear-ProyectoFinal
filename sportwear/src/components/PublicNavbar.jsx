@@ -1,10 +1,10 @@
 // src/components/PublicNavbar.jsx
 import { useState, useEffect, useRef } from "react";
-import { NavLink, Link, useNavigate } from "react-router-dom";
+import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import api from "../services/api";
-import { IconCart, IconUser, IconLogOut, IconSearch } from "./Icons";
+import { IconCart, IconUser, IconLogOut, IconSearch, IconMenu, IconX } from "./Icons";
 import logo from "../assets/LOGO.png";
 import "./Navbar.css";
 
@@ -25,6 +25,7 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
   const { usuario, logout } = useAuth();
   const { totalItems, oculto } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
   const esAdmin = usuario?.rol === "Admin";
 
   // ── NUEVO (HU 04.2.9): sugerencias en vivo mientras se escribe en el buscador ──
@@ -33,6 +34,11 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
   const [indiceActivo, setIndiceActivo] = useState(-1);
   const buscadorRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Menú móvil: en pantallas angostas, los links + categorías + buscador
+  // viven en este panel colapsable en vez de desaparecer con display:none.
+  const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
+  const cerrarMenuMovil = () => setMenuMovilAbierto(false);
 
   useEffect(() => {
     // Se carga una sola vez: el catálogo público no cambia tan seguido como
@@ -64,12 +70,14 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
   const irAProducto = (p) => {
     setSugerenciasAbiertas(false);
     setBusqueda("");
+    cerrarMenuMovil();
     navigate(`/catalogo/${p.id_producto}`);
   };
 
   const verTodosLosResultados = () => {
     setSugerenciasAbiertas(false);
     inputRef.current?.blur();
+    cerrarMenuMovil();
     navigate("/catalogo");
   };
 
@@ -94,7 +102,7 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
   return (
     <header className="navbar navbar--public-fixed">
 
-      {/* ── Izquierda: Logo ── */}
+      {/* ── Izquierda: Logo + hamburguesa (solo visible en móvil) ── */}
       <div className="navbar-left">
         <Link to="/" className="navbar-brand">
           <span className="navbar-brand-icon">
@@ -102,10 +110,24 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
           </span>
           SportWear
         </Link>
+        <button
+          type="button"
+          className="navbar-menu-btn"
+          onClick={() => setMenuMovilAbierto((v) => !v)}
+          title={menuMovilAbierto ? "Cerrar menú" : "Abrir menú"}
+          aria-label={menuMovilAbierto ? "Cerrar menú" : "Abrir menú"}
+          aria-expanded={menuMovilAbierto}
+        >
+          {menuMovilAbierto ? <IconX /> : <IconMenu />}
+        </button>
       </div>
 
+      {menuMovilAbierto && (
+        <div className="navbar-mobile-backdrop" onClick={cerrarMenuMovil} aria-hidden="true" />
+      )}
+
       {/* ── Centro: Links + Filtros ── */}
-      <div className="navbar-center">
+      <div className={`navbar-center ${menuMovilAbierto ? "navbar-center-mobile-open" : ""}`}>
         <nav className="navbar-nav">
           <Link
             to="/catalogo"
@@ -113,6 +135,7 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
             onClick={() => {
               setBusqueda("");
               setFiltroCategoria("Todos");
+              cerrarMenuMovil();
             }}
           >
             Inicio
@@ -121,7 +144,16 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
             <button
               key={cat}
               className={`navbar-link${filtroCategoria === cat ? " active" : ""}`}
-              onClick={() => setFiltroCategoria(cat)}
+              onClick={() => {
+                setFiltroCategoria(cat);
+                cerrarMenuMovil();
+                // Los filtros de categoría solo tienen efecto en /catalogo — si el
+                // usuario los pulsa desde otra página (p. ej. Sobre nosotros) hay
+                // que navegar ahí, si no parece que el link no hace nada.
+                if (location.pathname !== "/catalogo" && location.pathname !== "/") {
+                  navigate("/catalogo");
+                }
+              }}
               style={{ background: "none", border: "none", cursor: "pointer" }}
             >
               {cat}
@@ -130,6 +162,7 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
           <NavLink
             to="/sobre-nosotros"
             className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}
+            onClick={cerrarMenuMovil}
           >
             Sobre nosotros
           </NavLink>
@@ -149,7 +182,7 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
                 setSugerenciasAbiertas(true);
                 setIndiceActivo(-1);
               }}
-              onFocus={() => setSugerenciasAbiertas(true)}
+              onFocus={() => { setSugerenciasAbiertas(true); cerrarMenuMovil(); }}
               onKeyDown={handleKeyDown}
               role="combobox"
               aria-expanded={sugerenciasAbiertas && termino.length >= MIN_CARACTERES}

@@ -555,32 +555,52 @@
     gap: 1rem;
   }
   
+  /* Buscador + botón crear comparten la primera fila; las pestañas y
+     exportar van debajo, en una sola fila, desde la izquierda. Solo
+     responsive — el orden en escritorio no se toca. */
   .colores-actions-bar {
-    flex-direction: column;
-    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    row-gap: 10px;
   }
-  
-  .colores-actions-left {
-    width: 100%;
-  }
-  
+
+  .colores-actions-left { display: contents; }
+  .colores-actions-right { display: contents; }
+
   .colores-search-wrapper {
-    width: 100%;
+    order: 1;
+    flex: 1 1 140px;
+    min-width: 120px;
+    width: auto;
   }
-  
-  .colores-tabs-bar {
-    width: 100%;
-    justify-content: center;
-  }
-  
+
   .colores-btn-primary {
-    width: 100%;
+    order: 2;
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
     justify-content: center;
   }
+
+  .colores-tabs-bar {
+    order: 3;
+    width: auto;
+    flex: 0 0 auto;
+    justify-content: flex-start;
+  }
+
+  .colores-actions-right .export-buttons { order: 4; }
   
   .colores-grid {
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
   }
+}
+
+@media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .colores-btn-primary { font-size: 0; padding: 10px 12px; gap: 0; }
+  .colores-btn-primary span { font-size: 13px; }
 }
 
 /* Print button */

@@ -20,6 +20,16 @@
   box-shadow: 4px 0 24px rgba(44, 34, 24, 0.25);
 }
 
+/* ── Backdrop del drawer móvil ── */
+.sidebar-backdrop {
+  display: none;
+}
+
+/* ── Botón cerrar (solo visible en el drawer móvil) ── */
+.sidebar-close-btn {
+  display: none;
+}
+
 /* ── Logo ──
    Centrado siempre: colapsado, el nombre no ocupa ancho (max-width/margin en
    0), así que el único contenido del flex row es la imagen y queda
@@ -297,4 +307,38 @@
   width: 16px;
   height: 16px;
   display: block;
+}
+
+@media (max-width: 768px) {
+  .sidebar-logo { position: relative; }
+  /* Con el drawer abierto el logo+nombre queda centrado por defecto y
+     choca contra el botón de cerrar (✕) en la esquina — se alinea a la
+     izquierda y se deja espacio a la derecha para que no se peguen. */
+  .sidebar.sidebar-mobile-open .sidebar-logo {
+    justify-content: flex-start;
+    padding: 8px 52px 8px 18px;
+  }
+  .sidebar.sidebar-mobile-open .sidebar-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50%;
+    color: #ffffff;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .sidebar.sidebar-mobile-open .sidebar-close-btn svg {
+    width: 13px;
+    height: 13px;
+    stroke: #ffffff;
+  }
+  .sidebar.sidebar-mobile-open .sidebar-close-btn:hover {
+    background: rgba(255,255,255,0.16);
+  }
 }

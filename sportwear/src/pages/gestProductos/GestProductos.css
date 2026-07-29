@@ -823,11 +823,15 @@
 @media (max-width: 768px) {
   .gestproductos-container { padding: 1rem; }
   .gestproductos-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
-  .gestproductos-actions-bar { flex-direction: column; gap: 12px; }
-  .gestproductos-actions-left { width: 100%; }
-  .gestproductos-search-wrapper { width: 100%; }
-  .gestproductos-tabs-bar { width: 100%; justify-content: center; }
-  .gestproductos-btn-primary { width: 100%; justify-content: center; }
+  /* Buscador + botón crear comparten la primera fila; pestañas y exportar
+     van debajo, en una sola fila, desde la izquierda. Solo responsive. */
+  .gestproductos-actions-bar { flex-wrap: wrap; align-items: center; justify-content: flex-start; row-gap: 10px; }
+  .gestproductos-actions-left { display: contents; }
+  .gestproductos-actions-right { display: contents; }
+  .gestproductos-search-wrapper { order: 1; flex: 1 1 140px; min-width: 120px; width: auto; }
+  .gestproductos-btn-primary { order: 2; width: auto; flex: 0 0 auto; white-space: nowrap; justify-content: center; }
+  .gestproductos-tabs-bar { order: 3; width: auto; flex: 0 0 auto; justify-content: flex-start; }
+  .gestproductos-actions-right .export-buttons { order: 4; }
   .gestproductos-form-row { grid-template-columns: 1fr; gap: 0; }
   .gestproductos-imagen-preview img { width: 60px; height: 60px; }
   .gestproductos-toast { top: 1rem; right: 1rem; left: 1rem; }
@@ -837,6 +841,10 @@
 }
 
 @media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .gestproductos-actions-right .gestproductos-btn-primary { font-size: 0; padding: 10px 12px; gap: 0; }
+  .gestproductos-actions-right .gestproductos-btn-primary span { font-size: 13px; }
+
   .gestproductos-title { font-size: 1.6rem; }
   .gestproductos-product-name { font-size: 0.85rem; }
   .gestproductos-precio-cell { font-size: 0.85rem; }

@@ -56,6 +56,10 @@
   padding: 0;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-body);
   color: var(--dvna-charcoal);
@@ -64,6 +68,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
   width: 100%;
   min-height: 100vh;
+  /* Red de seguridad: ningún elemento (full-bleed, dropdown mal
+     posicionado, etc.) debe poder generar scroll horizontal de página.
+     El scroll horizontal interno de tablas/galerías sigue funcionando,
+     ya que vive en sus propios contenedores con overflow-x:auto. */
+  overflow-x: hidden;
 }
 
 #root {
@@ -71,6 +80,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: clip;
 }
 
 a {

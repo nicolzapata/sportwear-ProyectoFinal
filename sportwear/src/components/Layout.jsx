@@ -9,14 +9,17 @@ import "./Layout.css";
 
 export default function Layout() {
   useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // En móvil representa el drawer del sidebar (cerrado por defecto).
+  // En escritorio el sidebar siempre es visible (se expande con hover), así
+  // que este estado no le afecta.
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
     <ToastProvider>
       <div className="layout-admin">
-        <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
-        <div className={`layout-admin-content ${sidebarOpen ? '' : 'collapsed'}`}>
-          <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+        <Sidebar isOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+        <div className="layout-admin-content">
+          <Navbar onMenuClick={() => setMobileMenuOpen((v) => !v)} />
           <main className="layout-main">
             <div className="layout-container">
               <Outlet />

@@ -869,6 +869,47 @@
   .roles-modal-body { padding: 0 20px; }
   .roles-modal-footer { padding: 16px 20px; }
 }
+
+/* Selector calificado con `.roles-container` a propósito: hay una versión
+   vieja de estas mismas clases duplicada en App.css (residuo de una copia
+   anterior) y esto asegura que esta regla, más específica, gane siempre
+   sin depender del orden de carga entre archivos. */
+@media (max-width: 768px) {
+  /* Buscador + botón "Nuevo rol" comparten la primera fila; el contador de
+     resultados queda debajo, alineado desde la izquierda. Solo responsive
+     — el orden en escritorio no se toca. */
+  .roles-container .roles-actions-bar {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    row-gap: 10px;
+  }
+  .roles-container .roles-actions-left {
+    display: contents;
+  }
+  .roles-container .roles-search-wrapper {
+    order: 1;
+    max-width: none;
+    flex: 1 1 140px;
+    min-width: 120px;
+    width: auto;
+  }
+  .roles-container .roles-btn-nuevo {
+    order: 2;
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .roles-container .roles-search-count {
+    order: 3;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .roles-container .roles-btn-nuevo { font-size: 0; padding: 10px 12px; gap: 0; }
+  .roles-container .roles-btn-nuevo span { font-size: 13px; }
+}
 /* ── Barra de acciones ── */
 .roles-actions-bar {
   display: flex;

@@ -880,11 +880,12 @@ html, body {
 
 .nov-hero-title {
   font-family: 'Playfair Display', serif;
-  font-size: clamp(52px, 8vw, 96px);
+  font-size: clamp(30px, 8vw, 96px);
   font-weight: 700;
-  line-height: 1.0;
+  line-height: 1.05;
   color: #fff;
   margin: 0 0 28px;
+  overflow-wrap: break-word;
 }
 .nov-hero-title em {
   font-style: italic;
@@ -949,6 +950,11 @@ html, body {
   .catalog-footer-divider { display: none; }
   .catalog-footer-links { justify-content: center; }
   .nov-hero { padding: 0 24px; }
+  /* El hero mide 100vh pero el navbar fijo (56px en móvil) lo empuja hacia
+     abajo con padding-top, así que "sobra" al fondo y la franja de stats
+     queda cortada bajo el borde de la pantalla. Se descuenta esa altura
+     para que quede completa sin tocar el tamaño en escritorio. */
+  .nov-hero { height: calc(100vh - 64px); }
   .nov-hero-strip { gap: 16px; flex-wrap: wrap; padding: 20px 24px; }
   .nov-hero-title { font-size: 36px; }
   .nov-strip-sep { display: none; }

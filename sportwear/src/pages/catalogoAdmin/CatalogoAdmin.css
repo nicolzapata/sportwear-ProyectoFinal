@@ -358,9 +358,12 @@
 }
 @media (max-width: 768px) {
   .catadmin-container { padding: 1rem; }
-  .catadmin-search-wrapper { width: 100%; }
-  .catadmin-filtros-bar { flex-direction: column; align-items: stretch; }
-  .catadmin-estado-tabs { justify-content: center; }
+  /* Buscador siempre solo arriba; tabs de estado + orden en una sola fila
+     debajo, alineados desde la izquierda. */
+  .catadmin-filtros-bar { align-items: flex-start; justify-content: flex-start; }
+  .catadmin-search-wrapper { width: 100%; flex: 1 1 100%; }
+  .catadmin-estado-tabs { justify-content: flex-start; }
+  .catadmin-select-orden { margin-left: 0; }
   .catadmin-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.8rem; }
 }
 @media (max-width: 480px) {

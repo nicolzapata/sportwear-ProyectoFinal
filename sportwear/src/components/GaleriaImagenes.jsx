@@ -337,7 +337,9 @@ export default function GaleriaImagenes({
                       const btn = paletteBtnRefs.current[img.id_imagen];
                       if (btn) {
                         const rect = btn.getBoundingClientRect();
-                        setDropdownPos({ top: rect.bottom + 8, left: rect.left });
+                        const dropdownWidth = 130;
+                        const left = Math.min(rect.left, window.innerWidth - dropdownWidth - 8);
+                        setDropdownPos({ top: rect.bottom + 8, left: Math.max(8, left) });
                       }
                       setEditandoColor(editandoColor === img.id_imagen ? null : img.id_imagen);
                     }}

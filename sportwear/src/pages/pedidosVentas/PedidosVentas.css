@@ -535,19 +535,29 @@
   .pedidosventas-item-titulos { display: none; }
 }
 
+@media (max-width: 768px) {
+  /* Buscador + botón crear comparten la primera fila; imprimir va debajo,
+     alineado desde la izquierda. Solo responsive. */
+  .pedidosventas-actions-bar {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    row-gap: 10px;
+  }
+  .pedidosventas-actions-left { display: contents; }
+  .pedidosventas-actions-right { display: contents; }
+  .pedidosventas-search-wrapper { order: 1; flex: 1 1 140px; min-width: 120px; width: auto; }
+  .pedidosventas-btn-primary { order: 2; width: auto; flex: 0 0 auto; white-space: nowrap; justify-content: center; }
+  .pedidosventas-actions-right .btn-print { order: 3; }
+}
+
 @media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .pedidosventas-actions-right .pedidosventas-btn-primary { font-size: 0; padding: 10px 12px; gap: 0; }
+  .pedidosventas-actions-right .pedidosventas-btn-primary span { font-size: 13px; }
+
   .pedidosventas-title { font-size: 1.6rem; }
   .pedidosventas-action-btn { width: 32px; height: 32px; font-size: 0.9rem; }
-
-  .pedidosventas-actions-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
-
-  .pedidosventas-search-wrapper { width: 100%; }
-
-  .pedidosventas-btn-primary { width: 100%; justify-content: center; }
 
   .pedidosventas-form-row {
     grid-template-columns: 1fr;

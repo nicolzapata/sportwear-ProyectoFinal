@@ -29,8 +29,27 @@
 .navbar-left {
   display: flex;
   align-items: center;
+  gap: 12px;
   min-width: 160px;
 }
+
+/* Botón hamburguesa — solo visible en móvil, abre el drawer del sidebar */
+.navbar-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r);
+  color: var(--dvna-charcoal);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.navbar-menu-btn:hover { background: var(--dvna-pale); }
+.navbar-menu-btn svg { width: 17px; height: 17px; display: block; }
 
 /* Links al lado del logo */
 .navbar-left-links {
@@ -327,12 +346,100 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .navbar { padding: 0 20px; height: 56px; }
-  .navbar-center { display: none; }
+  .navbar { padding: 0 14px; height: 56px; }
+  .navbar-menu-btn { display: flex; }
   .navbar-user-role,
   .navbar-page-date { display: none; }
   .navbar-brand-icon { display: none; }
-  .navbar-nav { display: none; }
+  .navbar-left { min-width: 0; }
+  .navbar-right { min-width: 0; }
+
+  /* Admin: no tiene panel móvil propio (el sidebar cubre la navegación),
+     así que su .navbar-center/.navbar-nav se ocultan tal cual antes. */
+  .navbar:not(.navbar--public-fixed) .navbar-center,
+  .navbar:not(.navbar--public-fixed) .navbar-nav {
+    display: none;
+  }
+
+  /* Público (.navbar--public-fixed): fila más alta y con más aire — antes
+     quedaba todo muy apretado (logo+hamburguesa+buscador+usuario en 56px). */
+  .navbar--public-fixed {
+    height: 64px;
+    padding: 0 16px;
+  }
+  .navbar--public-fixed .navbar-left {
+    gap: 14px;
+  }
+
+  /* El buscador queda siempre visible en la fila principal (donde antes
+     estaba la hamburguesa — que ahora vive junto al nombre de la marca, en
+     .navbar-left). Solo los links/categorías (.navbar-nav) se colapsan en
+     un panel desplegable con la hamburguesa. */
+  .navbar--public-fixed .navbar-center {
+    display: flex;
+    position: static;
+    transform: none;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    gap: 0;
+    margin: 0 10px;
+  }
+  .navbar--public-fixed .navbar-nav {
+    display: none;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+    background: var(--dvna-white);
+    border-bottom: 1px solid var(--dvna-border);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.14);
+    padding: 8px 16px 16px;
+    z-index: 1050;
+  }
+  .navbar--public-fixed .navbar-center.navbar-center-mobile-open .navbar-nav {
+    display: flex;
+  }
+  .navbar--public-fixed .navbar-nav .navbar-link {
+    padding: 14px 8px;
+    border-bottom: 1px solid var(--dvna-border);
+    text-align: left;
+  }
+
+  /* Buscador: siempre visible, ocupa el espacio disponible en la fila */
+  .navbar--public-fixed .navbar-search {
+    max-width: none;
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+    margin-left: 0;
+  }
+  .navbar--public-fixed .navbar-search .search-input {
+    font-size: 13px;
+    padding: 10px 40px 10px 36px;
+  }
+  .navbar--public-fixed .navbar-right {
+    gap: 10px;
+  }
+
+  /* El backdrop solo debe cerrar el panel de links, no tapar el buscador */
+  .navbar-mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    top: 64px;
+    background: rgba(10,10,10,0.35);
+    z-index: 1040;
+  }
+}
+
+@media (max-width: 400px) {
+  .navbar { padding: 0 10px; }
+  .navbar-page-label { font-size: 12px; }
 }
 
 /* ── Modal logout ── */
@@ -571,5 +678,5 @@
 }
 
 @media (max-width: 768px) {
-  .navbar-sugerencias { min-width: 260px; }
+  .navbar-sugerencias { min-width: 0; z-index: 1060; }
 }

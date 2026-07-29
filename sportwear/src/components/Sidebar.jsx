@@ -6,7 +6,7 @@ import logo from "../assets/LOGO.png";
 import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,
   IconShoppingBag, IconPalette, IconBox, IconTruck, IconCart,
-  IconDollar, IconHeart, IconCreditCard, IconSettings, IconLogOut,
+  IconDollar, IconHeart, IconCreditCard, IconSettings, IconLogOut, IconX,
 } from "./Icons";
 import "./Sidebar.css";
 
@@ -36,7 +36,7 @@ const tieneModulosAdmin = (modulos = []) => {
   return normalizados.some(m => !MODULOS_CLIENTE.includes(m));
 };
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen = false, onClose }) {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -86,40 +86,57 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        <img src={logo} alt="Logo" className="logo-img" />
-        <div className="logo-name">SPORT<span>WEAR</span></div>
-      </div>
-
-      <nav className="sidebar-nav">
-        {menuFinal.map((item) => (
-          <div key={item.path}>
-            {item.divider && itemEsVisible(item) && <div className="nav-divider" />}
-            <NavLink
-              to={item.path}
-              className={({ isActive }) => "nav-item " + (isActive ? "active" : "")}
-              title={getLabel(item)}
-            >
-              <span className="nav-icon">{NAV_ICONS[item.path] ?? <IconBox />}</span>
-              <span className="nav-label">{getLabel(item)}</span>
-            </NavLink>
-          </div>
-        ))}
-      </nav>
-
-      <div className="sidebar-footer">
-        <div className="user-info">
-          <div className="user-avatar">{(usuario?.nombre ?? "U").charAt(0).toUpperCase()}</div>
-          <div className="user-text">
-            <div className="user-name">{usuario?.nombre ?? "Usuario"}</div>
-            <div className="user-role">{usuario?.rol ?? "—"}</div>
-          </div>
+    <>
+      <div
+        className={`sidebar-backdrop ${isOpen ? "visible" : ""}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <aside className={`sidebar ${isOpen ? "sidebar-mobile-open" : ""}`}>
+        <div className="sidebar-logo">
+          <img src={logo} alt="Logo" className="logo-img" />
+          <div className="logo-name">SPORT<span>WEAR</span></div>
+          <button
+            type="button"
+            className="sidebar-close-btn"
+            onClick={onClose}
+            title="Cerrar menú"
+            aria-label="Cerrar menú"
+          >
+            <IconX />
+          </button>
         </div>
-        <button className="logout-btn" onClick={handleLogout} title="Cerrar sesión">
-          <IconLogOut />
-        </button>
-      </div>
-    </aside>
+
+        <nav className="sidebar-nav">
+          {menuFinal.map((item) => (
+            <div key={item.path}>
+              {item.divider && itemEsVisible(item) && <div className="nav-divider" />}
+              <NavLink
+                to={item.path}
+                className={({ isActive }) => "nav-item " + (isActive ? "active" : "")}
+                title={getLabel(item)}
+                onClick={onClose}
+              >
+                <span className="nav-icon">{NAV_ICONS[item.path] ?? <IconBox />}</span>
+                <span className="nav-label">{getLabel(item)}</span>
+              </NavLink>
+            </div>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="user-info">
+            <div className="user-avatar">{(usuario?.nombre ?? "U").charAt(0).toUpperCase()}</div>
+            <div className="user-text">
+              <div className="user-name">{usuario?.nombre ?? "Usuario"}</div>
+              <div className="user-role">{usuario?.rol ?? "—"}</div>
+            </div>
+          </div>
+          <button className="logout-btn" onClick={handleLogout} title="Cerrar sesión">
+            <IconLogOut />
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

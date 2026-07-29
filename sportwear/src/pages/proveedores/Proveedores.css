@@ -721,17 +721,32 @@
     gap: 1rem;
   }
 
+  /* Buscador + botón crear comparten la primera fila; exportar va debajo,
+     alineado desde la izquierda. Solo responsive. */
   .proveedores-actions-bar {
-    flex-direction: column;
-    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    row-gap: 10px;
   }
+
+  .proveedores-actions-left { display: contents; }
+  .proveedores-actions-right { display: contents; }
 
   .proveedores-search-wrapper {
-    width: 100%;
+    order: 1;
+    flex: 1 1 140px;
+    min-width: 120px;
+    width: auto;
   }
 
+  .proveedores-actions-right .export-buttons { order: 3; }
+
   .proveedores-btn-primary {
-    width: 100%;
+    order: 2;
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
     justify-content: center;
   }
 
@@ -748,6 +763,10 @@
 }
 
 @media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .proveedores-actions-right .proveedores-btn-primary { font-size: 0; padding: 10px 12px; gap: 0; }
+  .proveedores-actions-right .proveedores-btn-primary span { font-size: 13px; }
+
   .proveedores-title {
     font-size: 1.6rem;
   }

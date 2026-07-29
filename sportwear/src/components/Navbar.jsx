@@ -6,7 +6,7 @@ import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,
   IconShoppingBag, IconPalette, IconBox, IconTruck,
   IconDollar, IconHeart, IconCreditCard, IconSettings,
-  IconBolt, IconBell, IconLogOut, IconX
+  IconBolt, IconBell, IconLogOut, IconX, IconMenu
 } from "./Icons";
 const IconStore = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -40,7 +40,7 @@ const fecha = new Date().toLocaleDateString("es-CO", {
   weekday: "long", year: "numeric", month: "long", day: "numeric"
 });
 
-export default function Navbar() {
+export default function Navbar({ onMenuClick }) {
   const location    = useLocation();
   const navigate    = useNavigate();
   const { logout }  = useAuth();
@@ -57,6 +57,15 @@ export default function Navbar() {
 
       {/* Izquierda — marca + página actual */}
       <div className="navbar-left">
+        <button
+          type="button"
+          className="navbar-menu-btn"
+          onClick={onMenuClick}
+          title="Abrir menú"
+          aria-label="Abrir menú"
+        >
+          <IconMenu />
+        </button>
         <div className="navbar-page">
           <span className="navbar-page-icon">{current.icon}</span>
           <div>

@@ -465,9 +465,15 @@
    .clientes-container { padding: 1rem; }
    .clientes-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
    .clientes-stats-grid { grid-template-columns: 1fr; gap: 1rem; }
-   .clientes-actions-bar { flex-direction: column; gap: 1rem; }
-   .clientes-search-wrapper { width: 100%; }
-   .clientes-btn-primary { width: 100%; justify-content: center; }
+   /* Buscador + botón crear comparten la primera fila; el resto (exportar)
+      va debajo en su propia fila, alineado desde la izquierda. Solo aplica
+      en responsive — el orden en escritorio no se toca (fuera de esta
+      media query todo sigue exactamente igual). */
+   .clientes-actions-bar { flex-wrap: wrap; align-items: center; justify-content: flex-start; row-gap: 10px; }
+   .clientes-actions-right { display: contents; }
+   .clientes-search-wrapper { order: 1; flex: 1 1 140px; min-width: 120px; width: auto; }
+   .clientes-btn-primary { order: 2; width: auto; flex: 0 0 auto; white-space: nowrap; justify-content: center; }
+   .clientes-actions-right .export-buttons { order: 3; }
    .clientes-table-th, .clientes-table-td { padding: 1rem 0.8rem; font-size: 0.85rem; }
    .clientes-user-name { font-size: 0.9rem; }
    .clientes-form-row { grid-template-columns: 1fr; gap: 0; }
@@ -475,6 +481,9 @@
   }
 
   @media (max-width: 480px) {
+   /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+   .clientes-btn-primary { font-size: 0; padding: 10px 12px; gap: 0; }
+   .clientes-btn-primary span { font-size: 13px; }
    .clientes-title { font-size: 1.6rem; }
    .clientes-stat-value { font-size: 1.5rem; }
    .clientes-table-th, .clientes-table-td { padding: 0.8rem 0.5rem; font-size: 0.8rem; }

@@ -326,13 +326,30 @@
 }
 
 @media (max-width: 768px) {
-  .usuarios-actions-bar { flex-direction: column; gap: 12px; }
-  .usuarios-actions-left { width: 100%; }
-  .usuarios-search-wrapper { width: 100%; }
-  .usuarios-filter-toggle { width: 100%; justify-content: center; }
-  .usuarios-btn-primary { width: 100%; justify-content: center; }
+  /* Buscador + botón crear comparten la primera fila; las pestañas y
+     exportar van debajo, en una sola fila, alineados desde la izquierda.
+     Solo responsive — el orden en escritorio no se toca. */
+  .usuarios-actions-bar {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    row-gap: 12px;
+  }
+  .usuarios-actions-left { display: contents; }
+  .usuarios-actions-right { display: contents; }
+
+  .usuarios-search-wrapper { order: 1; flex: 1 1 140px; min-width: 120px; width: auto; }
+  .usuarios-btn-primary { order: 2; width: auto; flex: 0 0 auto; white-space: nowrap; justify-content: center; }
+  .usuarios-filter-toggle { order: 3; width: auto; flex: 0 0 auto; justify-content: flex-start; }
+  .usuarios-actions-right .export-buttons { order: 4; }
   .usuarios-form-row { grid-template-columns: 1fr; gap: 0; }
   .usuarios-modal-factura { max-width: 95%; }
+}
+
+@media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .usuarios-actions-right .usuarios-btn-primary { font-size: 0; padding: 10px 12px; gap: 0; }
+  .usuarios-actions-right .usuarios-btn-primary span { font-size: 13px; }
 }
 
 .usuarios-req { color: var(--dvna-circle); font-size: 13px; }

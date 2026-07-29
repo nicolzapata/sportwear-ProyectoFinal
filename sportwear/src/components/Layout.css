@@ -43,8 +43,54 @@
 *::-webkit-scrollbar-thumb { background: var(--taupe); border-radius: 3px; }
 
 @media (max-width: 768px) {
-  .layout-container { padding: 0 20px; }
+  .layout-container { padding: 0 16px; }
   .layout-admin-content { margin-left: 0; }
-  .sidebar { transform: translateX(-100%); }
-  .sidebar:hover { transform: translateX(0); }
+
+  /* En móvil el sidebar es un drawer: oculto por defecto, se abre con la
+     hamburguesa del Navbar (clase .sidebar-mobile-open) y no depende de
+     :hover, que no existe en pantallas táctiles. */
+  .sidebar {
+    width: 260px;
+    max-width: 82vw;
+    transform: translateX(-100%);
+    box-shadow: none;
+    z-index: 1100;
+  }
+  .sidebar:hover {
+    width: 260px;
+  }
+  .sidebar.sidebar-mobile-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 24px rgba(44, 34, 24, 0.35);
+  }
+  /* Con el drawer abierto sí queremos ver etiquetas y nombre completos,
+     igual que en el estado "hover" de escritorio. */
+  .sidebar.sidebar-mobile-open .logo-name,
+  .sidebar.sidebar-mobile-open .nav-label,
+  .sidebar.sidebar-mobile-open .role-tag,
+  .sidebar.sidebar-mobile-open .user-text,
+  .sidebar.sidebar-mobile-open .logout-btn {
+    opacity: 1;
+    max-width: 200px;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+  .sidebar.sidebar-mobile-open .user-avatar {
+    opacity: 0;
+    width: 0;
+    margin: 0;
+  }
+  .sidebar.sidebar-mobile-open .sidebar-close-btn {
+    display: flex;
+  }
+
+  .sidebar-backdrop.visible {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 10, 0.5);
+    z-index: 1050;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 }

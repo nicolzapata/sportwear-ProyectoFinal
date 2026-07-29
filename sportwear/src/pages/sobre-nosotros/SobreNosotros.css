@@ -99,11 +99,12 @@
 
 .sn-hero-title {
   font-family: 'Playfair Display', serif;
-  font-size: clamp(52px, 8vw, 96px);
+  font-size: clamp(30px, 8vw, 96px);
   font-weight: 700;
-  line-height: 1.0;
+  line-height: 1.05;
   color: #fff;
   margin: 0 0 28px;
+  overflow-wrap: break-word;
 }
 .sn-hero-title em {
   font-style: italic;
@@ -365,6 +366,13 @@
 .sn-cta-btn:hover { background: #d4b898; transform: translateY(-2px); }
 
 /* ── Responsive ── */
+@media (max-width: 768px) {
+  /* El hero mide 100vh pero el navbar fijo (56px en móvil) lo empuja hacia
+     abajo con padding-top, así que "sobra" al fondo y la fila de stats
+     queda cortada bajo el borde de la pantalla. Se descuenta esa altura
+     para que quede completa sin tocar el tamaño en escritorio. */
+  .sn-hero { height: calc(100vh - 64px); }
+}
 @media (max-width: 640px) {
   .sn-hero { padding: 0 24px; }
   .sn-hero-stat-row { gap: 16px; flex-wrap: wrap; padding: 20px 24px; }

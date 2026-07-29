@@ -547,17 +547,24 @@
     gap: 1rem;
   }
 
+  /* Buscador + botón crear comparten la fila. Solo responsive. */
   .catproductos-actions-bar {
-    flex-direction: column;
-    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    row-gap: 10px;
   }
 
   .catproductos-search-wrapper {
-    width: 100%;
+    flex: 1 1 140px;
+    min-width: 120px;
+    width: auto;
   }
 
   .catproductos-btn-primary {
-    width: 100%;
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
     justify-content: center;
   }
 
@@ -589,6 +596,10 @@
 }
 
 @media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .catproductos-btn-primary { font-size: 0; padding: 10px 12px; gap: 0; }
+  .catproductos-btn-primary span { font-size: 13px; }
+
   .catproductos-title {
     font-size: 1.6rem;
   }
