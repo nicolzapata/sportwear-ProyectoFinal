@@ -1,5 +1,5 @@
 // src/components/PublicNavbar.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
@@ -15,6 +15,12 @@ const IconBoxMini = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
     <rect x="3" y="3" width="18" height="18" rx="2"/>
     <path d="m9 9 6 6m0-6-6 6"/>
+  </svg>
+);
+// ── NUEVO: flechita del disparador del menú de categorías ──
+const IconChevronDownSm = () => (
+  <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -35,6 +41,13 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
   const buscadorRef = useRef(null);
   const inputRef = useRef(null);
 
+  // ── NUEVO: menú de categorías tipo "mega menú" — antes cada categoría era
+  // un botón suelto en la barra, que se desbordaba al agregar más. Ahora
+  // vive en un desplegable único, con una imagen de referencia por
+  // categoría (tomada del primer producto que se encuentre de cada una). ──
+  const [menuCategoriasAbierto, setMenuCategoriasAbierto] = useState(false);
+  const categoriasRef = useRef(null);
+
   // Menú móvil: en pantallas angostas, los links + categorías + buscador
   // viven en este panel colapsable en vez de desaparecer con display:none.
   const [menuMovilAbierto, setMenuMovilAbierto] = useState(false);
@@ -43,8 +56,13 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
   useEffect(() => {
     // Se carga una sola vez: el catálogo público no cambia tan seguido como
     // para justificar pedirlo de nuevo en cada tecla — se filtra en el cliente.
+    // ── CORREGIDO: "?publicado=1" solo filtra por el campo `publicado`, pero
+    // un producto puede estar publicado y aun así Inactivo (por ejemplo, se
+    // agotó o el admin lo desactivó manualmente) — ese no debería aparecer ni
+    // en sugerencias de búsqueda ni como imagen de referencia de categoría.
+    // Mismo filtro que ya usa Catalogo.jsx para decidir qué es "visible". ──
     api.get("/productos?publicado=1")
-      .then(({ data }) => setProductos(data || []))
+      .then(({ data }) => setProductos((data || []).filter(p => p.publicado && p.estado === "Activo")))
       .catch(() => setProductos([]));
   }, []);
 
@@ -53,10 +71,39 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
       if (buscadorRef.current && !buscadorRef.current.contains(e.target)) {
         setSugerenciasAbiertas(false);
       }
+      if (categoriasRef.current && !categoriasRef.current.contains(e.target)) {
+        setMenuCategoriasAbierto(false);
+      }
     };
     document.addEventListener("mousedown", cerrar);
     return () => document.removeEventListener("mousedown", cerrar);
   }, []);
+
+  // ── NUEVO: una imagen de referencia por categoría, tomada del primer
+  // producto publicado que se encuentre de esa categoría con foto. ──
+  const imagenPorCategoria = useMemo(() => {
+    const map = {};
+    productos.forEach((p) => {
+      if (p.categoria && !map[p.categoria] && p.imagen_principal) {
+        map[p.categoria] = p.imagen_principal;
+      }
+    });
+    return map;
+  }, [productos]);
+
+  const listaCategorias = (categorias || []).filter((cat) => cat !== "Todos");
+
+  const irACategoria = (cat) => {
+    setFiltroCategoria(cat);
+    setMenuCategoriasAbierto(false);
+    cerrarMenuMovil();
+    // Los filtros de categoría solo tienen efecto en /catalogo — si el
+    // usuario los pulsa desde otra página (p. ej. Sobre nosotros) hay
+    // que navegar ahí, si no parece que el link no hace nada.
+    if (location.pathname !== "/catalogo" && location.pathname !== "/") {
+      navigate("/catalogo");
+    }
+  };
 
   const termino = busqueda.trim().toLowerCase();
   const sugerencias = termino.length >= MIN_CARACTERES
@@ -140,25 +187,44 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
           >
             Inicio
           </Link>
-          {categorias && categorias.filter(cat => cat !== "Todos").map((cat) => (
-            <button
-              key={cat}
-              className={`navbar-link${filtroCategoria === cat ? " active" : ""}`}
-              onClick={() => {
-                setFiltroCategoria(cat);
-                cerrarMenuMovil();
-                // Los filtros de categoría solo tienen efecto en /catalogo — si el
-                // usuario los pulsa desde otra página (p. ej. Sobre nosotros) hay
-                // que navegar ahí, si no parece que el link no hace nada.
-                if (location.pathname !== "/catalogo" && location.pathname !== "/") {
-                  navigate("/catalogo");
-                }
-              }}
-              style={{ background: "none", border: "none", cursor: "pointer" }}
-            >
-              {cat}
-            </button>
-          ))}
+
+          {/* ── NUEVO: menú de categorías tipo mega-menú con imagen de referencia ── */}
+          {listaCategorias.length > 0 && (
+            <div className="navbar-categorias-dropdown" ref={categoriasRef}>
+              <button
+                type="button"
+                className={`navbar-link navbar-categorias-trigger${filtroCategoria !== "Todos" ? " active" : ""}`}
+                onClick={() => setMenuCategoriasAbierto((v) => !v)}
+                aria-expanded={menuCategoriasAbierto}
+              >
+                {filtroCategoria !== "Todos" ? filtroCategoria : "Categorías"}
+                <span className={`navbar-categorias-chevron${menuCategoriasAbierto ? " abierto" : ""}`}>
+                  <IconChevronDownSm />
+                </span>
+              </button>
+
+              {menuCategoriasAbierto && (
+                <div className="navbar-categorias-panel">
+                  {listaCategorias.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      className={`navbar-categoria-item${filtroCategoria === cat ? " activo" : ""}`}
+                      onClick={() => irACategoria(cat)}
+                    >
+                      <span className="navbar-categoria-img">
+                        {imagenPorCategoria[cat]
+                          ? <img src={imagenPorCategoria[cat]} alt={cat} />
+                          : <IconBoxMini />}
+                      </span>
+                      <span className="navbar-categoria-nombre">{cat}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           <NavLink
             to="/sobre-nosotros"
             className={({ isActive }) => `navbar-link${isActive ? " active" : ""}`}
@@ -266,9 +332,7 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
           </Link>
         )}
 
-        {/* ── CORREGIDO: antes exigía "usuario" (sesión) además de "!esAdmin"
-            para mostrar el ícono del carrito — por eso desaparecía sin login.
-            El carrito ahora se ve sin sesión; solo se oculta para admins. ── */}
+        {/* ── El carrito se ve sin sesión; solo se oculta para admins. ── */}
         {!esAdmin && (
           <>
             <div className="navbar-divider" />

@@ -8,8 +8,7 @@ const getVentas = async ({ page, limit, q } = {}) => {
   let busquedaSql = '';
   if (q) {
     params.push(`%${q}%`);
-    busquedaSql = `AND (c.nombre ILIKE $${params.length} OR CAST(v.id_venta AS TEXT) = $${params.length + 1})`;
-    params.push(q);
+    busquedaSql = `AND c.nombre ILIKE $${params.length}`;
   }
 
   const paginar = page !== undefined;
@@ -23,24 +22,20 @@ const getVentas = async ({ page, limit, q } = {}) => {
   }
 
   const cab = await pool.query(`
-    SELECT v.*, c.nombre AS cliente, c.email AS cliente_email,
-           COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) AS total_pagado
+    SELECT v.*, c.nombre AS cliente, c.email AS cliente_email
            ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "Ventas" v
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
-    LEFT JOIN "PagosAbonos" pa ON v.id_venta=pa.id_venta
     WHERE v.estado != 'Abandonado' ${busquedaSql}
-    GROUP BY v.id_venta, c.nombre, c.email
     ORDER BY v.id_venta DESC
     ${limitOffsetSql}
   `, params);
 
   const total = cab.rows[0] ? Number(cab.rows[0].total_count) : 0;
-  const filas = cab.rows.map(({ total_count, ...r }) => ({ ...r, total_pagado: parseFloat(r.total_pagado) || 0 }));
+  const filas = cab.rows.map(({ total_count, ...r }) => r);
 
   const ids = filas.map(v => v.id_venta);
   let detalles = [];
-  let abonos = [];
   if (ids.length) {
     const det = await pool.query(`
       SELECT dv.*, p.nombre AS producto, pv.talla, pv.stock
@@ -50,17 +45,8 @@ const getVentas = async ({ page, limit, q } = {}) => {
       WHERE dv.id_venta=ANY($1::int[])
     `, [ids]);
     detalles = det.rows;
-
-    const abonosRes = await pool.query(`
-      SELECT * FROM "PagosAbonos" WHERE id_venta=ANY($1::int[]) ORDER BY num_cuota ASC
-    `, [ids]);
-    abonos = abonosRes.rows;
   }
-  const data = filas.map(v => ({
-    ...v,
-    items: detalles.filter(d => d.id_venta === v.id_venta),
-    abonos: abonos.filter(a => a.id_venta === v.id_venta),
-  }));
+  const data = filas.map(v => ({ ...v, items: detalles.filter(d => d.id_venta === v.id_venta) }));
 
   if (!paginar) return data;
   return { data, total };
@@ -388,7 +374,7 @@ const notificarPedidoRecibido = async (id_venta, metodo_pago) => {
   }
 };
 
-const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entrega, metodo_pago, tipo_pago, num_cuotas, items }) => {
+const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entrega, id_barrio, metodo_pago, tipo_pago, num_cuotas, items }) => {
   if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
   if (!id_cliente) throw { status: 400, message: 'Cliente no identificado' };
 
@@ -408,16 +394,21 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
   try {
     await client.query('BEGIN');
 
+    // ── NUEVO (Carrito/Finalizar compra): ciudad y barrio ya no se piden en
+    // el registro — se preguntan aquí, al finalizar la compra. Ciudad no se
+    // guarda como columna (los domicilios son únicamente en Medellín); barrio
+    // sí, como referencia real a "Barrios" (igual que en Clientes), no texto
+    // libre. ──
     const venta = await client.query(`
       INSERT INTO "Ventas"
         (id_cliente, subtotal, descuento, impuesto, total, estado, fecha,
-         direccion_entrega, metodo_pago, tipo_pago, num_cuotas, stock_descontado)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+         direccion_entrega, id_barrio, metodo_pago, tipo_pago, num_cuotas, stock_descontado)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
       RETURNING *
     `, [
       id_cliente, total, 0, 0, total,
       estado || 'Confirmado', fecha || new Date(),
-      direccion_entrega || null, metodo_pago || null,
+      direccion_entrega || null, id_barrio || null, metodo_pago || null,
       tipo_pago || 'completo', num_cuotas || null,
       esContraentrega,
     ]);

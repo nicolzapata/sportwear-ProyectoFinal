@@ -15,6 +15,13 @@ const fmt = (n) =>
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DIAS  = ['D','L','M','X','J','V','S'];
 
+// ── Etiquetas más descriptivas para los métodos de pago conocidos — si el
+// admin agrega uno nuevo que no esté aquí, se usa su nombre tal cual. ──
+const ETIQUETAS_METODO = {
+  Efectivo: "Efectivo (contra entrega)",
+  Transferencia: "Transferencia bancaria",
+};
+
 // ── Mini calendario por cuota ─────────────────────────────────────────────
 function MiniCalendario({ fecha, cuota, monto }) {
   const anio      = fecha.getFullYear();
@@ -85,7 +92,13 @@ export default function Checkout() {
     const s = sessionStorage.getItem("direccion");
     return s ?? "";
   });
-  const [metodo,        setMetodo]        = useState("Transferencia");
+  // ── NUEVO (Carrito/Finalizar compra): Ciudad y Barrio ya no se piden en el
+  // registro — se preguntan aquí. Ciudad es fija (solo hacemos domicilios en
+  // Medellín, se avisa en el formulario); Barrio sí se elige de una lista real. ──
+  const [idBarrio,      setIdBarrio]      = useState("");
+  const [barrios,       setBarrios]       = useState([]);
+  const [cargandoBarrios, setCargandoBarrios] = useState(true);
+  const [metodo,        setMetodo]        = useState("");
   const [enviando,      setEnviando]      = useState(false);
   const [exito,         setExito]         = useState(false);
   const [error,         setError]         = useState("");
@@ -93,6 +106,10 @@ export default function Checkout() {
   // sugerencias de otras tallas/colores del mismo producto que sí alcanzan. ──
   const [errorStock,    setErrorStock]    = useState(null);
   const [permisoCuotas, setPermisoCuotas] = useState(true);
+  // ── NUEVO: métodos de pago habilitados por el admin — si no está activo
+  // aquí, no debe poder elegirse en el checkout. ──
+  const [metodosPago,   setMetodosPago]   = useState([]);
+  const [cargandoMetodos, setCargandoMetodos] = useState(true);
   const [tipoPago,      setTipoPago]      = useState(() => {
     const s = sessionStorage.getItem("tipoPago");
     return s && s !== "cuotas" ? s : "completo";
@@ -117,6 +134,36 @@ export default function Checkout() {
       .catch(() => {});
     return () => { cancelado = true; };
   }, [usuario]);
+
+  // ── NUEVO: carga la lista de barrios (para el dropdown de la dirección de
+  // entrega). Público, se puede pedir siempre. ──
+  useEffect(() => {
+    let cancelado = false;
+    api.get("/barrios")
+      .then(({ data }) => { if (!cancelado) setBarrios(data || []); })
+      .catch(() => setBarrios([]))
+      .finally(() => { if (!cancelado) setCargandoBarrios(false); });
+    return () => { cancelado = true; };
+  }, []);
+
+  // ── NUEVO: carga los métodos de pago activos y preselecciona el primero.
+  // Público (no exige sesión), así que se puede pedir siempre, sin depender
+  // de "usuario" como el efecto de arriba. ──
+  useEffect(() => {
+    let cancelado = false;
+    api.get("/metodos-pago?activos=1")
+      .then(({ data }) => {
+        if (cancelado) return;
+        setMetodosPago(data || []);
+        setMetodo(prev => {
+          if (prev && (data || []).some(m => m.nombre === prev)) return prev;
+          return data?.[0]?.nombre ?? "";
+        });
+      })
+      .catch(() => setMetodosPago([]))
+      .finally(() => { if (!cancelado) setCargandoMetodos(false); });
+    return () => { cancelado = true; };
+  }, []);
 
   const tipoPagoActivo = (!permisoCuotas && tipoPago === "cuotas") ? "completo" : tipoPago;
 
@@ -170,6 +217,7 @@ export default function Checkout() {
   const validarFormulario = () => {
     const e = {};
     if (!direccion.trim()) e.direccion = "La dirección es obligatoria para continuar.";
+    if (!idBarrio)         e.barrio    = "Selecciona el barrio para continuar.";
     if (!metodo.trim())    e.metodo    = "Selecciona un método de pago antes de continuar.";
     setErroresPaso(e);
     return Object.keys(e).length === 0;
@@ -217,6 +265,7 @@ export default function Checkout() {
         estado:            "Confirmado",
         fecha:             hoy,
         direccion_entrega: direccion,
+        id_barrio:         idBarrio ? Number(idBarrio) : null,
         metodo_pago:       metodo,
         tipo_pago:         tipoPagoFinal,
         num_cuotas:        tipoPagoFinal === "cuotas" ? numCuotas : null,
@@ -335,19 +384,56 @@ export default function Checkout() {
             />
             {erroresPaso.direccion && <div className="checkout-error-message">{erroresPaso.direccion}</div>}
           </div>
+
+          {/* ── NUEVO: Ciudad fija + Barrio (antes vivían en el registro) ── */}
+          <div className="checkout-campo">
+            <label className="checkout-label">Ciudad</label>
+            <div className="checkout-valor">Medellín</div>
+            <p className="checkout-aviso-domicilios">Por ahora solo hacemos domicilios en Medellín.</p>
+          </div>
+          <div className="checkout-campo">
+            <label className="checkout-label">Barrio</label>
+            {cargandoBarrios ? (
+              <div className="checkout-valor">Cargando barrios...</div>
+            ) : (
+              <select
+                className={`form-control${erroresPaso.barrio ? " input-error" : ""}`}
+                value={idBarrio}
+                onChange={(e) => {
+                  setIdBarrio(e.target.value);
+                  if (erroresPaso.barrio) setErroresPaso((prev) => ({ ...prev, barrio: "" }));
+                }}
+              >
+                <option value="">Selecciona tu barrio...</option>
+                {barrios.map((b) => (
+                  <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>
+                ))}
+              </select>
+            )}
+            {erroresPaso.barrio && <div className="checkout-error-message">{erroresPaso.barrio}</div>}
+          </div>
           <div className="checkout-campo">
             <label className="checkout-label">Método de pago</label>
-            <select
-              className={`form-control${erroresPaso.metodo ? " input-error" : ""}`}
-              value={metodo}
-              onChange={(e) => {
-                setMetodo(e.target.value);
-                if (erroresPaso.metodo) setErroresPaso((prev) => ({ ...prev, metodo: "" }));
-              }}
-            >
-              <option value="Efectivo">Efectivo (contra entrega)</option>
-              <option value="Transferencia">Transferencia bancaria</option>
-            </select>
+            {cargandoMetodos ? (
+              <div className="checkout-valor">Cargando métodos de pago...</div>
+            ) : metodosPago.length === 0 ? (
+              <p className="checkout-error-message">No hay métodos de pago habilitados en este momento. Contáctanos para completar tu pedido.</p>
+            ) : (
+              <select
+                className={`form-control${erroresPaso.metodo ? " input-error" : ""}`}
+                value={metodo}
+                onChange={(e) => {
+                  setMetodo(e.target.value);
+                  if (erroresPaso.metodo) setErroresPaso((prev) => ({ ...prev, metodo: "" }));
+                }}
+              >
+                {metodosPago.map((m) => (
+                  <option key={m.id_metodo} value={m.nombre}>
+                    {ETIQUETAS_METODO[m.nombre] || m.nombre}
+                  </option>
+                ))}
+              </select>
+            )}
             {erroresPaso.metodo && <div className="checkout-error-message">{erroresPaso.metodo}</div>}
           </div>
 
@@ -413,7 +499,7 @@ export default function Checkout() {
             className="checkout-btn-primary"
             style={{ width: "100%", marginTop: 16 }}
             onClick={handleConfirmar}
-            disabled={enviando}
+            disabled={enviando || metodosPago.length === 0}
           >
             {enviando ? "Procesando..." : "Confirmar pedido"}
           </button>

@@ -154,4 +154,49 @@ const getComprasMensuales = async () => {
   return { labels, current, previous };
 };
 
-module.exports = { getResumen, getVentasMensuales, getComprasMensuales };
+// ── NUEVO: reporte de ventas filtrado por rango de fechas ──────────────────
+// Separado del resumen general (que siempre muestra "hoy"/"todo el tiempo"):
+// este reporte SOLO devuelve lo que cae dentro de [desde, hasta], con sus
+// propios totales calculados sobre ese rango exclusivamente — no mezcla datos
+// de fuera del rango consultado.
+const getReporteVentas = async ({ desde, hasta }) => {
+  if (!desde || !hasta) {
+    throw { status: 400, message: 'Debes indicar una fecha "desde" y una fecha "hasta".' };
+  }
+  if (new Date(desde) > new Date(hasta)) {
+    throw { status: 400, message: 'La fecha "desde" no puede ser posterior a la fecha "hasta".' };
+  }
+
+  const ventasResult = await pool.query(`
+    SELECT v.id_venta, c.nombre AS cliente, v.total, v.estado, v.fecha, v.metodo_pago
+    FROM "Ventas" v
+    JOIN "Clientes" c ON v.id_cliente = c.id_cliente
+    WHERE v.fecha::date BETWEEN $1 AND $2
+      AND v.estado != 'Abandonado'
+    ORDER BY v.fecha DESC, v.id_venta DESC
+  `, [desde, hasta]);
+
+  const ventas = ventasResult.rows;
+
+  // ── Cálculos sobre el rango consultado (y solo sobre él) ──
+  const totalVentas    = ventas.length;
+  const ingresosTotales = ventas.reduce((acc, v) => acc + Number(v.total || 0), 0);
+  const ingresosPagados = ventas
+    .filter(v => v.estado === 'Pagado')
+    .reduce((acc, v) => acc + Number(v.total || 0), 0);
+  const ticketPromedio = totalVentas > 0 ? ingresosTotales / totalVentas : 0;
+
+  return {
+    desde,
+    hasta,
+    totales: {
+      total_ventas:      totalVentas,
+      ingresos_totales:  ingresosTotales,
+      ingresos_pagados:  ingresosPagados,
+      ticket_promedio:   ticketPromedio,
+    },
+    ventas,
+  };
+};
+
+module.exports = { getResumen, getVentasMensuales, getComprasMensuales, getReporteVentas };

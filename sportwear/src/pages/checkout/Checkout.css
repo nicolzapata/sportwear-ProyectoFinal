@@ -155,6 +155,15 @@
   font-weight: 500;
 }
 
+/* ── NUEVO: aviso corto bajo un campo (p. ej. "solo domicilios en Medellín") ── */
+.checkout-aviso-domicilios {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 4px;
+}
+
 .checkout-divider {
   height: 1px;
   background: var(--border);

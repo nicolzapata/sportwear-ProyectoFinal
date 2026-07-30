@@ -163,6 +163,15 @@ function DonutChart({ pagado, pendiente, cancelado }) {
   );
 }
 
+const hoyISO = () => new Date().toISOString().slice(0, 10);
+const getBadgeClass = (estado) => {
+  switch (estado) {
+    case "Pagado":    return "exito";
+    case "Pendiente": return "pendiente";
+    default:          return "error";
+  }
+};
+
 export default function Dashboard() {
   const { usuario } = useAuth();
 
@@ -180,6 +189,33 @@ export default function Dashboard() {
   const [productosBajoStock, setProductosBajoStock] = useState([]);
   const [cargando,        setCargando]        = useState(true);
   const [errorCarga,      setErrorCarga]       = useState("");
+
+  // ── NUEVO: reporte de ventas por rango de fechas ──────────────────────────
+  const [reporteDesde,   setReporteDesde]   = useState("");
+  const [reporteHasta,   setReporteHasta]   = useState(hoyISO());
+  const [reporte,        setReporte]        = useState(null);
+  const [cargandoReporte, setCargandoReporte] = useState(false);
+  const [errorReporte,   setErrorReporte]   = useState("");
+
+  const generarReporte = async () => {
+    if (!reporteDesde || !reporteHasta) {
+      setErrorReporte("Selecciona ambas fechas para consultar.");
+      return;
+    }
+    setCargandoReporte(true);
+    setErrorReporte("");
+    try {
+      const { data } = await api.get("/dashboard/reporte", {
+        params: { desde: reporteDesde, hasta: reporteHasta },
+      });
+      setReporte(data);
+    } catch (err) {
+      setErrorReporte(err.response?.data?.message || "No se pudo generar el reporte.");
+      setReporte(null);
+    } finally {
+      setCargandoReporte(false);
+    }
+  };
 
   // ── NUEVO: período seleccionado por gráfico — el botón "Mensual" ya alterna de verdad ──
   const [periodoVentas, setPeriodoVentas]   = useState("actual");   // actual | anterior
@@ -224,14 +260,6 @@ export default function Dashboard() {
   // Early return DESPUÉS de todos los hooks
   if (usuario?.rol === 'Cliente') return <MiCuenta />;
 
-  const getBadgeClass = (estado) => {
-    switch (estado) {
-      case "Pagado":    return "exito";
-      case "Pendiente": return "pendiente";
-      default:          return "error";
-    }
-  };
-
   const ventasData   = ventasMensuales  || { labels: [], current: [], previous: [] };
   const comprasData  = comprasMensuales || { labels: [], current: [], previous: [] };
   const pagado    = ventasRecientes.filter((v) => v.estado === "Pagado").length;
@@ -262,6 +290,112 @@ export default function Dashboard() {
           </p>
         </div>
         <span className="dashboard-date">{today}</span>
+      </div>
+
+      {/* ── NUEVO: Reporte de ventas por rango de fechas ── */}
+      <div className="chart-card dashboard-reporte-card">
+        <div className="chart-header">
+          <div>
+            <h3 className="chart-title">Reporte por fechas</h3>
+            <p className="chart-subtitle">Consulta las ventas de un rango específico y exporta el resultado</p>
+          </div>
+        </div>
+
+        <div className="reporte-filtros">
+          <div className="reporte-filtro-campo">
+            <label>Desde</label>
+            <input
+              type="date"
+              className="reporte-input"
+              value={reporteDesde}
+              max={reporteHasta || undefined}
+              onChange={(e) => setReporteDesde(e.target.value)}
+            />
+          </div>
+          <div className="reporte-filtro-campo">
+            <label>Hasta</label>
+            <input
+              type="date"
+              className="reporte-input"
+              value={reporteHasta}
+              min={reporteDesde || undefined}
+              onChange={(e) => setReporteHasta(e.target.value)}
+            />
+          </div>
+          <button className="btn-generar-reporte" onClick={generarReporte} disabled={cargandoReporte}>
+            {cargandoReporte ? "Consultando..." : "Generar reporte"}
+          </button>
+        </div>
+
+        {errorReporte && <p className="reporte-error">{errorReporte}</p>}
+
+        {reporte && (
+          <>
+            <div className="reporte-totales">
+              <div className="reporte-total-item">
+                <span>Ventas en el rango</span>
+                <strong>{reporte.totales.total_ventas}</strong>
+              </div>
+              <div className="reporte-total-item">
+                <span>Ingresos totales</span>
+                <strong>{formatCurrency(reporte.totales.ingresos_totales)}</strong>
+              </div>
+              <div className="reporte-total-item">
+                <span>Ingresos ya pagados</span>
+                <strong>{formatCurrency(reporte.totales.ingresos_pagados)}</strong>
+              </div>
+              <div className="reporte-total-item">
+                <span>Ticket promedio</span>
+                <strong>{formatCurrency(reporte.totales.ticket_promedio)}</strong>
+              </div>
+            </div>
+
+            <div className="tbl-container">
+              <table className="tbl">
+                <thead className="tbl-header">
+                  <tr>
+                    <th className="tbl-th">Fecha</th>
+                    <th className="tbl-th">Cliente</th>
+                    <th className="tbl-th">Método</th>
+                    <th className="tbl-th">Total</th>
+                    <th className="tbl-th">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reporte.ventas.length === 0 ? (
+                    <tr><td className="tbl-td" colSpan={5} style={{ textAlign: "center", color: MUTED, fontStyle: "italic" }}>No hay ventas en ese rango de fechas.</td></tr>
+                  ) : reporte.ventas.map((v) => (
+                    <tr key={v.id_venta} className="tbl-row">
+                      <td className="tbl-td">{new Date(v.fecha).toLocaleDateString("es-CO")}</td>
+                      <td className="tbl-td">{v.cliente}</td>
+                      <td className="tbl-td">{v.metodo_pago || "—"}</td>
+                      <td className="tbl-td">{formatCurrency(v.total)}</td>
+                      <td className="tbl-td">
+                        <span className={`tabla-badge ${getBadgeClass(v.estado)}`}>{v.estado}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {reporte.ventas.length > 0 && (
+                <div className="print-button-container">
+                  <ExportButtons
+                    datos={reporte.ventas}
+                    columnas={[
+                      { header: "Fecha", value: (v) => new Date(v.fecha).toLocaleDateString("es-CO") },
+                      { header: "Cliente", key: "cliente" },
+                      { header: "Método de pago", value: (v) => v.metodo_pago || "—" },
+                      { header: "Total", value: (v) => formatCurrency(v.total) },
+                      { header: "Estado", key: "estado" },
+                    ]}
+                    nombreArchivo={`reporte_ventas_${reporte.desde}_a_${reporte.hasta}`}
+                    titulo={`Reporte de ventas — ${reporte.desde} a ${reporte.hasta}`}
+                  />
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="stats-grid">

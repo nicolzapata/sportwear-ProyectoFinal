@@ -58,6 +58,94 @@
   text-transform: none;
 }
 
+/* ── NUEVO: Reporte de ventas por rango de fechas ── */
+.dashboard-reporte-card {
+  margin-bottom: 20px;
+}
+.reporte-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.reporte-filtro-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.reporte-filtro-campo label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--dvna-muted);
+}
+.reporte-input {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--dvna-charcoal);
+  border: 0.5px solid var(--dvna-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: var(--dvna-white);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.reporte-input:focus { border-color: var(--dvna-circle); }
+.btn-generar-reporte {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: var(--dvna-circle);
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn-generar-reporte:hover:not(:disabled) { background: var(--accent, #9a7d66); }
+.btn-generar-reporte:disabled { opacity: 0.5; cursor: not-allowed; }
+.reporte-error {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: #b83232;
+  background: rgba(184,50,50,0.06);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+.reporte-totales {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.reporte-total-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--dvna-pale);
+  border: 0.5px solid var(--dvna-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+.reporte-total-item span {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--dvna-muted);
+  letter-spacing: 0.04em;
+}
+.reporte-total-item strong {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+}
+
 /* ── Stats grid ── */
 .stats-grid {
   display: grid;
@@ -353,8 +441,10 @@
   .charts-grid   { grid-template-columns: 1fr; }
   .charts-grid-2 { grid-template-columns: 1fr; }
   .bottom-stats  { grid-template-columns: 1fr; }
+  .reporte-filtros { align-items: stretch; }
 }
 @media (max-width: 600px) {
   .stats-grid      { grid-template-columns: 1fr; }
   .dashboard-title { font-size: 28px; }
+  .reporte-filtros { flex-direction: column; }
 }
