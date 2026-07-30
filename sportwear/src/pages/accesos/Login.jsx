@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { MENU_ITEMS } from "../../config/permisos";
 import api from "../../services/api";
 import logo from "../../assets/LOGO.png";
 import "./Login.css";
@@ -113,23 +114,12 @@ if (esCliente) {
   if (data.usuario?.rol === "Admin" || modulos.length === 0) {
     navigate("/dashboard");
   } else {
-    // Buscar la ruta del primer módulo asignado
-    const MENU_ITEMS = [
-      { module: "Dashboard",     path: "/dashboard" },
-      { module: "Usuarios",      path: "/usuarios" },
-      { module: "Roles",         path: "/roles" },
-      { module: "Productos",     path: "/productos" },
-      { module: "Colores",       path: "/colores" },
-      { module: "Catálogo",      path: "/catalogo-admin" },
-      { module: "Proveedores",   path: "/proveedores" },
-      { module: "Compras",       path: "/compras" },
-      { module: "PedidosVentas", path: "/pedidos" },
-      { module: "Pagos",         path: "/pagos" },
-    ];
+    // Buscar la ruta del primer módulo asignado (misma fuente que el Sidebar)
     const normalizar = (v) => v?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
-    const primerModulo = MENU_ITEMS.find(item =>
-      modulos.some(m => normalizar(m) === normalizar(item.module))
-    );
+    const primerModulo = MENU_ITEMS.find(item => {
+      const modulosItem = item.modules ? item.modules : [item.module];
+      return modulosItem.some(im => modulos.some(m => normalizar(m) === normalizar(im)));
+    });
     navigate(primerModulo ? primerModulo.path : "/dashboard");
   }
 }

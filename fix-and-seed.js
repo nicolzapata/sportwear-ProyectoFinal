@@ -9,7 +9,8 @@ const OFFICIAL_MODULES = [
   'Catálogo',
   'Proveedores',
   'Compras',
-  'PedidosVentas',
+  'Pedidos',
+  'Ventas',
   'Pagos',
 ];
 

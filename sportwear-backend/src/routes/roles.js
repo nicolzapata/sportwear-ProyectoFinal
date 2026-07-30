@@ -88,7 +88,7 @@ const asignarPermisos = async (client, id_rol, permisos) => {
 };
 
 // ── GET /modulos ──────────────────────────────────────────────────────────────
-router.get('/modulos', verificarToken, soloAdmin, async (req, res) => {
+router.get('/modulos', verificarToken, tieneModulo('Roles'), async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT DISTINCT p.modulo
@@ -109,7 +109,7 @@ router.get('/modulos', verificarToken, soloAdmin, async (req, res) => {
 });
 
 // ── GET /permisos ─────────────────────────────────────────────────────────────
-router.get('/permisos', verificarToken, soloAdmin, async (req, res) => {
+router.get('/permisos', verificarToken, tieneModulo('Roles'), async (req, res) => {
   try {
     const { rows } = await pool.query(
       `SELECT p.id_permiso, p.modulo, p.accion, p.descripcion

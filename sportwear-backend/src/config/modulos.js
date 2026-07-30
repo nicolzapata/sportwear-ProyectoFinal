@@ -12,8 +12,8 @@ const OFFICIAL_MODULES = [
   'Colores',
   'Proveedores',
   'Compras',
-  'PedidosVentas',
   'Pedidos',
+  'Ventas',
   'Pagos',
   'Catalogo',
 ];

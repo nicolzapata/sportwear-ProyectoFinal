@@ -59,7 +59,7 @@ function EstadoDropdownVenta({ venta, abierto, onToggle, onCambiar, cambiando, t
   const esAnulado = estadoActual === 'Anulado';
   const idxActual = ESTADOS_ORDEN_VENTA.indexOf(estadoActual);
   const siguientes = TRANSICIONES_VENTA[estadoActual] || [];
-  const puedeEditar = tienePerm('PedidosVentas.estado') && siguientes.length > 0;
+  const puedeEditar = tienePerm('Ventas.estado') && siguientes.length > 0;
 
   useEffect(() => {
     if (!abierto || !btnRef.current) return;
@@ -487,7 +487,7 @@ export default function PedidosVentas() {
           </div>
         </div>
         <div className="pedidosventas-actions-right">
-          {tienePerm('PedidosVentas.crear') && (
+          {tienePerm('Ventas.crear') && (
             <button className="pedidosventas-btn-primary" onClick={abrirNuevaVenta}>
               <span>+</span> Nueva venta
             </button>
@@ -557,7 +557,7 @@ export default function PedidosVentas() {
                 <td className="tbl-td">
                   <div className="pedidosventas-action-cell">
                     <button className="pedidosventas-action-btn pedidosventas-view-btn" onClick={() => setVerDetalle(v)}><IconEye /></button>
-                    {tienePerm('PedidosVentas.estado') && v.tipo_pago === 'cuotas' && v.estado !== "Anulado" && v.estado !== "Pagado" && (
+                    {tienePerm('Ventas.estado') && v.tipo_pago === 'cuotas' && v.estado !== "Anulado" && v.estado !== "Pagado" && (
                       <button className="pedidosventas-action-btn pedidosventas-pay-btn" onClick={() => setAbonosModal(v)} title="Agregar abono"><IconDollar /></button>
                     )}
                   </div>

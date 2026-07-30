@@ -651,23 +651,25 @@
 .roles-permisos-table tbody tr:last-child { border-bottom: none; }
 .roles-tr-alt { background: var(--dvna-pale, #f7f4f1); }
 .roles-td-modulo {
-  padding: 9px 12px;
+  padding: 9px 16px;
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
   color: var(--dvna-charcoal);
   white-space: nowrap;
   vertical-align: middle;
+  width: 1%;
 }
 .roles-td-acciones {
-  padding: 7px 12px;
+  padding: 7px 20px;
   vertical-align: middle;
+  border-left: 1px solid var(--dvna-border);
 }
 .roles-chips-wrap {
   display: flex;
-  gap: 5px;
+  gap: 6px;
   flex-wrap: wrap;
-  justify-content: flex-start;
+  justify-content: left;
 }
 
 /* Botones modal */
