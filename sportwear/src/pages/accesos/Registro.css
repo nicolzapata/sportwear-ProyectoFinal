@@ -6,14 +6,35 @@
 /* Card más ancha para el registro */
 .registro-card {
   max-width: 500px;
-  padding: 40px 44px;
+  padding: 16px 40px 18px;
 }
 
 /* Scroll vertical en pantallas pequeñas */
 .login-page.registro-page {
   align-items: flex-start;
-  padding: 40px 16px;
+  padding: 10px;
 }
+
+/* ── Versión compacta: el formulario tiene más campos que el de login,
+   así que se recorta el espaciado para que quepa sin scroll en un
+   escritorio estándar (1366×768) ── */
+.registro-card .card-logo { margin-bottom: 6px; }
+.registro-card .brand-logo-ring {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 4px;
+}
+.registro-card .brand-logo-ring img { width: 48px; height: 48px; }
+.registro-card .card-brand-name { font-size: 14px; }
+.registro-card .card-divider { margin: 8px 0; }
+.registro-card .form-header p { margin: 0 0 6px; }
+.registro-card .form-group { margin-bottom: 6px; gap: 4px; }
+.registro-card .form-group input,
+.registro-card .form-group select {
+  padding: 8px 14px;
+}
+.registro-card .submit-btn { margin-top: 4px; padding: 10px; }
+.registro-card .form-footer-mark { margin-top: 6px; }
 
 /* Filas de 2 columnas */
 .registro-row {
@@ -29,11 +50,11 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--dvna-circle);
-  margin: 22px 0 10px;
-  padding-bottom: 6px;
+  margin: 8px 0 4px;
+  padding-bottom: 4px;
   border-bottom: 1px solid rgba(180,151,128,0.25);
 }
-.registro-section-titulo:first-of-type { margin-top: 4px; }
+.registro-section-titulo:first-of-type { margin-top: 0; }
 
 /* Link a login */
 .registro-login-link {
@@ -41,7 +62,7 @@
   font-size: 12px;
   font-weight: 400;
   color: var(--dvna-muted);
-  margin-top: 18px;
+  margin-top: 6px;
   display: flex;
   align-items: center;
   justify-content: center;

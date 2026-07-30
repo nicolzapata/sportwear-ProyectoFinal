@@ -1,0 +1,74 @@
+/* src/pages/notFound/NotFound.css */
+
+.nf-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dvna-pale, #faf7f5);
+  padding: 24px;
+}
+
+.nf-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  max-width: 420px;
+  padding: 48px 40px;
+  background: var(--dvna-white, #fff);
+  border: 1px solid var(--dvna-border, #e3d7cd);
+  border-radius: var(--r-md, 12px);
+  box-shadow: 0 10px 40px rgba(58, 46, 40, 0.08);
+}
+
+.nf-logo {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+.nf-code {
+  font-family: var(--font-display, inherit);
+  font-size: 56px;
+  font-weight: 800;
+  color: var(--brown, #7a6050);
+  line-height: 1;
+}
+
+.nf-title {
+  font-family: var(--font-display, inherit);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--dvna-charcoal, #3a2e28);
+  margin: 4px 0 0;
+}
+
+.nf-text {
+  font-family: var(--font-body, inherit);
+  font-size: 13px;
+  color: var(--dvna-muted, #8a7a70);
+  margin: 0 0 12px;
+}
+
+.nf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body, inherit);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: #fff;
+  background: var(--brown, #7a6050);
+  border-radius: var(--r, 6px);
+  padding: 11px 24px;
+  transition: background 0.2s;
+}
+.nf-btn:hover {
+  background: var(--dvna-circle, #9a8070);
+}
