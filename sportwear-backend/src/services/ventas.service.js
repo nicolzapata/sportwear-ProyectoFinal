@@ -3,6 +3,12 @@ const pool = require('../config/db');
 const { generarComprobanteVentaBuffer } = require('./pdf.service');
 const { enviarCorreo, formatearFecha, filasDatos } = require('./mailer.service');
 
+// ── NUEVO: monto mínimo permitido para el valor de cada cuota — evita
+// ventas a cuotas donde cada cuota termine siendo un valor sin sentido
+// (ej. $1). Validado también en el frontend, pero la regla de plata real
+// vive aquí — nunca se confía solo en lo que mande el cliente. ──
+const MONTO_MINIMO_ABONO = 20000;
+
 const getVentas = async ({ page, limit, q } = {}) => {
   const params = [];
   let busquedaSql = '';
@@ -22,11 +28,14 @@ const getVentas = async ({ page, limit, q } = {}) => {
   }
 
   const cab = await pool.query(`
-    SELECT v.*, c.nombre AS cliente, c.email AS cliente_email
+    SELECT v.*, c.nombre AS cliente, c.email AS cliente_email,
+           COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) AS total_pagado
            ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "Ventas" v
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
+    LEFT JOIN "PagosAbonos" pa ON v.id_venta=pa.id_venta
     WHERE v.estado != 'Abandonado' ${busquedaSql}
+    GROUP BY v.id_venta, c.nombre, c.email
     ORDER BY v.id_venta DESC
     ${limitOffsetSql}
   `, params);
@@ -175,9 +184,13 @@ const crearVenta = async (datos) => {
     throw { status: 400, message: 'Debes indicar el motivo del descuento.' };
   }
 
-  // ── NUEVO: validar cupo de crédito solo cuando la venta es a cuotas ──
+  // ── NUEVO: validar cupo de crédito y monto mínimo por cuota solo cuando
+  // la venta es a cuotas ──
   if (tipo_pago === 'cuotas') {
     await validarCupoCredito(id_cliente, total);
+    if (!num_cuotas || Math.ceil(total / num_cuotas) < MONTO_MINIMO_ABONO) {
+      throw { status: 400, message: `El valor de cada cuota debe ser de al menos ${MONTO_MINIMO_ABONO.toLocaleString('es-CO')}.` };
+    }
   }
 
   const client = await pool.connect();
@@ -325,6 +338,27 @@ const cambiarEstado = async (id, estado) => {
       await pool.query(`UPDATE "Ventas" SET stock_descontado=true WHERE id_venta=$1`, [id]);
     }
 
+    // ── NUEVO: en contraentrega, el pago se cobra EN el momento de la
+    // entrega — son el mismo evento físico. Si esta venta es contraentrega,
+    // marcarla como pagada avanza el pedido a "Entregado" solo. ──
+    if (venta.metodo_pago === 'Efectivo') {
+      const pedidoRes = await pool.query(
+        `SELECT id_pedido, estado_pedido FROM "Pedidos" WHERE id_venta=$1`,
+        [id]
+      );
+      const pedido = pedidoRes.rows[0];
+      if (pedido && !['Entregado', 'Cancelado'].includes(pedido.estado_pedido)) {
+        await pool.query(
+          `UPDATE "Pedidos" SET estado_pedido='Entregado', fecha_actualizacion=now() WHERE id_pedido=$1`,
+          [pedido.id_pedido]
+        );
+        await pool.query(
+          `INSERT INTO "PedidosHistorial" (id_pedido, estado, fecha) VALUES ($1,'Entregado',now())`,
+          [pedido.id_pedido]
+        );
+      }
+    }
+
     // ── NUEVO: si la venta pasó a estar pagada, enviar el comprobante por correo ──
     notificarComprobantePago(id);
   }
@@ -378,9 +412,13 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
   if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
   if (!id_cliente) throw { status: 400, message: 'Cliente no identificado' };
 
-  // ── NUEVO: validar cupo de crédito solo cuando el pedido es a cuotas ──
+  // ── NUEVO: validar cupo de crédito y monto mínimo por cuota solo cuando
+  // el pedido es a cuotas ──
   if (tipo_pago === 'cuotas') {
     await validarCupoCredito(id_cliente, total);
+    if (!num_cuotas || Math.ceil(total / num_cuotas) < MONTO_MINIMO_ABONO) {
+      throw { status: 400, message: `El valor de cada cuota debe ser de al menos ${MONTO_MINIMO_ABONO.toLocaleString('es-CO')}.` };
+    }
   }
 
   // ── NUEVO (Inventario): el stock solo se descuenta de inmediato cuando el
@@ -569,13 +607,17 @@ const crearCarritoAbandonado = async ({ total, items, id_cliente }) => {
 };
 
 const getMisPedidos = async (id_cliente) => {
+  // ── NUEVO: join con "Pedidos" para traer el estado de envío junto con cada
+  // venta — antes esta consulta no sabía nada de Pedidos, así que Mi Cuenta
+  // no tenía cómo mostrar en qué va la entrega. ──
   const cab = await pool.query(`
-    SELECT v.*,
+    SELECT v.*, ped.estado_pedido AS estado_envio,
       COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) AS total_pagado
     FROM "Ventas" v
     LEFT JOIN "PagosAbonos" pa ON v.id_venta=pa.id_venta AND pa.estado='Confirmado'
+    LEFT JOIN "Pedidos" ped ON v.id_venta=ped.id_venta
     WHERE v.id_cliente=$1 AND v.estado != 'Abandonado'
-    GROUP BY v.id_venta
+    GROUP BY v.id_venta, ped.estado_pedido
     ORDER BY v.fecha DESC
   `, [id_cliente]);
 

@@ -36,9 +36,10 @@
 }
 .pedidos-action-btn:hover { border-color: var(--dvna-mid, #c8ab96); background: var(--dvna-pale, #f4f4f4); }
 
-/* ── Ancho fijo de la columna "Estado" (5ª columna) para que no empuje
-     el resto de la tabla cuando el texto del estado cambia de largo ── */
-.tbl th:nth-child(5), .tbl td:nth-child(5) {
+/* ── Ancho fijo de la columna "Envío" (7ª columna ahora, tras sumar
+     "Documento" y "Pago") para que no empuje el resto de la tabla
+     cuando el texto del estado cambia de largo ── */
+.tbl th:nth-child(7), .tbl td:nth-child(7) {
   width: 170px;
   min-width: 170px;
 }

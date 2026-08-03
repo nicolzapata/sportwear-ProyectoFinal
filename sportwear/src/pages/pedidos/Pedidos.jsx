@@ -34,6 +34,19 @@ const IconCheckSm = () => (
   </svg>
 );
 
+// ── NUEVO: si el pago de la venta asociada ya fue realizado o no — dato que
+// el backend ya trae (v.estado AS estado_venta en pedidos.service.js), solo
+// faltaba mostrarlo aquí. ──
+const getPagoBadge = (estadoVenta) => {
+  switch (estadoVenta) {
+    case "Pagado":     return "pedidos-badge-active";
+    case "Anulado":    return "pedidos-badge-inactive";
+    case "Confirmado": return "pedidos-badge-info";
+    default:            return "pedidos-badge-pending"; // Pendiente
+  }
+};
+const getPagoTexto = (estadoVenta) => estadoVenta || "—";
+
 // ── Dropdown de estado (portal, para no quedar recortado por el overflow de la tabla) ──
 function EstadoDropdown({ pedido, abierto, onToggle, onCambiar, cambiando, tienePerm }) {
   const btnRef = useRef(null);
@@ -149,6 +162,13 @@ export default function Pedidos() {
   const [verDetalle, setVerDetalle] = useState(null);
   const [cambiando,  setCambiando]  = useState(false);
   const [filaAbierta, setFilaAbierta] = useState(null);
+  // ── NUEVO: antes, cada búsqueda volvía a poner cargando=true, y como el
+  // componente hacía "if (cargando) return <Loader/>", TODA la tabla (con
+  // el buscador adentro) se desmontaba y remontaba en cada tecla — por eso
+  // el foco del input se perdía. Ahora el loader de pantalla completa solo
+  // se muestra en la carga inicial; las búsquedas posteriores no reemplazan
+  // el árbol entero, así que el input nunca se desmonta. ──
+  const primerCargaHecha = useRef(false);
 
   const cargar = async (pag = pagina, q = busquedaDebounced) => {
     setCargando(true);
@@ -161,6 +181,7 @@ export default function Pedidos() {
       setErrorMsg(err.response?.data?.message || "Error al cargar los pedidos");
     } finally {
       setCargando(false);
+      primerCargaHecha.current = true;
     }
   };
 
@@ -213,7 +234,7 @@ export default function Pedidos() {
     }
   };
 
-  if (cargando) return <Loader text="Cargando pedidos..." />;
+  if (cargando && !primerCargaHecha.current) return <Loader text="Cargando pedidos..." />;
 
   if (errorMsg) return (
     <div className="pedidos-container">
@@ -230,7 +251,7 @@ export default function Pedidos() {
             <input
               type="text"
               className="pedidos-search-input"
-              placeholder="Buscar por cliente..."
+              placeholder="Buscar por cliente o documento..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
@@ -250,15 +271,17 @@ export default function Pedidos() {
         {`${total} pedido${total !== 1 ? 's' : ''} encontrado${total !== 1 ? 's' : ''}`}
       </div>
 
-      <div className="tbl-container pedidos-tbl-container">
+      <div className="tbl-container pedidos-tbl-container" style={{ opacity: cargando ? 0.6 : 1, transition: "opacity 0.15s" }}>
         <table className="tbl">
           <thead className="tbl-header">
             <tr>
               <th className="tbl-th">Cliente</th>
+              <th className="tbl-th">Documento</th>
               <th className="tbl-th">Productos</th>
               <th className="tbl-th">Dirección</th>
               <th className="tbl-th">Actualizado</th>
-              <th className="tbl-th">Estado</th>
+              <th className="tbl-th">Pago</th>
+              <th className="tbl-th">Envío</th>
               <th className="tbl-th">Acciones</th>
             </tr>
           </thead>
@@ -266,11 +289,15 @@ export default function Pedidos() {
             {datos.map((p) => (
               <tr key={p.id_pedido} className="tbl-row">
                 <td className="tbl-td">{p.cliente}</td>
+                <td className="tbl-td">{p.cliente_documento || "—"}</td>
                 <td className="tbl-td pedidos-producto-cell">
                   {p.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
                 </td>
                 <td className="tbl-td">{p.direccion_entrega || "—"}</td>
                 <td className="tbl-td">{p.fecha_actualizacion?.toString().split("T")[0]}</td>
+                <td className="tbl-td">
+                  <span className={`pedidos-badge ${getPagoBadge(p.estado_venta)}`}>{getPagoTexto(p.estado_venta)}</span>
+                </td>
                 <td className="tbl-td">
                   <EstadoDropdown
                     pedido={p}
@@ -291,7 +318,7 @@ export default function Pedidos() {
               </tr>
             ))}
             {datos.length === 0 && (
-              <tr><td colSpan={6} style={{ padding: 0 }}>
+              <tr><td colSpan={8} style={{ padding: 0 }}>
                 <div className="pedidos-empty-state"><IconBox /><p>No hay pedidos registrados.</p></div>
               </td></tr>
             )}
@@ -327,9 +354,12 @@ export default function Pedidos() {
                 <h3 className="pedidos-factura-titulo">Información</h3>
                 <DetalleGrid>
                   <DetalleItem label="Cliente" value={verDetalle.cliente} />
+                  <DetalleItem label="Documento" value={verDetalle.cliente_documento} />
                   <DetalleItem label="Dirección" value={verDetalle.direccion_entrega} />
                   <DetalleItem label="Venta" value={`V-${String(verDetalle.id_venta).padStart(3, "0")}`} />
-                  <DetalleItem label="Estado" value={<span className={`pedidos-badge ${getEstadoBadge(verDetalle.estado_pedido)}`}>{verDetalle.estado_pedido}</span>} />
+                  <DetalleItem label="Método de pago" value={verDetalle.metodo_pago || "—"} />
+                  <DetalleItem label="Pago" value={<span className={`pedidos-badge ${getPagoBadge(verDetalle.estado_venta)}`}>{getPagoTexto(verDetalle.estado_venta)}</span>} />
+                  <DetalleItem label="Estado de envío" value={<span className={`pedidos-badge ${getEstadoBadge(verDetalle.estado_pedido)}`}>{verDetalle.estado_pedido}</span>} />
                 </DetalleGrid>
               </div>
 

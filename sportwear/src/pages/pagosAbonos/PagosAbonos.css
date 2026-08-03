@@ -247,6 +247,74 @@
   padding-left: 0.5rem;
 }
 
+/* ── NUEVO: desplegable de estado — mismo patrón que Pedidos/Compras.
+   Confirmar/Anular ya no viven como botones sueltos en Acciones. ── */
+.pagosabonos-estado-dropdown { position: relative; display: inline-block; }
+
+.pagosabonos-estado-trigger {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;
+  border: 1px solid var(--dvna-border); background: white; border-radius: 20px;
+  padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 500; cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 130px;
+  white-space: nowrap;
+}
+.pagosabonos-estado-trigger:disabled { cursor: default; opacity: 0.85; }
+.pagosabonos-estado-trigger:not(:disabled):hover { border-color: var(--dvna-charcoal); background: #fafafa; }
+
+.pagosabonos-estado-trigger.pagosabonos-estado-exito     { border-color: #bfe0c4; color: var(--success); background: #f0f9f1; }
+.pagosabonos-estado-trigger.pagosabonos-estado-pendiente { border-color: #ffd7b5; color: #b96422; background: #fff6ee; }
+.pagosabonos-estado-trigger.pagosabonos-estado-error     { border-color: #e0b3b3; color: #b83232; background: #fbeaea; }
+
+.pagosabonos-estado-panel {
+  z-index: 999;
+  background: white; border: 1px solid var(--dvna-border); border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+  padding: 0.4rem;
+  display: flex; flex-direction: column; gap: 2px;
+  animation: pagosabonos-panel-in 0.12s ease;
+}
+@keyframes pagosabonos-panel-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pagosabonos-estado-item {
+  display: flex; align-items: center; gap: 10px;
+  border: none; background: none; text-align: left;
+  padding: 0.55rem 0.6rem; border-radius: 8px; font-size: 0.82rem; color: var(--dvna-charcoal);
+  cursor: pointer; width: 100%;
+}
+.pagosabonos-estado-item:hover { background: var(--dvna-pale); }
+.pagosabonos-estado-item:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.pagosabonos-estado-dot {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid #ddd; color: white;
+}
+.pagosabonos-estado-item-confirmar .pagosabonos-estado-dot {
+  background: var(--success); border-color: var(--success);
+}
+
+.pagosabonos-estado-divider { height: 1px; background: #eee; margin: 4px 2px; }
+
+.pagosabonos-estado-item-cancelar { color: var(--danger); }
+.pagosabonos-estado-item-cancelar:hover { background: #fbeaea; }
+.pagosabonos-estado-item-cancelar .pagosabonos-estado-dot { border-color: #e0b3b3; }
+
+.pagosabonos-estado-final-msg { padding: 0.6rem; font-size: 0.8rem; color: #757575; text-align: center; }
+
+/* Badge estático (dentro del modal de detalle, sin funcionalidad de clic) */
+.pagosabonos-estado-badge-static {
+  display: inline-flex; align-items: center;
+  border-radius: 20px; padding: 0.3rem 0.8rem;
+  font-size: 0.8rem; font-weight: 500; border: 1px solid transparent;
+}
+.pagosabonos-estado-badge-static.pagosabonos-estado-exito     { border-color: #bfe0c4; color: var(--success); background: #f0f9f1; }
+.pagosabonos-estado-badge-static.pagosabonos-estado-pendiente { border-color: #ffd7b5; color: #b96422; background: #fff6ee; }
+.pagosabonos-estado-badge-static.pagosabonos-estado-error     { border-color: #e0b3b3; color: #b83232; background: #fbeaea; }
+
 /* Modal */
 .pagosabonos-modal-overlay {
   position: fixed;

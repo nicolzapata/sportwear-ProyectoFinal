@@ -3,6 +3,10 @@ const pool = require('../config/db');
 const { enviarCorreo, formatearFecha, filasDatos } = require('./mailer.service');
 const { notificarComprobantePago } = require('./ventas.service');
 
+// ── NUEVO: mismo mínimo que en ventas.service.js — un abono no debería
+// poder registrarse por $1 o cualquier valor sin sentido. ──
+const MONTO_MINIMO_ABONO = 20000;
+
 const getPagos = async ({ page, limit, q } = {}) => {
   const params = [];
   let busquedaSql = '';
@@ -136,7 +140,40 @@ const evaluarYMarcarPagada = async (client, id_venta) => {
       `UPDATE "Ventas" SET estado='Pagado' WHERE id_venta=$1 AND estado != 'Anulado'`,
       [id_venta]
     );
+    // ── NUEVO: si la venta ya quedó cubierta, cualquier otro registro de
+    // PagosAbonos que siga "Pendiente" para esta misma venta ya no
+    // representa nada por cobrar — se cierra automáticamente para que
+    // Pagos y Pedidos nunca se contradigan (uno diciendo "pagado" y el
+    // otro mostrando todavía un pendiente huérfano de la misma venta). ──
+    await client.query(
+      `UPDATE "PagosAbonos" SET estado='Anulado' WHERE id_venta=$1 AND estado='Pendiente'`,
+      [id_venta]
+    );
     await descontarStockSiHaceFalta(client, id_venta);
+
+    // ── NUEVO: en contraentrega, el pago se cobra EN el momento de la
+    // entrega — son el mismo evento físico. Si esta venta es contraentrega,
+    // confirmar el pago completo avanza el pedido a "Entregado" solo, sin
+    // que el admin tenga que repetir el mismo paso a mano en Pedidos. ──
+    const ventaRes = await client.query(`SELECT metodo_pago FROM "Ventas" WHERE id_venta=$1`, [id_venta]);
+    if (ventaRes.rows[0]?.metodo_pago === 'Efectivo') {
+      const pedidoRes = await client.query(
+        `SELECT id_pedido, estado_pedido FROM "Pedidos" WHERE id_venta=$1`,
+        [id_venta]
+      );
+      const pedido = pedidoRes.rows[0];
+      if (pedido && !['Entregado', 'Cancelado'].includes(pedido.estado_pedido)) {
+        await client.query(
+          `UPDATE "Pedidos" SET estado_pedido='Entregado', fecha_actualizacion=now() WHERE id_pedido=$1`,
+          [pedido.id_pedido]
+        );
+        await client.query(
+          `INSERT INTO "PedidosHistorial" (id_pedido, estado, fecha) VALUES ($1,'Entregado',now())`,
+          [pedido.id_pedido]
+        );
+      }
+    }
+
     return 'completo';
   }
   return 'parcial';
@@ -156,6 +193,14 @@ const crearPago = async (datos) => {
   const { saldo } = await getSaldoPendiente(pool, id_venta);
   if (Number(monto) > saldo)
     throw { status: 400, message: `El monto ($${Number(monto).toLocaleString('es-CO')}) supera el saldo pendiente ($${saldo.toLocaleString('es-CO')}).` };
+
+  // ── NUEVO: monto mínimo por abono — salvo que este pago liquide
+  // exactamente lo que queda por pagar (no tendría sentido exigir un mínimo
+  // más alto que el propio saldo restante, ej. últimos $15.000 de una deuda). ──
+  const liquidaSaldoCompleto = Math.abs(Number(monto) - saldo) < 0.01;
+  if (Number(monto) < MONTO_MINIMO_ABONO && !liquidaSaldoCompleto) {
+    throw { status: 400, message: `El monto mínimo para un abono es de $${MONTO_MINIMO_ABONO.toLocaleString('es-CO')} (a menos que sea el pago que liquida el saldo restante).` };
+  }
 
   const client = await pool.connect();
   let tipoNotificacion = null;

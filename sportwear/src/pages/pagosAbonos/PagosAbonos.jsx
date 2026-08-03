@@ -1,5 +1,6 @@
 // src/pages/pagos/PagosAbonos.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import './PagosAbonos.css';
 import api from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
@@ -12,7 +13,122 @@ import ExportButtons from "../../components/ExportButtons";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;
-const HOY_ISO = new Date().toISOString().split("T")[0];
+// ── NUEVO: mismo mínimo que valida el backend — un abono no debería poder
+// registrarse por $1 o cualquier valor sin sentido. ──
+const MONTO_MINIMO_ABONO = 20000;
+
+// ── NUEVO: mismo patrón de desplegable de estado que ya usan Pedidos y
+// Compras — antes, Confirmar/Anular vivían como botones sueltos en
+// "Acciones" mientras el estado era solo texto plano; ahora todo vive junto
+// en el propio badge de Estado, igual que en el resto del admin. ──
+const TRANSICIONES_PAGO = {
+  'Pendiente':  ['Confirmado', 'Anulado'],
+  'Confirmado': [],
+  'Anulado':    [],
+};
+
+const IconChevronDown = () => (
+  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+const IconCheckSm = () => (
+  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+function EstadoDropdownPago({ pago, abierto, onToggle, onCambiar, cambiando, tienePerm }) {
+  const btnRef = useRef(null);
+  const panelRef = useRef(null);
+  const [coords, setCoords] = useState(null);
+
+  const estadoActual = pago.estado;
+  const esFinal = estadoActual === 'Confirmado' || estadoActual === 'Anulado';
+  const siguientes = TRANSICIONES_PAGO[estadoActual] || [];
+  const puedeEditar = tienePerm('Pagos.estado') && siguientes.length > 0;
+
+  useEffect(() => {
+    if (!abierto || !btnRef.current) return;
+    const r = btnRef.current.getBoundingClientRect();
+    setCoords({ top: r.bottom + 6, left: r.left, width: r.width });
+  }, [abierto]);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrar = (e) => {
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        panelRef.current && !panelRef.current.contains(e.target)
+      ) onToggle(null);
+    };
+    const cerrarPorScroll = () => onToggle(null);
+    document.addEventListener('mousedown', cerrar);
+    window.addEventListener('scroll', cerrarPorScroll, true);
+    window.addEventListener('resize', cerrarPorScroll);
+    return () => {
+      document.removeEventListener('mousedown', cerrar);
+      window.removeEventListener('scroll', cerrarPorScroll, true);
+      window.removeEventListener('resize', cerrarPorScroll);
+    };
+  }, [abierto, onToggle]);
+
+  const badgeClase =
+    estadoActual === 'Confirmado' ? 'exito' :
+    estadoActual === 'Anulado'    ? 'error' : 'pendiente';
+
+  return (
+    <div className="pagosabonos-estado-dropdown">
+      <button
+        ref={btnRef}
+        type="button"
+        className={`pagosabonos-estado-trigger pagosabonos-estado-${badgeClase}`}
+        onClick={() => puedeEditar && onToggle(abierto ? null : pago.id_pago)}
+        disabled={!puedeEditar}
+      >
+        {estadoActual}
+        {puedeEditar && <IconChevronDown />}
+      </button>
+
+      {abierto && puedeEditar && coords && createPortal(
+        <div
+          ref={panelRef}
+          className="pagosabonos-estado-panel"
+          style={{ position: 'fixed', top: coords.top, left: coords.left, minWidth: Math.max(coords.width, 190) }}
+        >
+          {esFinal ? (
+            <div className="pagosabonos-estado-final-msg">
+              {estadoActual === 'Confirmado' ? 'Pago confirmado' : 'Pago anulado'}
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="pagosabonos-estado-item pagosabonos-estado-item-confirmar clickable"
+                disabled={cambiando}
+                onClick={() => { onCambiar(pago.id_pago, 'Confirmado'); onToggle(null); }}
+              >
+                <span className="pagosabonos-estado-dot"><IconCheckSm /></span>
+                <span className="pagosabonos-estado-item-label">Confirmar pago</span>
+              </button>
+              <div className="pagosabonos-estado-divider" />
+              <button
+                type="button"
+                className="pagosabonos-estado-item pagosabonos-estado-item-cancelar clickable"
+                disabled={cambiando}
+                onClick={() => { onCambiar(pago.id_pago, 'Anulado'); onToggle(null); }}
+              >
+                <span className="pagosabonos-estado-dot" />
+                <span className="pagosabonos-estado-item-label">Anular pago</span>
+              </button>
+            </>
+          )}
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
 
 export default function PagosAbonos() {
   const { usuario } = useAuth();
@@ -32,6 +148,13 @@ export default function PagosAbonos() {
   const [guardando,  setGuardando]  = useState(false);
   const [form, setForm] = useState({ id_venta: "", monto: "", tipo: "Pago completo", metodo: "Efectivo", estado: "Pendiente", fecha: "" });
   const [errores, setErrores] = useState({ id_venta: "", monto: "", fecha: "" });
+  // ── NUEVO: fila con el desplegable de estado abierto (solo una a la vez) ──
+  const [filaAbierta, setFilaAbierta] = useState(null);
+  const [cambiandoEstado, setCambiandoEstado] = useState(false);
+  // ── NUEVO: como en Pedidos, el loader de pantalla completa solo debe
+  // aparecer en la carga inicial — si no, cada búsqueda desmonta la tabla
+  // completa (con el buscador adentro) y el input pierde el foco. ──
+  const primerCargaHecha = useRef(false);
 
   const [metodosPago,    setMetodosPago]    = useState([]);
   const [modalMetodos,   setModalMetodos]   = useState(false);
@@ -76,6 +199,7 @@ export default function PagosAbonos() {
       setErrorMsg("No se pudieron cargar los pagos. Intenta de nuevo.");
     } finally {
       setCargando(false);
+      primerCargaHecha.current = true;
     }
   };
 
@@ -92,6 +216,19 @@ export default function PagosAbonos() {
 
   const handleVentaChange = (id_venta) => {
     setForm(f => ({ ...f, id_venta, tipo: "Pago completo" }));
+    // ── NUEVO: ahora que /ventas sí trae total_pagado real, se puede avisar
+    // de una vez si la venta elegida ya está completamente pagada — antes
+    // esto no se detectaba nunca (total_pagado llegaba undefined = 0
+    // siempre), lo que dejaba registrar pagos de más sin ningún aviso. ──
+    const venta = ventas.find(v => String(v.id_venta) === String(id_venta));
+    if (venta) {
+      const restante = Number(venta.total || 0) - Number(venta.total_pagado || 0);
+      if (restante <= 0) {
+        setErrores(prev => ({ ...prev, id_venta: "Esta venta ya está completamente pagada — no tiene saldo pendiente." }));
+        return;
+      }
+    }
+    setErrores(prev => ({ ...prev, id_venta: "" }));
   };
 
   const totalPaginas = Math.ceil(totalPagos / FILAS_POR_PAGINA) || 1;
@@ -106,6 +243,13 @@ export default function PagosAbonos() {
     if (!monto || Number(monto) <= 0) return "El monto es obligatorio";
     const restante = restanteVentaSeleccionada();
     if (restante !== null && Number(monto) > restante) return "El monto no puede ser mayor al saldo de la venta";
+    // ── NUEVO: mismo mínimo que valida el backend — salvo que este pago
+    // liquide exactamente el saldo restante (ej. últimos $15.000 de una
+    // deuda), no tendría sentido exigirle un mínimo más alto que eso. ──
+    const liquidaSaldoCompleto = restante !== null && Math.abs(Number(monto) - restante) < 1;
+    if (Number(monto) < MONTO_MINIMO_ABONO && !liquidaSaldoCompleto) {
+      return `El monto mínimo para un abono es de ${fmt(MONTO_MINIMO_ABONO)} (a menos que liquide el saldo restante).`;
+    }
     return "";
   };
 
@@ -115,7 +259,6 @@ export default function PagosAbonos() {
     const msgMonto = errorMonto(form.monto);
     if (msgMonto) e.monto = msgMonto;
     if (!form.fecha) e.fecha = "La fecha es obligatoria";
-    else if (form.fecha > HOY_ISO) e.fecha = "La fecha no puede ser futura";
     setErrores(e);
     if (Object.keys(e).length > 0) return;
     setGuardando(true);
@@ -138,20 +281,19 @@ export default function PagosAbonos() {
     }
   };
 
-  const registrarPago = async (id) => {
+  // ── NUEVO: reemplaza a registrarPago/cancelarPago sueltos — un solo
+  // handler para el desplegable de estado, igual que en Pedidos/Compras. ──
+  const cambiarEstadoPago = async (id_pago, estado) => {
+    setCambiandoEstado(true);
     try {
-      await api.patch(`/pagos/${id}/estado`, { estado: "Confirmado" });
-      setDatos(prev => prev.map(p => p.id_pago === id ? { ...p, estado: "Confirmado" } : p));
-      showToast("exito", "Pago confirmado correctamente.");
-    } catch (err) { showToast("error", err.response?.data?.message ?? "Error al registrar el pago."); }
-  };
-
-  const cancelarPago = async (id) => {
-    try {
-      await api.patch(`/pagos/${id}/estado`, { estado: "Anulado" });
-      setDatos(prev => prev.map(p => p.id_pago === id ? { ...p, estado: "Anulado" } : p));
-      showToast("exito", "Pago anulado correctamente.");
-    } catch (err) { showToast("error", err.response?.data?.message ?? "Error al cancelar el pago."); }
+      await api.patch(`/pagos/${id_pago}/estado`, { estado });
+      setDatos(prev => prev.map(p => p.id_pago === id_pago ? { ...p, estado } : p));
+      showToast("exito", estado === "Confirmado" ? "Pago confirmado correctamente." : "Pago anulado correctamente.");
+    } catch (err) {
+      showToast("error", err.response?.data?.message ?? "Error al actualizar el pago.");
+    } finally {
+      setCambiandoEstado(false);
+    }
   };
 
   const getMetodoIcon = (metodo) => {
@@ -160,15 +302,6 @@ export default function PagosAbonos() {
       case "Tarjeta":       return "Tarj.";
       case "Transferencia": return "Transf.";
       default:              return "—";
-    }
-  };
-
-  const getEstadoBadge = (estado) => {
-    switch (estado) {
-      case "Confirmado": return "exito";
-      case "Pendiente":  return "pendiente";
-      case "Anulado":    return "error";
-      default:           return "info";
     }
   };
 
@@ -183,7 +316,7 @@ export default function PagosAbonos() {
     setModal(false);
   };
 
-  if (cargando) return <Loader text="Cargando pagos..." />;
+  if (cargando && !primerCargaHecha.current) return <Loader text="Cargando pagos..." />;
   if (errorMsg) return <div style={{ padding: 32, color: "var(--danger)" }}>{errorMsg}<button onClick={() => cargar()} style={{ marginLeft: 12 }}>Reintentar</button></div>;
 
   return (
@@ -225,7 +358,7 @@ export default function PagosAbonos() {
         </div>
       </div>
 
-      <div className="tbl-container">
+      <div className="tbl-container" style={{ opacity: cargando ? 0.6 : 1, transition: "opacity 0.15s" }}>
         <table className="tbl">
           <thead className="tbl-header">
             <tr>
@@ -253,16 +386,19 @@ export default function PagosAbonos() {
                   </span>
                 </td>
                 <td className="tbl-td pagosabonos-fecha-cell">{p.fecha?.toString().split("T")[0]}</td>
-                <td className="tbl-td"><span className={`tabla-badge ${getEstadoBadge(p.estado)}`}>{p.estado}</span></td>
+                <td className="tbl-td">
+                  <EstadoDropdownPago
+                    pago={p}
+                    abierto={filaAbierta === p.id_pago}
+                    onToggle={setFilaAbierta}
+                    onCambiar={cambiarEstadoPago}
+                    cambiando={cambiandoEstado}
+                    tienePerm={tienePerm}
+                  />
+                </td>
                 <td className="tbl-td">
                   <div className="pagosabonos-action-cell">
                     <button className="pagosabonos-action-btn pagosabonos-view-btn" onClick={() => setVerDetalle(p)}><IconEye /></button>
-                    {tienePerm('Pagos.estado') && p.estado === "Pendiente" && (
-                      <>
-                        <button className="pagosabonos-action-btn pagosabonos-register-btn" onClick={() => registrarPago(p.id_pago)} title="Registrar pago"><IconCheck /></button>
-                        <button className="pagosabonos-action-btn pagosabonos-cancel-btn" onClick={() => cancelarPago(p.id_pago)} title="Cancelar"><IconX /></button>
-                      </>
-                    )}
                   </div>
                 </td>
               </tr>
@@ -303,10 +439,7 @@ export default function PagosAbonos() {
                     <select
                       className={`pagosabonos-form-select${errores.id_venta ? " input-error" : ""}`}
                       value={form.id_venta}
-                      onChange={(e) => {
-                        handleVentaChange(e.target.value);
-                        if (errores.id_venta) setErrores(prev => ({ ...prev, id_venta: "" }));
-                      }}
+                      onChange={(e) => handleVentaChange(e.target.value)}
                     >
                       <option value="">Seleccionar venta...</option>
                       {ventas.map(v => <option key={v.id_venta} value={v.id_venta}>V-{String(v.id_venta).padStart(3, "0")} — {v.cliente}</option>)}
@@ -353,7 +486,6 @@ export default function PagosAbonos() {
                     <label className="pagosabonos-form-label">Fecha</label>
                     <input
                       type="date"
-                      max={HOY_ISO}
                       className={`pagosabonos-form-input${errores.fecha ? " input-error" : ""}`}
                       value={form.fecha}
                       onChange={(e) => {
@@ -375,7 +507,7 @@ export default function PagosAbonos() {
             </div>
             <div className="pagosabonos-modal-footer">
               <button className="pagosabonos-btn-secondary" onClick={cerrarModal} disabled={guardando}>Cancelar</button>
-              <button className="pagosabonos-btn-primary" onClick={guardar} disabled={guardando || !form.id_venta || !form.monto}>
+              <button className="pagosabonos-btn-primary" onClick={guardar} disabled={guardando || !form.id_venta || !form.monto || !!errores.id_venta}>
                 {guardando ? "Registrando..." : "Registrar"}
               </button>
             </div>
@@ -412,7 +544,11 @@ export default function PagosAbonos() {
                 <h3 className="pagosabonos-factura-titulo">Pago</h3>
                 <DetalleGrid>
                   <DetalleItem label="Monto" value={fmt(verDetalle.monto)} />
-                  <DetalleItem label="Estado" value={<span className={`tabla-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>} />
+                  <DetalleItem label="Estado" value={
+                    <span className={`pagosabonos-estado-badge-static pagosabonos-estado-${
+                      verDetalle.estado === 'Confirmado' ? 'exito' : verDetalle.estado === 'Anulado' ? 'error' : 'pendiente'
+                    }`}>{verDetalle.estado}</span>
+                  } />
                 </DetalleGrid>
               </div>
             </div>

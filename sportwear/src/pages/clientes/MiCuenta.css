@@ -47,6 +47,10 @@
   border: 0.5px solid var(--dvna-border);
   box-sizing: border-box;
   margin-bottom: 16px;
+  transition: box-shadow 0.2s ease;
+}
+.mc-card:hover {
+  box-shadow: 0 8px 24px rgba(50,35,20,0.05);
 }
 .mc-card-title {
   font-family: 'DM Sans', system-ui, sans-serif;
@@ -64,22 +68,72 @@
   margin: 0 0 16px;
 }
 
-/* ── Estado de cuenta ── */
+/* ── NUEVO: encabezado de "Tus pedidos" con el botón "Ver todos" a la derecha ── */
+.mc-card-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.mc-btn-ver-todos {
+  white-space: nowrap;
+  font-size: 11px !important;
+  padding: 8px 16px !important;
+}
+
+/* ── NUEVO: ventana "Ver todos mis pedidos" — lista completa con scroll
+   interno propio, para no alargar la página principal. ── */
+.mc-modal-todos-pedidos {
+  max-width: 640px;
+  width: 92%;
+  max-height: 82vh;
+}
+.mc-modal-todos-pedidos-body {
+  max-height: calc(82vh - 70px);
+  overflow-y: auto;
+}
+
+/* ── Estado de cuenta — tarjetas con ícono ── */
 .mc-estado-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-top: 16px;
 }
+.mc-estado-grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
 .mc-estado-item {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
   border-radius: 12px;
   background: var(--dvna-bg2, #faf9f7);
   border: 0.5px solid var(--dvna-border);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+.mc-estado-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(50,35,20,0.06);
+}
+.mc-estado-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--dvna-pale);
+  color: var(--dvna-circle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.mc-estado-icon svg { width: 17px; height: 17px; stroke: currentColor; }
+.mc-estado-icon-pagado    { background: rgba(58,102,72,0.1);  color: #3a6648; }
+.mc-estado-icon-pendiente { background: rgba(184,50,50,0.1);  color: #b83232; }
+
+.mc-estado-item > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .mc-estado-label {
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 10px;
@@ -89,10 +143,11 @@
 }
 .mc-estado-value {
   font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 22px;
-  font-weight: 300;
+  font-size: 18px;
+  font-weight: 400;
   color: var(--dvna-charcoal);
-  line-height: 1;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 .mc-estado-pagado    { color: #3a6648; }
 .mc-estado-pendiente { color: #b83232; }
@@ -100,54 +155,34 @@
 /* ── Perfil ── */
 .profile-top-row {
   display: flex;
-  align-items: flex-start;
-  gap: 28px;
+  align-items: center;
+  gap: 20px;
   margin-bottom: 0;
 }
 .profile-avatar {
-  width: 84px; height: 84px; border-radius: 50%;
+  width: 72px; height: 72px; border-radius: 50%;
   background: var(--dvna-pale); border: 0.5px solid var(--dvna-border);
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
 .profile-initials {
   font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 28px; font-weight: 300; color: var(--dvna-muted);
+  font-size: 24px; font-weight: 300; color: var(--dvna-muted);
   letter-spacing: -0.02em; line-height: 1; text-transform: uppercase;
 }
-.profile-right { flex: 1; min-width: 0; }
+.profile-right { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .profile-name {
   font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 22px; font-weight: 400; color: var(--dvna-charcoal);
+  font-size: 20px; font-weight: 400; color: var(--dvna-charcoal);
   margin: 0 0 2px; letter-spacing: -0.01em; text-transform: none;
 }
 .profile-doc {
   font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 12px; color: var(--dvna-muted); margin: 0 0 14px;
+  font-size: 12px; color: var(--dvna-muted); margin: 0;
 }
-.profile-stats-row {
-  display: flex; align-items: center; gap: 0;
-  margin-bottom: 16px; flex-wrap: wrap; row-gap: 10px;
-}
-.profile-stats-group { display: flex; align-items: center; }
-.profile-stat-item {
-  display: flex; flex-direction: column; align-items: center; padding: 0 18px;
-}
-.profile-stat-item:first-child { padding-left: 0; }
-.profile-stat-value {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 20px; font-weight: 300; color: var(--dvna-charcoal);
-  line-height: 1; text-transform: none; letter-spacing: -0.01em;
-}
-.profile-stat-label {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 9px; font-weight: 400; color: var(--dvna-muted);
-  margin-top: 3px; letter-spacing: 0.03em; text-transform: none; white-space: nowrap;
-}
-.profile-stat-divider { width: 1px; height: 32px; background: var(--dvna-border); flex-shrink: 0; }
-.profile-edit-btn { font-size: 11px !important; padding: 7px 18px !important; letter-spacing: 0.04em !important; }
+.profile-edit-btn { font-size: 11px !important; padding: 8px 20px !important; letter-spacing: 0.04em !important; flex-shrink: 0; }
 .profile-fields-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 12px 24px; border-top: 0.5px solid var(--dvna-border);
+  gap: 14px 24px; border-top: 0.5px solid var(--dvna-border);
   margin-top: 20px; padding-top: 18px;
 }
 .profile-field-item { display: block; }
@@ -161,7 +196,138 @@
   font-size: 13px; color: var(--dvna-charcoal); margin: 0;
 }
 
-/* ── Tabla ── */
+/* ══════════════════════════════════════════════════════════════
+   ── NUEVO: "Tus pedidos" como tarjetas con miniaturas de producto
+   (estilo Temu/Shein) — reemplaza la tabla ancha que generaba scroll
+   horizontal en pantallas normales.
+   ══════════════════════════════════════════════════════════════ */
+.mc-pedidos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.mc-pedido-card {
+  border: 0.5px solid var(--dvna-border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--dvna-white);
+  transition: box-shadow 0.15s ease;
+}
+.mc-pedido-card:hover {
+  box-shadow: 0 6px 18px rgba(50,35,20,0.06);
+}
+.mc-pedido-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.mc-pedido-card-info {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.mc-pedido-card-id {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+}
+.mc-pedido-card-fecha {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 11px;
+  color: var(--dvna-muted);
+}
+.mc-pedido-card-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Miniaturas de producto — se ajustan solas, nunca fuerzan scroll lateral */
+.mc-pedido-card-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.mc-pedido-item-thumb {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--dvna-pale);
+  border: 0.5px solid var(--dvna-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dvna-mid);
+  flex-shrink: 0;
+}
+.mc-pedido-item-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.mc-pedido-item-cant {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: rgba(26,26,26,0.72);
+  color: #fff;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 4px;
+  line-height: 1.3;
+}
+
+.mc-pedido-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--dvna-border);
+}
+.mc-pedido-card-totales {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.mc-pedido-card-tipo {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  color: var(--dvna-muted);
+  background: var(--dvna-pale);
+  border-radius: 99px;
+  padding: 3px 9px;
+}
+.mc-pedido-card-total {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+}
+.mc-pedido-card-pagado {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 11px;
+  color: #3a6648;
+}
+.mc-pedido-card-acciones {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Tabla (todavía usada en otros lados, ej. OrderDetailModal) ── */
 .mi-cuenta thead th {
   font-family: 'DM Sans', system-ui, sans-serif !important;
   font-size: 9px !important; font-weight: 500 !important;
@@ -176,6 +342,8 @@
 }
 .tbl-td:first-child { padding-left: 0; }
 .tbl-td:last-child  { padding-right: 0; }
+.tbl-row { transition: background 0.12s ease; }
+.tbl-row:hover { background: var(--dvna-pale); }
 
 /* ── Badges ── */
 .badge {
@@ -223,6 +391,7 @@
   box-shadow: none !important; transition: background 0.2s;
 }
 .btn-primary:hover { background: var(--dvna-circle) !important; }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Toast ── */
 .dvna-toast {
@@ -243,33 +412,47 @@
   to   { transform: translateY(-16px) scale(0.95); opacity: 0; }
 }
 
-/* ── Modal ── */
-.modal-overlay {
+/* ── NUEVO: ventanas de Mi Cuenta (editar perfil, ver todos los pedidos) —
+   con nombre propio (mc-modal-*) para no chocar con .modal-overlay/.modal-box
+   de otras páginas del sitio (el CSS de todo el proyecto se junta en un solo
+   paquete, así que los nombres genéricos sin prefijo sí pueden pisarse). ── */
+.mc-modal-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.45); display: flex;
   align-items: center; justify-content: center; z-index: 1000;
+  padding: 20px;
 }
-.modal-box {
+.mc-modal-box {
   background: var(--dvna-white); border-radius: 12px;
-  max-width: 520px; width: 92%; max-height: 82vh;
+  max-width: 520px; width: 92%; max-height: 88vh;
   overflow-y: auto; display: flex; flex-direction: column;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.18);
 }
-.modal-header {
+.mc-modal-perfil { max-width: 600px; }
+.mc-modal-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 20px 24px 16px; border-bottom: 0.5px solid var(--dvna-border);
   position: sticky; top: 0; background: var(--dvna-white); z-index: 1;
 }
-.modal-title {
+.mc-modal-title {
   font-family: 'DM Sans', system-ui, sans-serif; font-size: 18px;
   font-weight: 400; color: var(--dvna-charcoal); margin: 0; text-transform: none;
 }
-.modal-close {
-  border: none; background: none; font-size: 22px;
+.mc-modal-close {
+  border: none; background: none;
   color: var(--dvna-muted); cursor: pointer; line-height: 1;
-  padding: 0; transition: color 0.15s;
+  padding: 6px; border-radius: 50%; transition: background 0.15s, color 0.15s;
+  display: flex; align-items: center; justify-content: center;
 }
-.modal-close:hover { color: var(--dvna-charcoal); }
-.modal-body { padding: 20px 24px 24px; }
+.mc-modal-close:hover { color: var(--dvna-charcoal); background: var(--dvna-pale); }
+.mc-modal-body { padding: 20px 24px 24px; }
+.mc-modal-section-title {
+  font-family: 'DM Sans', system-ui, sans-serif; font-size: 12px;
+  font-weight: 500; color: var(--dvna-charcoal); letter-spacing: 0.04em;
+  margin: 0 0 12px; text-transform: none;
+}
+/* Clases genéricas que no usa este archivo directamente, pero se dejan por
+   si OrderDetailModal (u otro componente) las sigue esperando en el bundle. */
 .modal-meta { margin-bottom: 20px; }
 .modal-meta-row {
   display: flex; justify-content: space-between; align-items: center;
@@ -278,26 +461,54 @@
 .modal-meta-row:last-child { border-bottom: none; }
 .modal-meta-label { font-family: 'DM Sans', system-ui, sans-serif; font-size: 11px; color: var(--dvna-muted); font-weight: 400; }
 .modal-meta-value { font-family: 'DM Sans', system-ui, sans-serif; font-size: 13px; color: var(--dvna-charcoal); font-weight: 400; }
-.modal-section-title {
-  font-family: 'DM Sans', system-ui, sans-serif; font-size: 12px;
-  font-weight: 500; color: var(--dvna-charcoal); letter-spacing: 0.04em;
-  margin: 0 0 10px; text-transform: none;
+
+/* ── Footer del modal de editar perfil ── */
+.mc-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 0.5px solid var(--dvna-border);
+  background: var(--dvna-pale);
+  position: sticky;
+  bottom: 0;
 }
+.mc-btn-secondary {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 4px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.mc-btn-secondary:hover:not(:disabled) { background: var(--dvna-pale); border-color: var(--dvna-mid); }
+.mc-btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Responsive ── */
+@media (max-width: 900px) {
+  .mc-estado-grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 700px) {
-  .profile-top-row     { flex-direction: column; align-items: flex-start; gap: 16px; }
-  .profile-stats-row   { gap: 0; }
-  .profile-stat-item   { padding: 0 12px; }
+  .profile-top-row     { flex-wrap: wrap; }
+  .profile-right       { flex-direction: column; align-items: flex-start; gap: 10px; }
   .profile-fields-grid { grid-template-columns: 1fr 1fr; }
-  .mc-estado-grid      { grid-template-columns: 1fr; }
+  .mc-estado-grid      { grid-template-columns: 1fr 1fr; }
+  .mc-pedido-card-footer { flex-direction: column; align-items: flex-start; }
+  .mc-pedido-card-acciones { width: 100%; }
+  .mc-pedido-card-acciones .tbl-action-btn { flex: 1; justify-content: center; }
 }
 @media (max-width: 600px) {
   .mi-cuenta-title     { font-size: 28px; }
-  .profile-avatar      { width: 68px; height: 68px; }
-  .profile-initials    { font-size: 22px; }
-  .profile-name        { font-size: 19px; }
+  .profile-avatar      { width: 64px; height: 64px; }
+  .profile-initials    { font-size: 20px; }
+  .profile-name        { font-size: 18px; }
   .profile-fields-grid { grid-template-columns: 1fr; }
-  .profile-stat-item   { padding: 0 10px; }
+  .mc-estado-grid, .mc-estado-grid-4 { grid-template-columns: 1fr; }
   .modal-box           { width: 96%; }
+  .mc-pedido-item-thumb { width: 44px; height: 44px; }
 }

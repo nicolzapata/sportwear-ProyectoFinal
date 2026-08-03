@@ -12,6 +12,11 @@ const fmt = (n) =>
     style: "currency", currency: "COP", minimumFractionDigits: 0,
   });
 
+// ── NUEVO: monto mínimo permitido para un abono/cuota — evita que una
+// cuota termine siendo de $1 o cualquier valor sin sentido frente al
+// precio real de los productos. ──
+const MONTO_MINIMO_ABONO = 20000;
+
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const DIAS  = ['D','L','M','X','J','V','S'];
 
@@ -165,10 +170,18 @@ export default function Checkout() {
     return () => { cancelado = true; };
   }, []);
 
-  const tipoPagoActivo = (!permisoCuotas && tipoPago === "cuotas") ? "completo" : tipoPago;
+  // ── NUEVO: solo se ofrecen las cuotas cuyo valor por cuota alcance el
+  // mínimo permitido — si el total es tan bajo que ni 2 cuotas lo cumplen,
+  // no se ofrece la opción de cuotas en absoluto (solo pago completo). ──
+  const opcionesCuotas = [2, 3].filter((n) => Math.ceil(total / n) >= MONTO_MINIMO_ABONO);
+  const tipoPagoActivo = ((!permisoCuotas || opcionesCuotas.length === 0) && tipoPago === "cuotas") ? "completo" : tipoPago;
 
-  const fechasCuotas = tipoPagoActivo === "cuotas" ? getFechasCuotas(numCuotas) : [];
-  const valorCuota   = Math.ceil(total / numCuotas);
+  // Si el número de cuotas guardado ya no es una opción válida (p. ej. cambió
+  // el contenido del carrito), se usa la primera opción disponible.
+  const numCuotasActivo = opcionesCuotas.includes(numCuotas) ? numCuotas : (opcionesCuotas[0] || numCuotas);
+
+  const fechasCuotas = tipoPagoActivo === "cuotas" ? getFechasCuotas(numCuotasActivo) : [];
+  const valorCuota   = Math.ceil(total / numCuotasActivo);
 
   // ── Aplica la variante alternativa elegida al ítem del carrito que no tenía stock ──
   const elegirAlternativa = (alt) => {
@@ -251,7 +264,7 @@ export default function Checkout() {
     setError("");
     setErrorStock(null);
 
-    const tipoPagoFinal = (!permisoCuotas && tipoPago === "cuotas") ? "completo" : tipoPago;
+    const tipoPagoFinal = ((!permisoCuotas || opcionesCuotas.length === 0) && tipoPago === "cuotas") ? "completo" : tipoPago;
 
     if (tipoPago === "cuotas" && !permisoCuotas) {
       setError("No tienes permiso para pagar por cuotas. Se cambiará a pago completo.");
@@ -268,7 +281,7 @@ export default function Checkout() {
         id_barrio:         idBarrio ? Number(idBarrio) : null,
         metodo_pago:       metodo,
         tipo_pago:         tipoPagoFinal,
-        num_cuotas:        tipoPagoFinal === "cuotas" ? numCuotas : null,
+        num_cuotas:        tipoPagoFinal === "cuotas" ? numCuotasActivo : null,
         items: items.map((i) => ({
           id_producto: i.id,
           id_variante: i.id_variante,
@@ -444,16 +457,19 @@ export default function Checkout() {
                 <input type="radio" name="tipoPago2" value="completo" checked={tipoPago === "completo"} onChange={() => setTipoPago("completo")} />
                 Pago completo
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 5 }}>
-                <input type="radio" name="tipoPago2" value="cuotas" checked={tipoPago === "cuotas"} onChange={() => setTipoPago("cuotas")} />
-                Pagar en cuotas
-              </label>
+              {opcionesCuotas.length > 0 && (
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 5 }}>
+                  <input type="radio" name="tipoPago2" value="cuotas" checked={tipoPago === "cuotas"} onChange={() => setTipoPago("cuotas")} />
+                  Pagar en cuotas
+                </label>
+              )}
               {tipoPagoActivo === "cuotas" && (
                 <div style={{ marginTop: 10, paddingLeft: 24 }}>
                   <label className="checkout-label">Número de cuotas</label>
-                  <select value={numCuotas} onChange={(e) => setNumCuotas(Number(e.target.value))} className="form-control" style={{ marginTop: 4 }}>
-                    <option value={2}>2 cuotas de {fmt(Math.ceil(total / 2))}</option>
-                    <option value={3}>3 cuotas de {fmt(Math.ceil(total / 3))}</option>
+                  <select value={numCuotasActivo} onChange={(e) => setNumCuotas(Number(e.target.value))} className="form-control" style={{ marginTop: 4 }}>
+                    {opcionesCuotas.map((n) => (
+                      <option key={n} value={n}>{n} cuotas de {fmt(Math.ceil(total / n))}</option>
+                    ))}
                   </select>
                 </div>
               )}
@@ -474,14 +490,14 @@ export default function Checkout() {
           <div className="checkout-divider" />
 
           <div className="checkout-total">
-            <span>{tipoPagoActivo === "cuotas" ? `Total cuota (1/${numCuotas})` : "Total a pagar"}</span>
+            <span>{tipoPagoActivo === "cuotas" ? `Total cuota (1/${numCuotasActivo})` : "Total a pagar"}</span>
             <span>{fmt(tipoPagoActivo === "cuotas" ? valorCuota : total)}</span>
           </div>
 
           {tipoPagoActivo === "cuotas" && (
             <>
               <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 16 }}>
-                Total del pedido: {fmt(total)} en {numCuotas} cuotas de {fmt(valorCuota)}
+                Total del pedido: {fmt(total)} en {numCuotasActivo} cuotas de {fmt(valorCuota)}
               </p>
               <label className="checkout-label" style={{ marginBottom: 8 }}>Fechas de pago</label>
               <div className="cal-cuotas-wrap">

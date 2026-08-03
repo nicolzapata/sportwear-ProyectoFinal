@@ -11,6 +11,10 @@ const fmt = (n) =>
     style: "currency", currency: "COP", minimumFractionDigits: 0,
   });
 
+// ── NUEVO: mismo mínimo por cuota que en Checkout.jsx — evita ofrecer
+// cuotas cuyo valor no tenga sentido frente al precio real (ej. $1). ──
+const MONTO_MINIMO_ABONO = 20000;
+
 export default function Carrito() {
   const { items, total, totalItems, actualizarCantidad, eliminarItem, vaciarCarrito } = useCart();
   const { usuario } = useAuth();
@@ -28,8 +32,14 @@ export default function Carrito() {
       .catch(() => setPermisoCuotas(true));
   }, [usuario]);
 
+  // ── NUEVO: solo se ofrecen las cuotas cuyo valor por cuota alcance el
+  // mínimo permitido — si ninguna calza, no se muestra la opción de cuotas. ──
+  const opcionesCuotas = [2, 3].filter((n) => Math.ceil(total / n) >= MONTO_MINIMO_ABONO);
+  const numCuotasActivo = opcionesCuotas.includes(numCuotas) ? numCuotas : (opcionesCuotas[0] || numCuotas);
+  const tipoPagoActivo = (opcionesCuotas.length === 0 && tipoPago === "cuotas") ? "completo" : tipoPago;
+
   // Calcular valor de cada cuota
-  const valorCuota = tipoPago === "cuotas" ? Math.ceil(total / numCuotas) : null;
+  const valorCuota = tipoPagoActivo === "cuotas" ? Math.ceil(total / numCuotasActivo) : null;
 
   // ── CORREGIDO: antes esta página exigía sesión solo para VER el carrito,
   // lo cual es más estricto que la regla de negocio ("Exigir inicio de sesión
@@ -74,8 +84,8 @@ export default function Carrito() {
     }
     yendoACheckout.current = true;
     // Guardar tipo de pago en sessionStorage para pasarlo al checkout
-    sessionStorage.setItem("tipoPago", tipoPago);
-    sessionStorage.setItem("numCuotas", numCuotas);
+    sessionStorage.setItem("tipoPago", tipoPagoActivo);
+    sessionStorage.setItem("numCuotas", numCuotasActivo);
     navigate("/checkout");
   };
 
@@ -129,7 +139,7 @@ export default function Carrito() {
                 <button
                   className="carrito-qty-btn"
                   onClick={() => actualizarCantidad(item.id_variante ?? item.id, item.cantidad + 1)}
-                  disabled={item.cantidad >= (item.stock ?? 99)}
+                  disabled={item.cantidad >= (item.stock ?? 0)}
                 >+</button>
               </div>
 
@@ -182,16 +192,19 @@ export default function Carrito() {
                 <input type="radio" name="tipoPago" value="completo" checked={tipoPago === "completo"} onChange={() => setTipoPago("completo")} />
                 Pago completo
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '5px' }}>
-                <input type="radio" name="tipoPago" value="cuotas" checked={tipoPago === "cuotas"} onChange={() => setTipoPago("cuotas")} />
-                Pagar en cuotas
-              </label>
-              {tipoPago === "cuotas" && (
+              {opcionesCuotas.length > 0 && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '5px' }}>
+                  <input type="radio" name="tipoPago" value="cuotas" checked={tipoPago === "cuotas"} onChange={() => setTipoPago("cuotas")} />
+                  Pagar en cuotas
+                </label>
+              )}
+              {tipoPagoActivo === "cuotas" && (
                 <div style={{ marginTop: '10px', paddingLeft: '24px' }}>
                   <label style={{ fontSize: '14px' }}>Número de cuotas:</label>
-                  <select value={numCuotas} onChange={(e) => setNumCuotas(Number(e.target.value))} style={{ marginLeft: '10px', padding: '4px' }}>
-                    <option value={2}>2 cuotas de {fmt(Math.ceil(total / 2))}</option>
-                    <option value={3}>3 cuotas de {fmt(Math.ceil(total / 3))}</option>
+                  <select value={numCuotasActivo} onChange={(e) => setNumCuotas(Number(e.target.value))} style={{ marginLeft: '10px', padding: '4px' }}>
+                    {opcionesCuotas.map((n) => (
+                      <option key={n} value={n}>{n} cuotas de {fmt(Math.ceil(total / n))}</option>
+                    ))}
                   </select>
                 </div>
               )}
