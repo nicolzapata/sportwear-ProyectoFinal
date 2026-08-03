@@ -30,7 +30,7 @@ import Compras       from "../pages/compras/Compras";
 import Pedidos       from "../pages/pedidos/Pedidos";
 import PedidosVentas from "../pages/pedidosVentas/PedidosVentas";
 import PagosAbonos   from "../pages/pagosAbonos/PagosAbonos";
-import NotFound      from "../pages/notFound/NotFound";
+import NotFound      from "../pages/NotFound/NotFound";
 
 const MODULOS_CLIENTE = ['dashboard', 'catalogo', 'categorias'];
 
