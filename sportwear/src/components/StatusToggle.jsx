@@ -12,16 +12,17 @@ export default function StatusToggle({
   disabledReason = null,
   showConfirmation = true,
   labels = { activo: "Activo", inactivo: "Inactivo" },
-  size = "md"
+  size = "md",
+  // ── NUEVO: nombre específico del registro (ej. el nombre del producto,
+  // categoría, color, usuario...) — si se pasa, el mensaje de confirmación
+  // dice exactamente cuál registro se va a desactivar, en vez del genérico
+  // "¿Inactivar este registro?". Es opcional a propósito: en las pantallas
+  // donde todavía no se le pase este prop, el mensaje sigue funcionando
+  // igual que antes (no rompe nada donde no se use). ──
+  nombreRegistro = null,
 }) {
   const [loading, setLoading] = useState(false);
   const [pendingEstado, setPendingEstado] = useState(null);
-  // ── CORREGIDO: antes este componente manejaba su PROPIO toast local
-  // (useState + <Toast/> propio), separado del sistema centralizado — por
-  // eso aparecían dos avisos a la vez en páginas que también mostraban el
-  // suyo (ej. GestProductos), y por eso siempre salía en verde/"correctamente"
-  // sin importar si se activaba o desactivaba. Ahora usa el mismo
-  // mostrarToast() de toda la app, con color según la dirección real. ──
   const { mostrarToast } = useToast();
 
   const handleToggle = async (nuevoEstado) => {
@@ -53,6 +54,12 @@ export default function StatusToggle({
     handleToggle(nuevoEstado);
   };
 
+  // ── NUEVO: título con el nombre específico cuando se pasa nombreRegistro,
+  // ej. "¿Inactivar a Sofía Suaza?" en vez de "¿Inactivo este registro?". ──
+  const tituloConfirmacion = nombreRegistro
+    ? `¿${pendingEstado === "Activo" ? labels.activo : labels.inactivo} "${nombreRegistro}"?`
+    : `¿${pendingEstado === "Activo" ? labels.activo : labels.inactivo} este registro?`;
+
   return (
     <>
       <button
@@ -73,7 +80,7 @@ export default function StatusToggle({
 
       {pendingEstado && (
         <ConfirmModal
-          title={`¿${pendingEstado === "Activo" ? labels.activo : labels.inactivo} este registro?`}
+          title={tituloConfirmacion}
           message="Esta acción puede afectar otros registros relacionados."
           onCancel={() => setPendingEstado(null)}
           onConfirm={() => {

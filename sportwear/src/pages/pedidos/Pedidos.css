@@ -36,9 +36,8 @@
 }
 .pedidos-action-btn:hover { border-color: var(--dvna-mid, #c8ab96); background: var(--dvna-pale, #f4f4f4); }
 
-/* ── Ancho fijo de la columna "Envío" (7ª columna ahora, tras sumar
-     "Documento" y "Pago") para que no empuje el resto de la tabla
-     cuando el texto del estado cambia de largo ── */
+/* ── Ancho fijo de la columna "Envío" (7ª columna) para que no empuje
+     el resto de la tabla cuando el texto del estado cambia de largo ── */
 .tbl th:nth-child(7), .tbl td:nth-child(7) {
   width: 170px;
   min-width: 170px;
@@ -142,6 +141,46 @@
   display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--dvna-pale); font-size: 0.85rem;
 }
 .pedidos-detalle-item-linea:last-child { border-bottom: none; }
+
+/* ── NUEVO: fila de producto enriquecida en el detalle de pedido — con
+   miniatura, referencia, color y talla, para que el admin sepa exactamente
+   qué despachar sin tener que adivinar. ── */
+.pedidos-detalle-producto-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--dvna-pale);
+}
+.pedidos-detalle-producto-row:last-child { border-bottom: none; }
+.pedidos-detalle-producto-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dvna-muted);
+  flex-shrink: 0;
+}
+.pedidos-detalle-producto-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pedidos-detalle-producto-thumb svg { width: 18px; height: 18px; }
+.pedidos-detalle-producto-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.pedidos-detalle-producto-nombre { font-size: 0.85rem; font-weight: 500; color: var(--dvna-charcoal); }
+.pedidos-detalle-producto-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.pedidos-detalle-tag {
+  font-size: 0.7rem;
+  color: var(--dvna-muted);
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+.pedidos-detalle-tag-ref { color: var(--brown, #b49780); font-weight: 600; border-color: rgba(180,151,128,0.35); }
+.pedidos-detalle-producto-cant { font-size: 0.82rem; font-weight: 500; color: var(--dvna-charcoal); white-space: nowrap; flex-shrink: 0; }
 .pedidos-modal-footer {
   padding: 1.5rem; border-top: 1px solid var(--dvna-pale); display: flex; justify-content: flex-end;
   background: #fafafa; flex-shrink: 0;

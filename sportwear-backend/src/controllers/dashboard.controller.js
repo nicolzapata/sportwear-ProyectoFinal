@@ -3,7 +3,7 @@ const dashboardService = require('../services/dashboard.service');
 
 const getResumen = async (req, res) => {
   try {
-    const data = await dashboardService.getResumen();
+    const data = await dashboardService.getResumen(req.query);
     res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
@@ -12,7 +12,9 @@ const getResumen = async (req, res) => {
 
 const getVentasMensuales = async (req, res) => {
   try {
-    const data = await dashboardService.getVentasMensuales();
+    // ── NUEVO: ahora también recibe ?desde=&hasta= para comparar el mismo
+    // rango contra el año anterior, en vez de siempre año completo. ──
+    const data = await dashboardService.getVentasMensuales(req.query);
     res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
@@ -21,14 +23,14 @@ const getVentasMensuales = async (req, res) => {
 
 const getComprasMensuales = async (req, res) => {
   try {
-    const data = await dashboardService.getComprasMensuales();
+    const data = await dashboardService.getComprasMensuales(req.query);
     res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
   }
 };
 
-// ── NUEVO: reporte de ventas filtrado por rango de fechas (?desde=&hasta=) ──
+// ── reporte de ventas filtrado por rango de fechas (?desde=&hasta=) ──
 const getReporteVentas = async (req, res) => {
   try {
     const { desde, hasta } = req.query;

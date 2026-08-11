@@ -2,9 +2,15 @@
 const pool = require('../config/db');
 const { enviarCorreo, formatearFecha, filasDatos } = require('./mailer.service');
 const { notificarComprobantePago } = require('./ventas.service');
+// ── CORREGIDO: "evaluarYMarcarPagada", "descontarStockSiHaceFalta" y
+// "getSaldoPendiente" vivían aquí definidas a mano, y ventas.service.js
+// tenía su PROPIA reimplementación parecida-pero-distinta para el mismo
+// problema. Ahora ambas usan la misma versión, importada desde
+// pagoLogica.service.js — una sola fuente de verdad. ──
+const { getSaldoPendiente, evaluarYMarcarPagada } = require('./pagoLogica.service');
 
-// ── NUEVO: mismo mínimo que en ventas.service.js — un abono no debería
-// poder registrarse por $1 o cualquier valor sin sentido. ──
+// ── mismo mínimo que en ventas.service.js — un abono no debería poder
+// registrarse por $1 o cualquier valor sin sentido. ──
 const MONTO_MINIMO_ABONO = 20000;
 
 const getPagos = async ({ page, limit, q } = {}) => {
@@ -55,21 +61,9 @@ const getPagoById = async (id) => {
   return result.rows[0];
 };
 
-// Suma de abonos/pagos ya confirmados (dinero efectivamente recibido) para una venta.
-const getSaldoPendiente = async (client, id_venta) => {
-  const venta = await client.query(`SELECT total FROM "Ventas" WHERE id_venta=$1`, [id_venta]);
-  if (!venta.rows.length) throw { status: 404, message: 'Venta no encontrada' };
-  const pagado = await client.query(
-    `SELECT COALESCE(SUM(monto), 0) AS total_pagado FROM "PagosAbonos" WHERE id_venta=$1 AND estado='Confirmado'`,
-    [id_venta]
-  );
-  const total = Number(venta.rows[0].total);
-  const totalPagado = Number(pagado.rows[0].total_pagado);
-  return { total, totalPagado, saldo: total - totalPagado };
-};
-
-// ── NUEVO: notificación simple de abono parcial. Acepta "pool" o un "client" de transacción
-// (ambos tienen `.query`) — se usa siempre DESPUÉS del COMMIT, con `pool`. ──
+// ── notificación simple de abono parcial. Acepta "pool" o un "client" de
+// transacción (ambos tienen `.query`) — se usa siempre DESPUÉS del COMMIT,
+// con `pool`. ──
 const notificarAbono = async (db, id_venta, monto) => {
   try {
     const info = await db.query(`
@@ -103,82 +97,6 @@ const notificarAbono = async (db, id_venta, monto) => {
   }
 };
 
-// ── NUEVO (Inventario): si el stock de esta venta todavía no se había
-// descontado (pedidos pagados por transferencia/tarjeta, que no descuentan
-// stock al crearse sino hasta que se confirma el pago), se descuenta ahora,
-// línea por línea, dentro de la misma transacción, y se marca para no
-// volver a descontarlo. Los pagos contraentrega ya llegan con
-// stock_descontado=true desde que se creó el pedido, así que aquí no hacen nada. ──
-const descontarStockSiHaceFalta = async (client, id_venta) => {
-  const ventaRes = await client.query(
-    `SELECT stock_descontado FROM "Ventas" WHERE id_venta=$1`,
-    [id_venta]
-  );
-  if (!ventaRes.rows.length || ventaRes.rows[0].stock_descontado) return;
-
-  const detalle = await client.query(
-    `SELECT id_variante, cantidad FROM "DetalleVenta" WHERE id_venta=$1 AND id_variante IS NOT NULL`,
-    [id_venta]
-  );
-  for (const item of detalle.rows) {
-    await client.query(
-      `UPDATE "ProductoVariantes" SET stock=stock-$1 WHERE id_variante=$2`,
-      [item.cantidad, item.id_variante]
-    );
-  }
-  await client.query(`UPDATE "Ventas" SET stock_descontado=true WHERE id_venta=$1`, [id_venta]);
-};
-
-// ── NUEVO: dentro de la transacción, solo evalúa y marca "Pagado" si corresponde,
-// y descuenta el stock diferido si hacía falta — NO envía nada todavía (el envío
-// se hace después del COMMIT, en cada punto de llamada, para no leer datos sin
-// confirmar ni disparar correos si la transacción termina en ROLLBACK). ──
-const evaluarYMarcarPagada = async (client, id_venta) => {
-  const { total, totalPagado } = await getSaldoPendiente(client, id_venta);
-  if (totalPagado >= total) {
-    await client.query(
-      `UPDATE "Ventas" SET estado='Pagado' WHERE id_venta=$1 AND estado != 'Anulado'`,
-      [id_venta]
-    );
-    // ── NUEVO: si la venta ya quedó cubierta, cualquier otro registro de
-    // PagosAbonos que siga "Pendiente" para esta misma venta ya no
-    // representa nada por cobrar — se cierra automáticamente para que
-    // Pagos y Pedidos nunca se contradigan (uno diciendo "pagado" y el
-    // otro mostrando todavía un pendiente huérfano de la misma venta). ──
-    await client.query(
-      `UPDATE "PagosAbonos" SET estado='Anulado' WHERE id_venta=$1 AND estado='Pendiente'`,
-      [id_venta]
-    );
-    await descontarStockSiHaceFalta(client, id_venta);
-
-    // ── NUEVO: en contraentrega, el pago se cobra EN el momento de la
-    // entrega — son el mismo evento físico. Si esta venta es contraentrega,
-    // confirmar el pago completo avanza el pedido a "Entregado" solo, sin
-    // que el admin tenga que repetir el mismo paso a mano en Pedidos. ──
-    const ventaRes = await client.query(`SELECT metodo_pago FROM "Ventas" WHERE id_venta=$1`, [id_venta]);
-    if (ventaRes.rows[0]?.metodo_pago === 'Efectivo') {
-      const pedidoRes = await client.query(
-        `SELECT id_pedido, estado_pedido FROM "Pedidos" WHERE id_venta=$1`,
-        [id_venta]
-      );
-      const pedido = pedidoRes.rows[0];
-      if (pedido && !['Entregado', 'Cancelado'].includes(pedido.estado_pedido)) {
-        await client.query(
-          `UPDATE "Pedidos" SET estado_pedido='Entregado', fecha_actualizacion=now() WHERE id_pedido=$1`,
-          [pedido.id_pedido]
-        );
-        await client.query(
-          `INSERT INTO "PedidosHistorial" (id_pedido, estado, fecha) VALUES ($1,'Entregado',now())`,
-          [pedido.id_pedido]
-        );
-      }
-    }
-
-    return 'completo';
-  }
-  return 'parcial';
-};
-
 // Dispara la notificación correcta después de que la transacción ya quedó confirmada.
 const notificarSegunResultado = (tipo, id_venta, monto) => {
   if (tipo === 'completo') notificarComprobantePago(id_venta);
@@ -194,9 +112,9 @@ const crearPago = async (datos) => {
   if (Number(monto) > saldo)
     throw { status: 400, message: `El monto ($${Number(monto).toLocaleString('es-CO')}) supera el saldo pendiente ($${saldo.toLocaleString('es-CO')}).` };
 
-  // ── NUEVO: monto mínimo por abono — salvo que este pago liquide
-  // exactamente lo que queda por pagar (no tendría sentido exigir un mínimo
-  // más alto que el propio saldo restante, ej. últimos $15.000 de una deuda). ──
+  // ── monto mínimo por abono — salvo que este pago liquide exactamente lo
+  // que queda por pagar (no tendría sentido exigir un mínimo más alto que
+  // el propio saldo restante, ej. últimos $15.000 de una deuda). ──
   const liquidaSaldoCompleto = Math.abs(Number(monto) - saldo) < 0.01;
   if (Number(monto) < MONTO_MINIMO_ABONO && !liquidaSaldoCompleto) {
     throw { status: 400, message: `El monto mínimo para un abono es de $${MONTO_MINIMO_ABONO.toLocaleString('es-CO')} (a menos que sea el pago que liquida el saldo restante).` };

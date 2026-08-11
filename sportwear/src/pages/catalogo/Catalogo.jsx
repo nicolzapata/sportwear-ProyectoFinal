@@ -62,6 +62,16 @@ const IconAgotado = () => (
     <line x1="7" y1="7" x2="17" y2="17"/>
   </svg>
 );
+// ── NUEVO: ícono propio para "Inactivo" (solo visible para admins) —
+// mismo lenguaje de listón que el resto, para que no se vea descuadrado
+// al apilarse debajo de "Nuevo"/"Promoción"/"Agotado". ──
+const IconOjoTachado = () => (
+  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>
+    <circle cx="12" cy="12" r="2.5"/>
+    <line x1="3" y1="21" x2="21" y2="3"/>
+  </svg>
+);
 const IconWhatsApp = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
@@ -132,7 +142,10 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
   const [cantidad,  setCantidad]  = useState(1);
   const [agregado,  setAgregado]  = useState(false);
 
-  const stock   = p.stock ?? 0;
+  // ── CORREGIDO: "stock" viene de un SUM() en Postgres, que la librería pg
+  // entrega como texto ("0"), no como número — la comparación estricta
+  // "stock === 0" nunca coincidía, así que "Agotado" jamás se activaba. ──
+  const stock   = Number(p.stock ?? 0);
   const agotado = stock === 0;
 
   const cargarDatos = async () => {
@@ -193,7 +206,16 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
   const incrementar = (e) => { e.stopPropagation(); setCantidad(c => Math.min(stock, c + 1)); };
 
   const varianteSel = variantes?.find(v => v.id_color === colorSel?.id_color && v.talla === tallaSel);
-  const stockColorTalla = varianteSel?.stock ?? stock;
+  const stockColorTalla = Number(varianteSel?.stock ?? stock);
+
+  // ── NUEVO: cada variante puede tener su propio precio. Antes de elegir
+  // color/talla, si todas las variantes valen lo mismo se muestra un solo
+  // precio (igual que siempre); si varían, se muestra un rango "Desde $X".
+  // En cuanto se elige una variante puntual, se muestra su precio exacto. ──
+  const precioMinNum = Number(p.precio_min ?? p.precio ?? 0);
+  const precioMaxNum = Number(p.precio_max ?? p.precio ?? 0);
+  const hayRangoPrecio = precioMaxNum > precioMinNum;
+  const precioVarianteSel = varianteSel ? Number(varianteSel.precio ?? p.precio ?? 0) : null;
 
   return (
     <div className="catalog-card" onMouseEnter={cargarDatos}>
@@ -235,7 +257,7 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
           if (p.destacado === "Nuevo") badges.push({ key: "nuevo", texto: "Nuevo", clase: "badge-nuevo", icono: <IconSparkle /> });
           if (p.destacado === "Promocion") badges.push({ key: "promo", texto: "Promoción", clase: "badge-promo", icono: <IconTagPromo /> });
           if (agotado) badges.push({ key: "agotado", texto: "Agotado", clase: "badge-agotado", icono: <IconAgotado /> });
-          if (esAdmin && p.estado !== "Activo") badges.push({ key: "inactivo", texto: "Inactivo", clase: "badge badge-inactive" });
+          if (esAdmin && p.estado !== "Activo") badges.push({ key: "inactivo", texto: "Inactivo", clase: "badge-admin-inactivo", icono: <IconOjoTachado /> });
           return badges.map((b, i) => (
             <span key={b.key} className={`catalog-card-badge ${b.clase}`} style={{ top: 12 + i * 26 }}>
               {b.icono}{b.texto}
@@ -286,7 +308,13 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
         )}
 
         <div className="catalog-card-footer">
-          <div className="catalog-card-price">{fmt(p.precio)}</div>
+          <div className="catalog-card-price">
+            {precioVarianteSel !== null
+              ? fmt(precioVarianteSel)
+              : hayRangoPrecio
+                ? <><span className="catalog-card-price-desde">Desde</span> {fmt(precioMinNum)}</>
+                : fmt(precioMinNum)}
+          </div>
           {!agotado && !esAdmin && (
             <div className="catalog-qty-wrap" onClick={(e) => e.stopPropagation()}>
               <button className="catalog-qty-btn" onClick={decrementar} disabled={cantidad <= 1}>
@@ -312,7 +340,7 @@ function ProductCard({ p, onTogglePublicado, esAdmin }) {
                     id: p.id_producto,
                     id_variante: varianteSel?.id_variante ?? null,
                     nombre: p.nombre,
-                    precio: p.precio,
+                    precio: precioVarianteSel ?? p.precio,
                     imagen: p.imagen_principal,
                     categoria: p.categoria,
                     talla: tallaSel,
@@ -373,11 +401,30 @@ export default function Catalogo() {
     }
   };
 
+  // ── CORREGIDO: antes la lista de categorías salía de leer el texto
+  // "categoria" que ya traía cada producto cargado — así que si administras
+  // categorías por separado (crear una nueva, renombrar, desactivar), el
+  // menú nunca se enteraba, porque no tenía ninguna relación con la tabla
+  // real de Categorías. Ahora se consulta esa tabla directamente, filtrando
+  // solo las que están Activas y sí tienen al menos un producto (para no
+  // ofrecer una categoría vacía sin nada que mostrar). ──
+  const cargarCategorias = async () => {
+    try {
+      const { data } = await api.get("/categorias");
+      const nombres = (data || [])
+        .filter((c) => c.estado === "Activo" && Number(c.total_productos) > 0)
+        .map((c) => c.nombre);
+      setCategorias(["Todos", ...nombres]);
+    } catch {
+      // Si falla, se deja el fallback anterior (derivado de productos) para
+      // no dejar el filtro completamente vacío.
+      const nombres = ["Todos", ...new Set(datos.map(p => p.categoria).filter(Boolean))];
+      setCategorias(nombres);
+    }
+  };
+
   useEffect(() => { cargar(); }, [esAdmin]);
-  useEffect(() => {
-    const categorias = ["Todos", ...new Set(datos.map(p => p.categoria).filter(Boolean))];
-    setCategorias(categorias);
-  }, [datos, setCategorias]);
+  useEffect(() => { cargarCategorias(); }, []);
 
   const tallasDisponibles = [...new Set(
     datos.flatMap(p => (p.variantes || []).map(v => v.talla)).filter(Boolean)
@@ -392,8 +439,15 @@ export default function Catalogo() {
     const matchBusqueda  = p.nombre?.toLowerCase().includes(busqueda.toLowerCase())
       || p.codigo?.toLowerCase().includes(busqueda.toLowerCase());
     const matchCategoria = filtroCategoria === "Todos" || p.categoria === filtroCategoria;
-    const matchPrecioMin = !precioMin || Number(p.precio) >= Number(precioMin);
-    const matchPrecioMax = !precioMax || Number(p.precio) <= Number(precioMax);
+    // ── CORREGIDO: ahora que cada variante puede tener su propio precio, el
+    // filtro de rango debe comparar contra el rango real del producto
+    // (precio_min/precio_max, ya calculado por el backend), no solo contra
+    // el precio base — si no, un producto con una variante dentro del rango
+    // buscado podía quedar afuera solo porque su precio "base" no calzaba. ──
+    const precioMinProducto = Number(p.precio_min ?? p.precio ?? 0);
+    const precioMaxProducto = Number(p.precio_max ?? p.precio ?? 0);
+    const matchPrecioMin = !precioMin || precioMaxProducto >= Number(precioMin);
+    const matchPrecioMax = !precioMax || precioMinProducto <= Number(precioMax);
     const matchTalla     = !filtroTalla || (p.variantes || []).some(v => v.talla === filtroTalla);
     const matchColor      = !filtroColor || (p.variantes || []).some(v => String(v.id_color) === filtroColor);
     return matchBusqueda && matchCategoria && matchPrecioMin && matchPrecioMax && matchTalla && matchColor;

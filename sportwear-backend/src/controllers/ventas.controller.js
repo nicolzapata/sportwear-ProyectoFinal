@@ -4,8 +4,11 @@ const { generarComprobanteVentaPDF } = require('../services/pdf.service');
 
 const getVentas = async (req, res) => {
   try {
-    const { page, limit, q } = req.query;
-    const data = await ventasService.getVentas({ page, limit, q });
+    // ── CORREGIDO: nunca se destructuraba "origen" de req.query, así que el
+    // filtro Todas/Cliente/Admin (Landing/Admin) nunca llegaba al service,
+    // sin importar qué tan bien estuviera el resto del código. ──
+    const { page, limit, q, origen } = req.query;
+    const data = await ventasService.getVentas({ page, limit, q, origen });
     res.json(data);
   } catch (err) {
     console.error('ERROR getVentas:', err);

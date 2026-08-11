@@ -126,20 +126,35 @@
 }
 .reporte-total-item {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 12px;
   background: var(--dvna-pale);
   border: 0.5px solid var(--dvna-border);
   border-radius: 10px;
   padding: 12px 14px;
 }
-.reporte-total-item span {
+/* ── NUEVO: ícono por burbuja de totales del reporte — antes estas
+   tarjetas no tenían ícono, a diferencia de las tarjetas de KPI de más
+   abajo (Ventas del día, Bajo stock, etc.), lo cual se sentía inconsistente. ── */
+.reporte-total-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; background: #e8ddd6; color: var(--dvna-circle);
+}
+.reporte-total-icon svg { width: 15px; height: 15px; stroke: currentColor; }
+.reporte-total-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.reporte-total-text span {
   font-family: var(--font-body);
   font-size: 10px;
   color: var(--dvna-muted);
   letter-spacing: 0.04em;
 }
-.reporte-total-item strong {
+.reporte-total-text strong {
   font-family: var(--font-body);
   font-size: 18px;
   font-weight: 500;
@@ -447,4 +462,4 @@
   .stats-grid      { grid-template-columns: 1fr; }
   .dashboard-title { font-size: 28px; }
   .reporte-filtros { flex-direction: column; }
-}
+} 

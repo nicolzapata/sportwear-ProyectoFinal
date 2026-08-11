@@ -97,7 +97,12 @@ export default function MiCuenta() {
       // de venta (V-089), que revela cuántas ventas lleva la tienda en
       // total, no solo las tuyas. ──
       const filtrados = (pedidosRes.data || []).filter(
-        (p) => ["Confirmado", "Pagado", "Cancelado", "Abonado"].includes(p.estado)
+        // ── CORREGIDO: el filtro buscaba "Cancelado", pero el valor real que
+        // usa Ventas.estado en todo el resto del sistema es "Anulado" — dos
+        // palabras distintas para lo mismo, así que una venta anulada nunca
+        // pasaba este filtro y se escondía por completo en vez de mostrarse
+        // marcada como anulada. ──
+        (p) => ["Confirmado", "Pagado", "Cancelado", "Anulado", "Abonado"].includes(p.estado)
       );
       const total = filtrados.length;
       const conNumeroYFotos = filtrados.map((p, i) => ({
@@ -221,7 +226,11 @@ export default function MiCuenta() {
     switch (estado) {
       case "Pagado": case "Confirmado": case "Abonado": return "exito";
       case "Pendiente": return "pendiente";
-      case "Cancelado": return "error";
+      // ── CORREGIDO: "Cancelado" no es un valor real de Ventas.estado — el
+      // que sí se usa es "Anulado" (distinto de Pedidos.estado_pedido, que
+      // sí usa "Cancelado" — por eso getEnvioBadgeClass, más arriba, no se
+      // toca). Se dejan los dos por seguridad, sin que ninguno estorbe. ──
+      case "Cancelado": case "Anulado": return "error";
       default: return "info";
     }
   };
@@ -269,11 +278,18 @@ export default function MiCuenta() {
     const textoTipo  = esCuotas ? `${abonosConfirmados}/${pedido.num_cuotas} cuotas` : "Pago completo";
 
     return (
-      <div className="mc-pedido-card">
+      <div className={`mc-pedido-card${(pedido.estado === "Cancelado" || pedido.estado === "Anulado") ? " mc-pedido-card-cancelado" : ""}`}>
         <div className="mc-pedido-card-header">
           <div className="mc-pedido-card-info">
-            <span className="mc-pedido-card-id">Pedido #{pedido.numeroPedido}</span>
-            <span className="mc-pedido-card-fecha">{new Date(pedido.fecha).toLocaleDateString("es-CO")}</span>
+            {/* ── NUEVO: el código real de la venta se muestra junto al número
+                de pedido del cliente — el número sigue siendo el conteo propio
+                del cliente (no revela el total de ventas de la tienda), y el
+                código sirve como referencia exacta para soporte. ── */}
+            <span className="mc-pedido-card-id">
+              Pedido #{pedido.numeroPedido}
+              <span className="mc-pedido-card-codigo">V-{String(pedido.id_venta).padStart(3, "0")}</span>
+            </span>
+            <span className="mc-pedido-card-fecha">{new Date(pedido.fecha).toLocaleDateString("es-CO", { timeZone: "UTC" })}</span>
           </div>
           <div className="mc-pedido-card-badges">
             <span className={`badge ${getBadgeClass(pedido.estado)}`}>{pedido.estado}</span>

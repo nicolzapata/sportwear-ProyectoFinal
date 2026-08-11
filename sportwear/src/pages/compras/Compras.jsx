@@ -25,6 +25,10 @@ const formInicial = () => ({
   fecha: new Date().toISOString().split("T")[0],
   observaciones: "",
   items: [nuevoItem()],
+  // ── NUEVO: si está activo, escribir el "Valor de venta" en cualquier línea
+  // lo replica automáticamente a las demás líneas del MISMO producto (otra
+  // talla/color) — no afecta líneas de un producto distinto. ──
+  mismoPrecioVenta: false,
 });
 
 const HOY_ISO = new Date().toISOString().split("T")[0];
@@ -223,6 +227,22 @@ export default function Compras() {
       const items = [...prev.items];
       items[index] = { ...items[index], [campo]: valor };
       if (campo === "id_producto") items[index].id_variante = "";
+
+      // ── NUEVO: con el interruptor "mismo precio de venta" activo, al
+      // escribir el valor de venta de una línea se replica automáticamente
+      // a las demás líneas del MISMO producto (id_producto igual) — nunca a
+      // un producto distinto, aunque esté en la misma compra. ──
+      if (campo === "precio_venta" && prev.mismoPrecioVenta) {
+        const idProductoEditado = items[index].id_producto;
+        if (idProductoEditado) {
+          items.forEach((it, i) => {
+            if (i !== index && it.id_producto === idProductoEditado) {
+              items[i] = { ...it, precio_venta: valor };
+            }
+          });
+        }
+      }
+
       return { ...prev, items };
     });
   };
@@ -232,6 +252,31 @@ export default function Compras() {
       ...prev,
       items: prev.items.length > 1 ? prev.items.filter((_, i) => i !== index) : prev.items,
     }));
+
+  // ── NUEVO: alternar el interruptor "mismo precio de venta". Al activarlo,
+  // aplica de una vez el precio_venta de la primera línea de cada producto
+  // a sus demás líneas — así el efecto se siente inmediato, no solo hacia
+  // adelante en próximas ediciones. ──
+  const toggleMismoPrecio = () => {
+    setForm((prev) => {
+      const activando = !prev.mismoPrecioVenta;
+      if (!activando) return { ...prev, mismoPrecioVenta: false };
+
+      const primerPrecioPorProducto = new Map();
+      prev.items.forEach((it) => {
+        if (it.id_producto && it.precio_venta !== "" && it.precio_venta !== null && !primerPrecioPorProducto.has(it.id_producto)) {
+          primerPrecioPorProducto.set(it.id_producto, it.precio_venta);
+        }
+      });
+      const items = prev.items.map((it) => {
+        if (it.id_producto && primerPrecioPorProducto.has(it.id_producto)) {
+          return { ...it, precio_venta: primerPrecioPorProducto.get(it.id_producto) };
+        }
+        return it;
+      });
+      return { ...prev, mismoPrecioVenta: true, items };
+    });
+  };
 
   const subtotal = form.items.reduce((acc, it) => {
     const cant = Number(it.cantidad) || 0;
@@ -342,6 +387,22 @@ export default function Compras() {
 
   // ── Cambio de estado directo desde el dropdown de la tabla ──
   const cambiarEstadoDesdeTabla = async (id, estado) => {
+    // ── NUEVO: anular es irreversible y antes no pedía ninguna
+    // confirmación real (la función "anularCompra" que sí la tenía nunca se
+    // llamaba desde el desplegable de la tabla). Ahora sí se confirma, y el
+    // mensaje dice específicamente CUÁL compra se va a anular — no un
+    // genérico "¿Anular este registro?". ──
+    if (estado === 'Anulado') {
+      const compra = compras.find((c) => c.id_compra === id);
+      const referencia = compra ? `C-${String(compra.id_compra).padStart(3, "0")} (${compra.proveedor})` : "esta compra";
+      const ok = await confirmar({
+        title: "Anular compra",
+        message: `¿Anular la compra ${referencia}? Esta acción no se puede deshacer.`,
+        confirmLabel: "Sí, anular",
+      });
+      if (!ok) return;
+    }
+
     setCambiandoEstadoTabla(true);
     try {
       if (estado === 'Anulado') {
@@ -374,7 +435,9 @@ export default function Compras() {
   };
 
   const anularCompra = async (id) => {
-    const ok = await confirmar({ title: "Anular compra", message: "¿Anular esta compra? Esta acción no se puede deshacer.", confirmLabel: "Sí, anular" });
+    const compra = compras.find((c) => c.id_compra === id);
+    const referencia = compra ? `C-${String(compra.id_compra).padStart(3, "0")} (${compra.proveedor})` : "esta compra";
+    const ok = await confirmar({ title: "Anular compra", message: `¿Anular la compra ${referencia}? Esta acción no se puede deshacer.`, confirmLabel: "Sí, anular" });
     if (!ok) return;
     try {
       await api.patch(`/compras/${id}/anular`);
@@ -494,8 +557,15 @@ export default function Compras() {
                     <button className="compras-action-btn compras-view-btn" onClick={() => abrirDetalle(c)} title="Ver detalles">
                       <IconEye />
                     </button>
-                    {tienePerm('Compras.editar') && c.estado !== "Anulado" && (
+                    {tienePerm('Compras.editar') && c.estado !== "Anulado" ? (
                       <button className="compras-action-btn compras-edit-btn" onClick={() => abrirEdicion(c)} title="Editar estado">
+                        <IconEdit />
+                      </button>
+                    ) : tienePerm('Compras.editar') && (
+                      // ── NUEVO: en vez de desaparecer y dejar un hueco en blanco,
+                      // el botón se muestra deshabilitado — la columna Acciones
+                      // se ve consistente en todas las filas. ──
+                      <button className="compras-action-btn compras-edit-btn" disabled title="No se puede editar una compra anulada">
                         <IconEdit />
                       </button>
                     )}
@@ -527,7 +597,7 @@ export default function Compras() {
 
       {modal && (
         <div className="compras-modal-overlay" onClick={() => !guardando && setModal(false)}>
-          <div className="compras-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="compras-modal compras-modal-nueva" onClick={(e) => e.stopPropagation()}>
             <div className="compras-modal-header">
               <h2 className="compras-modal-title">Nueva compra</h2>
               <button className="compras-modal-close" onClick={() => setModal(false)}><IconX /></button>
@@ -602,7 +672,21 @@ export default function Compras() {
               <div className="compras-items-section">
                 <div className="compras-items-header">
                   <label className="compras-form-label">Productos de la compra</label>
-                  <button type="button" className="compras-btn-add-item" onClick={agregarItem}>+ Agregar producto</button>
+                  <div className="compras-items-header-right">
+                    {/* ── NUEVO: interruptor "mismo precio de venta" — al
+                        activarlo, escribir el valor de venta en una línea lo
+                        replica a las demás líneas del mismo producto (otra
+                        talla/color), nunca a un producto distinto. ── */}
+                    <label className="compras-toggle-mismo-precio" title="Al escribir el valor de venta de una talla/color, se copia automáticamente a las demás variantes del mismo producto en esta compra.">
+                      <input
+                        type="checkbox"
+                        checked={form.mismoPrecioVenta}
+                        onChange={toggleMismoPrecio}
+                      />
+                      Mismo valor de venta para variantes del mismo producto
+                    </label>
+                    <button type="button" className="compras-btn-add-item" onClick={agregarItem}>+ Agregar producto</button>
+                  </div>
                 </div>
 
                 <div className="compras-item-titulos">
@@ -631,6 +715,7 @@ export default function Compras() {
                   return (
                     <div className="compras-item-row" key={i}>
                       <div className="compras-item-field compras-item-field-producto">
+                        <label className="compras-item-label-movil">Producto</label>
                         <select
                           className={`compras-form-select${errores[`item_${i}_producto`] ? " input-error" : ""}`}
                           value={item.id_producto}
@@ -648,8 +733,10 @@ export default function Compras() {
                             <option key={p.id_producto} value={p.id_producto}>{p.nombre}</option>
                           ))}
                         </select>
+                        {errores[`item_${i}_producto`] && <span className="compras-field-error">{errores[`item_${i}_producto`]}</span>}
                       </div>
                       <div className="compras-item-field compras-item-field-variante">
+                        <label className="compras-item-label-movil">Talla / Color</label>
                         <select
                           className={`compras-form-select${errores[`item_${i}_variante`] ? " input-error" : ""}`}
                           value={item.id_variante}
@@ -672,8 +759,10 @@ export default function Compras() {
                             </option>
                           ))}
                         </select>
+                        {errores[`item_${i}_variante`] && <span className="compras-field-error">{errores[`item_${i}_variante`]}</span>}
                       </div>
                       <div className="compras-item-field">
+                        <label className="compras-item-label-movil">Cantidad</label>
                         <input
                           type="number"
                           min="1"
@@ -693,6 +782,7 @@ export default function Compras() {
                         />
                       </div>
                       <div className="compras-item-field">
+                        <label className="compras-item-label-movil">Precio de costo</label>
                         <input
                           type="number"
                           min="0"
@@ -709,8 +799,10 @@ export default function Compras() {
                           }}
                           onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(item.precio_unitario) }))}
                         />
+                        {errores[`item_${i}_precio`] && <span className="compras-field-error">{errores[`item_${i}_precio`]}</span>}
                       </div>
                       <div className="compras-item-field">
+                        <label className="compras-item-label-movil">Valor de venta</label>
                         <input
                           type="number"
                           min="0"
@@ -735,7 +827,10 @@ export default function Compras() {
                           <span className="compras-field-warning"><IconAlertTriangle /> El valor de venta es igual al costo — no hay ganancia.</span>
                         )}
                       </div>
-                      <div className="compras-item-subtotal">{fmt(lineaTotal)}</div>
+                      <div className="compras-item-subtotal">
+                        <label className="compras-item-label-movil">Subtotal</label>
+                        {fmt(lineaTotal)}
+                      </div>
                       <button
                         type="button"
                         className="compras-item-remove"

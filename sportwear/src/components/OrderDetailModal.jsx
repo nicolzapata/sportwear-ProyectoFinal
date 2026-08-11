@@ -58,7 +58,10 @@ const getBadgeClass = (estado) => {
     case "Confirmado":
     case "Abonado": return "badge-success";
     case "Pendiente": return "badge-warning";
-    case "Cancelado": return "badge-danger";
+    // ── CORREGIDO: el valor real de Ventas.estado cuando se anula una
+    // venta es "Anulado", no "Cancelado" — se dejan los dos por seguridad. ──
+    case "Cancelado":
+    case "Anulado": return "badge-danger";
     default:          return "badge-secondary";
   }
 };
@@ -93,8 +96,13 @@ export default function OrderDetailModal({ pedido, onClose }) {
   const cuotasPagadas   = pedido.abonos?.filter((a) => a.estado === "Confirmado") || [];
   const cuotasPendientes = pedido.abonos?.filter((a) => a.estado === "Pendiente") || [];
 
+  // ── CORREGIDO: sin { timeZone: "UTC" }, una fecha guardada como "solo
+  // fecha" (medianoche UTC) se interpretaba en la zona horaria local del
+  // navegador — en Colombia (UTC-5) eso puede correr la fecha mostrada un
+  // día hacia atrás. Forzar UTC aquí hace que la fecha mostrada siempre
+  // coincida con la que realmente se guardó. ──
   const formatFecha = (f) =>
-    f ? new Date(f).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+    f ? new Date(f).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }) : "—";
 
   return createPortal(
     <div className="od-overlay">
@@ -166,22 +174,34 @@ export default function OrderDetailModal({ pedido, onClose }) {
             </div>
           </div>
 
-          {/* ── Sección 2: Productos ── */}
+          {/* ── Sección 2: Productos — rediseñada con miniaturas más
+              prominentes y filas más limpias, mismo lenguaje visual que el
+              detalle de producto del admin (imagen + info estructurada). ── */}
           <div className="od-section">
             <h3 className="od-section-title"><IconPackage /> Productos</h3>
             {pedido.items?.length > 0 ? (
               <div className="od-products">
                 {pedido.items.map((item, idx) => (
                   <div key={idx} className="od-product-row">
+                    <div className="od-product-thumb">
+                      {item.producto_imagen ? (
+                        <img src={item.producto_imagen} alt={item.producto} />
+                      ) : (
+                        <IconPackage />
+                      )}
+                    </div>
                     <div className="od-product-info">
                       <span className="od-product-name">{item.producto}</span>
                       <div className="od-product-meta">
-                        {item.talla && <span className="od-tag">Talla: {item.talla}</span>}
+                        {item.producto_codigo && <span className="od-tag od-tag-ref">{item.producto_codigo}</span>}
                         {item.color_nombre && <span className="od-tag">{item.color_nombre}</span>}
-                        <span className="od-tag">×{item.cantidad}</span>
+                        {item.talla && <span className="od-tag">Talla {item.talla}</span>}
                       </div>
                     </div>
-                    <span className="od-product-price">{fmt(item.precio_unitario)}</span>
+                    <div className="od-product-right">
+                      <span className="od-product-price">{fmt(item.precio_unitario)}</span>
+                      <span className="od-product-cant">× {item.cantidad}</span>
+                    </div>
                   </div>
                 ))}
               </div>

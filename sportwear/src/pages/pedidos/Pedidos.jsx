@@ -1,5 +1,5 @@
 // src/pages/pedidos/Pedidos.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import './Pedidos.css';
 import api from "../../services/api";
@@ -62,8 +62,21 @@ function EstadoDropdown({ pedido, abierto, onToggle, onCambiar, cambiando, tiene
   useEffect(() => {
     if (!abierto || !btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
-    setCoords({ top: r.bottom + 6, left: r.left, width: r.width });
+    setCoords({ top: r.bottom + 6, left: r.left, width: r.width, arriba: false });
   }, [abierto]);
+
+  // ── NUEVO: voltea el panel hacia arriba si no cabe debajo del botón
+  // (ej. pedidos al final de la tabla) — mismo criterio que el resto de
+  // desplegables de estado del sitio. ──
+  useLayoutEffect(() => {
+    if (!abierto || !coords || coords.arriba || !panelRef.current || !btnRef.current) return;
+    const panelAlto = panelRef.current.getBoundingClientRect().height;
+    const r = btnRef.current.getBoundingClientRect();
+    const espacioAbajo = window.innerHeight - r.bottom;
+    if (panelAlto + 12 > espacioAbajo) {
+      setCoords({ top: r.top - panelAlto - 6, left: r.left, width: r.width, arriba: true });
+    }
+  }, [abierto, coords]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -366,9 +379,23 @@ export default function Pedidos() {
               <div className="pedidos-factura-seccion">
                 <h3 className="pedidos-factura-titulo">Productos</h3>
                 {(verDetalle.items || []).map((item, i) => (
-                  <div key={i} className="pedidos-detalle-item-linea">
-                    <span>{item.producto} {item.talla ? `(${item.talla})` : ""}</span>
-                    <span>Cant: {item.cantidad}</span>
+                  <div key={i} className="pedidos-detalle-producto-row">
+                    <div className="pedidos-detalle-producto-thumb">
+                      {item.producto_imagen ? (
+                        <img src={item.producto_imagen} alt={item.producto} />
+                      ) : (
+                        <IconBox />
+                      )}
+                    </div>
+                    <div className="pedidos-detalle-producto-info">
+                      <span className="pedidos-detalle-producto-nombre">{item.producto}</span>
+                      <div className="pedidos-detalle-producto-tags">
+                        {item.producto_codigo && <span className="pedidos-detalle-tag pedidos-detalle-tag-ref">{item.producto_codigo}</span>}
+                        {item.talla && <span className="pedidos-detalle-tag">Talla: {item.talla}</span>}
+                        {item.color_nombre && <span className="pedidos-detalle-tag">{item.color_nombre}</span>}
+                      </div>
+                    </div>
+                    <span className="pedidos-detalle-producto-cant">Cant: {item.cantidad}</span>
                   </div>
                 ))}
               </div>

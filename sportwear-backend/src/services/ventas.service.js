@@ -2,6 +2,12 @@
 const pool = require('../config/db');
 const { generarComprobanteVentaBuffer } = require('./pdf.service');
 const { enviarCorreo, formatearFecha, filasDatos } = require('./mailer.service');
+// ── CORREGIDO: "cambiarEstado" reimplementaba a mano su propia versión de
+// "qué pasa cuando una venta queda pagada" — con un criterio DISTINTO al
+// que usa Pagos para las cuotas sobrantes (las confirmaba, en vez de
+// anularlas). Ahora usa la misma lógica compartida que Pagos, para que
+// nunca puedan desincronizarse entre sí. ──
+const { evaluarYMarcarPagada, restaurarStockSiHaceFalta } = require('./pagoLogica.service');
 
 // ── NUEVO: monto mínimo permitido para el valor de cada cuota — evita
 // ventas a cuotas donde cada cuota termine siendo un valor sin sentido
@@ -9,12 +15,19 @@ const { enviarCorreo, formatearFecha, filasDatos } = require('./mailer.service')
 // vive aquí — nunca se confía solo en lo que mande el cliente. ──
 const MONTO_MINIMO_ABONO = 20000;
 
-const getVentas = async ({ page, limit, q } = {}) => {
+const getVentas = async ({ page, limit, q, origen } = {}) => {
   const params = [];
   let busquedaSql = '';
   if (q) {
     params.push(`%${q}%`);
     busquedaSql = `AND c.nombre ILIKE $${params.length}`;
+  }
+  // ── NUEVO: filtro "Cliente" (Landing) / "Admin" — pestañas al lado del
+  // buscador, igual que Usuarios/Clientes en el módulo de Usuarios. ──
+  let origenSql = '';
+  if (origen === 'Landing' || origen === 'Admin') {
+    params.push(origen);
+    origenSql = `AND v.origen = $${params.length}`;
   }
 
   const paginar = page !== undefined;
@@ -34,7 +47,7 @@ const getVentas = async ({ page, limit, q } = {}) => {
     FROM "Ventas" v
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
     LEFT JOIN "PagosAbonos" pa ON v.id_venta=pa.id_venta
-    WHERE v.estado != 'Abandonado' ${busquedaSql}
+    WHERE v.estado != 'Abandonado' ${busquedaSql} ${origenSql}
     GROUP BY v.id_venta, c.nombre, c.email
     ORDER BY v.id_venta DESC
     ${limitOffsetSql}
@@ -68,11 +81,21 @@ const getVentaById = async (id) => {
     WHERE v.id_venta=$1
   `, [id]);
   if (!cab.rows.length) throw { status: 404, message: 'No encontrada' };
+  // ── NUEVO: se agrega color, código de referencia e imagen del producto —
+  // el modal de detalle de pedido (cliente) ya intentaba mostrar
+  // "color_nombre", pero esta consulta nunca lo mandaba, así que nunca se
+  // vio. La imagen usa la MISMA subconsulta verificada que ya usa
+  // productos.service.js (no se adivina el nombre de columna otra vez). ──
   const det = await pool.query(`
-    SELECT dv.*, p.nombre AS producto, pv.talla, pv.stock
+    SELECT dv.*, p.nombre AS producto, p.codigo AS producto_codigo,
+           pv.talla, pv.stock, col.nombre AS color_nombre,
+           (SELECT url FROM "Imagenes"
+            WHERE id_referencia = p.id_producto AND tipo_referencia = 'Producto'
+              AND es_principal = true AND estado = 'Activo' LIMIT 1) AS producto_imagen
     FROM "DetalleVenta" dv
     JOIN "Productos" p ON dv.id_producto=p.id_producto
     LEFT JOIN "ProductoVariantes" pv ON dv.id_variante=pv.id_variante
+    LEFT JOIN "Colores" col ON pv.id_color=col.id_color
     WHERE dv.id_venta=$1
   `, [id]);
   return { ...cab.rows[0], items: det.rows };
@@ -202,15 +225,25 @@ const crearVenta = async (datos) => {
     // pasaba antes, por lo que se marca stock_descontado=true desde ya, para
     // que si más adelante esta venta pasa a "Pagado" por el módulo de Pagos,
     // no se vuelva a descontar el stock por segunda vez.
+    // ── NUEVO: si es una venta a cuotas con más de una cuota, marcar
+    // "Pagado" en el formulario solo confirma la PRIMERA cuota — la venta en
+    // sí todavía no está completamente pagada, así que Ventas.estado no
+    // puede decir "Pagado" (rompería la regla de Pedidos que exige el pago
+    // confirmado antes de avanzar, y la limpieza automática de abonos
+    // huérfanos). En ese caso queda como "Confirmado" (pedido en firme,
+    // pago parcial), igual que cuando lo crea el checkout público. ──
+    const esCuotasParciales = tipo_pago === 'cuotas' && Number(num_cuotas) > 1;
+    const estadoVentaFinal = (estado === 'Pagado' && esCuotasParciales) ? 'Confirmado' : (estado || 'Pendiente');
+
     const venta = await client.query(`
       INSERT INTO "Ventas"
         (id_cliente, subtotal, descuento, impuesto, total, estado, fecha, observaciones,
-         tipo_pago, num_cuotas, metodo_pago, motivo_descuento, direccion_entrega, stock_descontado)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,true)
+         tipo_pago, num_cuotas, metodo_pago, motivo_descuento, direccion_entrega, stock_descontado, origen)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,true,'Admin')
       RETURNING *
     `, [
       id_cliente, subtotal, descuento || 0, impuesto || 0, total,
-      estado || 'Pendiente', fecha || new Date(), observaciones || null,
+      estadoVentaFinal, fecha || new Date(), observaciones || null,
       tipo_pago || 'completo', num_cuotas || null, metodo_pago || null,
       (descuento && descuento > 0) ? motivo_descuento.trim() : null,
       direccion_entrega?.trim() || null,
@@ -248,16 +281,24 @@ const crearVenta = async (datos) => {
     if (tipo_pago === 'cuotas' && num_cuotas && total > 0) {
       const valorCuota = Math.ceil(total / num_cuotas);
       for (let i = 0; i < num_cuotas; i++) {
+        // ── CORREGIDO: "Primera cuota confirmada" en el formulario solo debe
+        // confirmar la cuota #1 — antes esta condición no revisaba "i",
+        // así que confirmaba TODAS las cuotas de una vez, sin importar
+        // cuántas hubiera. ──
+        const estadoCuota = (estado === 'Pagado' && i === 0) ? 'Confirmado' : 'Pendiente';
         await client.query(`
           INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha, num_cuota)
           VALUES ($1,$2,'Abono',$3,$4,$5,$6)
-        `, [id_venta, valorCuota, metodo_pago || 'Efectivo',
-            estado === 'Pagado' ? 'Confirmado' : 'Pendiente', new Date(), i + 1]);
+        `, [id_venta, valorCuota, metodo_pago || 'Efectivo', estadoCuota, new Date(), i + 1]);
       }
     } else if (total > 0) {
+      // ── CORREGIDO: esto decía "tipo='Abono'" sin importar si la venta
+      // era a cuotas o de pago completo — así que una venta de pago
+      // completo terminaba con su único registro de pago etiquetado como
+      // "Abono" en la tabla de Pagos, en vez de "Pago completo". ──
       await client.query(`
         INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha)
-        VALUES ($1,$2,'Abono',$3,$4,$5)
+        VALUES ($1,$2,'Pago completo',$3,$4,$5)
       `, [id_venta, total, metodo_pago || 'Efectivo',
           estado === 'Pagado' ? 'Confirmado' : 'Pendiente', new Date()]);
     }
@@ -281,89 +322,97 @@ const crearVenta = async (datos) => {
 
 const cambiarEstado = async (id, estado) => {
   if (!estado) throw { status: 400, message: 'Estado requerido' };
-  const result = await pool.query(
-    `UPDATE "Ventas" SET estado=$1 WHERE id_venta=$2 RETURNING *`,
-    [estado, id]
-  );
-  if (!result.rows.length) throw { status: 404, message: 'No encontrada' };
-  const venta = result.rows[0];
 
-  // ── NUEVO: si la venta se anula, el pedido también se cancela ──
-  if (estado === 'Anulado') {
-    await pool.query(`
-      UPDATE "Pedidos" SET estado_pedido='Cancelado', fecha_actualizacion=now()
-      WHERE id_venta=$1 AND estado_pedido NOT IN ('Entregado','Cancelado')
-    `, [id]);
-  }
+  const client = await pool.connect();
+  let tipoNotificacionPago = null;
+  try {
+    await client.query('BEGIN');
 
-  if (estado === 'Pagado') {
-    // ── CORREGIDO: primero confirmar los abonos "Pendiente" que ya existen para esta venta
-    // (el que se crea automático al registrar la venta), en vez de crear uno nuevo aparte
-    // dejando el viejo sin tocar — así evitamos duplicados y calzamos con pagarTotal(). ──
-    await pool.query(
-      `UPDATE "PagosAbonos" SET estado='Confirmado' WHERE id_venta=$1 AND estado='Pendiente'`,
+    // Bloquea la fila antes de tocar nada (evita condiciones de carrera si
+    // dos peticiones intentan cambiar el estado de la misma venta a la vez).
+    const actualRes = await client.query(
+      `SELECT id_venta FROM "Ventas" WHERE id_venta=$1 FOR UPDATE`,
       [id]
     );
+    if (!actualRes.rows.length) throw { status: 404, message: 'No encontrada' };
 
-    // Si aún así queda un saldo sin cubrir (por ejemplo, no había ningún abono pendiente
-    // registrado), se crea uno nuevo para que el total cuadre.
-    const abonadoRes = await pool.query(
-      `SELECT COALESCE(SUM(monto),0) AS abonado FROM "PagosAbonos" WHERE id_venta=$1 AND estado='Confirmado'`,
-      [id]
-    );
-    const abonado = Number(abonadoRes.rows[0].abonado) || 0;
-    const saldo = Number(venta.total) - abonado;
-    if (saldo > 0.01) {
-      await pool.query(`
-        INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha)
-        VALUES ($1,$2,'Abono',$3,'Confirmado',$4)
-      `, [id, saldo, venta.metodo_pago || 'Efectivo', new Date()]);
+    // ── CORREGIDO: anular una venta nunca le devolvía el stock que ya se
+    // había descontado — esas unidades quedaban perdidas del inventario
+    // para siempre, sin importar que la venta jamás se hubiera completado.
+    // Se usa la misma función compartida que ya se usaría desde cualquier
+    // otro lugar, en vez de repetir la lógica aquí también. ──
+    if (estado === 'Anulado') {
+      await restaurarStockSiHaceFalta(client, id);
     }
 
-    // ── NUEVO (Inventario): si el stock de esta venta todavía no se había
-    // descontado (pedidos pagados por transferencia/tarjeta, que no descuentan
-    // stock al crearse sino hasta que se confirma el pago), se descuenta ahora,
-    // línea por línea, y se marca para no volver a descontarlo. ──
-    if (!venta.stock_descontado) {
-      const detalle = await pool.query(
-        `SELECT id_variante, cantidad FROM "DetalleVenta" WHERE id_venta=$1 AND id_variante IS NOT NULL`,
+    let venta;
+
+    if (estado === 'Pagado') {
+      // ── CORREGIDO: antes esta rama FORZABA "Ventas.estado='Pagado'"
+      // directo, y por separado reimplementaba todo lo que pasa cuando una
+      // venta queda pagada (descuento de stock, avance de pedido en
+      // contraentrega, notificación) — una segunda versión de la misma
+      // lógica que ya vive en evaluarYMarcarPagada (Pagos), con el riesgo
+      // real de que las dos se desincronizaran.
+      //
+      // Ahora: lo único propio de declarar "Pagado" desde Ventas
+      // directamente (sin pasar por un abono puntual) es confirmar las
+      // cuotas que ya estaban pendientes de cobrar — eso sí es una acción
+      // real. Pero quién decide si con eso YA califica como "Pagado" de
+      // verdad es evaluarYMarcarPagada, mirando la plata real confirmada
+      // contra el total — nunca una orden directa. Así, si por algún
+      // motivo la plata confirmada no alcanza a cubrir el total (datos
+      // inconsistentes, un caso raro), la venta se queda en su estado
+      // real en vez de mentir diciendo "Pagado" sin que la cuenta cuadre. ──
+      await client.query(
+        `UPDATE "PagosAbonos" SET estado='Confirmado' WHERE id_venta=$1 AND estado='Pendiente'`,
         [id]
       );
-      for (const item of detalle.rows) {
-        await pool.query(
-          `UPDATE "ProductoVariantes" SET stock=stock-$1 WHERE id_variante=$2`,
-          [item.cantidad, item.id_variante]
-        );
-      }
-      await pool.query(`UPDATE "Ventas" SET stock_descontado=true WHERE id_venta=$1`, [id]);
-    }
+      // ── CORREGIDO: antes esto pedía "evaluarYMarcarPagada" con un require
+      // perezoso apuntando a pagos.service.js, para esquivar una dependencia
+      // circular (pagos.service.js necesita algo de este archivo también).
+      // Ahora esa lógica compartida vive en su propio módulo
+      // (pagoLogica.service.js), que no depende de ninguno de los dos —
+      // así que se puede importar arriba del todo, normal, sin trucos. ──
+      tipoNotificacionPago = await evaluarYMarcarPagada(client, id);
 
-    // ── NUEVO: en contraentrega, el pago se cobra EN el momento de la
-    // entrega — son el mismo evento físico. Si esta venta es contraentrega,
-    // marcarla como pagada avanza el pedido a "Entregado" solo. ──
-    if (venta.metodo_pago === 'Efectivo') {
-      const pedidoRes = await pool.query(
-        `SELECT id_pedido, estado_pedido FROM "Pedidos" WHERE id_venta=$1`,
-        [id]
+      const refrescada = await client.query(`SELECT * FROM "Ventas" WHERE id_venta=$1`, [id]);
+      venta = refrescada.rows[0];
+    } else {
+      const result = await client.query(
+        `UPDATE "Ventas" SET estado=$1 WHERE id_venta=$2 RETURNING *`,
+        [estado, id]
       );
-      const pedido = pedidoRes.rows[0];
-      if (pedido && !['Entregado', 'Cancelado'].includes(pedido.estado_pedido)) {
-        await pool.query(
-          `UPDATE "Pedidos" SET estado_pedido='Entregado', fecha_actualizacion=now() WHERE id_pedido=$1`,
-          [pedido.id_pedido]
-        );
-        await pool.query(
-          `INSERT INTO "PedidosHistorial" (id_pedido, estado, fecha) VALUES ($1,'Entregado',now())`,
-          [pedido.id_pedido]
+      venta = result.rows[0];
+
+      if (estado === 'Anulado') {
+        await client.query(`
+          UPDATE "Pedidos" SET estado_pedido='Cancelado', fecha_actualizacion=now()
+          WHERE id_venta=$1 AND estado_pedido NOT IN ('Entregado','Cancelado')
+        `, [id]);
+        // ── NUEVO: si quedaban cuotas pendientes por cobrar, ya no hay
+        // nada que cobrar — se anulan también, para que no queden abonos
+        // "Pendiente" huérfanos de una venta que ya no existe. ──
+        await client.query(
+          `UPDATE "PagosAbonos" SET estado='Anulado' WHERE id_venta=$1 AND estado='Pendiente'`,
+          [id]
         );
       }
     }
 
-    // ── NUEVO: si la venta pasó a estar pagada, enviar el comprobante por correo ──
-    notificarComprobantePago(id);
+    await client.query('COMMIT');
+
+    if (estado === 'Pagado' && tipoNotificacionPago === 'completo') {
+      notificarComprobantePago(id);
+    }
+
+    return venta;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
-
-  return venta;
 };
 
 // ── NUEVO: correo de "pedido recibido" — se envía SIEMPRE al crear el pedido,
@@ -440,8 +489,8 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
     const venta = await client.query(`
       INSERT INTO "Ventas"
         (id_cliente, subtotal, descuento, impuesto, total, estado, fecha,
-         direccion_entrega, id_barrio, metodo_pago, tipo_pago, num_cuotas, stock_descontado)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+         direccion_entrega, id_barrio, metodo_pago, tipo_pago, num_cuotas, stock_descontado, origen)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'Landing')
       RETURNING *
     `, [
       id_cliente, total, 0, 0, total,
@@ -524,9 +573,12 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
         `, [id_venta, valorCuota, metodo_pago || 'Efectivo', new Date(), i + 1]);
       }
     } else {
+      // ── CORREGIDO: mismo bug que en crearVenta (admin) — el registro de
+      // pago de una venta de pago completo salía etiquetado como "Abono"
+      // en la tabla de Pagos. ──
       await client.query(`
         INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha)
-        VALUES ($1,$2,'Abono',$3,'Pendiente',$4)
+        VALUES ($1,$2,'Pago completo',$3,'Pendiente',$4)
       `, [id_venta, total, metodo_pago || 'Efectivo', new Date()]);
     }
 
@@ -569,8 +621,8 @@ const crearCarritoAbandonado = async ({ total, items, id_cliente }) => {
 
     const venta = await client.query(`
       INSERT INTO "Ventas"
-        (id_cliente, subtotal, descuento, impuesto, total, estado, fecha, observaciones)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        (id_cliente, subtotal, descuento, impuesto, total, estado, fecha, observaciones, origen)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'Landing')
       RETURNING *
     `, [id_cliente, total, 0, 0, total, 'Abandonado', new Date(), 'Carrito abandonado']);
 

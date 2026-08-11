@@ -216,6 +216,18 @@
 .mc-pedido-card:hover {
   box-shadow: 0 6px 18px rgba(50,35,20,0.06);
 }
+/* ── NUEVO: pedido cancelado — se ve visiblemente apagado/en gris de un
+   vistazo, sin tener que leer el badge para darse cuenta. ── */
+.mc-pedido-card-cancelado {
+  background: var(--dvna-pale);
+  opacity: 0.72;
+}
+.mc-pedido-card-cancelado:hover {
+  box-shadow: none;
+}
+.mc-pedido-card-cancelado .mc-pedido-item-thumb img {
+  filter: grayscale(1);
+}
 .mc-pedido-card-header {
   display: flex;
   align-items: center;
@@ -234,6 +246,17 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--dvna-charcoal);
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+/* ── NUEVO: código real de la venta (V-XXX), junto al número de pedido
+   del cliente — referencia exacta para soporte. ── */
+.mc-pedido-card-codigo {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--dvna-muted);
+  letter-spacing: 0.02em;
 }
 .mc-pedido-card-fecha {
   font-family: 'DM Sans', system-ui, sans-serif;

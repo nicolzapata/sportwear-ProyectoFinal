@@ -308,12 +308,13 @@ html, body {
   border-radius: 2px;
 }
 
-/* ── Badges de estado: Nuevo/Promoción/Agotado — mismo lenguaje visual
-   "ribbon" con degradado e ícono. Agotado usa su propio color (gris oscuro)
-   para distinguirse claramente de las indicaciones de marketing. ── */
+/* ── Badges de estado: Nuevo/Promoción/Agotado/Inactivo — mismo lenguaje
+   visual "ribbon" con degradado e ícono, todas con la misma altura para
+   que se apilen parejo. Cada una con su propio color. ── */
 .catalog-card-badge.badge-nuevo,
 .catalog-card-badge.badge-promo,
-.catalog-card-badge.badge-agotado {
+.catalog-card-badge.badge-agotado,
+.catalog-card-badge.badge-admin-inactivo {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -325,7 +326,8 @@ html, body {
 }
 .catalog-card-badge.badge-nuevo svg,
 .catalog-card-badge.badge-promo svg,
-.catalog-card-badge.badge-agotado svg {
+.catalog-card-badge.badge-agotado svg,
+.catalog-card-badge.badge-admin-inactivo svg {
   flex-shrink: 0;
 }
 .catalog-card-badge.badge-nuevo {
@@ -336,6 +338,9 @@ html, body {
 }
 .catalog-card-badge.badge-agotado {
   background: linear-gradient(135deg, #57534e, #292524);
+}
+.catalog-card-badge.badge-admin-inactivo {
+  background: linear-gradient(135deg, #64748b, #334155);
 }
 
 /* ── Badge styles ── */

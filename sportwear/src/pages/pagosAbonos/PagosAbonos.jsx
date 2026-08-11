@@ -1,5 +1,5 @@
 // src/pages/pagos/PagosAbonos.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import './PagosAbonos.css';
 import api from "../../services/api";
@@ -51,8 +51,19 @@ function EstadoDropdownPago({ pago, abierto, onToggle, onCambiar, cambiando, tie
   useEffect(() => {
     if (!abierto || !btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
-    setCoords({ top: r.bottom + 6, left: r.left, width: r.width });
+    setCoords({ top: r.bottom + 6, left: r.left, width: r.width, arriba: false });
   }, [abierto]);
+
+  // ── NUEVO: voltea el panel hacia arriba si no cabe debajo del botón. ──
+  useLayoutEffect(() => {
+    if (!abierto || !coords || coords.arriba || !panelRef.current || !btnRef.current) return;
+    const panelAlto = panelRef.current.getBoundingClientRect().height;
+    const r = btnRef.current.getBoundingClientRect();
+    const espacioAbajo = window.innerHeight - r.bottom;
+    if (panelAlto + 12 > espacioAbajo) {
+      setCoords({ top: r.top - panelAlto - 6, left: r.left, width: r.width, arriba: true });
+    }
+  }, [abierto, coords]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -215,7 +226,13 @@ export default function PagosAbonos() {
   useEffect(() => { cargar(pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
 
   const handleVentaChange = (id_venta) => {
-    setForm(f => ({ ...f, id_venta, tipo: "Pago completo" }));
+    // ── CORREGIDO: antes esto siempre fijaba tipo="Pago completo" sin
+    // importar qué venta se eligiera — así que un pago para una venta a
+    // cuotas también se guardaba etiquetado "Pago completo" en vez de
+    // "Abono". Ahora se calcula según el tipo_pago real de la venta elegida. ──
+    const ventaSel = ventas.find(v => String(v.id_venta) === String(id_venta));
+    const tipoCorrecto = ventaSel?.tipo_pago === 'cuotas' ? 'Abono' : 'Pago completo';
+    setForm(f => ({ ...f, id_venta, tipo: tipoCorrecto }));
     // ── NUEVO: ahora que /ventas sí trae total_pagado real, se puede avisar
     // de una vez si la venta elegida ya está completamente pagada — antes
     // esto no se detectaba nunca (total_pagado llegaba undefined = 0

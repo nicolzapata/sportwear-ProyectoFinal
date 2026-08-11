@@ -1,5 +1,5 @@
 // src/pages/pedidosVentas/PedidosVentas.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import './PedidosVentas.css';
 import api from "../../services/api";
@@ -8,7 +8,7 @@ import { useToast } from "../../context/ToastContext";
 import { validarMonto, MAX_MONTO, MAX_LONGITUD_TEXTO_LIBRE, MAX_LONGITUD_DIRECCION } from "../../utils/numerico";
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import Loader from "../../components/Loader";
-import { IconDollar, IconEye, IconPrint, IconSearch, IconX } from "../../components/Icons";
+import { IconDollar, IconEye, IconSearch, IconX } from "../../components/Icons";
 
 const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;
@@ -49,6 +49,16 @@ const IconCheckSm = () => (
     <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
+// ── NUEVO: ícono propio de "reporte" (documento con líneas + gráfica
+// pequeña) — antes se usaba IconPrint, que no se leía como un reporte. ──
+const IconReporte = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14 2 14 8 20 8"/>
+    <line x1="8" y1="13" x2="16" y2="13"/>
+    <line x1="8" y1="17" x2="12" y2="17"/>
+  </svg>
+);
 
 function EstadoDropdownVenta({ venta, abierto, onToggle, onCambiar, cambiando, tienePerm }) {
   const btnRef = useRef(null);
@@ -64,8 +74,19 @@ function EstadoDropdownVenta({ venta, abierto, onToggle, onCambiar, cambiando, t
   useEffect(() => {
     if (!abierto || !btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
-    setCoords({ top: r.bottom + 6, left: r.left, width: r.width });
+    setCoords({ top: r.bottom + 6, left: r.left, width: r.width, arriba: false });
   }, [abierto]);
+
+  // ── NUEVO: voltea el panel hacia arriba si no cabe debajo del botón. ──
+  useLayoutEffect(() => {
+    if (!abierto || !coords || coords.arriba || !panelRef.current || !btnRef.current) return;
+    const panelAlto = panelRef.current.getBoundingClientRect().height;
+    const r = btnRef.current.getBoundingClientRect();
+    const espacioAbajo = window.innerHeight - r.bottom;
+    if (panelAlto + 12 > espacioAbajo) {
+      setCoords({ top: r.top - panelAlto - 6, left: r.left, width: r.width, arriba: true });
+    }
+  }, [abierto, coords]);
 
   useEffect(() => {
     if (!abierto) return;
@@ -157,6 +178,13 @@ export default function PedidosVentas() {
   const [datos,       setDatos]       = useState([]);
   const [total,       setTotal]       = useState(0);
   const [cargando,    setCargando]    = useState(true);
+  // ── NUEVO: antes, cada cambio de filtro/búsqueda volvía a poner
+  // cargando=true, y como el componente hacía "if (cargando) return
+  // <Loader/>", TODA la tabla (con el buscador y las pestañas adentro) se
+  // desmontaba y remontaba — por eso se sentía como si la página se
+  // refrescara al cambiar de pestaña. Ahora el loader de pantalla completa
+  // solo se muestra en la carga inicial. ──
+  const primerCargaHecha = useRef(false);
   const [errorMsg,    setErrorMsg]    = useState("");
   const [busqueda,    setBusqueda]    = useState("");
   const [busquedaDebounced, setBusquedaDebounced] = useState("");
@@ -172,6 +200,26 @@ export default function PedidosVentas() {
   // ── Nueva venta ──
   const [clientes,   setClientes]   = useState([]);
   const [productos,  setProductos]  = useState([]);
+  // ── NUEVO: filtro de pestañas "Todas / Cliente / Admin" al lado del
+  // buscador — mismo patrón que "Usuarios"/"Clientes" en el módulo de
+  // Usuarios. Filtra según quién registró la venta: el cliente desde la
+  // Landing, o el administrador directamente aquí. ──
+  const [filtroOrigen, setFiltroOrigen] = useState(""); // "" = Todas | "Landing" | "Admin"
+  // ── NUEVO: buscador de cliente con autocompletar — con muchos clientes,
+  // desplazarse en un <select> plano es incómodo. Se reemplaza por un input
+  // que filtra mientras escribes, mismo patrón que ya usa el buscador de
+  // productos del catálogo público. ──
+  const [busquedaCliente, setBusquedaCliente] = useState("");
+  const [clienteDropdownAbierto, setClienteDropdownAbierto] = useState(false);
+  const clienteInputRef = useRef(null);
+  // ── NUEVO: métodos de pago reales, traídos de Pagos — antes estaban fijos
+  // en el código ("Efectivo"/"Tarjeta"/"Transferencia"), sin relación con lo
+  // que el admin gestiona en Pagos → "Métodos de pago". ──
+  const [metodosPago, setMetodosPago] = useState([]);
+
+  useEffect(() => {
+    api.get("/metodos-pago?activos=1").then(({ data }) => setMetodosPago(data || [])).catch(() => setMetodosPago([]));
+  }, []);
   const [modalVenta, setModalVenta] = useState(false);
   const [guardandoVenta, setGuardandoVenta] = useState(false);
   const [formVenta,  setFormVenta]  = useState(formVentaInicial());
@@ -182,15 +230,19 @@ export default function PedidosVentas() {
   const [errorDatosVenta,   setErrorDatosVenta]   = useState("");
 
   // Buscador con debounce: evita disparar una petición por cada tecla.
+  // ── CORREGIDO: antes "resetear a página 1" vivía en un efecto aparte que
+  // dependía de busquedaDebounced/filtroOrigen — eso significaba que un
+  // solo cambio de filtro disparaba DOS ciclos de carga en cadena (uno con
+  // la página vieja, otro ya con página 1), lo cual se sentía como que la
+  // pantalla "recargaba" de golpe. Ahora se resetea la página en el mismo
+  // lugar donde se origina cada cambio, para que sea un solo re-render. ──
   useEffect(() => {
-    const t = setTimeout(() => setBusquedaDebounced(busqueda), 350);
+    const t = setTimeout(() => { setBusquedaDebounced(busqueda); setPagina(1); }, 350);
     return () => clearTimeout(t);
   }, [busqueda]);
 
-  useEffect(() => { setPagina(1); }, [busquedaDebounced]);
-
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { cargar(false, pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
+  useEffect(() => { cargar(false, pagina, busquedaDebounced); }, [pagina, busquedaDebounced, filtroOrigen]);
 
   const cargar = async (silencioso = false, pag = pagina, q = busquedaDebounced) => {
     if (!silencioso) {
@@ -199,21 +251,27 @@ export default function PedidosVentas() {
     setErrorMsg("");
     const inicio = Date.now();
     try {
-      const { data } = await api.get("/ventas", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      const { data } = await api.get("/ventas", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined, origen: filtroOrigen || undefined } });
 
-      // El backend ya trae total_pagado (suma de abonos confirmados) y los abonos de
-      // cada venta — el cálculo de "estado" (Pagado/Pendiente/Anulado) se mantiene acá
-      // igual que antes, solo que ahora parte de datos ya paginados por el backend.
       const ventas = data.data.map(v => {
         const abonos      = v.abonos || [];
         const totalPagado = v.total_pagado || 0;
 
+        // ── CORREGIDO: antes, para ventas a cuotas, el estado se calculaba
+        // contando cuántos abonos tenían "num_cuota" marcado como Confirmado
+        // — pero los abonos registrados a mano desde esta misma pantalla
+        // (botón "Registrar Abono"/"Registrar Pago") nunca mandan num_cuota,
+        // así que sí sumaban al total pagado pero NUNCA contaban para este
+        // cálculo. Resultado: una venta con "Sin saldo" (100% pagado) podía
+        // seguir mostrando "Pendiente" en el badge de Estado.
+        //
+        // Ahora se usa un solo criterio, igual para cuotas y pago completo:
+        // si lo pagado ya cubre el total, está Pagado — sin importar cómo
+        // se etiquetó cada abono individual. Es la misma plata, un solo
+        // criterio, sin contradicciones entre la barra de progreso y el badge. ──
         let estado;
         if (v.estado === "Anulado") {
           estado = "Anulado";
-        } else if (v.tipo_pago === 'cuotas' && v.num_cuotas) {
-          const cuotasConfirmadas = abonos.filter(p => p.estado === "Confirmado" && p.num_cuota).length;
-          estado = cuotasConfirmadas >= v.num_cuotas ? "Pagado" : "Pendiente";
         } else {
           estado = totalPagado >= v.total ? "Pagado" : "Pendiente";
         }
@@ -222,17 +280,10 @@ export default function PedidosVentas() {
       });
 
       if (!silencioso) {
-        // ── Tiempo mínimo de carga (400ms) para que la animación se vea intencional
-        // y no como un parpadeo — solo aplica a la carga inicial de página completa. ──
         const transcurrido = Date.now() - inicio;
         if (transcurrido < 400) await new Promise((r) => setTimeout(r, 400 - transcurrido));
       }
 
-      // ── NUEVO: en modo "silencioso" (después de un pago/cambio de estado) NO se pasa
-      // por el estado de carga/skeleton — así las filas de la tabla se quedan montadas
-      // en el DOM, y la barrita de "Pago" de esa fila sí puede animarse suavemente de
-      // su valor anterior al nuevo (transition: width), en vez de aparecer ya en su
-      // posición final de golpe. ──
       setDatos(ventas);
       setTotal(data.total);
     } catch (err) {
@@ -240,10 +291,10 @@ export default function PedidosVentas() {
       setErrorMsg("Error al cargar los datos");
     } finally {
       if (!silencioso) setCargando(false);
+      primerCargaHecha.current = true;
     }
   };
 
-  // ── Cargar clientes y productos solo cuando se abre el modal de nueva venta ──
   const cargarDatosVenta = async () => {
     setCargandoDatosVenta(true);
     setErrorDatosVenta("");
@@ -262,7 +313,6 @@ export default function PedidosVentas() {
     }
   };
 
-  // ── NUEVO: consulta el cupo de crédito del cliente cuando la venta es a cuotas ──
   useEffect(() => {
     if (!modalVenta || formVenta.tipo_pago !== "cuotas" || !formVenta.id_cliente) {
       setCreditoInfo(null);
@@ -277,11 +327,42 @@ export default function PedidosVentas() {
     return () => { cancelado = true; };
   }, [modalVenta, formVenta.id_cliente, formVenta.tipo_pago]);
 
+  // ── NUEVO: cierra el desplegable de clientes al hacer clic afuera ──
+  useEffect(() => {
+    if (!clienteDropdownAbierto) return;
+    const cerrar = (e) => {
+      if (clienteInputRef.current && !clienteInputRef.current.contains(e.target)) {
+        setClienteDropdownAbierto(false);
+      }
+    };
+    document.addEventListener('mousedown', cerrar);
+    return () => document.removeEventListener('mousedown', cerrar);
+  }, [clienteDropdownAbierto]);
+
   const abrirNuevaVenta = () => {
     setFormVenta(formVentaInicial());
     setErroresVenta({});
+    setBusquedaCliente("");
+    setClienteDropdownAbierto(false);
     setModalVenta(true);
     cargarDatosVenta();
+  };
+
+  // ── NUEVO: encuentra la variante seleccionada de un ítem, para poder
+  // validar su stock disponible en tiempo real. ──
+  const getVarianteSeleccionada = (item) => {
+    const producto = productos.find((p) => String(p.id_producto) === String(item.id_producto));
+    return (producto?.variantes || []).find((v) => String(v.id_variante) === String(item.id_variante));
+  };
+
+  // ── NUEVO: la cantidad no puede superar el stock disponible de la
+  // variante elegida — mismo criterio en tiempo real y en el submit. ──
+  const errorItemStock = (item) => {
+    const variante = getVarianteSeleccionada(item);
+    if (!variante) return ""; // producto sin variantes (no hay stock que validar aquí)
+    const cant = Number(item.cantidad) || 0;
+    if (cant > variante.stock) return `Solo hay ${variante.stock} unidades disponibles`;
+    return "";
   };
 
   const actualizarItemVenta = (index, campo, valor) => {
@@ -290,7 +371,6 @@ export default function PedidosVentas() {
       items[index] = { ...items[index], [campo]: valor };
       if (campo === "id_producto") {
         items[index].id_variante = "";
-        // ── NUEVO: al elegir el producto, trae automáticamente su precio del catálogo ──
         const producto = productos.find((p) => String(p.id_producto) === String(valor));
         items[index].precio_unitario = producto?.precio ?? "";
       }
@@ -355,6 +435,11 @@ export default function PedidosVentas() {
       if (variantesActivas.length > 0 && !it.id_variante) e[`item_${i}_variante`] = "Selecciona talla y color";
       const msgCantidad = errorItemCantidad(it.cantidad);
       if (msgCantidad) e[`item_${i}_cantidad`] = msgCantidad;
+      // ── NUEVO: no dejar registrar más unidades de las que hay en stock ──
+      else {
+        const msgStock = errorItemStock(it);
+        if (msgStock) e[`item_${i}_cantidad`] = msgStock;
+      }
       const msgPrecio = errorItemPrecio(it.precio_unitario);
       if (msgPrecio) e[`item_${i}_precio`] = msgPrecio;
       const msgDescLinea = errorItemDescuento(it.descuento_linea, it.cantidad, it.precio_unitario);
@@ -379,7 +464,12 @@ export default function PedidosVentas() {
         direccion_entrega: formVenta.direccion_entrega?.trim() || null,
         tipo_pago: formVenta.tipo_pago,
         num_cuotas: formVenta.tipo_pago === "cuotas" ? Number(formVenta.num_cuotas) : null,
-        metodo_pago: formVenta.metodo_pago,
+        // ── NUEVO: se manda el método solo cuando de verdad aplica a algo
+        // concreto — pago completo (siempre), o cuotas cuando se confirma la
+        // primera cuota de una vez (ese método es para ESA cuota puntual).
+        // Si es cuotas y queda "Pendiente", no hay ningún pago que describir
+        // todavía, así que no se manda nada. ──
+        metodo_pago: (formVenta.tipo_pago !== "cuotas" || formVenta.estado === "Pagado") ? formVenta.metodo_pago : null,
         items: formVenta.items.map((it) => ({
           id_producto: Number(it.id_producto),
           id_variante: it.id_variante ? Number(it.id_variante) : null,
@@ -406,10 +496,6 @@ export default function PedidosVentas() {
     setCambiandoEstado(true);
     try {
       await api.patch(`/ventas/${id}/estado`, { estado });
-      // ── CORREGIDO: antes solo actualizaba "estado" localmente, dejando "total_pagado"
-      // (la columna Pago) con el valor viejo. Ahora recarga desde el backend, que ya
-      // confirma el abono correspondiente al marcar "Pagado" — en modo silencioso, para
-      // que la fila no se remonte y la barrita de "Pago" se anime en vez de aparecer de golpe. ──
       await cargar(true);
       showToast("exito", `Venta marcada como "${estado}".`);
     } catch (err) {
@@ -423,7 +509,6 @@ export default function PedidosVentas() {
     const e = {};
     const restante = abonosModal ? abonosModal.total - (abonosModal.total_pagado || 0) : 0;
     const esCuotas = abonosModal?.tipo_pago === "cuotas";
-    // ── NUEVO: si NO es a cuotas, no se pide monto — se cobra el saldo restante completo ──
     const montoAEnviar = esCuotas ? Number(formAbono.monto) : restante;
 
     if (esCuotas) {
@@ -445,8 +530,6 @@ export default function PedidosVentas() {
         fecha:    formAbono.fecha || new Date().toISOString().split("T")[0]
       });
 
-      // ── Recarga en modo silencioso: la fila no se remonta, así la barrita
-      // de "Pago" de esa fila se anima de su valor anterior al nuevo. ──
       await cargar(true);
 
       setAbonosModal(null);
@@ -468,7 +551,7 @@ export default function PedidosVentas() {
     }
   };
 
-  if (cargando) return <Loader text="Cargando ventas..." />;
+  if (cargando && !primerCargaHecha.current) return <Loader text="Cargando ventas..." />;
 
   if (errorMsg) return (
     <div className="pedidosventas-container">
@@ -485,6 +568,73 @@ export default function PedidosVentas() {
             <input type="text" className="pedidosventas-search-input" placeholder="Buscar por cliente o ID..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
             {busqueda && <button className="pedidosventas-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
           </div>
+          {/* ── CORREGIDO: antes cada botón solo cambiaba de color de golpe al
+              hacer clic — ahora hay una "píldora" que se desliza de una
+              posición a otra con transform + transition, como un selector
+              deslizante de verdad. Se arma aparte (sin tocar Usuarios.css
+              directamente) para no arriesgarme a romper la pestaña real de
+              Usuarios sin haber visto su JSX. ── */}
+          {/* ── NUEVO: regla con !important directa aquí — los dos intentos
+              anteriores (outline en línea, luego blur() al soltar el clic)
+              no bastaron, así que esto gana pase lo que pase, sin importar
+              si el aro venía de "outline" o de "box-shadow" en algún estilo
+              global. ── */}
+          <style>{`
+            .pv-origen-btn,
+            .pv-origen-btn:focus,
+            .pv-origen-btn:focus-visible,
+            .pv-origen-btn:active {
+              outline: none !important;
+              box-shadow: none !important;
+              -webkit-tap-highlight-color: transparent !important;
+            }
+          `}</style>
+          <div className="usuarios-filter-toggle" style={{ position: "relative" }}>
+            <div
+              style={{
+                position: "absolute",
+                top: 4, bottom: 4, left: 4,
+                width: "calc((100% - 8px) / 3)",
+                borderRadius: 40,
+                background: "var(--brown)",
+                transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
+                transform: `translateX(${["", "Landing", "Admin"].indexOf(filtroOrigen) * 100}%)`,
+                zIndex: 0,
+              }}
+            />
+            {[
+              { valor: "", etiqueta: "Todas" },
+              { valor: "Landing", etiqueta: "Cliente" },
+              { valor: "Admin", etiqueta: "Admin" },
+            ].map((op) => (
+              <button
+                key={op.valor}
+                type="button"
+                onClick={() => { setFiltroOrigen(op.valor); setPagina(1); }}
+                // ── NUEVO: se limpia el foco de forma imperativa (no solo
+                // por CSS) — así se gana contra cualquier estilo global de
+                // ":focus"/":focus-visible" que use box-shadow en vez de
+                // outline, que un simple "outline: none" en línea no toca. ──
+                onMouseUp={(e) => e.currentTarget.blur()}
+                className="pv-origen-btn"
+                style={{
+                  position: "relative", zIndex: 1,
+                  flex: 1, textAlign: "center",
+                  border: "none", background: "transparent",
+                  borderRadius: 40, padding: "0.55rem 1.2rem",
+                  fontFamily: "var(--font-body)", fontSize: "0.85rem", fontWeight: 500,
+                  color: filtroOrigen === op.valor ? "#fff" : "var(--dvna-muted)",
+                  cursor: "pointer", transition: "color 0.2s ease",
+                  outline: "none",
+                  boxShadow: "none",
+                  WebkitTapHighlightColor: "transparent",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {op.etiqueta}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="pedidosventas-actions-right">
           {tienePerm('Ventas.crear') && (
@@ -492,7 +642,7 @@ export default function PedidosVentas() {
               <span>+</span> Nueva venta
             </button>
           )}
-          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+          <button className="btn-print" onClick={() => window.print()} title="Imprimir reporte"><IconReporte /></button>
         </div>
       </div>
 
@@ -500,7 +650,7 @@ export default function PedidosVentas() {
         {`${total} venta${total !== 1 ? 's' : ''} encontrada${total !== 1 ? 's' : ''}`}
       </div>
 
-      <div className="tbl-container pedidosventas-tbl-container">
+      <div className="tbl-container pedidosventas-tbl-container" style={{ opacity: cargando ? 0.6 : 1, transition: "opacity 0.15s" }}>
         <table className="tbl">
           <thead className="tbl-header">
             <tr>
@@ -557,9 +707,6 @@ export default function PedidosVentas() {
                 <td className="tbl-td">
                   <div className="pedidosventas-action-cell">
                     <button className="pedidosventas-action-btn pedidosventas-view-btn" onClick={() => setVerDetalle(v)}><IconEye /></button>
-                    {tienePerm('Ventas.estado') && v.tipo_pago === 'cuotas' && v.estado !== "Anulado" && v.estado !== "Pagado" && (
-                      <button className="pedidosventas-action-btn pedidosventas-pay-btn" onClick={() => setAbonosModal(v)} title="Agregar abono"><IconDollar /></button>
-                    )}
                   </div>
                 </td>
               </tr>
@@ -734,9 +881,9 @@ export default function PedidosVentas() {
                         value={formAbono.metodo}
                         onChange={(e) => setFormAbono({ ...formAbono, metodo: e.target.value })}
                       >
-                        <option value="Efectivo">Efectivo</option>
-                        <option value="Tarjeta">Tarjeta</option>
-                        <option value="Transferencia">Transferencia</option>
+                        {metodosPago.map((m) => (
+                          <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -774,7 +921,7 @@ export default function PedidosVentas() {
       {/* ── Modal "Nueva venta" ── */}
       {modalVenta && (
         <div className="pedidosventas-modal-overlay" onClick={() => !guardandoVenta && setModalVenta(false)}>
-          <div className="pedidosventas-modal pedidosventas-modal-factura" onClick={(e) => e.stopPropagation()}>
+          <div className="pedidosventas-modal pedidosventas-modal-factura" style={{ maxWidth: 1100, width: "95%" }} onClick={(e) => e.stopPropagation()}>
             <div className="pedidosventas-modal-header">
               <h2 className="pedidosventas-modal-title">Nueva venta</h2>
               <button className="pedidosventas-modal-close" onClick={() => setModalVenta(false)}><IconX /></button>
@@ -783,16 +930,60 @@ export default function PedidosVentas() {
               <div className="pedidosventas-form-row">
                 <div className="pedidosventas-form-group">
                   <label className="pedidosventas-form-label">Cliente</label>
-                  <select
-                    className={`pedidosventas-form-select${erroresVenta.id_cliente ? " input-error" : ""}`}
-                    value={formVenta.id_cliente}
-                    onChange={(e) => { setFormVenta({ ...formVenta, id_cliente: e.target.value }); setErroresVenta((prev) => ({ ...prev, id_cliente: "" })); }}
-                  >
-                    <option value="">Seleccionar cliente...</option>
-                    {clientes.map((c) => (
-                      <option key={c.id_cliente} value={c.id_cliente}>{c.nombre}</option>
-                    ))}
-                  </select>
+                  <div style={{ position: "relative" }} ref={clienteInputRef}>
+                    <input
+                      type="text"
+                      className={`pedidosventas-form-input${erroresVenta.id_cliente ? " input-error" : ""}`}
+                      placeholder="Buscar cliente por nombre..."
+                      value={
+                        clienteDropdownAbierto
+                          ? busquedaCliente
+                          : (clientes.find((c) => String(c.id_cliente) === String(formVenta.id_cliente))?.nombre || "")
+                      }
+                      onFocus={() => { setBusquedaCliente(""); setClienteDropdownAbierto(true); }}
+                      onChange={(e) => {
+                        setBusquedaCliente(e.target.value);
+                        setClienteDropdownAbierto(true);
+                        if (formVenta.id_cliente) setFormVenta({ ...formVenta, id_cliente: "" });
+                      }}
+                    />
+                    {clienteDropdownAbierto && (
+                      <div style={{
+                        position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
+                        background: "var(--dvna-white, #fff)", border: "1px solid var(--dvna-border, #e5e5e5)",
+                        borderRadius: 10, boxShadow: "0 10px 30px rgba(0,0,0,0.14)",
+                        maxHeight: 220, overflowY: "auto", padding: 4,
+                      }}>
+                        {clientes
+                          .filter((c) => c.nombre.toLowerCase().includes(busquedaCliente.toLowerCase()))
+                          .slice(0, 30)
+                          .map((c) => (
+                            <button
+                              type="button"
+                              key={c.id_cliente}
+                              onClick={() => {
+                                setFormVenta({ ...formVenta, id_cliente: c.id_cliente });
+                                setErroresVenta((prev) => ({ ...prev, id_cliente: "" }));
+                                setBusquedaCliente("");
+                                setClienteDropdownAbierto(false);
+                              }}
+                              style={{
+                                display: "block", width: "100%", textAlign: "left", padding: "8px 10px",
+                                border: "none", background: "transparent", borderRadius: 6, cursor: "pointer",
+                                fontSize: 13, color: "var(--dvna-charcoal, #1a1a1a)",
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--dvna-pale, #f4f4f4)"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                            >
+                              {c.nombre}
+                            </button>
+                          ))}
+                        {clientes.filter((c) => c.nombre.toLowerCase().includes(busquedaCliente.toLowerCase())).length === 0 && (
+                          <div style={{ padding: "10px", fontSize: 12, color: "var(--dvna-muted, #888)", fontStyle: "italic" }}>Sin resultados</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   {erroresVenta.id_cliente && <span className="pedidosventas-field-error">{erroresVenta.id_cliente}</span>}
                   {cargandoDatosVenta && (
                     <span className="pedidosventas-field-error" style={{ color: "var(--muted)" }}>Cargando clientes...</span>
@@ -872,20 +1063,40 @@ export default function PedidosVentas() {
               </div>
 
               <div className="pedidosventas-form-row">
-                <div className="pedidosventas-form-group">
-                  <label className="pedidosventas-form-label">Método de pago</label>
-                  <select className="pedidosventas-form-select" value={formVenta.metodo_pago} onChange={(e) => setFormVenta({ ...formVenta, metodo_pago: e.target.value })}>
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Tarjeta">Tarjeta</option>
-                    <option value="Transferencia">Transferencia</option>
-                  </select>
-                </div>
+                {/* ── NUEVO: si la venta es a cuotas, no tiene sentido pedir UN
+                    método de pago general — cada abono ya tiene el suyo
+                    propio al registrarlo. Solo se pide para pago completo. ── */}
+                {formVenta.tipo_pago !== "cuotas" && (
+                  <div className="pedidosventas-form-group">
+                    <label className="pedidosventas-form-label">Método de pago</label>
+                    <select className="pedidosventas-form-select" value={formVenta.metodo_pago} onChange={(e) => setFormVenta({ ...formVenta, metodo_pago: e.target.value })}>
+                      {metodosPago.map((m) => (
+                        <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
                 {formVenta.tipo_pago === "cuotas" && (
                   <div className="pedidosventas-form-group">
                     <label className="pedidosventas-form-label">Estado inicial</label>
                     <select className="pedidosventas-form-select" value={formVenta.estado} onChange={(e) => setFormVenta({ ...formVenta, estado: e.target.value })}>
                       <option value="Pendiente">Pendiente</option>
                       <option value="Pagado">Primera cuota confirmada</option>
+                    </select>
+                  </div>
+                )}
+                {/* ── NUEVO: si se confirma la primera cuota de una vez al
+                    crear la venta, hay que saber CÓMO se pagó esa cuota
+                    puntual — las demás cuotas futuras ya piden su propio
+                    método cada vez que se registran desde "Gestionar
+                    Abonos", así que esto solo aplica a la cuota inicial. ── */}
+                {formVenta.tipo_pago === "cuotas" && formVenta.estado === "Pagado" && (
+                  <div className="pedidosventas-form-group">
+                    <label className="pedidosventas-form-label">Método de pago (cuota inicial)</label>
+                    <select className="pedidosventas-form-select" value={formVenta.metodo_pago} onChange={(e) => setFormVenta({ ...formVenta, metodo_pago: e.target.value })}>
+                      {metodosPago.map((m) => (
+                        <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
+                      ))}
                     </select>
                   </div>
                 )}
@@ -923,26 +1134,48 @@ export default function PedidosVentas() {
                           onChange={(e) => actualizarItemVenta(i, "id_producto", e.target.value)}
                         >
                           <option value="">Producto...</option>
-                          {productos.map((p) => (
-                            <option key={p.id_producto} value={p.id_producto}>{p.nombre}</option>
-                          ))}
+                          {productos.map((p) => {
+                            // ── NUEVO: "p.stock" viene de un SUM() en Postgres
+                            // (llega como texto vía la librería pg) — se
+                            // coerciona a número para comparar bien, mismo
+                            // fix que ya se aplicó en el catálogo público. Si
+                            // el producto no tiene stock en NINGUNA de sus
+                            // variantes, no se puede seleccionar. ──
+                            const stockProducto = Number(p.stock ?? 0);
+                            return (
+                              <option key={p.id_producto} value={p.id_producto} disabled={stockProducto === 0}>
+                                {p.nombre}{stockProducto === 0 ? " — Sin stock" : ""}
+                              </option>
+                            );
+                          })}
                         </select>
                       </div>
                       <div>
                         <select
                           className={`pedidosventas-form-select${erroresVenta[`item_${i}_variante`] ? " input-error" : ""}`}
                           value={item.id_variante}
-                          onChange={(e) => actualizarItemVenta(i, "id_variante", e.target.value)}
+                          onChange={(e) => {
+                            actualizarItemVenta(i, "id_variante", e.target.value);
+                            // ── NUEVO: revalida la cantidad contra el stock de la
+                            // variante recién elegida (puede que la que tenía
+                            // antes ya no aplique). ──
+                            if (erroresVenta[`item_${i}_cantidad`]) {
+                              setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: "" }));
+                            }
+                          }}
                           disabled={!item.id_producto || variantesActivas.length === 0}
                         >
                           <option value="">
                             {!item.id_producto ? "Elige un producto" : variantesActivas.length === 0 ? "Sin variantes" : "Talla / color..."}
                           </option>
-                          {variantesActivas.map((v) => (
-                            <option key={v.id_variante} value={v.id_variante}>
-                              {v.talla} · {v.color_nombre} (stock: {v.stock})
-                            </option>
-                          ))}
+                          {variantesActivas.map((v) => {
+                            const stockVariante = Number(v.stock ?? 0);
+                            return (
+                              <option key={v.id_variante} value={v.id_variante} disabled={stockVariante === 0}>
+                                {v.talla} · {v.color_nombre} {stockVariante === 0 ? "— Agotado" : `(stock: ${stockVariante})`}
+                              </option>
+                            );
+                          })}
                         </select>
                       </div>
                       <div>
@@ -956,10 +1189,18 @@ export default function PedidosVentas() {
                           value={item.cantidad}
                           onChange={(e) => {
                             actualizarItemVenta(i, "cantidad", e.target.value);
-                            if (erroresVenta[`item_${i}_cantidad`]) setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: errorItemCantidad(e.target.value) }));
+                            if (erroresVenta[`item_${i}_cantidad`]) {
+                              const itemActualizado = { ...item, cantidad: e.target.value };
+                              const msg = errorItemCantidad(e.target.value) || errorItemStock(itemActualizado);
+                              setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: msg }));
+                            }
                           }}
-                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: errorItemCantidad(item.cantidad) }))}
+                          onBlur={() => {
+                            const msg = errorItemCantidad(item.cantidad) || errorItemStock(item);
+                            setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: msg }));
+                          }}
                         />
+                        {erroresVenta[`item_${i}_cantidad`] && <span className="pedidosventas-field-error">{erroresVenta[`item_${i}_cantidad`]}</span>}
                       </div>
                       <div>
                         <input

@@ -151,7 +151,15 @@ export default function DetalleProducto() {
   const imgUrls       = filtrarImagenes(imgsData, colorSel?.id_color ?? null);
   const total         = imgUrls.length;
   const varianteSel   = variantes.find(v => v.id_color === colorSel?.id_color && v.talla === tallaSel);
-  const stockMostrado = varianteSel?.stock ?? producto?.stock ?? 0;
+  // ── CORREGIDO: mismo bug que en Catalogo.jsx — "producto.stock" viene de
+  // un SUM() en Postgres, que llega como texto ("0") vía la librería pg, no
+  // como número. La comparación estricta "=== 0" nunca coincidía cuando no
+  // había variante seleccionada. ──
+  const stockMostrado = Number(varianteSel?.stock ?? producto?.stock ?? 0);
+  // ── NUEVO: cada variante puede tener su propio precio (definido al
+  // recibir una compra) — si esta variante no tiene uno propio, se usa el
+  // precio general del producto como respaldo. ──
+  const precioMostrado = Number(varianteSel?.precio ?? producto?.precio ?? 0);
   const agotado       = stockMostrado === 0;
   const sinSeleccion  = variantes.length > 0 && (!colorSel || !tallaSel);
 
@@ -199,7 +207,7 @@ export default function DetalleProducto() {
       id:          producto.id_producto,
       id_variante: varianteSel?.id_variante ?? null, // ✅ campo clave para el stock
       nombre:      producto.nombre,
-      precio:      producto.precio,
+      precio:      precioMostrado,
       imagen:      imgUrls[0] ?? producto.imagen_principal,
       categoria:   producto.categoria,
       talla:       tallaSel,
@@ -328,7 +336,7 @@ export default function DetalleProducto() {
                   <div className="dp-talla-chips-row">
                     {tallas.map(t => {
                       const varT     = variantes.find(v => v.id_color === colorSel?.id_color && v.talla === t);
-                      const sinStock = varT?.stock === 0;
+                      const sinStock = Number(varT?.stock ?? 0) === 0;
                       return (
                         <button
                           key={t}
@@ -347,7 +355,7 @@ export default function DetalleProducto() {
           )}
 
           <div className="dp-precio-wrap">
-            <span className="dp-precio">{fmt(producto.precio)}</span>
+            <span className="dp-precio">{fmt(precioMostrado)}</span>
           </div>
 
           <div className="dp-stock-row">

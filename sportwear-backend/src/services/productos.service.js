@@ -79,6 +79,21 @@ const getProductos = async (opciones = {}) => {
         FROM "ProductoVariantes" v
         WHERE v.id_producto = p.id_producto AND v.estado = 'Activo'
       ), 0) AS stock,
+      -- ── NUEVO: rango de precios entre variantes (para saber en el
+      -- frontend si el producto tiene un solo precio o varios, sin tener
+      -- que recorrer el array de variantes cada vez). Si una variante no
+      -- tiene precio propio, para este cálculo cuenta como el precio base
+      -- del producto (mismo respaldo que se usa al mostrarlo). ──
+      (
+        SELECT MIN(COALESCE(v.precio, p.precio))
+        FROM "ProductoVariantes" v
+        WHERE v.id_producto = p.id_producto AND v.estado = 'Activo'
+      ) AS precio_min,
+      (
+        SELECT MAX(COALESCE(v.precio, p.precio))
+        FROM "ProductoVariantes" v
+        WHERE v.id_producto = p.id_producto AND v.estado = 'Activo'
+      ) AS precio_max,
       -- Imagen principal
       (SELECT url FROM "Imagenes"
        WHERE id_referencia = p.id_producto AND tipo_referencia = 'Producto'
@@ -92,7 +107,11 @@ const getProductos = async (opciones = {}) => {
           'codigo_hex',  col.codigo_hex,
           'talla',       v.talla,
           'stock',       v.stock,
-          'estado',      v.estado
+          'estado',      v.estado,
+          -- ── NUEVO: precio propio de la variante; si es NULL, el
+          -- frontend debe usar el precio general del producto (p.precio)
+          -- como respaldo — mismo criterio que "precio_min/max" arriba. ──
+          'precio',      v.precio
         ) ORDER BY v.talla, col.nombre)
         FROM "ProductoVariantes" v
         JOIN "Colores" col ON v.id_color = col.id_color

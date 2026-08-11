@@ -8,7 +8,6 @@ import { useToast } from "../../context/ToastContext";
 import { MAX_MONTO, MAX_LONGITUD_NOMBRE, MAX_LONGITUD_TEXTO_LIBRE } from "../../utils/numerico";
 import GaleriaImagenes from "../../components/GaleriaImagenes";
 import GestVariantes from "../../components/GestVariantes";
-import ModalSteps from "../../components/ModalSteps";
 import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
 import StatusToggle from "../../components/StatusToggle";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -354,15 +353,6 @@ export default function GestProductos() {
     await guardarProducto();
   };
 
-  // Se ejecuta al confirmar el guardado — se separó de `guardar` para poder
-  // reintentarlo automáticamente tras purgar los colores sin fotos.
-  //
-  // ── FIX: este bloque tenía un try/catch/finally duplicado y mal pegado
-  // (restos de un merge sin limpiar): después del finally correcto había
-  // otras 4 líneas sueltas seguidas de un segundo `} finally { ... }` sin
-  // `try` al que pertenecer. Eso rompía la compilación (SyntaxError) y,
-  // aunque no lo hiciera, referenciaba `err` fuera de su scope. Se dejó un
-  // único try/catch/finally con toda la lógica consolidada. ──
   const guardarProducto = async () => {
     setGuardando(true);
     let huboExito = false;
@@ -404,16 +394,12 @@ export default function GestProductos() {
         huboExito = true;
       }
     } catch (err) {
-      // ── DIAGNÓSTICO TEMPORAL: si el modal no cierra, esto nos dice si en
-      // realidad SÍ está cayendo aquí (con un error que no se ve en el banner). ──
       console.error("[guardarProducto] error real:", err);
       const msg = err.response?.data?.message || "Error al guardar.";
       setErrores(prev => ({ ...prev, general: msg }));
       mostrarToast("error", msg);
     } finally {
       setGuardando(false);
-      // ── El cierre + refresco ahora es INCONDICIONAL si hubo éxito, sin
-      // importar cuál rama (crear/editar) se ejecutó ni qué pase después. ──
       if (huboExito) {
         console.log("[guardarProducto] éxito — cerrando modal y refrescando lista");
         setModal(false);
@@ -425,9 +411,6 @@ export default function GestProductos() {
     }
   };
 
-  // Confirmar en la alerta de "colores sin fotos": se le pide a GestVariantes
-  // que los purgue (vía la prop coloresAPurgar) y, cuando termina, se reintenta
-  // el guardado automáticamente en onColoresPurgados.
   const confirmarEliminarColoresSinFotos = () => {
     setColoresAPurgar(coloresSinFotos.map(c => c.id_color));
     setColoresSinFotos([]);
@@ -438,30 +421,19 @@ export default function GestProductos() {
     guardarProducto();
   };
 
-  // Se dispara desde GestVariantes cuando el usuario, al eliminar la última
-  // talla de un color, elige también eliminar las fotos de ese color —
-  // GaleriaImagenes hace el borrado real (API o local) al reaccionar a la prop.
   const eliminarFotosDeColor = (id_color) => setColoresAPurgarFotos([id_color]);
   const onFotosDeColorPurgadas = () => setColoresAPurgarFotos([]);
 
   const toggleEstadoProducto = async (id, nuevoEstado) => {
-    // ── El aviso de éxito/error ya lo muestra StatusToggle centralizadamente —
-    // mostrarlo también aquí duplicaba el mensaje en pantalla. ──
     const { data } = await api.patch(`/productos/${id}/estado`);
-    // Al desactivar, el backend también despublica el producto (no puede quedar
-    // visible en el catálogo estando inactivo) — se refleja aquí sin esperar un refetch.
     setDatos(prev => prev.map(p => p.id_producto === id ? { ...p, estado: nuevoEstado, publicado: data?.publicado ?? p.publicado } : p));
   };
 
   const togglePublicado = async (id) => {
     const producto = datos.find(p => p.id_producto === id);
     if (producto?.estado === "Inactivo") {
-      // Se lanza con la misma forma que usa axios (err.response.data.message)
-      // para que StatusToggle muestre ESTE mensaje específico en su único
-      // aviso, en vez de duplicarlo con uno genérico propio.
       throw { response: { data: { message: "No se puede publicar un producto inactivo." } } };
     }
-    // ── El aviso de éxito/error ya lo muestra StatusToggle centralizadamente. ──
     await api.patch(`/productos/${id}/publicar`);
     cargar();
   };
@@ -535,7 +507,6 @@ export default function GestProductos() {
   };
 
   const cambiarEstadoCategoria = async (id, nuevoEstado) => {
-    // ── El aviso de éxito/error ya lo muestra StatusToggle centralizadamente. ──
     await api.patch(`/categorias/${id}/estado`);
     setCategoriasPagina(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
     setCategorias(prev => prev.map(c => c.id_categoria === id ? { ...c, estado: nuevoEstado } : c));
@@ -578,7 +549,6 @@ export default function GestProductos() {
   };
 
   const cambiarEstadoColor = async (id, nuevoEstado) => {
-    // ── El aviso de éxito/error ya lo muestra StatusToggle centralizadamente. ──
     await api.patch(`/colores/${id}/estado`);
     setColoresPagina(prev => prev.map(c => c.id_color === id ? { ...c, estado: nuevoEstado } : c));
   };
@@ -687,9 +657,6 @@ export default function GestProductos() {
   );
 
   // ── Detalle de producto: info general + variantes/imágenes ──
-  // Se agregan aquí los campos "ID" y "Destacado" (versión propia) junto con
-  // el agrupamiento de variantes por color y la separación con/sin stock
-  // (versión de la compañera), para no perder ninguno de los dos cambios.
   const DetalleInfoGeneral = verDetalle && (
     <>
       <div className="gestproductos-factura-seccion">
@@ -698,7 +665,7 @@ export default function GestProductos() {
           <DetalleItem label="ID" value={`#${String(verDetalle.id_producto).padStart(3, "0")}`} />
           <DetalleItem label="Código" value={verDetalle.codigo} />
           <DetalleItem label="Categoría" value={verDetalle.categoria} />
-          <DetalleItem label="Precio" value={fmt(verDetalle.precio)} />
+          <DetalleItem label="Precio base" value={fmt(verDetalle.precio)} />
           <DetalleItem label="Stock total" value={`${verDetalle.stock ?? 0} unidades`} />
           <DetalleItem label="Publicado" value={verDetalle.publicado ? "Sí, visible en catálogo" : "No publicado"} />
           <DetalleItem label="Estado" value={<span className={`tabla-status${verDetalle.estado === "Activo" ? " activo" : " inactivo"}`}>{verDetalle.estado}</span>} />
@@ -726,19 +693,48 @@ export default function GestProductos() {
       {verDetalle.variantes?.length > 0 && (() => {
         const conStock = verDetalle.variantes.filter(v => v.stock > 0);
         const sinStock = verDetalle.variantes.filter(v => v.stock === 0);
-        // Mismo agrupamiento por color que la columna Tallas/Colores de la
-        // tabla: un chip por color con sus tallas concatenadas, no un chip
-        // por combinación color+talla.
         const gruposConStock = agruparVariantesPorColor(conStock);
         const gruposSinStock = agruparVariantesPorColor(sinStock);
+        // ── NUEVO: cada variante (talla) puede tener su propio precio —
+        // antes el chip solo mostraba "L, M, S" sin decir a qué precio
+        // vende cada una. Se arma un mapa talla->precio por color para
+        // mostrar el precio de cada talla individualmente cuando alguna
+        // difiere del precio base del producto. ──
+        const preciosPorColor = new Map();
+        verDetalle.variantes.forEach(v => {
+          if (!preciosPorColor.has(v.id_color)) preciosPorColor.set(v.id_color, new Map());
+          preciosPorColor.get(v.id_color).set(v.talla, v.precio);
+        });
         const renderChip = (g, agotada) => {
           const swatchStyle = esColorClaro(g.codigo_hex)
             ? { background: g.codigo_hex || "#ccc", border: "2px solid #ccc" }
             : { background: g.codigo_hex || "#ccc" };
+          const mapaPrecios = preciosPorColor.get(g.id_color) || new Map();
+          // Si TODAS las tallas de este color tienen el mismo precio (o
+          // ninguna tiene precio propio), se muestra un solo precio al
+          // final. Si varían entre sí, se muestra el precio junto a cada talla.
+          const preciosDistintos = new Set(
+            g.tallas.map(t => Number(mapaPrecios.get(t) ?? verDetalle.precio))
+          );
+          const hayVariacion = preciosDistintos.size > 1;
           return (
             <div key={g.id_color} className={`gestproductos-detalle-variante-chip${agotada ? " agotada" : ""}`}>
               <span className="gestproductos-detalle-variante-dot" style={swatchStyle} />
-              <span>{g.nombre}: {g.tallas.join(", ")}</span>
+              {hayVariacion ? (
+                <span>
+                  {g.nombre}: {g.tallas.map((t, i) => (
+                    <span key={t}>
+                      {i > 0 && ", "}
+                      {t} <span style={{ color: "var(--dvna-circle)", fontWeight: 600 }}>({fmt(mapaPrecios.get(t) ?? verDetalle.precio)})</span>
+                    </span>
+                  ))}
+                </span>
+              ) : (
+                <span>
+                  {g.nombre}: {g.tallas.join(", ")}
+                  {" "}<span style={{ color: "var(--dvna-circle)", fontWeight: 600 }}>({fmt([...preciosDistintos][0])})</span>
+                </span>
+              )}
               {agotada && <span className="gestproductos-detalle-variante-stock"> · Agotado</span>}
             </div>
           );
@@ -746,6 +742,9 @@ export default function GestProductos() {
         return (
           <div className="gestproductos-factura-seccion">
             <h3 className="gestproductos-factura-titulo">Variantes</h3>
+            <p style={{ fontSize: 11, color: "var(--dvna-muted)", margin: "0 0 10px" }}>
+              Si una talla no tiene precio propio, se usa el precio base del producto (mostrado arriba).
+            </p>
             <div className="gestproductos-detalle-variantes-cell">
               {gruposConStock.map(g => renderChip(g, false))}
             </div>
@@ -880,11 +879,6 @@ export default function GestProductos() {
                     {p.variantes?.length > 0 ? (() => {
                       const grupos = agruparVariantesPorColor(p.variantes).map(g => ({ ...g, texto: g.tallas.join(" · ") }));
 
-                      // ¿Cuántos chips caben completos en el ancho fijo de la columna? Se
-                      // estima el ancho real de cada uno y siempre se reserva espacio para
-                      // el chip "+N más" mientras queden grupos sin mostrar — incluso el
-                      // primer chip se descarta (pasa a sumarse en el "+N más") si no entra
-                      // completo, en vez de dejarlo sobresalir del límite de la celda.
                       let anchoUsado = 0;
                       let visibles = [];
                       for (let i = 0; i < grupos.length; i++) {
@@ -939,7 +933,7 @@ export default function GestProductos() {
                   )}
                   {tienePerm('Productos.estado') && (
                     <td className="tbl-td gestproductos-td-toggle">
-                      <StatusToggle id={p.id_producto} estado={p.estado} onToggle={toggleEstadoProducto} showConfirmation={true} size="sm" />
+                      <StatusToggle id={p.id_producto} estado={p.estado} onToggle={toggleEstadoProducto} showConfirmation={true} size="sm" nombreRegistro={p.nombre} />
                     </td>
                   )}
                   <td className="tbl-td">
@@ -1000,7 +994,7 @@ export default function GestProductos() {
                   <td className="tbl-td">{c.total_productos ?? 0}</td>
                   {tienePerm('Categorias.estado') && (
                     <td className="tbl-td">
-                      <StatusToggle id={c.id_categoria} estado={c.estado} onToggle={cambiarEstadoCategoria} showConfirmation={true} />
+                      <StatusToggle id={c.id_categoria} estado={c.estado} onToggle={cambiarEstadoCategoria} showConfirmation={true} nombreRegistro={c.nombre} />
                     </td>
                   )}
                   <td className="tbl-td">
@@ -1041,7 +1035,7 @@ export default function GestProductos() {
                     <div className="gestproductos-colores-hex">{c.codigo_hex}</div>
                     <div className="gestproductos-colores-actions">
                       {tienePerm('Colores.estado') ? (
-                        <StatusToggle id={c.id_color} estado={c.estado} onToggle={cambiarEstadoColor} showConfirmation={true} size="sm" />
+                        <StatusToggle id={c.id_color} estado={c.estado} onToggle={cambiarEstadoColor} showConfirmation={true} size="sm" nombreRegistro={c.nombre} />
                       ) : (
                         <span className={`tabla-status ${c.estado === "Activo" ? "activo" : "inactivo"}`}>{c.estado}</span>
                       )}
@@ -1117,9 +1111,6 @@ export default function GestProductos() {
                     {errores.id_categoria && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.id_categoria}</p>}
                   </div>
 
-                  {/* ── NUEVO: el precio solo se edita aquí cuando el producto ya existe.
-                  Al crear, no se pide — nace en $0 y se define con la primera compra.
-                  Y es OPCIONAL incluso al editar: el valor real lo pone Compras. ── */}
                   {editar && (
                     <div className="gestproductos-form-group">
                       <label className="gestproductos-form-label">Precio (COP)</label>
@@ -1217,34 +1208,60 @@ export default function GestProductos() {
         </div>
       )}
 
+      {/* ── Modal crear/editar categoría — panel único, mismo estilo que
+          "Nuevo producto" (antes usaba el wizard ModalSteps con "Paso 1 de 1",
+          visualmente distinto al resto). ── */}
       {modal && tab === 'categorias' && (
-        <ModalSteps
-          titulo={editarCategoria ? "Editar categoría" : "Nueva categoría"}
-          pasos={["Datos"]}
-          onClose={() => setModal(false)} onGuardar={guardarCategoria}
-          validaciones={[validarPasoCategoriaForm]}
-          labelGuardar={editarCategoria ? "Actualizar" : "Registrar"}
-        >
-          {PasoCategoriaForm}
-        </ModalSteps>
+        <div className="gestproductos-modal-overlay" onClick={() => setModal(false)}>
+          <div className="gestproductos-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="gestproductos-modal-header">
+              <h2 className="gestproductos-modal-title">{editarCategoria ? "Editar categoría" : "Nueva categoría"}</h2>
+              <button className="gestproductos-modal-close" onClick={() => setModal(false)}><IconX /></button>
+            </div>
+            <div className="gestproductos-modal-body gestproductos-factura-body">
+              <div className="gestproductos-factura-seccion">
+                <h3 className="gestproductos-factura-titulo">Datos de la categoría</h3>
+                {PasoCategoriaForm}
+              </div>
+            </div>
+            <div className="gestproductos-modal-footer">
+              <button className="gestproductos-btn-secondary" onClick={() => setModal(false)}>Cancelar</button>
+              <button className="gestproductos-btn-primary" onClick={guardarCategoria}>
+                {editarCategoria ? "Actualizar" : "Registrar"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
+      {/* ── Modal crear/editar color — mismo criterio: panel único, no wizard. ── */}
       {modal && tab === 'colores' && (
-        <ModalSteps
-          titulo={editarColor ? "Editar color" : "Nuevo color"}
-          pasos={["Color y nombre"]}
-          onClose={() => setModal(false)} onGuardar={guardarColor}
-          validaciones={[validarPasoColorForm]}
-          labelGuardar={editarColor ? "Actualizar" : "Registrar"}
-        >
-          {PasoColorForm}
-        </ModalSteps>
+        <div className="gestproductos-modal-overlay" onClick={() => setModal(false)}>
+          <div className="gestproductos-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="gestproductos-modal-header">
+              <h2 className="gestproductos-modal-title">{editarColor ? "Editar color" : "Nuevo color"}</h2>
+              <button className="gestproductos-modal-close" onClick={() => setModal(false)}><IconX /></button>
+            </div>
+            <div className="gestproductos-modal-body gestproductos-factura-body">
+              <div className="gestproductos-factura-seccion">
+                <h3 className="gestproductos-factura-titulo">Color y nombre</h3>
+                {PasoColorForm}
+              </div>
+            </div>
+            <div className="gestproductos-modal-footer">
+              <button className="gestproductos-btn-secondary" onClick={() => setModal(false)}>Cancelar</button>
+              <button className="gestproductos-btn-primary" onClick={guardarColor}>
+                {editarColor ? "Actualizar" : "Registrar"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {eliminarColorId && (
         <ConfirmModal
           title="Eliminar color"
-          message="¿Eliminar este color? No se podrá eliminar si está asociado a algún producto."
+          message={`¿Eliminar el color "${coloresPagina.find((c) => c.id_color === eliminarColorId)?.nombre || ""}"? No se podrá eliminar si está asociado a algún producto.`}
           onCancel={() => setEliminarColorId(null)}
           onConfirm={confirmarEliminarColor}
           confirmLabel="Sí, eliminar"
@@ -1334,7 +1351,7 @@ export default function GestProductos() {
       {eliminarId && (
         <ConfirmModal
           title="Eliminar producto"
-          message="¿Seguro que deseas eliminar este producto? Dejará de mostrarse en el catálogo y en la gestión de productos. No se puede eliminar si tiene pedidos pendientes."
+          message={`¿Seguro que deseas eliminar "${datos.find((p) => p.id_producto === eliminarId)?.nombre || "este producto"}"? Dejará de mostrarse en el catálogo y en la gestión de productos. No se puede eliminar si tiene pedidos pendientes.`}
           confirmLabel="Sí, eliminar"
           onConfirm={confirmarEliminar}
           onCancel={() => setEliminarId(null)}

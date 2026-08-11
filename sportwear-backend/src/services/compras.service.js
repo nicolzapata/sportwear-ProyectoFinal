@@ -76,12 +76,12 @@ const crearCompra = async (datos) => {
   if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
   if (!id_proveedor) throw { status: 400, message: 'El proveedor es requerido' };
 
-  // ── NUEVO: no se permiten compras con fecha futura ──
+  // ── no se permiten compras con fecha futura ──
   const fechaCompra = fecha ? new Date(fecha) : new Date();
   const hoy = new Date(); hoy.setHours(23, 59, 59, 999); // permite cualquier hora del día de hoy
   if (fechaCompra > hoy) throw { status: 400, message: 'La fecha de la compra no puede ser futura.' };
 
-  // ── CORREGIDO: "impuesto" ya no se pide en el formulario — siempre 0 para
+  // ── "impuesto" ya no se pide en el formulario — siempre 0 para
   // compras nuevas (se deja la columna en la BD por si algo más la referencia). ──
   const impuesto = 0;
 
@@ -100,7 +100,7 @@ const crearCompra = async (datos) => {
 
     const id_compra = compra.rows[0].id_compra;
     for (const item of items) {
-      // ── NUEVO: "descuento_linea" ya no se usa como descuento — esa celda ahora
+      // ── "descuento_linea" ya no se usa como descuento — esa celda ahora
       // es "Valor de venta" (precio_venta), el precio al que se venderá la unidad. ──
       const subtotalLinea = item.cantidad * item.precio_unitario;
       await client.query(`
@@ -116,7 +116,7 @@ const crearCompra = async (datos) => {
   } finally { client.release(); }
 };
 
-// ── NUEVO: edición completa de una compra (solo si NO está Recibida ni Anulada) ──
+// ── edición completa de una compra (solo si NO está Recibida ni Anulada) ──
 const actualizarCompra = async (id, datos) => {
   const { id_proveedor, numero_orden, descuento, fecha, observaciones, items } = datos;
   if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
@@ -196,7 +196,7 @@ const cambiarEstado = async (id, estado) => {
     );
 
     // Al recibir la compra (y solo la primera vez), sumar las existencias al inventario
-    // y actualizar el precio de venta del producto con el registrado en la compra.
+    // y actualizar el precio de venta.
     if (estado === 'Recibido' && estadoAnterior !== 'Recibido') {
       const detalles = await client.query(
         `SELECT id_producto, id_variante, cantidad, precio_venta FROM "DetalleCompra" WHERE id_compra=$1`,
@@ -209,13 +209,31 @@ const cambiarEstado = async (id, estado) => {
             [item.cantidad, item.id_variante]
           );
         }
-        // ── NUEVO: el precio de venta registrado en la compra pasa a ser el
-        // precio oficial del producto en el catálogo. ──
+
         if (item.precio_venta !== null && item.precio_venta !== undefined) {
-          await client.query(
-            `UPDATE "Productos" SET precio = $1 WHERE id_producto = $2`,
-            [item.precio_venta, item.id_producto]
-          );
+          // ── CORREGIDO: antes esto SIEMPRE actualizaba "Productos.precio"
+          // (el precio de TODO el producto), sin importar la variante — así
+          // que si una misma compra traía, por ejemplo, la talla S a $20.000
+          // y la talla M a $25.000, la última línea procesada pisaba a la
+          // anterior y el producto completo terminaba con un solo precio,
+          // perdiendo la diferencia entre variantes.
+          //
+          // Ahora: si la línea tiene una variante asociada, el precio se
+          // guarda en esa variante puntual (ProductoVariantes.precio) — cada
+          // talla/color puede tener su propio precio. Si la línea no tiene
+          // variante (producto sin tallas/colores), se sigue actualizando
+          // el precio general del producto, como respaldo. ──
+          if (item.id_variante) {
+            await client.query(
+              `UPDATE "ProductoVariantes" SET precio = $1 WHERE id_variante = $2`,
+              [item.precio_venta, item.id_variante]
+            );
+          } else {
+            await client.query(
+              `UPDATE "Productos" SET precio = $1 WHERE id_producto = $2`,
+              [item.precio_venta, item.id_producto]
+            );
+          }
         }
       }
     }
