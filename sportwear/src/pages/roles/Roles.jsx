@@ -59,6 +59,12 @@ const esRolProtegido = (nombre = "") => {
   return n === "administrador" || n === "admin";
 };
 
+// La acción "estado" (activar/desactivar) se confunde fácilmente con el
+// campo "Estado" (Activo/Inactivo) del rol, así que se muestra con una
+// etiqueta más clara sin tocar el nombre real de la acción en el backend.
+const ACCION_LABELS = { ver: "Ver", crear: "Crear", editar: "Editar", estado: "Cambiar estado" };
+const labelAccion = (accion = "") => ACCION_LABELS[accion] || accion;
+
 const validarNombreRol = (valor) => {
   const texto = (valor ?? "").trim();
   if (!texto) return "El nombre es obligatorio";
@@ -223,7 +229,7 @@ function RoleCard({ rol, index, onEditar, onCambiarEstado, puedeEditar, puedeEst
                     <span className="role-back-modulo-nombre">{mod}</span>
                     <div className="role-back-chips">
                       {permisosPorModulo[mod].map((accion, i) => (
-                        <span key={i} className="role-back-chip" style={{ borderColor: color }}>{accion}</span>
+                        <span key={i} className="role-back-chip" style={{ borderColor: color }}>{labelAccion(accion)}</span>
                       ))}
                     </div>
                   </div>
@@ -374,9 +380,9 @@ function RolModal({ titulo, form, setForm, errores, setErrores, modulosDisponibl
                                   onClick={() => togglePermiso(accion.id_permiso, modulo, accion.accion)}
                                   disabled={otrasActivas}
                                   style={{ opacity: otrasActivas ? 0.6 : 1, cursor: otrasActivas ? 'not-allowed' : 'pointer' }}
-                                  title={otrasActivas ? 'No se puede quitar "ver" mientras haya otras acciones activas' : (accion.descripcion || accion.accion)}
+                                  title={otrasActivas ? 'No se puede quitar "ver" mientras haya otras acciones activas' : (accion.descripcion || labelAccion(accion.accion))}
                                 >
-                                  {accion.accion}
+                                  {labelAccion(accion.accion)}
                                 </button>
                               );
                             })}
@@ -411,6 +417,7 @@ export default function Roles() {
 
   const [datos,              setDatos]              = useState([]);
   const [busqueda,           setBusqueda]           = useState("");
+  const [filtroEstado,       setFiltroEstado]       = useState("todos");
   const [loading,            setLoading]            = useState(true);
   const [modal,              setModal]              = useState(false);
   const [editar,             setEditar]             = useState(null);
@@ -426,10 +433,9 @@ export default function Roles() {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const mostrarBuscador = datos.length >= 10;
-  const filtrados = mostrarBuscador
-    ? datos.filter(r => r.nombre.toLowerCase().includes(busqueda.toLowerCase()))
-    : datos;
+  const filtrados = datos
+    .filter(r => r.nombre.toLowerCase().includes(busqueda.toLowerCase()))
+    .filter(r => filtroEstado === "todos" ? true : r.estado === (filtroEstado === "activos" ? "Activo" : "Inactivo"));
 
   const cargar = useCallback(async () => {
     try {
@@ -525,14 +531,19 @@ export default function Roles() {
     <div className="roles-container">
       <div className="roles-actions-bar">
         <div className="roles-actions-left">
-          {mostrarBuscador && (
-            <div className="roles-search-wrapper">
-              <span className="roles-search-icon"><IconSearch /></span>
-              <input type="text" className="roles-search-input" placeholder="Buscar rol..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
-              {busqueda && <button className="roles-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
-            </div>
-          )}
-          {mostrarBuscador && busqueda && <span className="roles-search-count">{filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}</span>}
+          <div className="roles-search-wrapper">
+            <span className="roles-search-icon"><IconSearch /></span>
+            <input type="text" className="roles-search-input" placeholder="Buscar rol..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+            {busqueda && <button className="roles-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
+          </div>
+
+          <div className="roles-filter-toggle">
+            <button className={`roles-filter-btn${filtroEstado === "todos" ? " active" : ""}`} onClick={() => setFiltroEstado("todos")}>Todos</button>
+            <button className={`roles-filter-btn${filtroEstado === "activos" ? " active" : ""}`} onClick={() => setFiltroEstado("activos")}>Activos</button>
+            <button className={`roles-filter-btn${filtroEstado === "inactivos" ? " active" : ""}`} onClick={() => setFiltroEstado("inactivos")}>Inactivos</button>
+          </div>
+
+          {(busqueda || filtroEstado !== "todos") && <span className="roles-search-count">{filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}</span>}
         </div>
 
         {tienePerm('Roles.crear') && (

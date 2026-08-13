@@ -68,23 +68,29 @@ const crearProveedor = async (datos) => {
     throw { status: 400, message: 'El correo electrónico es requerido y debe tener un formato válido' };
   validarCamposNumericos({ 'número de documento': numero_doc, teléfono: telefono_celular, 'número de cuenta': numero_cuenta });
 
-  const result = await pool.query(`
-    INSERT INTO "Proveedores" (
-      tipo_doc, numero_doc, razon_social, nombre_comercial,
-      nombre_contacto, cargo_contacto, telefono_celular, email_contacto,
-      ciudad, departamento, pais, direccion,
-      banco, tipo_cuenta, numero_cuenta, titular_cuenta,
-      plazo_pago_dias, condiciones, estado
-    ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
-    RETURNING *
-  `, [
-    tipo_doc, numero_doc, razon_social, nombre_comercial || null,
-    nombre_contacto, cargo_contacto || null, telefono_celular || null, email_contacto || null,
-    ciudad, departamento || null, pais || 'Colombia', direccion || null,
-    banco || null, tipo_cuenta || null, numero_cuenta || null, titular_cuenta || null,
-    plazo_pago_dias || 30, condiciones || null, estado || 'Activo'
-  ]);
-  return result.rows[0];
+  try {
+    const result = await pool.query(`
+      INSERT INTO "Proveedores" (
+        tipo_doc, numero_doc, razon_social, nombre_comercial,
+        nombre_contacto, cargo_contacto, telefono_celular, email_contacto,
+        ciudad, departamento, pais, direccion,
+        banco, tipo_cuenta, numero_cuenta, titular_cuenta,
+        plazo_pago_dias, condiciones, estado
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+      RETURNING *
+    `, [
+      tipo_doc, numero_doc, razon_social, nombre_comercial || null,
+      nombre_contacto, cargo_contacto || null, telefono_celular || null, email_contacto || null,
+      ciudad, departamento || null, pais || 'Colombia', direccion || null,
+      banco || null, tipo_cuenta || null, numero_cuenta || null, titular_cuenta || null,
+      plazo_pago_dias || 30, condiciones || null, estado || 'Activo'
+    ]);
+    return result.rows[0];
+  } catch (err) {
+    if (err.code === '23505')
+      throw { status: 409, message: `Ya existe un proveedor registrado con el ${tipo_doc} ${numero_doc}.` };
+    throw err;
+  }
 };
 
 const actualizarProveedor = async (id, datos) => {

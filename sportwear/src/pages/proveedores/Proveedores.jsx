@@ -34,9 +34,14 @@ const FORM_VACIO = {
 
 const TIPOS_DOC_POR_PERSONA = { Juridica: ["NIT"], Natural: ["CC", "CE"] };
 
-// "nombre_contacto" completo (BD) -> primer palabra = nombres, resto = apellidos.
+// "nombre_contacto" completo (BD) -> se separa en nombres y apellidos. Con 4
+// o más palabras se asumen 2 apellidos (convención CO), así el segundo
+// nombre no termina metido en el campo de apellidos.
 const dividirNombreContacto = (nombreCompleto) => {
   const partes = (nombreCompleto || "").trim().split(/\s+/).filter(Boolean);
+  if (partes.length >= 4) {
+    return { nombres_contacto: partes.slice(0, -2).join(" "), apellidos_contacto: partes.slice(-2).join(" ") };
+  }
   return { nombres_contacto: partes[0] || "", apellidos_contacto: partes.slice(1).join(" ") };
 };
 

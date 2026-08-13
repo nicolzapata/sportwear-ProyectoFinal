@@ -810,7 +810,7 @@
 .roles-search-icon svg { width: 14px; height: 14px; }
 .roles-search-input {
   width: 100%;
-  font-family: var(--font-body); font-size: 13px; font-weight: 300;
+  font-family: var(--font-body); font-size: 13px;
   color: var(--dvna-charcoal);
   background: var(--dvna-white);
   border: 1px solid var(--dvna-border);
@@ -819,7 +819,6 @@
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-.roles-search-input::placeholder { color: var(--dvna-mid); }
 .roles-search-input:focus {
   border-color: var(--dvna-circle);
   box-shadow: 0 0 0 3px rgba(180,151,128,0.1);
@@ -835,6 +834,34 @@
 .roles-search-count {
   font-family: var(--font-body); font-size: 11px; font-weight: 300;
   color: var(--dvna-muted); white-space: nowrap;
+}
+
+/* ── Filtro por estado (chips sueltos, estilo catadmin-chip) ── */
+.roles-filter-toggle {
+  display: flex;
+  gap: 0.5rem;
+  width: fit-content;
+}
+.roles-filter-btn {
+  display: inline-flex; align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 40px;
+  border: 1px solid var(--dvna-border, #e8e0d8);
+  background: var(--dvna-white, #fff);
+  font-family: var(--font-body); font-size: 0.8rem; font-weight: 500;
+  color: var(--dvna-muted, #999);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.roles-filter-btn:hover {
+  border-color: var(--dvna-circle, #b49780);
+  color: var(--dvna-charcoal, #1a1a1a);
+}
+.roles-filter-btn.active {
+  background: var(--dvna-circle, #b49780);
+  border-color: var(--dvna-circle, #b49780);
+  color: #fff;
 }
 
 /* Inputs de formulario */
@@ -896,14 +923,17 @@
     min-width: 120px;
     width: auto;
   }
-  .roles-container .roles-btn-nuevo {
+  .roles-container .roles-filter-toggle {
     order: 2;
+  }
+  .roles-container .roles-btn-nuevo {
+    order: 3;
     width: auto;
     flex: 0 0 auto;
     white-space: nowrap;
   }
   .roles-container .roles-search-count {
-    order: 3;
+    order: 4;
   }
 }
 

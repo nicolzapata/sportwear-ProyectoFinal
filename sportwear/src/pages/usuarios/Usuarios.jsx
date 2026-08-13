@@ -66,9 +66,14 @@ export default function Usuarios() {
   });
   const [erroresCliente, setErroresCliente] = useState({ nombres: "", apellidos: "", documento: "", telefono: "", email: "", ciudad: "", direccion: "", id_barrio: "", contrasena: "", confirmar: "" });
 
-  // "nombre" completo (BD) -> primer palabra = nombres, resto = apellidos.
+  // "nombre" completo (BD) -> se separa en nombres y apellidos. Con 4 o más
+  // palabras se asumen 2 apellidos (convención CO), así el segundo nombre no
+  // termina metido en el campo de apellidos.
   const dividirNombre = (nombreCompleto) => {
     const partes = (nombreCompleto || "").trim().split(/\s+/).filter(Boolean);
+    if (partes.length >= 4) {
+      return { nombres: partes.slice(0, -2).join(" "), apellidos: partes.slice(-2).join(" ") };
+    }
     return { nombres: partes[0] || "", apellidos: partes.slice(1).join(" ") };
   };
 
@@ -683,7 +688,7 @@ export default function Usuarios() {
               { header: "Documento", value: (u) => u.documento ? `${u.tipo_doc} ${u.documento}` : "—" },
               { header: "Usuario", key: "nombre" },
               { header: "Email", key: "email" },
-              { header: "Rol", key: "rol" },
+              { header: "Rol", value: (u) => u.rol || getRoleName(u.id_rol) },
               { header: "Estado", key: "estado" },
             ] : [
               { header: "Documento", key: "documento" },
