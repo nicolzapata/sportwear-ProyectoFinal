@@ -180,7 +180,7 @@ export default function CatProductos() {
                   </div>
                 </td>
 <td className="tbl-td">
-                  <StatusToggle id={c.id_categoria} estado={c.estado} onToggle={toggleEstado} showConfirmation={true} />
+                  <StatusToggle id={c.id_categoria} estado={c.estado} onToggle={toggleEstado} showConfirmation={true} nombreRegistro={c.nombre} />
                 </td>
                 <td className="tbl-td">
                   <div className="catproductos-action-cell">

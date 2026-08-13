@@ -292,7 +292,7 @@ export default function Proveedores() {
                 <td className="tbl-td"><span className="tabla-ciudad">{p.ciudad || "—"}</span></td>
                 <td className="tbl-td">{p.total_compras ?? 0}</td>
                 {tienePerm('Proveedores.estado') && (
-                  <td className="tbl-td"><StatusToggle id={p.id_proveedor} estado={p.estado} onToggle={() => toggleEstado(p.id_proveedor)} /></td>
+                  <td className="tbl-td"><StatusToggle id={p.id_proveedor} estado={p.estado} onToggle={() => toggleEstado(p.id_proveedor)} nombreRegistro={p.nombre_comercial || p.razon_social} /></td>
                 )}
                 <td className="tbl-td">
                   <div className="proveedores-action-cell">

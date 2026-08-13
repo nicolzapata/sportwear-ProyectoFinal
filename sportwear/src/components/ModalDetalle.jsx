@@ -114,11 +114,12 @@ export default function ModalDetalle({
         <div className="md-actions">
           <button className="md-btn-cerrar" onClick={onClose}>Cerrar</button>
           {onCambiarEstado && badgeEstado && onToggleEstado && badgeId && (
-            <StatusToggle 
-              id={badgeId} 
-              estado={badgeEstado} 
-              onToggle={onToggleEstado} 
+            <StatusToggle
+              id={badgeId}
+              estado={badgeEstado}
+              onToggle={onToggleEstado}
               showConfirmation={true}
+              nombreRegistro={subtitulo}
             />
           )}
           {onEditar && (

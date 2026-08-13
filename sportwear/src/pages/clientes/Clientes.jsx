@@ -364,7 +364,7 @@ export default function Clientes() {
                 <td className="tbl-td">{c.total_compras || 0}</td>
                 <td className="tbl-td">${Number(c.total_gastado || 0).toLocaleString('es-CO')}</td>
                 {tienePerm('Clientes.estado') && (
-                  <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstado} showConfirmation={true} /></td>
+                  <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstado} showConfirmation={true} nombreRegistro={c.nombre} /></td>
                 )}
                 <td className="tbl-td">
                   <div className="clientes-action-cell">

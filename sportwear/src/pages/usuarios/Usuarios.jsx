@@ -746,6 +746,7 @@ export default function Usuarios() {
                         showConfirmation={true}
                         disabled={esRolAdmin(u.id_rol)}
                         disabledReason="Un administrador siempre permanece activo"
+                        nombreRegistro={u.nombre}
                       />
                     </td>
                   )}
@@ -772,7 +773,7 @@ export default function Usuarios() {
                     }
                   </td>
                   {tienePerm('Clientes.estado') && (
-                    <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstadoCliente} showConfirmation={true} /></td>
+                    <td className="tbl-td"><StatusToggle id={c.id_cliente} estado={c.estado} onToggle={toggleEstadoCliente} showConfirmation={true} nombreRegistro={c.nombre} /></td>
                   )}
                   <td className="tbl-td">
                     <div className="clientes-action-cell">

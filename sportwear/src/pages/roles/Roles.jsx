@@ -569,7 +569,7 @@ export default function Roles() {
             <div className="roles-modal-accent" style={{ background: '#b83232' }} />
             <div className="roles-modal-header">
               <div>
-                <h2 className="roles-modal-title">Desactivar rol</h2>
+                <h2 className="roles-modal-title">¿Deseas inactivar "{confirm.rol.nombre}"?</h2>
                 <p className="roles-modal-subtitle">Esta acción afectará a los usuarios asignados</p>
               </div>
               <button className="roles-modal-close" onClick={() => setConfirm(null)}><IconX /></button>

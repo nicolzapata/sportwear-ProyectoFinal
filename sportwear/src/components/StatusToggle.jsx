@@ -54,11 +54,12 @@ export default function StatusToggle({
     handleToggle(nuevoEstado);
   };
 
-  // ── NUEVO: título con el nombre específico cuando se pasa nombreRegistro,
-  // ej. "¿Inactivar a Sofía Suaza?" en vez de "¿Inactivo este registro?". ──
+  // ── Título con el nombre específico cuando se pasa nombreRegistro,
+  // ej. "¿Deseas inactivar a Sofía Suaza?" en vez de "¿Deseas inactivar este registro?". ──
+  const verboAccion = pendingEstado === "Activo" ? "activar" : "inactivar";
   const tituloConfirmacion = nombreRegistro
-    ? `¿${pendingEstado === "Activo" ? labels.activo : labels.inactivo} "${nombreRegistro}"?`
-    : `¿${pendingEstado === "Activo" ? labels.activo : labels.inactivo} este registro?`;
+    ? `¿Deseas ${verboAccion} "${nombreRegistro}"?`
+    : `¿Deseas ${verboAccion} este registro?`;
 
   return (
     <>
@@ -87,7 +88,7 @@ export default function StatusToggle({
             setPendingEstado(null);
             handleToggle(pendingEstado);
           }}
-          confirmLabel={`Sí, ${(pendingEstado === "Activo" ? labels.activo : labels.inactivo).toLowerCase()}`}
+          confirmLabel={`Sí, ${verboAccion}`}
         />
       )}
     </>

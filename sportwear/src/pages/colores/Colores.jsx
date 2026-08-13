@@ -270,7 +270,7 @@ export default function Colores() {
                   </td>
                   <td className="tbl-td"><code className="colores-hex-code">{c.codigo_hex}</code></td>
                   {tienePerm('Colores.estado') && (
-                    <td className="tbl-td"><StatusToggle id={c.id_color} estado={c.estado} onToggle={toggleEstado} /></td>
+                    <td className="tbl-td"><StatusToggle id={c.id_color} estado={c.estado} onToggle={toggleEstado} nombreRegistro={c.nombre} /></td>
                   )}
                   <td className="tbl-td">
                     <div className="colores-action-cell">
