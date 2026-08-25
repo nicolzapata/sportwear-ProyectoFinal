@@ -1,11 +1,11 @@
 // src/pages/categorias/CatProductos.jsx
 import { useState, useEffect } from "react";
-import api from "../../services/api";
-import ModalSteps from "../../components/ModalSteps";
-import StatusToggle from "../../components/StatusToggle";
-import Loader from "../../components/Loader";
+import api from "../../../shared/services/api";
+import ModalSteps from "../../../shared/components/ModalSteps";
+import StatusToggle from "../../../shared/components/StatusToggle";
+import Loader from "../../../shared/components/Loader";
 import './CatProductos.css';
-import { IconBan, IconCheck, IconEdit, IconSearch, IconX } from "../../components/Icons";
+import { IconBan, IconCheck, IconEdit, IconSearch, IconX } from "../../../shared/components/Icons";
 
 const ICONOS = [
   { id: "shirt", svg: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg> },

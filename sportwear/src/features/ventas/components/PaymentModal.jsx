@@ -1,8 +1,8 @@
 // src/components/PaymentModal.jsx
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import api from "../services/api";
-import { useToast } from "../context/ToastContext";
+import api from "../../../shared/services/api";
+import { useToast } from "../../../shared/contexts/ToastContext";
 import "./PaymentModal.css";
 
 /* ── Helpers ── */

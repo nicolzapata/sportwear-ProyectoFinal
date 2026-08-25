@@ -1,10 +1,10 @@
 // src/pages/checkout/Checkout.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { useCart } from "../../context/CartContext";
-import api from "../../services/api";
-import PaymentModal from "../../components/PaymentModal";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useCart } from "../../../shared/contexts/CartContext";
+import api from "../../../shared/services/api";
+import PaymentModal from "../../ventas/components/PaymentModal";
 import "./Checkout.css";
 
 const fmt = (n) =>

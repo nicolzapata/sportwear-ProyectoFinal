@@ -1,7 +1,7 @@
 // src/components/ProtectedRoute.jsx
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { MENU_ITEMS } from "../config/permisos";
+import { useAuth } from "../contexts/AuthContext";
+import { MENU_ITEMS } from "../utils/permisos";
 
 const MODULOS_CLIENTE = ['dashboard', 'catalogo', 'categorias'];
 

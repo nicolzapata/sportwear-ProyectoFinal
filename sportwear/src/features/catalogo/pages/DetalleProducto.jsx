@@ -1,8 +1,8 @@
 // src/pages/catalogo/DetalleProducto.jsx
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useCart } from "../../context/CartContext";
-import api from "../../services/api";
+import { useCart } from "../../../shared/contexts/CartContext";
+import api from "../../../shared/services/api";
 import "./DetalleProducto.css";
 
 const fmt = (n) =>

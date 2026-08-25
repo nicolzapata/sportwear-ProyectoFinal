@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { IconCheck, IconX } from "./Icons";
 import ConfirmModal from "./ConfirmModal";
-import { useToast } from "../context/ToastContext";
+import { useToast } from "../contexts/ToastContext";
 import "./StatusToggle.css";
 
 export default function StatusToggle({

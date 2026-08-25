@@ -1,12 +1,12 @@
 // src/pages/catalogoAdmin/CatalogoAdmin.jsx
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
-import ExportButtons from "../../components/ExportButtons";
-import Loader from "../../components/Loader";
-import { IconSearch, IconX, IconBox, IconEdit, IconEye, IconAlertTriangle } from "../../components/Icons";
+import api from "../../../shared/services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useToast } from "../../../shared/contexts/ToastContext";
+import ExportButtons from "../../../shared/components/ExportButtons";
+import Loader from "../../../shared/components/Loader";
+import { IconSearch, IconX, IconBox, IconEdit, IconEye, IconAlertTriangle } from "../../../shared/components/Icons";
 import "./CatalogoAdmin.css";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });

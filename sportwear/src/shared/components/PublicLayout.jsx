@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 import { useState } from "react";
 import PublicNavbar from "./PublicNavbar";
 import "./PublicLayout.css";
-import "../pages/catalogo/Catalogo.css";
+import "../../features/catalogo/pages/Catalogo.css";
 
 export default function PublicLayout() {
   const [busqueda, setBusqueda] = useState("");

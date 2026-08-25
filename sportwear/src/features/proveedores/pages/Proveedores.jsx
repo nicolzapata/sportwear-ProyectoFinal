@@ -1,16 +1,16 @@
 // src/pages/proveedores/Proveedores.jsx
 import { useState, useEffect } from "react";
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
-import StatusToggle from "../../components/StatusToggle";
-import ConfirmModal from "../../components/ConfirmModal";
-import Loader from "../../components/Loader";
-import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO, MAX_LONGITUD_NOMBRE } from "../../utils/numerico";
+import api from "../../../shared/services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useToast } from "../../../shared/contexts/ToastContext";
+import StatusToggle from "../../../shared/components/StatusToggle";
+import ConfirmModal from "../../../shared/components/ConfirmModal";
+import Loader from "../../../shared/components/Loader";
+import ExportButtons from "../../../shared/components/ExportButtons";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO, MAX_LONGITUD_NOMBRE } from "../../../shared/utils/numerico";
 import './Proveedores.css';
-import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
-import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
+import { DetalleItem, DetalleGrid } from "../../../shared/components/ModalDetalle";
+import { IconEdit, IconEye, IconSearch, IconX } from "../../../shared/components/Icons";
 
 const FILAS_POR_PAGINA = 10;
 

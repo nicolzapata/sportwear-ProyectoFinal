@@ -1,13 +1,13 @@
 // src/pages/roles/Roles.jsx
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";  // ← AGREGAR
-import { MAX_LONGITUD_NOMBRE } from "../../utils/numerico";
-import Loader from "../../components/Loader";
-import Toast from "../../components/Toast";
+import api from "../../../shared/services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";  // ← AGREGAR
+import { MAX_LONGITUD_NOMBRE } from "../../../shared/utils/numerico";
+import Loader from "../../../shared/components/Loader";
+import Toast from "../../../shared/components/Toast";
 import './Roles.css';
-import { IconX, IconSearch } from "../../components/Icons";
+import { IconX, IconSearch } from "../../../shared/components/Icons";
 
 // ── Iconos por rol ────────────────────────────────────────────────────────────
 const ROLE_ICONS = {

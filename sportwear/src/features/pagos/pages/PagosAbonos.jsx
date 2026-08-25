@@ -2,14 +2,14 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import './PagosAbonos.css';
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
-import { MAX_MONTO, MAX_LONGITUD_NOMBRE } from "../../utils/numerico";
-import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
-import { IconCheck, IconEye, IconSearch, IconX, IconSettings } from "../../components/Icons";
-import Loader from "../../components/Loader";
-import ExportButtons from "../../components/ExportButtons";
+import api from "../../../shared/services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useToast } from "../../../shared/contexts/ToastContext";
+import { MAX_MONTO, MAX_LONGITUD_NOMBRE } from "../../../shared/utils/numerico";
+import { DetalleItem, DetalleGrid } from "../../../shared/components/ModalDetalle";
+import { IconCheck, IconEye, IconSearch, IconX, IconSettings } from "../../../shared/components/Icons";
+import Loader from "../../../shared/components/Loader";
+import ExportButtons from "../../../shared/components/ExportButtons";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;

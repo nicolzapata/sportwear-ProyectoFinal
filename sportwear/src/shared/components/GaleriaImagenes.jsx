@@ -1,7 +1,7 @@
 // src/components/GaleriaImagenes.jsx
 import { useState, useEffect, useRef } from "react";
 import api from "../services/api";
-import { useConfirm } from "../context/ConfirmContext";
+import { useConfirm } from "../contexts/ConfirmContext";
 import "./GaleriaImagenes.css";
 
 // ── Iconos inline ──────────────────────────────────────────────────────────

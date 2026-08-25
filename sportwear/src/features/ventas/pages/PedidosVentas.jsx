@@ -2,13 +2,13 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import './PedidosVentas.css';
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
-import { validarMonto, MAX_MONTO, MAX_LONGITUD_TEXTO_LIBRE, MAX_LONGITUD_DIRECCION } from "../../utils/numerico";
-import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
-import Loader from "../../components/Loader";
-import { IconDollar, IconEye, IconSearch, IconX } from "../../components/Icons";
+import api from "../../../shared/services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useToast } from "../../../shared/contexts/ToastContext";
+import { validarMonto, MAX_MONTO, MAX_LONGITUD_TEXTO_LIBRE, MAX_LONGITUD_DIRECCION } from "../../../shared/utils/numerico";
+import { DetalleItem, DetalleGrid } from "../../../shared/components/ModalDetalle";
+import Loader from "../../../shared/components/Loader";
+import { IconDollar, IconEye, IconSearch, IconX } from "../../../shared/components/Icons";
 
 const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;

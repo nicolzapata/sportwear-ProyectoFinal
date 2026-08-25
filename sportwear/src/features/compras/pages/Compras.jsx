@@ -1,16 +1,16 @@
 // src/pages/compras/Compras.jsx
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
-import { useConfirm } from "../../context/ConfirmContext";
-import { validarMonto, MAX_MONTO, MAX_LONGITUD_CODIGO, MAX_LONGITUD_TEXTO_LIBRE } from "../../utils/numerico";
+import api from "../../../shared/services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useToast } from "../../../shared/contexts/ToastContext";
+import { useConfirm } from "../../../shared/contexts/ConfirmContext";
+import { validarMonto, MAX_MONTO, MAX_LONGITUD_CODIGO, MAX_LONGITUD_TEXTO_LIBRE } from "../../../shared/utils/numerico";
 import './Compras.css';
-import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
-import { IconAlertTriangle, IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
-import Loader from "../../components/Loader";
-import ExportButtons from "../../components/ExportButtons";
+import { DetalleItem, DetalleGrid } from "../../../shared/components/ModalDetalle";
+import { IconAlertTriangle, IconEdit, IconEye, IconSearch, IconX } from "../../../shared/components/Icons";
+import Loader from "../../../shared/components/Loader";
+import ExportButtons from "../../../shared/components/ExportButtons";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const FILAS_POR_PAGINA = 10;

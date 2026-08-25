@@ -2,7 +2,7 @@
 // Reemplazo del botón "Imprimir": exporta la tabla visible a Excel o PDF real.
 import { useState, useRef, useEffect } from "react";
 import { exportarExcel, exportarPDF } from "../utils/exportar";
-import { useToast } from "../context/ToastContext";
+import { useToast } from "../contexts/ToastContext";
 import { IconFileText } from "./Icons";
 import "./ExportButtons.css";
 

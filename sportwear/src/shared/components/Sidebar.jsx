@@ -1,7 +1,7 @@
 ﻿// src/components/Sidebar.jsx
 import { NavLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { MENU_ITEMS, PERMISOS } from "../config/permisos";
+import { useAuth } from "../contexts/AuthContext";
+import { MENU_ITEMS, PERMISOS } from "../utils/permisos";
 import logo from "../assets/LOGO.png";
 import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,

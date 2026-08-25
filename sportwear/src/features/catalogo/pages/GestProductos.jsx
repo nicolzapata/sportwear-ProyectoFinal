@@ -2,22 +2,22 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "react-router-dom";
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
-import { MAX_MONTO, MAX_LONGITUD_NOMBRE, MAX_LONGITUD_TEXTO_LIBRE } from "../../utils/numerico";
-import GaleriaImagenes from "../../components/GaleriaImagenes";
-import GestVariantes from "../../components/GestVariantes";
-import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
-import StatusToggle from "../../components/StatusToggle";
-import ConfirmModal from "../../components/ConfirmModal";
-import Loader from "../../components/Loader";
-import ExportButtons from "../../components/ExportButtons";
-import { IconAlertTriangle, IconEdit, IconEye, IconSearch, IconX, IconBox, IconTag, IconTrash, IconPalette } from "../../components/Icons";
+import api from "../../../shared/services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useToast } from "../../../shared/contexts/ToastContext";
+import { MAX_MONTO, MAX_LONGITUD_NOMBRE, MAX_LONGITUD_TEXTO_LIBRE } from "../../../shared/utils/numerico";
+import GaleriaImagenes from "../../../shared/components/GaleriaImagenes";
+import GestVariantes from "../components/GestVariantes";
+import { DetalleItem, DetalleGrid } from "../../../shared/components/ModalDetalle";
+import StatusToggle from "../../../shared/components/StatusToggle";
+import ConfirmModal from "../../../shared/components/ConfirmModal";
+import Loader from "../../../shared/components/Loader";
+import ExportButtons from "../../../shared/components/ExportButtons";
+import { IconAlertTriangle, IconEdit, IconEye, IconSearch, IconX, IconBox, IconTag, IconTrash, IconPalette } from "../../../shared/components/Icons";
 import "./GestProductos.css";
 // Reutiliza los estilos del selector de color / vista previa (picker, preview) tal
 // cual como en la antigua página de Colores — evita duplicar esas reglas acá.
-import "../colores/Colores.css";
+import "./Colores.css";
 
 const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 const ERRORES_INICIALES = { nombre: "", id_categoria: "", precio: "", general: "" };

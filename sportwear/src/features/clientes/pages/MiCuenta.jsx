@@ -1,15 +1,15 @@
 // src/pages/clientes/MiCuenta.jsx
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useToast } from "../../../shared/contexts/ToastContext";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
-import PaymentModal from "../../components/PaymentModal";
-import OrderDetailModal from "../../components/OrderDetailModal";
-import { IconCreditCard, IconShoppingCart, IconDollar, IconBox, IconTruck } from "../../components/Icons";
-import Loader from "../../components/Loader";
-import { soloDigitos, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../utils/numerico";
+import api from "../../../shared/services/api";
+import PaymentModal from "../../ventas/components/PaymentModal";
+import OrderDetailModal from "../../ventas/components/OrderDetailModal";
+import { IconCreditCard, IconShoppingCart, IconDollar, IconBox, IconTruck } from "../../../shared/components/Icons";
+import Loader from "../../../shared/components/Loader";
+import { soloDigitos, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../../shared/utils/numerico";
 import "./MiCuenta.css";
 
 const IconImagenVacia = () => (

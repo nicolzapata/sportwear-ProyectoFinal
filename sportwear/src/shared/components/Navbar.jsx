@@ -1,7 +1,7 @@
 // src/components/Navbar.jsx  —  Admin · Estilo ETHKL
 import { useState } from "react";
 import { useLocation, Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,
   IconShoppingBag, IconPalette, IconBox, IconTruck,

@@ -1,8 +1,8 @@
 // src/components/PublicNavbar.jsx
 import { useState, useEffect, useRef, useMemo } from "react";
 import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { useCart } from "../context/CartContext";
+import { useAuth } from "../contexts/AuthContext";
+import { useCart } from "../contexts/CartContext";
 import api from "../services/api";
 import { IconCart, IconUser, IconLogOut, IconSearch, IconMenu, IconX } from "./Icons";
 import logo from "../assets/LOGO.png";

@@ -1,14 +1,14 @@
 // src/pages/dashboard/Dashboard.jsx
 import { useState, useEffect, useRef, useMemo, Fragment } from "react";
-import { useAuth } from "../../context/AuthContext";
-import api from "../../services/api";
-import MiCuenta from "../clientes/MiCuenta";
-import ExportButtons from "../../components/ExportButtons";
-import Loader from "../../components/Loader";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import api from "../../../shared/services/api";
+import MiCuenta from "../../clientes/pages/MiCuenta";
+import ExportButtons from "../../../shared/components/ExportButtons";
+import Loader from "../../../shared/components/Loader";
 import {
   IconDollar, IconShoppingCart, IconUsers, IconAlertTriangle,
   IconBox, IconTruck,
-} from "../../components/Icons";
+} from "../../../shared/components/Icons";
 import "./Dashboard.css";
 
 let chartJsLoaded = false;

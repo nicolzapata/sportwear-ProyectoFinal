@@ -1,12 +1,12 @@
 // src/pages/catalogo/Catalogo.jsx
 import { useState, useEffect } from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { useCart } from "../../context/CartContext";
-import { useToast } from "../../context/ToastContext";
-import api from "../../services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useCart } from "../../../shared/contexts/CartContext";
+import { useToast } from "../../../shared/contexts/ToastContext";
+import api from "../../../shared/services/api";
 import "./Catalogo.css";
-import { IconBox, IconSearch } from "../../components/Icons";
+import { IconBox, IconSearch } from "../../../shared/components/Icons";
 
 const IconGrid = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

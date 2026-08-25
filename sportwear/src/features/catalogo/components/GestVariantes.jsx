@@ -1,7 +1,7 @@
 // src/components/GestVariantes.jsx
 import { useState, useEffect } from "react";
-import api from "../services/api";
-import { useConfirm } from "../context/ConfirmContext";
+import api from "../../../shared/services/api";
+import { useConfirm } from "../../../shared/contexts/ConfirmContext";
 import "./GestVariantes.css";
 
 const TALLAS = ["XS","S","M","L","XL","XXL","Única","28","30","32","34","36","38","40","42","44"];

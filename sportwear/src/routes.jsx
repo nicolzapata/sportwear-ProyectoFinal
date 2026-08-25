@@ -1,36 +1,36 @@
 // src/router/AppRouter.jsx
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
-import { AuthProvider }  from "../context/AuthContext";
-import { CartProvider }  from "../context/CartContext";
-import { ToastProvider }   from "../context/ToastContext";
-import { ConfirmProvider } from "../context/ConfirmContext";
-import Layout            from "../components/Layout";
-import PublicLayout      from "../components/PublicLayout";
-import ProtectedRoute    from "../components/ProtectedRoute";
-import { useAuth }       from "../context/AuthContext";
-import RestablecerContrasena from "../pages/accesos/RestablecerContrasena";
+import { AuthProvider }  from "./shared/contexts/AuthContext";
+import { CartProvider }  from "./shared/contexts/CartContext";
+import { ToastProvider }   from "./shared/contexts/ToastContext";
+import { ConfirmProvider } from "./shared/contexts/ConfirmContext";
+import Layout            from "./shared/components/Layout";
+import PublicLayout      from "./shared/components/PublicLayout";
+import ProtectedRoute    from "./shared/components/ProtectedRoute";
+import { useAuth }       from "./shared/contexts/AuthContext";
+import RestablecerContrasena from "./features/auth/pages/RestablecerContrasena";
 
-import Login               from "../pages/accesos/Login";
-import Registro            from "../pages/accesos/Registro";
-import RecuperarContrasena from "../pages/accesos/RecuperarContrasena";
-import Catalogo            from "../pages/catalogo/Catalogo";
-import DetalleProducto     from "../pages/catalogo/DetalleProducto";
-import Carrito             from "../pages/carrito/Carrito";
-import Checkout            from "../pages/checkout/Checkout";
-import SobreNosotros       from "../pages/sobre-nosotros/SobreNosotros";
-import MiCuenta            from "../pages/clientes/MiCuenta";
+import Login               from "./features/auth/pages/Login";
+import Registro            from "./features/auth/pages/Registro";
+import RecuperarContrasena from "./features/auth/pages/RecuperarContrasena";
+import Catalogo            from "./features/catalogo/pages/Catalogo";
+import DetalleProducto     from "./features/catalogo/pages/DetalleProducto";
+import Carrito             from "./features/carrito/pages/Carrito";
+import Checkout            from "./features/checkout/pages/Checkout";
+import SobreNosotros       from "./shared/pages/SobreNosotros";
+import MiCuenta            from "./features/clientes/pages/MiCuenta";
 
-import Dashboard     from "../pages/dashboard/Dashboard";
-import Roles         from "../pages/roles/Roles";
-import Usuarios      from "../pages/usuarios/Usuarios";
-import GestProductos from "../pages/gestProductos/GestProductos";
-import CatalogoAdmin from "../pages/catalogoAdmin/CatalogoAdmin";
-import Proveedores   from "../pages/proveedores/Proveedores";
-import Compras       from "../pages/compras/Compras";
-import Pedidos       from "../pages/pedidos/Pedidos";
-import PedidosVentas from "../pages/pedidosVentas/PedidosVentas";
-import PagosAbonos   from "../pages/pagosAbonos/PagosAbonos";
-import NotFound      from "../pages/NotFound/NotFound";
+import Dashboard     from "./features/dashboard/pages/Dashboard";
+import Roles         from "./features/roles/pages/Roles";
+import Usuarios      from "./features/usuarios/pages/Usuarios";
+import GestProductos from "./features/catalogo/pages/GestProductos";
+import CatalogoAdmin from "./features/catalogo/pages/CatalogoAdmin";
+import Proveedores   from "./features/proveedores/pages/Proveedores";
+import Compras       from "./features/compras/pages/Compras";
+import Pedidos       from "./features/ventas/pages/Pedidos";
+import PedidosVentas from "./features/ventas/pages/PedidosVentas";
+import PagosAbonos   from "./features/pagos/pages/PagosAbonos";
+import NotFound      from "./shared/pages/NotFound";
 
 const MODULOS_CLIENTE = ['dashboard', 'catalogo', 'categorias'];
 

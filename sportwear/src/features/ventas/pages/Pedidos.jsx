@@ -2,12 +2,12 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
 import './Pedidos.css';
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
-import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
-import Loader from "../../components/Loader";
-import { IconEye, IconPrint, IconSearch, IconX, IconBox } from "../../components/Icons";
+import api from "../../../shared/services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useToast } from "../../../shared/contexts/ToastContext";
+import { DetalleItem, DetalleGrid } from "../../../shared/components/ModalDetalle";
+import Loader from "../../../shared/components/Loader";
+import { IconEye, IconPrint, IconSearch, IconX, IconBox } from "../../../shared/components/Icons";
 
 const FILAS_POR_PAGINA = 10;
 

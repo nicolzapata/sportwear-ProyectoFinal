@@ -1,6 +1,6 @@
 // src/pages/sobre-nosotros/SobreNosotros.jsx
 import "./SobreNosotros.css";
-import { IconBolt, IconShield, IconStar, IconHeart, IconCheck } from "../../components/Icons";
+import { IconBolt, IconShield, IconStar, IconHeart, IconCheck } from "../components/Icons";
 
 const VALORES = [
   {

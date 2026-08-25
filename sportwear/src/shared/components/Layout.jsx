@@ -1,8 +1,8 @@
 // src/components/Layout.jsx
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { ToastProvider } from "../context/ToastContext";
+import { useAuth } from "../contexts/AuthContext";
+import { ToastProvider } from "../contexts/ToastContext";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import "./Layout.css";

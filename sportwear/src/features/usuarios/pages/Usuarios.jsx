@@ -1,15 +1,15 @@
 // src/pages/usuarios/Usuarios.jsx
 import { useState, useEffect, useRef } from "react";
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
-import { DetalleItem, DetalleGrid } from "../../components/ModalDetalle";
-import StatusToggle from "../../components/StatusToggle";
-import Toast from "../../components/Toast";
-import Loader from "../../components/Loader";
-import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO, MAX_LONGITUD_NOMBRE, MAX_LONGITUD_DIRECCION, MAX_LONGITUD_CONTRASENA } from "../../utils/numerico";
+import api from "../../../shared/services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { DetalleItem, DetalleGrid } from "../../../shared/components/ModalDetalle";
+import StatusToggle from "../../../shared/components/StatusToggle";
+import Toast from "../../../shared/components/Toast";
+import Loader from "../../../shared/components/Loader";
+import ExportButtons from "../../../shared/components/ExportButtons";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO, MAX_LONGITUD_NOMBRE, MAX_LONGITUD_DIRECCION, MAX_LONGITUD_CONTRASENA } from "../../../shared/utils/numerico";
 import './Usuarios.css';
-import { IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconSearch, IconX } from "../../components/Icons";
+import { IconEdit, IconEyeOpen, IconEyeClosed, IconLock, IconSearch, IconX } from "../../../shared/components/Icons";
 
 const TIPOS_DOC = ["CC", "CE", "TI", "NIT", "PP"];
 const FILAS_POR_PAGINA = 10;

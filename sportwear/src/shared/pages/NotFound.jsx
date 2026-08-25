@@ -1,7 +1,7 @@
 // src/pages/notFound/NotFound.jsx
 import { Link } from "react-router-dom";
 import "./NotFound.css";
-import logo from "../../assets/LOGO.png";
+import logo from "../assets/LOGO.png";
 
 export default function NotFound() {
   return (

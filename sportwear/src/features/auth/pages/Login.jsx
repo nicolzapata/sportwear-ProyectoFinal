@@ -5,10 +5,10 @@
    ====================================== */
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
-import { MENU_ITEMS } from "../../config/permisos";
-import api from "../../services/api";
-import logo from "../../assets/LOGO.png";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import { MENU_ITEMS } from "../../../shared/utils/permisos";
+import api from "../../../shared/services/api";
+import logo from "../../../shared/assets/LOGO.png";
 import "./Login.css";
 
 const IconMail = () => (

@@ -1,16 +1,16 @@
 // src/pages/clientes/Clientes.jsx
 import { useState, useEffect, useRef } from "react";
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
-import ModalSteps from "../../components/ModalSteps";
-import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../components/ModalDetalle";
-import StatusToggle from "../../components/StatusToggle";
-import Toast from "../../components/Toast";
-import Loader from "../../components/Loader";
-import ExportButtons from "../../components/ExportButtons";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../utils/numerico";
+import api from "../../../shared/services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import ModalSteps from "../../../shared/components/ModalSteps";
+import ModalDetalle, { DetalleItem, DetalleGrid, DetalleSeccion } from "../../../shared/components/ModalDetalle";
+import StatusToggle from "../../../shared/components/StatusToggle";
+import Toast from "../../../shared/components/Toast";
+import Loader from "../../../shared/components/Loader";
+import ExportButtons from "../../../shared/components/ExportButtons";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../../shared/utils/numerico";
 import "./Clientes.css";
-import { IconEdit, IconEye, IconSearch, IconX } from "../../components/Icons";
+import { IconEdit, IconEye, IconSearch, IconX } from "../../../shared/components/Icons";
 
 const FORM_VACIO = { nombres: "", apellidos: "", tipo_doc: "CC", documento: "", telefono: "", email: "", ciudad: "Medellín", id_barrio: "", direccion: "", contrasena: "", confirmar: "", permiso_cuotas: 0, estado: "Activo" };
 

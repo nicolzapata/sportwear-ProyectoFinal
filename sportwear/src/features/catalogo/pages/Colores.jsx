@@ -1,15 +1,15 @@
 // src/pages/colores/Colores.jsx
 import { useState, useEffect } from "react";
-import api from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
-import ModalSteps from "../../components/ModalSteps";
-import StatusToggle from "../../components/StatusToggle";
-import ConfirmModal from "../../components/ConfirmModal";
-import Toast from "../../components/Toast";
-import ExportButtons from "../../components/ExportButtons";
-import Loader from "../../components/Loader";
+import api from "../../../shared/services/api";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import ModalSteps from "../../../shared/components/ModalSteps";
+import StatusToggle from "../../../shared/components/StatusToggle";
+import ConfirmModal from "../../../shared/components/ConfirmModal";
+import Toast from "../../../shared/components/Toast";
+import ExportButtons from "../../../shared/components/ExportButtons";
+import Loader from "../../../shared/components/Loader";
 import './Colores.css';
-import { IconEdit, IconPalette, IconSearch, IconTrash, IconX } from "../../components/Icons";
+import { IconEdit, IconPalette, IconSearch, IconTrash, IconX } from "../../../shared/components/Icons";
 
 const getBrightness = (hex) => {
   const r = parseInt(hex.substring(1,3),16), g = parseInt(hex.substring(3,5),16), b = parseInt(hex.substring(5,7),16);

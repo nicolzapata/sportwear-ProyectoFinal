@@ -1,9 +1,9 @@
 // src/pages/carrito/Carrito.jsx
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCart } from "../../context/CartContext";
-import { useAuth } from "../../context/AuthContext";
-import api from "../../services/api";
+import { useCart } from "../../../shared/contexts/CartContext";
+import { useAuth } from "../../../shared/contexts/AuthContext";
+import api from "../../../shared/services/api";
 import "./Carrito.css";
 
 const fmt = (n) =>

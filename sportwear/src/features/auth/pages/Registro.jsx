@@ -5,9 +5,9 @@
    ====================================== */
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import api from "../../services/api";
-import logo from "../../assets/LOGO.png";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../utils/numerico";
+import api from "../../../shared/services/api";
+import logo from "../../../shared/assets/LOGO.png";
+import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../../shared/utils/numerico";
 import "./Login.css";
 import "./Registro.css";
 
