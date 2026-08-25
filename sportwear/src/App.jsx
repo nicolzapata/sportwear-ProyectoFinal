@@ -1,4 +1,4 @@
-  import AppRouter from "./router/AppRouter";
+  import AppRouter from "./routes";
 
   function App() {
     return <AppRouter />;
