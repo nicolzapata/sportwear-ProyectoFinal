@@ -12,7 +12,7 @@ const MUTED    = '#888888';
 const LIGHT    = '#f7f5f2';
 const BORDER   = '#e5e0d8';
 
-const LOGO_PATH = path.join(__dirname, '../assets/logo.png');
+const LOGO_PATH = path.join(__dirname, '../../public/logo.png');
 
 // ── Toda la lógica de dibujo del comprobante, compartida entre las dos salidas
 // (descarga directa por HTTP, y buffer en memoria para adjuntar a un correo) ──

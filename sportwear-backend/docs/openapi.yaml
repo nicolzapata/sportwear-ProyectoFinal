@@ -1,0 +1,173 @@
+openapi: 3.0.3
+info:
+  title: SportWear API
+  version: "1.0.0"
+  description: API REST del backend de SportWear (gestión de productos, ventas, compras, clientes, etc.)
+
+servers:
+  - url: /api
+
+paths:
+  /productos:
+    get:
+      summary: Listar productos
+      tags: [Productos]
+      security: []
+      parameters:
+        - in: query
+          name: publicado
+          schema: { type: string, enum: ["true", "false"] }
+        - in: query
+          name: id_categoria
+          schema: { type: integer }
+        - in: query
+          name: q
+          schema: { type: string }
+        - in: query
+          name: precio_min
+          schema: { type: number }
+        - in: query
+          name: precio_max
+          schema: { type: number }
+        - in: query
+          name: talla
+          schema: { type: string }
+        - in: query
+          name: color
+          schema: { type: string }
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Listado de productos (array plano, o { data, total } si se envía "page")
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items: { $ref: "#/components/schemas/Producto" }
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items: { $ref: "#/components/schemas/Producto" }
+                      total: { type: integer }
+    post:
+      summary: Crear producto
+      tags: [Productos]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductoInput" }
+      responses:
+        "201": { description: Producto creado }
+        "400": { description: Datos inválidos }
+        "401": { description: No autenticado }
+
+  /productos/{id}:
+    put:
+      summary: Actualizar producto
+      tags: [Productos]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductoInput" }
+      responses:
+        "200": { description: Producto actualizado }
+        "404": { description: No encontrado }
+    delete:
+      summary: Eliminar producto (lógico)
+      tags: [Productos]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Producto eliminado }
+        "400": { description: No se puede eliminar (pedidos pendientes) }
+        "404": { description: No encontrado }
+
+  /productos/{id}/historial-precios:
+    get:
+      summary: Historial de precios de un producto
+      tags: [Productos]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Historial de precios }
+
+  /productos/{id}/estado:
+    patch:
+      summary: Activar/Inactivar producto
+      tags: [Productos]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Estado actualizado }
+
+  /productos/{id}/publicar:
+    patch:
+      summary: Publicar/Despublicar producto
+      tags: [Productos]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200": { description: Publicación actualizada }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Producto:
+      type: object
+      properties:
+        id_producto: { type: integer }
+        codigo: { type: string }
+        nombre: { type: string }
+        descripcion: { type: string, nullable: true }
+        id_categoria: { type: integer }
+        precio: { type: number }
+        publicado: { type: boolean }
+        estado: { type: string, enum: [Activo, Inactivo, Eliminado] }
+        destacado: { type: string, nullable: true }
+        stock: { type: integer }
+    ProductoInput:
+      type: object
+      required: [nombre]
+      properties:
+        nombre: { type: string }
+        descripcion: { type: string }
+        id_categoria: { type: integer }
+        precio: { type: number }
+        publicado: { type: boolean }
+        estado: { type: string }
+        destacado: { type: string }
