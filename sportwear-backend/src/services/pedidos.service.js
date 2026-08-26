@@ -238,6 +238,26 @@ const cambiarEstadoPedido = async (id_pedido, nuevoEstado, id_usuario) => {
       }
     }
 
+    // ── NUEVO: cuotas + Efectivo puede avanzar libre por los pasos
+    // intermedios (esContraentrega hace que el bloque de arriba no le
+    // exija nada) — pero llegar a "Entregado" sí exige que la primera
+    // cuota esté confirmada. Es bloqueante nada más: a diferencia de la
+    // contraentrega de pago completo (más abajo), aquí nunca se
+    // auto-confirma nada, siempre es una acción manual del admin en Pagos. ──
+    if (nuevoEstado === 'Entregado' && esCuotas && esContraentrega) {
+      const primeraCuotaRes = await client.query(
+        `SELECT estado FROM "PagosAbonos" WHERE id_venta=$1 AND num_cuota=1`,
+        [id_venta]
+      );
+      const primeraConfirmada = primeraCuotaRes.rows[0]?.estado === 'Confirmado';
+      if (!primeraConfirmada) {
+        throw {
+          status: 400,
+          message: `Este pedido es a cuotas y la primera cuota todavía no está confirmada. Confírmala desde Pagos antes de marcarlo como Entregado.`,
+        };
+      }
+    }
+
     const result = await client.query(`
       UPDATE "Pedidos" SET estado_pedido=$1, fecha_actualizacion=now()
       WHERE id_pedido=$2 RETURNING *

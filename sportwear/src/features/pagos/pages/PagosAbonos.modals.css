@@ -317,3 +317,58 @@
     flex-wrap: wrap;
   }
 }
+
+/* ── NUEVO: calendario de cuotas de la venta (modal de detalle de un pago) —
+   timeline vertical en vez de tabla plana. ── */
+.pagosabonos-calendario-cargando { font-size: 0.8rem; color: var(--dvna-muted); }
+
+.pagosabonos-calendario-venta {
+  position: relative;
+  padding-left: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.pagosabonos-timeline-item {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding-bottom: 16px;
+  padding-left: 4px;
+}
+.pagosabonos-timeline-item::before {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 18px;
+  bottom: -4px;
+  width: 1.5px;
+  background: var(--dvna-pale, #eee);
+}
+.pagosabonos-timeline-item:last-child::before { display: none; }
+
+.pagosabonos-timeline-dot {
+  width: 19px; height: 19px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+  border: 2px solid #ddd; background: white; z-index: 1;
+}
+.pagosabonos-timeline-confirmado .pagosabonos-timeline-dot { border-color: var(--success); background: var(--success); }
+.pagosabonos-timeline-anulado .pagosabonos-timeline-dot    { border-color: var(--danger); background: var(--danger); }
+.pagosabonos-timeline-vencida .pagosabonos-timeline-dot    { border-color: var(--danger); }
+.pagosabonos-timeline-pendiente .pagosabonos-timeline-dot  { border-color: #ffb677; }
+
+.pagosabonos-timeline-content { flex: 1; min-width: 0; }
+.pagosabonos-timeline-header { display: flex; justify-content: space-between; gap: 8px; }
+.pagosabonos-timeline-titulo { font-size: 0.85rem; font-weight: 600; color: var(--dvna-charcoal); }
+.pagosabonos-timeline-monto  { font-size: 0.85rem; font-weight: 600; color: var(--dvna-charcoal); }
+
+.pagosabonos-timeline-sub { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+.pagosabonos-timeline-fecha { font-size: 0.72rem; color: var(--dvna-muted); }
+
+.pagosabonos-timeline-badge {
+  font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 1px 7px; border-radius: 999px;
+}
+.pagosabonos-timeline-badge-confirmado { background: #eaf6ec; color: var(--success); }
+.pagosabonos-timeline-badge-anulado    { background: #fbeaea; color: var(--danger); }
+.pagosabonos-timeline-badge-vencida    { background: #fbeaea; color: var(--danger); }
+.pagosabonos-timeline-badge-pendiente  { background: #fff6ee; color: #b96422; }

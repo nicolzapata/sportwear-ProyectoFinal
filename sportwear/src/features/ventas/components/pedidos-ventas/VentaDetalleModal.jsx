@@ -32,12 +32,15 @@ export default function VentaDetalleModal({ verDetalle, setVerDetalle }) {
 
           <div className="pedidosventas-factura-seccion">
             <h3 className="pedidosventas-factura-titulo">Productos</h3>
-            {(verDetalle.items || []).map((item, i) => (
-              <div key={i} className="pedidosventas-detalle-item-linea">
-                <span>{item.producto} {item.talla ? `(${item.talla})` : ""} × {item.cantidad}</span>
-                <span>{fmt(item.subtotal)}</span>
-              </div>
-            ))}
+            {(verDetalle.items || []).map((item, i) => {
+              const variante = [item.color_nombre, item.talla ? `Talla ${item.talla}` : null].filter(Boolean).join(" · ");
+              return (
+                <div key={i} className="pedidosventas-detalle-item-linea">
+                  <span>{item.producto} {variante ? `(${variante})` : ""} × {item.cantidad}</span>
+                  <span>{fmt(item.subtotal)}</span>
+                </div>
+              );
+            })}
           </div>
 
           <div className="pedidosventas-factura-seccion">

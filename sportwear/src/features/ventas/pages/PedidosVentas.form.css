@@ -4,6 +4,13 @@
 /* Form */
 .pedidosventas-form-group { margin-bottom: 1rem; }
 .pedidosventas-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+/* ── NUEVO: fila "Fecha de la primera cuota" + calendario, uno al lado del
+   otro — el calendario se limita en altura porque con muchas cuotas (hasta
+   36) puede volverse muy alto dentro del modal. ── */
+.pedidosventas-cuotas-row { align-items: start; margin-bottom: 1rem; }
+.pedidosventas-calendario-cuotas { max-height: 260px; overflow-y: auto; padding-right: 4px; }
+.pedidosventas-calendario-cuotas .cal-cuotas-wrap { margin-bottom: 0; }
 .pedidosventas-form-label {
   display: block; font-size: 0.75rem; font-weight: 500; color: var(--dvna-muted);
   margin-bottom: 0.3rem; text-transform: none; letter-spacing: normal;

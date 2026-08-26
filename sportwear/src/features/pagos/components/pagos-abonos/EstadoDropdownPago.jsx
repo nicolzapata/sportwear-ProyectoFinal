@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
-import { TRANSICIONES_PAGO } from "../../utils/pagosAbonosHelpers";
+import { TRANSICIONES_PAGO, fmt } from "../../utils/pagosAbonosHelpers";
 
 const IconChevronDown = () => (
   <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
@@ -13,7 +13,7 @@ const IconCheckSm = () => (
   </svg>
 );
 
-export default function EstadoDropdownPago({ pago, abierto, onToggle, onCambiar, cambiando, tienePerm }) {
+export default function EstadoDropdownPago({ pago, abierto, onToggle, onCambiar, cambiando, tienePerm, accionable = true, proximasCuotas = [] }) {
   const btnRef = useRef(null);
   const panelRef = useRef(null);
   const [coords, setCoords] = useState(null);
@@ -21,7 +21,14 @@ export default function EstadoDropdownPago({ pago, abierto, onToggle, onCambiar,
   const estadoActual = pago.estado;
   const esFinal = estadoActual === 'Confirmado' || estadoActual === 'Anulado';
   const siguientes = TRANSICIONES_PAGO[estadoActual] || [];
-  const puedeEditar = tienePerm('Pagos.estado') && siguientes.length > 0;
+  // ── NUEVO: las cuotas se resuelven en orden — si esta es una cuota futura
+  // (todavía hay una anterior de la misma venta sin resolver), el
+  // desplegable se ve deshabilitado en vez de desaparecer. ──
+  const puedeEditar = tienePerm('Pagos.estado') && siguientes.length > 0 && accionable;
+  // ── NUEVO: "Pagar cuota N" / "Anular cuota N" en vez de genérico, cuando
+  // la fila corresponde a una cuota puntual. ──
+  const etiquetaConfirmar = pago.num_cuota ? `Pagar cuota ${pago.num_cuota}` : "Confirmar pago";
+  const etiquetaAnular    = pago.num_cuota ? `Anular cuota ${pago.num_cuota}` : "Anular pago";
 
   useEffect(() => {
     if (!abierto || !btnRef.current) return;
@@ -95,7 +102,7 @@ export default function EstadoDropdownPago({ pago, abierto, onToggle, onCambiar,
                 onClick={() => { onCambiar(pago.id_pago, 'Confirmado'); onToggle(null); }}
               >
                 <span className="pagosabonos-estado-dot"><IconCheckSm /></span>
-                <span className="pagosabonos-estado-item-label">Confirmar pago</span>
+                <span className="pagosabonos-estado-item-label">{etiquetaConfirmar}</span>
               </button>
               <div className="pagosabonos-estado-divider" />
               <button
@@ -105,8 +112,22 @@ export default function EstadoDropdownPago({ pago, abierto, onToggle, onCambiar,
                 onClick={() => { onCambiar(pago.id_pago, 'Anulado'); onToggle(null); }}
               >
                 <span className="pagosabonos-estado-dot" />
-                <span className="pagosabonos-estado-item-label">Anular pago</span>
+                <span className="pagosabonos-estado-item-label">{etiquetaAnular}</span>
               </button>
+              {/* ── NUEVO: vista previa, en gris y no clickeable, de las 2-3
+                  cuotas siguientes de la misma venta. ── */}
+              {proximasCuotas.length > 0 && (
+                <>
+                  <div className="pagosabonos-estado-divider" />
+                  <div className="pagosabonos-estado-preview-titulo">Próximas cuotas</div>
+                  {proximasCuotas.map((c) => (
+                    <div key={c.id_pago} className="pagosabonos-estado-item pagosabonos-estado-item-preview">
+                      <span className="pagosabonos-estado-dot" />
+                      <span className="pagosabonos-estado-item-label">Cuota {c.num_cuota} · {fmt(c.monto)}</span>
+                    </div>
+                  ))}
+                </>
+              )}
             </>
           )}
         </div>,

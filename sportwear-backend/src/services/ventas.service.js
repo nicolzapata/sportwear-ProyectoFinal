@@ -7,13 +7,10 @@ const { enviarCorreo, formatearFecha, filasDatos } = require('./mailer.service')
 // que usa Pagos para las cuotas sobrantes (las confirmaba, en vez de
 // anularlas). Ahora usa la misma lógica compartida que Pagos, para que
 // nunca puedan desincronizarse entre sí. ──
-const { evaluarYMarcarPagada, restaurarStockSiHaceFalta } = require('./pagoLogica.service');
-
-// ── NUEVO: monto mínimo permitido para el valor de cada cuota — evita
-// ventas a cuotas donde cada cuota termine siendo un valor sin sentido
-// (ej. $1). Validado también en el frontend, pero la regla de plata real
-// vive aquí — nunca se confía solo en lo que mande el cliente. ──
-const MONTO_MINIMO_ABONO = 20000;
+const {
+  evaluarYMarcarPagada, restaurarStockSiHaceFalta,
+  MONTO_MINIMO_ABONO, ajustarNumCuotas, calcularFechasVencimiento,
+} = require('./pagoLogica.service');
 
 const getVentas = async ({ page, limit, q, origen } = {}) => {
   const params = [];
@@ -59,11 +56,16 @@ const getVentas = async ({ page, limit, q, origen } = {}) => {
   const ids = filas.map(v => v.id_venta);
   let detalles = [];
   if (ids.length) {
+    // ── NUEVO: se agrega el color de la variante — el modal de "ver detalle"
+    // de este mismo módulo (Ventas) usa los items que trae ESTA consulta
+    // (la del listado), no los de getVentaById, así que sin este join el
+    // color nunca llegaba a la pantalla sin importar qué mostrara el modal. ──
     const det = await pool.query(`
-      SELECT dv.*, p.nombre AS producto, pv.talla, pv.stock
+      SELECT dv.*, p.nombre AS producto, pv.talla, pv.stock, col.nombre AS color_nombre
       FROM "DetalleVenta" dv
       JOIN "Productos" p ON dv.id_producto=p.id_producto
       LEFT JOIN "ProductoVariantes" pv ON dv.id_variante=pv.id_variante
+      LEFT JOIN "Colores" col ON pv.id_color=col.id_color
       WHERE dv.id_venta=ANY($1::int[])
     `, [ids]);
     detalles = det.rows;
@@ -194,7 +196,7 @@ const validarCupoCredito = async (id_cliente, montoNuevaVenta) => {
 };
 
 const crearVenta = async (datos) => {
-  const { id_cliente, descuento, impuesto, estado, fecha, observaciones, items, tipo_pago, num_cuotas, metodo_pago, motivo_descuento, direccion_entrega } = datos;
+  const { id_cliente, descuento, impuesto, estado, fecha, observaciones, items, tipo_pago, metodo_pago, motivo_descuento, direccion_entrega, fecha_primera_cuota } = datos;
   if (!id_cliente) throw { status: 400, message: 'El cliente es requerido' };
 
   const subtotal = items
@@ -207,13 +209,16 @@ const crearVenta = async (datos) => {
     throw { status: 400, message: 'Debes indicar el motivo del descuento.' };
   }
 
-  // ── NUEVO: validar cupo de crédito y monto mínimo por cuota solo cuando
-  // la venta es a cuotas ──
+  // ── NUEVO: validar cupo de crédito solo cuando la venta es a cuotas. El
+  // número de cuotas pedido se autoajusta al máximo real que permite el
+  // total (nunca se rechaza la venta por pedir de más). ──
+  let num_cuotas = datos.num_cuotas;
   if (tipo_pago === 'cuotas') {
     await validarCupoCredito(id_cliente, total);
-    if (!num_cuotas || Math.ceil(total / num_cuotas) < MONTO_MINIMO_ABONO) {
-      throw { status: 400, message: `El valor de cada cuota debe ser de al menos ${MONTO_MINIMO_ABONO.toLocaleString('es-CO')}.` };
+    if (!num_cuotas || Number(num_cuotas) < 1) {
+      throw { status: 400, message: 'Indica el número de cuotas.' };
     }
+    num_cuotas = ajustarNumCuotas(num_cuotas, total);
   }
 
   const client = await pool.connect();
@@ -280,6 +285,11 @@ const crearVenta = async (datos) => {
 
     if (tipo_pago === 'cuotas' && num_cuotas && total > 0) {
       const valorCuota = Math.ceil(total / num_cuotas);
+      // ── NUEVO: fecha base para calcular el vencimiento de cada cuota — si
+      // no se manda "fecha de la primera cuota", se usa la fecha de la venta
+      // como respaldo. La cuota 1 cae exactamente ahí, sin desplazamiento. ──
+      const fechaBaseCuotas = fecha_primera_cuota || fecha || new Date();
+      const fechasVencimiento = calcularFechasVencimiento(fechaBaseCuotas, num_cuotas, total);
       for (let i = 0; i < num_cuotas; i++) {
         // ── CORREGIDO: "Primera cuota confirmada" en el formulario solo debe
         // confirmar la cuota #1 — antes esta condición no revisaba "i",
@@ -287,9 +297,9 @@ const crearVenta = async (datos) => {
         // cuántas hubiera. ──
         const estadoCuota = (estado === 'Pagado' && i === 0) ? 'Confirmado' : 'Pendiente';
         await client.query(`
-          INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha, num_cuota)
-          VALUES ($1,$2,'Abono',$3,$4,$5,$6)
-        `, [id_venta, valorCuota, metodo_pago || 'Efectivo', estadoCuota, new Date(), i + 1]);
+          INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha, num_cuota, fecha_vencimiento)
+          VALUES ($1,$2,'Abono',$3,$4,$5,$6,$7)
+        `, [id_venta, valorCuota, metodo_pago || 'Efectivo', estadoCuota, new Date(), i + 1, fechasVencimiento[i]]);
       }
     } else if (total > 0) {
       // ── CORREGIDO: esto decía "tipo='Abono'" sin importar si la venta
@@ -320,8 +330,13 @@ const crearVenta = async (datos) => {
   }
 };
 
-const cambiarEstado = async (id, estado) => {
+const cambiarEstado = async (id, estado, motivo_anulacion) => {
   if (!estado) throw { status: 400, message: 'Estado requerido' };
+  // ── NUEVO: anular una venta ahora exige el motivo — se guarda como
+  // registro de por qué se anuló, no solo que se anuló. ──
+  if (estado === 'Anulado' && !motivo_anulacion?.trim()) {
+    throw { status: 400, message: 'Debes indicar el motivo de la anulación.' };
+  }
 
   const client = await pool.connect();
   let tipoNotificacionPago = null;
@@ -379,10 +394,15 @@ const cambiarEstado = async (id, estado) => {
       const refrescada = await client.query(`SELECT * FROM "Ventas" WHERE id_venta=$1`, [id]);
       venta = refrescada.rows[0];
     } else {
-      const result = await client.query(
-        `UPDATE "Ventas" SET estado=$1 WHERE id_venta=$2 RETURNING *`,
-        [estado, id]
-      );
+      const result = estado === 'Anulado'
+        ? await client.query(
+            `UPDATE "Ventas" SET estado=$1, motivo_anulacion=$2 WHERE id_venta=$3 RETURNING *`,
+            [estado, motivo_anulacion.trim(), id]
+          )
+        : await client.query(
+            `UPDATE "Ventas" SET estado=$1 WHERE id_venta=$2 RETURNING *`,
+            [estado, id]
+          );
       venta = result.rows[0];
 
       if (estado === 'Anulado') {
@@ -457,17 +477,20 @@ const notificarPedidoRecibido = async (id_venta, metodo_pago) => {
   }
 };
 
-const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entrega, id_barrio, metodo_pago, tipo_pago, num_cuotas, items }) => {
+const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entrega, id_barrio, metodo_pago, tipo_pago, num_cuotas: numCuotasPedido, fecha_primera_cuota, items }) => {
   if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
   if (!id_cliente) throw { status: 400, message: 'Cliente no identificado' };
 
-  // ── NUEVO: validar cupo de crédito y monto mínimo por cuota solo cuando
-  // el pedido es a cuotas ──
+  // ── NUEVO: validar cupo de crédito solo cuando el pedido es a cuotas. El
+  // número de cuotas se autoajusta al máximo real que permite el total,
+  // igual que en la venta creada por el admin (misma regla, un solo lugar). ──
+  let num_cuotas = numCuotasPedido;
   if (tipo_pago === 'cuotas') {
     await validarCupoCredito(id_cliente, total);
-    if (!num_cuotas || Math.ceil(total / num_cuotas) < MONTO_MINIMO_ABONO) {
-      throw { status: 400, message: `El valor de cada cuota debe ser de al menos ${MONTO_MINIMO_ABONO.toLocaleString('es-CO')}.` };
+    if (!num_cuotas || Number(num_cuotas) < 1) {
+      throw { status: 400, message: 'Indica el número de cuotas.' };
     }
+    num_cuotas = ajustarNumCuotas(num_cuotas, total);
   }
 
   // ── NUEVO (Inventario): el stock solo se descuenta de inmediato cuando el
@@ -566,11 +589,13 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
 
     if (tipo_pago === 'cuotas' && num_cuotas) {
       const valorCuota = Math.ceil(total / num_cuotas);
+      const fechaBaseCuotas = fecha_primera_cuota || fecha || new Date();
+      const fechasVencimiento = calcularFechasVencimiento(fechaBaseCuotas, num_cuotas, total);
       for (let i = 0; i < num_cuotas; i++) {
         await client.query(`
-          INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha, num_cuota)
-          VALUES ($1,$2,'Abono',$3,'Pendiente',$4,$5)
-        `, [id_venta, valorCuota, metodo_pago || 'Efectivo', new Date(), i + 1]);
+          INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha, num_cuota, fecha_vencimiento)
+          VALUES ($1,$2,'Abono',$3,'Pendiente',$4,$5,$6)
+        `, [id_venta, valorCuota, metodo_pago || 'Efectivo', new Date(), i + 1, fechasVencimiento[i]]);
       }
     } else {
       // ── CORREGIDO: mismo bug que en crearVenta (admin) — el registro de

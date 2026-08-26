@@ -38,7 +38,7 @@ const crearVenta = async (req, res) => {
 
 const cambiarEstado = async (req, res) => {
   try {
-    const data = await ventasService.cambiarEstado(req.params.id, req.body.estado);
+    const data = await ventasService.cambiarEstado(req.params.id, req.body.estado, req.body.motivo_anulacion);
     res.json(data);
   } catch (err) {
     console.error('ERROR cambiarEstado (ventas):', err);

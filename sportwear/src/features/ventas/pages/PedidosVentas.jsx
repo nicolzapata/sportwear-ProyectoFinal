@@ -16,10 +16,11 @@ import VentasTable from "../components/pedidos-ventas/VentasTable";
 import VentaDetalleModal from "../components/pedidos-ventas/VentaDetalleModal";
 import AbonosModal from "../components/pedidos-ventas/AbonosModal";
 import NuevaVentaModal from "../components/pedidos-ventas/NuevaVentaModal";
+import AnularVentaModal from "../components/pedidos-ventas/AnularVentaModal";
 import {
   FILAS_POR_PAGINA, HOY_ISO, nuevoItem, formVentaInicial,
   errorItemCantidad, errorItemPrecio, errorItemDescuento,
-  MAX_NUM_CUOTAS,
+  MAX_NUM_CUOTAS, opcionesCuotasDisponibles,
 } from "../utils/pedidosVentasHelpers";
 
 // ── NUEVO: ícono propio de "reporte" (documento con líneas + gráfica
@@ -59,6 +60,10 @@ export default function PedidosVentas() {
   const [filaAbierta, setFilaAbierta] = useState(null);
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
   const [guardandoAbono, setGuardandoAbono] = useState(false);
+  // ── NUEVO: anular una venta ahora exige un motivo — se pide en un modal
+  // con textarea obligatorio antes de mandar la petición. ──
+  const [modalAnular, setModalAnular] = useState(null); // venta a anular, o null
+  const [motivoAnulacion, setMotivoAnulacion] = useState("");
 
   // ── Nueva venta ──
   const [clientes,   setClientes]   = useState([]);
@@ -251,6 +256,18 @@ export default function PedidosVentas() {
   }, 0);
   const totalVenta = subtotalVenta - (Number(formVenta.descuento) || 0) + (Number(formVenta.impuesto) || 0);
 
+  // ── NUEVO: opciones estándar de cuotas (2,3,4,6,9,12,18,24,36) filtradas
+  // por lo que el total de la venta permita — mismo criterio que Carrito y
+  // Checkout. Si el total cambia (se agrega/quita un producto) y la cuota
+  // elegida deja de ser válida, se resetea sola. ──
+  const opcionesCuotasVenta = opcionesCuotasDisponibles(totalVenta);
+  useEffect(() => {
+    if (formVenta.tipo_pago === "cuotas" && formVenta.num_cuotas && !opcionesCuotasVenta.includes(Number(formVenta.num_cuotas))) {
+      setFormVenta((prev) => ({ ...prev, num_cuotas: "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalVenta, formVenta.tipo_pago]);
+
   const validarVenta = () => {
     const e = {};
     if (!formVenta.id_cliente) e.id_cliente = "El cliente es obligatorio";
@@ -258,8 +275,7 @@ export default function PedidosVentas() {
     else if (formVenta.fecha > HOY_ISO) e.fecha = "La fecha no puede ser futura";
     if (formVenta.tipo_pago === "cuotas") {
       const n = Number(formVenta.num_cuotas);
-      if (!formVenta.num_cuotas || n < 2) e.num_cuotas = "Indica el número de cuotas (mínimo 2)";
-      else if (!Number.isInteger(n)) e.num_cuotas = "Debe ser un número entero";
+      if (!formVenta.num_cuotas || n < 2) e.num_cuotas = "Selecciona el número de cuotas";
       else if (n > MAX_NUM_CUOTAS) e.num_cuotas = `No puede ser mayor a ${MAX_NUM_CUOTAS} cuotas`;
     }
     if (Number(formVenta.descuento) > 0 && !formVenta.motivo_descuento?.trim()) {
@@ -305,6 +321,7 @@ export default function PedidosVentas() {
         direccion_entrega: formVenta.direccion_entrega?.trim() || null,
         tipo_pago: formVenta.tipo_pago,
         num_cuotas: formVenta.tipo_pago === "cuotas" ? Number(formVenta.num_cuotas) : null,
+        fecha_primera_cuota: formVenta.tipo_pago === "cuotas" ? (formVenta.fecha_primera_cuota || formVenta.fecha) : null,
         // ── NUEVO: se manda el método solo cuando de verdad aplica a algo
         // concreto — pago completo (siempre), o cuotas cuando se confirma la
         // primera cuota de una vez (ese método es para ESA cuota puntual).
@@ -334,6 +351,14 @@ export default function PedidosVentas() {
   const totalPaginas = Math.ceil(total / FILAS_POR_PAGINA) || 1;
 
   const cambiarEstado = async (id, estado) => {
+    // ── NUEVO: anular una venta exige un motivo — en vez de mandar la
+    // petición de una vez, se abre un modal a pedirlo. ──
+    if (estado === "Anulado") {
+      const venta = datos.find((v) => v.id_venta === id);
+      setMotivoAnulacion("");
+      setModalAnular(venta || { id_venta: id });
+      return;
+    }
     setCambiandoEstado(true);
     try {
       await api.patch(`/ventas/${id}/estado`, { estado });
@@ -341,6 +366,22 @@ export default function PedidosVentas() {
       showToast("exito", `Venta marcada como "${estado}".`);
     } catch (err) {
       showToast("error", err.response?.data?.message || "Error al cambiar estado");
+    } finally {
+      setCambiandoEstado(false);
+    }
+  };
+
+  const confirmarAnularVenta = async () => {
+    if (!modalAnular || !motivoAnulacion.trim()) return;
+    setCambiandoEstado(true);
+    try {
+      await api.patch(`/ventas/${modalAnular.id_venta}/estado`, { estado: "Anulado", motivo_anulacion: motivoAnulacion.trim() });
+      await cargar(true);
+      showToast("exito", "Venta anulada correctamente.");
+      setModalAnular(null);
+      setMotivoAnulacion("");
+    } catch (err) {
+      showToast("error", err.response?.data?.message || "Error al anular la venta");
     } finally {
       setCambiandoEstado(false);
     }
@@ -449,6 +490,13 @@ export default function PedidosVentas() {
         actualizarItemVenta={actualizarItemVenta} agregarItemVenta={agregarItemVenta}
         quitarItemVenta={quitarItemVenta} errorItemStock={errorItemStock}
         subtotalVenta={subtotalVenta} totalVenta={totalVenta}
+        opcionesCuotasVenta={opcionesCuotasVenta}
+      />
+
+      <AnularVentaModal
+        venta={modalAnular} onClose={() => setModalAnular(null)}
+        motivo={motivoAnulacion} setMotivo={setMotivoAnulacion}
+        guardando={cambiandoEstado} onConfirmar={confirmarAnularVenta}
       />
     </div>
   );

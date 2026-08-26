@@ -22,6 +22,16 @@ const getPagoById = async (req, res) => {
   }
 };
 
+const getPagosPorVenta = async (req, res) => {
+  try {
+    const data = await pagosService.getPagosPorVenta(req.params.id_venta);
+    res.json(data);
+  } catch (err) {
+    console.error('ERROR getPagosPorVenta:', err);
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
 const crearPago = async (req, res) => {
   try {
     const data = await pagosService.crearPago(req.body);
@@ -62,4 +72,4 @@ const pagarTotal = async (req, res) => {
   }
 };
 
-module.exports = { getPagos, getPagoById, crearPago, cambiarEstado, pagarCuota, pagarTotal };
+module.exports = { getPagos, getPagoById, getPagosPorVenta, crearPago, cambiarEstado, pagarCuota, pagarTotal };

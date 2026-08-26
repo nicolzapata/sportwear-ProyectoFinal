@@ -2,7 +2,9 @@ import { IconX } from "../../../../shared/components/Icons";
 import { MAX_MONTO, MAX_LONGITUD_TEXTO_LIBRE, MAX_LONGITUD_DIRECCION } from "../../../../shared/utils/numerico";
 import ClienteAutocomplete from "./ClienteAutocomplete";
 import VentaItemRow from "./VentaItemRow";
-import { fmt, HOY_ISO, MAX_NUM_CUOTAS } from "../../utils/pedidosVentasHelpers";
+import CuotasCalendario from "../../../checkout/components/checkout/CuotasCalendario";
+import "../../../checkout/pages/Checkout.cuotas.css";
+import { fmt, HOY_ISO, calcularFechasVencimiento } from "../../utils/pedidosVentasHelpers";
 
 export default function NuevaVentaModal({
   modalVenta, setModalVenta, guardandoVenta, guardarVenta,
@@ -13,9 +15,16 @@ export default function NuevaVentaModal({
   cargandoDatosVenta, errorDatosVenta,
   cargandoCredito, creditoInfo,
   actualizarItemVenta, agregarItemVenta, quitarItemVenta, errorItemStock,
-  subtotalVenta, totalVenta,
+  subtotalVenta, totalVenta, opcionesCuotasVenta,
 }) {
   if (!modalVenta) return null;
+
+  const numCuotasSel = Number(formVenta.num_cuotas) || 0;
+  const valorCuotaSel = numCuotasSel > 0 ? Math.ceil(totalVenta / numCuotasSel) : 0;
+  const fechaBaseCuotas = formVenta.fecha_primera_cuota || formVenta.fecha;
+  const fechasCuotasSel = numCuotasSel > 0 && fechaBaseCuotas
+    ? calcularFechasVencimiento(fechaBaseCuotas, numCuotasSel, totalVenta)
+    : [];
 
   return (
     <div className="pedidosventas-modal-overlay" onClick={() => !guardandoVenta && setModalVenta(false)}>
@@ -79,15 +88,27 @@ export default function NuevaVentaModal({
             {formVenta.tipo_pago === "cuotas" ? (
               <div className="pedidosventas-form-group">
                 <label className="pedidosventas-form-label">Número de cuotas</label>
-                <input
-                  type="number"
-                  min="2"
-                  max={MAX_NUM_CUOTAS}
-                  step={1}
-                  className={`pedidosventas-form-input${erroresVenta.num_cuotas ? " input-error" : ""}`}
+                <select
+                  className={`pedidosventas-form-select${erroresVenta.num_cuotas ? " input-error" : ""}`}
                   value={formVenta.num_cuotas}
-                  onChange={(e) => { setFormVenta({ ...formVenta, num_cuotas: e.target.value }); setErroresVenta((prev) => ({ ...prev, num_cuotas: "" })); }}
-                />
+                  onChange={(e) => {
+                    const num_cuotas = e.target.value;
+                    setFormVenta((prev) => ({
+                      ...prev,
+                      num_cuotas,
+                      // ── NUEVO: la fecha de la primera cuota se autocompleta con
+                      // la fecha de la venta al elegir el número de cuotas — sigue
+                      // siendo editable después. ──
+                      fecha_primera_cuota: prev.fecha_primera_cuota || prev.fecha,
+                    }));
+                    setErroresVenta((prev) => ({ ...prev, num_cuotas: "" }));
+                  }}
+                >
+                  <option value="">Selecciona...</option>
+                  {(opcionesCuotasVenta || []).map((n) => (
+                    <option key={n} value={n}>{n} cuotas de {fmt(Math.ceil(totalVenta / n))}</option>
+                  ))}
+                </select>
                 {erroresVenta.num_cuotas && <span className="pedidosventas-field-error">{erroresVenta.num_cuotas}</span>}
               </div>
             ) : (
@@ -140,6 +161,30 @@ export default function NuevaVentaModal({
               </div>
             )}
           </div>
+
+          {/* ── NUEVO: fecha de la primera cuota (misma fila que el
+              calendario, no debajo) — se recalcula solo si cambia la fecha
+              o el número de cuotas. ── */}
+          {formVenta.tipo_pago === "cuotas" && numCuotasSel > 0 && (
+            <div className="pedidosventas-form-row pedidosventas-cuotas-row">
+              <div className="pedidosventas-form-group">
+                <label className="pedidosventas-form-label">Fecha de la primera cuota</label>
+                <input
+                  type="date"
+                  max={HOY_ISO}
+                  className="pedidosventas-form-input"
+                  value={formVenta.fecha_primera_cuota || formVenta.fecha}
+                  onChange={(e) => setFormVenta({ ...formVenta, fecha_primera_cuota: e.target.value })}
+                />
+              </div>
+              <div className="pedidosventas-calendario-cuotas">
+                <CuotasCalendario
+                  tipoPagoActivo="cuotas" total={totalVenta} numCuotasActivo={numCuotasSel}
+                  valorCuota={valorCuotaSel} fechasCuotas={fechasCuotasSel}
+                />
+              </div>
+            </div>
+          )}
 
           <div className="pedidosventas-items-section">
             <div className="pedidosventas-items-header">

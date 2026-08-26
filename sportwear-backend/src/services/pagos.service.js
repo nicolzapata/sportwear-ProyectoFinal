@@ -7,11 +7,10 @@ const { notificarComprobantePago } = require('./ventas.service');
 // tenía su PROPIA reimplementación parecida-pero-distinta para el mismo
 // problema. Ahora ambas usan la misma versión, importada desde
 // pagoLogica.service.js — una sola fuente de verdad. ──
-const { getSaldoPendiente, evaluarYMarcarPagada } = require('./pagoLogica.service');
-
-// ── mismo mínimo que en ventas.service.js — un abono no debería poder
-// registrarse por $1 o cualquier valor sin sentido. ──
-const MONTO_MINIMO_ABONO = 20000;
+const {
+  getSaldoPendiente, evaluarYMarcarPagada,
+  MONTO_MINIMO_ABONO, mensajeMontoMinimo,
+} = require('./pagoLogica.service');
 
 const getPagos = async ({ page, limit, q } = {}) => {
   const params = [];
@@ -32,14 +31,32 @@ const getPagos = async ({ page, limit, q } = {}) => {
     limitOffsetSql = `LIMIT $${params.length - 1} OFFSET $${params.length}`;
   }
 
+  // ── NUEVO: la tabla no debe mostrar TODAS las cuotas pendientes de una
+  // venta a cuotas de una — solo las que ya se resolvieron (Confirmado o
+  // Anulado) más una ventana de las próximas 3 cuotas Pendientes. Las que
+  // van más adelante quedan ocultas hasta que las anteriores se resuelvan.
+  // Se calcula con una sub-consulta que trae, por venta, la cuota pendiente
+  // más próxima (el número de cuota más bajo aún Pendiente). ──
   const result = await pool.query(`
+    WITH primera_pendiente AS (
+      SELECT id_venta, MIN(num_cuota) AS min_pendiente
+      FROM "PagosAbonos"
+      WHERE estado = 'Pendiente' AND num_cuota IS NOT NULL
+      GROUP BY id_venta
+    )
     SELECT pa.*, v.id_cliente, c.nombre AS cliente
            ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "PagosAbonos" pa
     JOIN "Ventas"   v ON pa.id_venta=v.id_venta
     JOIN "Clientes" c ON v.id_cliente=c.id_cliente
-    WHERE 1=1 ${busquedaSql}
-    ORDER BY pa.id_pago DESC
+    LEFT JOIN primera_pendiente pp ON pp.id_venta = pa.id_venta
+    WHERE (
+      pa.estado != 'Pendiente'
+      OR pa.num_cuota IS NULL
+      OR pa.num_cuota < COALESCE(pp.min_pendiente, 0) + 3
+    )
+    ${busquedaSql}
+    ORDER BY pa.id_venta DESC, pa.num_cuota ASC NULLS LAST
     ${limitOffsetSql}
   `, params);
 
@@ -47,6 +64,19 @@ const getPagos = async ({ page, limit, q } = {}) => {
   const total = result.rows[0] ? Number(result.rows[0].total_count) : 0;
   const data = result.rows.map(({ total_count, ...r }) => r);
   return { data, total };
+};
+
+// ── NUEVO: a diferencia de getPagos (que solo muestra una ventana de las
+// próximas cuotas pendientes), esto trae TODAS las cuotas de una venta
+// puntual, pasadas y futuras — para el calendario completo en el modal de
+// detalle de un pago. ──
+const getPagosPorVenta = async (id_venta) => {
+  const result = await pool.query(`
+    SELECT pa.* FROM "PagosAbonos" pa
+    WHERE pa.id_venta = $1
+    ORDER BY pa.num_cuota ASC NULLS LAST, pa.id_pago ASC
+  `, [id_venta]);
+  return result.rows;
 };
 
 const getPagoById = async (id) => {
@@ -112,12 +142,13 @@ const crearPago = async (datos) => {
   if (Number(monto) > saldo)
     throw { status: 400, message: `El monto ($${Number(monto).toLocaleString('es-CO')}) supera el saldo pendiente ($${saldo.toLocaleString('es-CO')}).` };
 
-  // ── monto mínimo por abono — salvo que este pago liquide exactamente lo
-  // que queda por pagar (no tendría sentido exigir un mínimo más alto que
-  // el propio saldo restante, ej. últimos $15.000 de una deuda). ──
+  // ── monto mínimo por abono — dinámico: si el saldo restante es menor al
+  // mínimo estándar, el mínimo efectivo pasa a ser el saldo mismo (no
+  // tendría sentido exigir un mínimo más alto que la propia deuda), salvo
+  // que este pago liquide exactamente lo que queda por pagar. ──
   const liquidaSaldoCompleto = Math.abs(Number(monto) - saldo) < 0.01;
   if (Number(monto) < MONTO_MINIMO_ABONO && !liquidaSaldoCompleto) {
-    throw { status: 400, message: `El monto mínimo para un abono es de $${MONTO_MINIMO_ABONO.toLocaleString('es-CO')} (a menos que sea el pago que liquida el saldo restante).` };
+    throw { status: 400, message: mensajeMontoMinimo(saldo) };
   }
 
   const client = await pool.connect();
@@ -232,4 +263,4 @@ const pagarTotal = async (id_venta, { metodo, referencia_pago }) => {
   } finally { client.release(); }
 };
 
-module.exports = { getPagos, getPagoById, crearPago, cambiarEstado, pagarCuota, pagarTotal };
+module.exports = { getPagos, getPagoById, getPagosPorVenta, crearPago, cambiarEstado, pagarCuota, pagarTotal };

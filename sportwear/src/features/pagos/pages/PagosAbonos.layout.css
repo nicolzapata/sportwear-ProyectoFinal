@@ -306,6 +306,17 @@
 
 .pagosabonos-estado-final-msg { padding: 0.6rem; font-size: 0.8rem; color: #757575; text-align: center; }
 
+/* ── NUEVO: vista previa de las próximas cuotas — en gris, no clickeable ── */
+.pagosabonos-estado-preview-titulo {
+  padding: 0.4rem 0.6rem 0.2rem; font-size: 0.68rem; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase; color: #b3b3b3;
+}
+.pagosabonos-estado-item-preview {
+  cursor: default; color: #aaa;
+}
+.pagosabonos-estado-item-preview:hover { background: none; }
+.pagosabonos-estado-item-preview .pagosabonos-estado-dot { border-color: #e3e3e3; }
+
 /* Badge estático (dentro del modal de detalle, sin funcionalidad de clic) */
 .pagosabonos-estado-badge-static {
   display: inline-flex; align-items: center;

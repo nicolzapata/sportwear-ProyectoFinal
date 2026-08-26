@@ -175,11 +175,17 @@ export default function PagosAbonos() {
 
   // ── NUEVO: reemplaza a registrarPago/cancelarPago sueltos — un solo
   // handler para el desplegable de estado, igual que en Pedidos/Compras. ──
+  // ── CORREGIDO: esto hacía una actualización optimista local (solo
+  // cambiaba el "estado" de la fila en memoria) y nunca volvía a pedir los
+  // datos al servidor. Al confirmar/anular una cuota, la ventana de "próximas
+  // cuotas" (que decide qué filas se muestran) cambia en el backend — pero
+  // como nunca se recargaba, la tabla seguía mostrando la misma foto vieja
+  // de antes del cambio, sin la cuota siguiente que ya debía aparecer. ──
   const cambiarEstadoPago = async (id_pago, estado) => {
     setCambiandoEstado(true);
     try {
       await api.patch(`/pagos/${id_pago}/estado`, { estado });
-      setDatos(prev => prev.map(p => p.id_pago === id_pago ? { ...p, estado } : p));
+      await cargar();
       showToast("exito", estado === "Confirmado" ? "Pago confirmado correctamente." : "Pago anulado correctamente.");
     } catch (err) {
       showToast("error", err.response?.data?.message ?? "Error al actualizar el pago.");

@@ -1,6 +1,6 @@
 import { IconEye } from "../../../../shared/components/Icons";
 import EstadoDropdownPago from "./EstadoDropdownPago";
-import { fmt, getMetodoIcon } from "../../utils/pagosAbonosHelpers";
+import { fmt, getMetodoIcon, getTipoLabel, esAccionablePorOrden } from "../../utils/pagosAbonosHelpers";
 
 export default function PagosTable({
   datos, cargando, tienePerm,
@@ -29,7 +29,7 @@ export default function PagosTable({
               <td className="tbl-td"><span className="pagosabonos-venta-badge">V-{String(p.id_venta).padStart(3, "0")}</span></td>
               <td className="tbl-td"><span className="pagosabonos-cliente-name">{p.cliente}</span></td>
               <td className="tbl-td pagosabonos-monto-cell">{fmt(p.monto)}</td>
-              <td className="tbl-td pagosabonos-tipo-cell">{p.tipo}</td>
+              <td className="tbl-td pagosabonos-tipo-cell">{getTipoLabel(p)}</td>
               <td className="tbl-td">
                 <span className="pagosabonos-metodo">
                   <span className="pagosabonos-metodo-icon">{getMetodoIcon(p.metodo)}</span>
@@ -45,6 +45,15 @@ export default function PagosTable({
                   onCambiar={cambiarEstadoPago}
                   cambiando={cambiandoEstado}
                   tienePerm={tienePerm}
+                  accionable={esAccionablePorOrden(p, datos)}
+                  proximasCuotas={
+                    p.num_cuota
+                      ? datos
+                          .filter((otro) => otro.id_venta === p.id_venta && otro.num_cuota > p.num_cuota && otro.estado === "Pendiente")
+                          .sort((a, b) => a.num_cuota - b.num_cuota)
+                          .slice(0, 3)
+                      : []
+                  }
                 />
               </td>
               <td className="tbl-td">

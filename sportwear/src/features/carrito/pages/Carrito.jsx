@@ -4,16 +4,15 @@ import { useNavigate } from "react-router-dom";
 import { useCart } from "../../../shared/contexts/CartContext";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import api from "../../../shared/services/api";
+import { opcionesCuotasDisponibles, calcularFechasVencimiento } from "../../../shared/utils/cuotas";
+import CuotasCalendario from "../../checkout/components/checkout/CuotasCalendario";
+import "../../checkout/pages/Checkout.cuotas.css";
 import "./Carrito.css";
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("es-CO", {
     style: "currency", currency: "COP", minimumFractionDigits: 0,
   });
-
-// ── NUEVO: mismo mínimo por cuota que en Checkout.jsx — evita ofrecer
-// cuotas cuyo valor no tenga sentido frente al precio real (ej. $1). ──
-const MONTO_MINIMO_ABONO = 20000;
 
 export default function Carrito() {
   const { items, total, totalItems, actualizarCantidad, eliminarItem, vaciarCarrito } = useCart();
@@ -32,14 +31,15 @@ export default function Carrito() {
       .catch(() => setPermisoCuotas(true));
   }, [usuario]);
 
-  // ── NUEVO: solo se ofrecen las cuotas cuyo valor por cuota alcance el
-  // mínimo permitido — si ninguna calza, no se muestra la opción de cuotas. ──
-  const opcionesCuotas = [2, 3].filter((n) => Math.ceil(total / n) >= MONTO_MINIMO_ABONO);
+  // ── NUEVO: opciones estándar (2,3,4,6,9,12,18,24,36) filtradas por lo que
+  // el total permita — si ninguna calza, no se muestra la opción de cuotas. ──
+  const opcionesCuotas = opcionesCuotasDisponibles(total);
   const numCuotasActivo = opcionesCuotas.includes(numCuotas) ? numCuotas : (opcionesCuotas[0] || numCuotas);
   const tipoPagoActivo = (opcionesCuotas.length === 0 && tipoPago === "cuotas") ? "completo" : tipoPago;
 
-  // Calcular valor de cada cuota
+  // Calcular valor de cada cuota y sus fechas de vencimiento
   const valorCuota = tipoPagoActivo === "cuotas" ? Math.ceil(total / numCuotasActivo) : null;
+  const fechasCuotas = tipoPagoActivo === "cuotas" ? calcularFechasVencimiento(new Date(), numCuotasActivo, total) : [];
 
   // ── CORREGIDO: antes esta página exigía sesión solo para VER el carrito,
   // lo cual es más estricto que la regla de negocio ("Exigir inicio de sesión
@@ -206,6 +206,12 @@ export default function Carrito() {
                       <option key={n} value={n}>{n} cuotas de {fmt(Math.ceil(total / n))}</option>
                     ))}
                   </select>
+                  <div style={{ marginTop: '14px' }}>
+                    <CuotasCalendario
+                      tipoPagoActivo={tipoPagoActivo} total={total} numCuotasActivo={numCuotasActivo}
+                      valorCuota={valorCuota} fechasCuotas={fechasCuotas}
+                    />
+                  </div>
                 </div>
               )}
             </div>

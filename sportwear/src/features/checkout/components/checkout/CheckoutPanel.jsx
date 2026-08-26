@@ -1,5 +1,5 @@
 import OpcionesPago from "./OpcionesPago";
-import CuotasCalendario from "./CuotasCalendario";
+import CuotasAccordion from "./CuotasAccordion";
 import StockAlerta from "./StockAlerta";
 import { fmt, ETIQUETAS_METODO } from "../../utils/checkoutHelpers";
 
@@ -111,15 +111,17 @@ export default function CheckoutPanel({
 
       <div className="checkout-divider" />
 
-      <div className="checkout-total">
-        <span>{tipoPagoActivo === "cuotas" ? `Total cuota (1/${numCuotasActivo})` : "Total a pagar"}</span>
-        <span>{fmt(tipoPagoActivo === "cuotas" ? valorCuota : total)}</span>
-      </div>
-
-      <CuotasCalendario
-        tipoPagoActivo={tipoPagoActivo} total={total} numCuotasActivo={numCuotasActivo}
-        valorCuota={valorCuota} fechasCuotas={fechasCuotas}
-      />
+      {tipoPagoActivo === "cuotas" ? (
+        <CuotasAccordion
+          tipoPagoActivo={tipoPagoActivo} numCuotasActivo={numCuotasActivo}
+          valorCuota={valorCuota} fechasCuotas={fechasCuotas}
+        />
+      ) : (
+        <div className="checkout-total">
+          <span>Total a pagar</span>
+          <span>{fmt(total)}</span>
+        </div>
+      )}
 
       {error && <p className="checkout-error">{error}</p>}
       <StockAlerta errorStock={errorStock} elegirAlternativa={elegirAlternativa} />

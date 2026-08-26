@@ -1,12 +1,16 @@
 // Funciones y constantes puras usadas por PedidosVentas.jsx.
 import { validarMonto } from "../../../shared/utils/numerico";
+export { MONTO_MINIMO_ABONO, MAX_CUOTAS_ABSOLUTO, opcionesCuotasDisponibles, calcularFechasVencimiento } from "../../../shared/utils/cuotas";
 
 export const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 export const FILAS_POR_PAGINA = 10;
 export const HOY_ISO = new Date().toISOString().split("T")[0];
 
 export const MAX_CANTIDAD = 9999;
-export const MAX_NUM_CUOTAS = 60;
+// ── CORREGIDO: el tope real de cuotas es 36 (ver pagoLogica.service.js en el
+// backend) — este archivo tenía su propio 60, que nunca coincidió con esa
+// regla real. ──
+export const MAX_NUM_CUOTAS = 36;
 
 export const nuevoItem = () => ({ id_producto: "", id_variante: "", cantidad: 1, precio_unitario: "", descuento_linea: 0 });
 
@@ -16,6 +20,7 @@ export const formVentaInicial = () => ({
   estado: "Pendiente",       // Pendiente | Pagado
   tipo_pago: "completo",     // completo | cuotas
   num_cuotas: "",
+  fecha_primera_cuota: "",
   metodo_pago: "Efectivo",
   descuento: 0,
   motivo_descuento: "",

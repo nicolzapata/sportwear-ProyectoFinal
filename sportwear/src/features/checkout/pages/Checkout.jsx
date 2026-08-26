@@ -11,7 +11,7 @@ import "./Checkout.layout.css";
 import "./Checkout.cuotas.css";
 import ProductosList from "../components/checkout/ProductosList";
 import CheckoutPanel from "../components/checkout/CheckoutPanel";
-import { MONTO_MINIMO_ABONO, getFechasCuotas } from "../utils/checkoutHelpers";
+import { opcionesCuotasDisponibles, calcularFechasVencimiento } from "../utils/checkoutHelpers";
 
 export default function Checkout() {
   const { usuario }                                    = useAuth();
@@ -40,9 +40,14 @@ export default function Checkout() {
   // aquí, no debe poder elegirse en el checkout. ──
   const [metodosPago,   setMetodosPago]   = useState([]);
   const [cargandoMetodos, setCargandoMetodos] = useState(true);
+  // ── CORREGIDO: esta condición excluía justo "cuotas" — la única razón de
+  // ser de sessionStorage("tipoPago") es traer la elección de pago que el
+  // cliente ya hizo en el Carrito, pero con "s !== 'cuotas'" nunca se
+  // restauraba esa opción, y Checkout siempre arrancaba en "completo" sin
+  // importar lo que el cliente hubiera elegido. ──
   const [tipoPago,      setTipoPago]      = useState(() => {
     const s = sessionStorage.getItem("tipoPago");
-    return s && s !== "cuotas" ? s : "completo";
+    return s || "completo";
   });
   const [numCuotas,     setNumCuotas]     = useState(() => {
     const s = sessionStorage.getItem("numCuotas");
@@ -95,17 +100,17 @@ export default function Checkout() {
     return () => { cancelado = true; };
   }, []);
 
-  // ── NUEVO: solo se ofrecen las cuotas cuyo valor por cuota alcance el
-  // mínimo permitido — si el total es tan bajo que ni 2 cuotas lo cumplen,
-  // no se ofrece la opción de cuotas en absoluto (solo pago completo). ──
-  const opcionesCuotas = [2, 3].filter((n) => Math.ceil(total / n) >= MONTO_MINIMO_ABONO);
+  // ── NUEVO: opciones estándar (2,3,4,6,9,12,18,24,36) filtradas por lo que
+  // el total permita — si el total es tan bajo que ni 2 cuotas alcanzan el
+  // mínimo, no se ofrece la opción de cuotas en absoluto (solo pago completo). ──
+  const opcionesCuotas = opcionesCuotasDisponibles(total);
   const tipoPagoActivo = ((!permisoCuotas || opcionesCuotas.length === 0) && tipoPago === "cuotas") ? "completo" : tipoPago;
 
   // Si el número de cuotas guardado ya no es una opción válida (p. ej. cambió
   // el contenido del carrito), se usa la primera opción disponible.
   const numCuotasActivo = opcionesCuotas.includes(numCuotas) ? numCuotas : (opcionesCuotas[0] || numCuotas);
 
-  const fechasCuotas = tipoPagoActivo === "cuotas" ? getFechasCuotas(numCuotasActivo) : [];
+  const fechasCuotas = tipoPagoActivo === "cuotas" ? calcularFechasVencimiento(new Date(), numCuotasActivo, total) : [];
   const valorCuota   = Math.ceil(total / numCuotasActivo);
 
   // ── Aplica la variante alternativa elegida al ítem del carrito que no tenía stock ──

@@ -2,7 +2,7 @@
 const router = require('express').Router();
 const pool   = require('../config/db');
 const {
-  getPagos, getPagoById, crearPago, cambiarEstado, pagarCuota, pagarTotal
+  getPagos, getPagoById, getPagosPorVenta, crearPago, cambiarEstado, pagarCuota, pagarTotal
 } = require('../controllers/pagos.controller');
 const {
   verificarToken, soloCliente, tieneModulo, tieneAlgunModulo
@@ -28,6 +28,11 @@ router.get('/mis-pagos', verificarToken, soloCliente, async (req, res) => {
 
 router.post('/cuota/:id',       verificarToken, soloCliente, pagarCuota);
 router.post('/venta/:id/total', verificarToken, soloCliente, pagarTotal);
+
+// ── NUEVO: calendario completo de cuotas de una venta (pasadas y futuras,
+// sin la ventana de "próximas 3" que sí aplica al listado general) — para
+// el modal de detalle de un pago. ──
+router.get('/venta/:id_venta/todas', verificarToken, tieneAlgunModulo('Pagos', 'Ventas'), getPagosPorVenta);
 
 router.get('/:id',          verificarToken, tieneAlgunModulo('Pagos', 'Ventas'), getPagoById);
 router.post('/',            verificarToken, tieneModulo('Pagos', 'crear'),  crearPago);
