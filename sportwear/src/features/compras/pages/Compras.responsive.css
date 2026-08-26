@@ -1,0 +1,217 @@
+/* Compras — loading, responsive y advertencias de "Valor de venta". */
+
+/* Loading */
+.compras-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.compras-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--dvna-pale);
+  border-top-color: var(--dvna-charcoal);
+  border-radius: 50%;
+  animation: compras-spin 1s linear infinite;
+}
+
+.compras-loading-text {
+  color: var(--dvna-muted);
+  font-size: 0.9rem;
+}
+
+@keyframes compras-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .compras-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .compras-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .compras-modal {
+    max-width: 95%;
+  }
+  .compras-modal-nueva {
+    max-width: 95%;
+  }
+}
+
+@media (max-width: 768px) {
+  .compras-container {
+    padding: 1rem;
+  }
+
+  .compras-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .compras-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Buscador + botón crear comparten la primera fila; exportar va debajo
+     en su propia fila, alineado desde la izquierda. Solo responsive: fuera
+     de esta media query el orden en escritorio queda intacto. */
+  .compras-actions-bar {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    row-gap: 10px;
+  }
+
+  .compras-actions-left { display: contents; }
+  .compras-actions-right { display: contents; }
+
+  .compras-search-wrapper {
+    order: 1;
+    flex: 1 1 140px;
+    min-width: 120px;
+    width: auto;
+  }
+
+  .compras-btn-primary {
+    order: 2;
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    justify-content: center;
+  }
+
+  .compras-actions-right .export-buttons { order: 3; }
+
+  .compras-table-th,
+  .compras-table-td {
+    padding: 1rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .compras-proveedor-cell {
+    gap: 0.6rem;
+  }
+
+  .compras-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .compras-action-cell {
+    flex-wrap: wrap;
+  }
+
+  /* En móvil, la fila de producto se apila en una sola columna — cada
+     campo se ve completo con su propia etiqueta arriba, en vez de
+     comprimirse en 6 columnas angostas. */
+  .compras-item-titulos {
+    display: none;
+  }
+
+  .compras-item-row {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+  .compras-item-label-movil {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--dvna-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .compras-item-subtotal {
+    text-align: left;
+    padding-top: 0;
+  }
+  .compras-item-remove {
+    margin-top: 0;
+    align-self: flex-end;
+  }
+  .compras-items-header-right {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .compras-actions-right .compras-btn-primary { font-size: 0; padding: 10px 12px; gap: 0; }
+  .compras-actions-right .compras-btn-primary span { font-size: 13px; }
+
+  .compras-title {
+    font-size: 1.6rem;
+  }
+
+  .compras-stat-value {
+    font-size: 1.5rem;
+  }
+
+  .compras-stat-value-currency {
+    font-size: 1rem;
+  }
+
+  .compras-table-th,
+  .compras-table-td {
+    padding: 0.8rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .compras-proveedor-avatar {
+    width: 28px;
+    height: 28px;
+    font-size: 0.9rem;
+  }
+
+  .compras-total-cell {
+    font-size: 0.85rem;
+  }
+
+  .compras-action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+}
+/* ── NUEVO: advertencias de "Valor de venta" en Compras ── */
+.compras-input-warning {
+  border-color: #b96422 !important;
+  box-shadow: 0 0 0 3px rgba(185,100,34,0.08) !important;
+}
+.compras-field-warning {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 0.7rem;
+  color: #b96422;
+  font-weight: 500;
+}
+.compras-field-warning svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+.compras-detalle-item-precios {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.compras-detalle-item-venta {
+  font-size: 0.75rem;
+  color: #2e7d32;
+  font-weight: 500;
+}

@@ -1,0 +1,141 @@
+/* Responsive */
+@media (max-width: 1024px) {
+  .catproductos-container {
+    padding: 1.5rem;
+  }
+
+  .catproductos-categoria-cell {
+    gap: 0.8rem;
+  }
+
+  .catproductos-categoria-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .catproductos-categoria-avatar svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .catproductos-categoria-name {
+    font-size: 0.9rem;
+  }
+
+  .catproductos-desc-cell {
+    max-width: 150px;
+  }
+
+  .catproductos-icon-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .catproductos-container {
+    padding: 1rem;
+  }
+
+  .catproductos-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .catproductos-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Buscador + botón crear comparten la fila. Solo responsive. */
+  .catproductos-actions-bar {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    row-gap: 10px;
+  }
+
+  .catproductos-search-wrapper {
+    flex: 1 1 140px;
+    min-width: 120px;
+    width: auto;
+  }
+
+  .catproductos-btn-primary {
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    justify-content: center;
+  }
+
+  .catproductos-categoria-cell {
+    gap: 0.8rem;
+  }
+
+  .catproductos-categoria-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .catproductos-categoria-avatar svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .catproductos-categoria-name {
+    font-size: 0.9rem;
+  }
+
+  .catproductos-desc-cell {
+    max-width: 150px;
+  }
+
+  .catproductos-icon-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .catproductos-btn-primary { font-size: 0; padding: 10px 12px; gap: 0; }
+  .catproductos-btn-primary span { font-size: 13px; }
+
+  .catproductos-title {
+    font-size: 1.6rem;
+  }
+
+  .catproductos-stat-value {
+    font-size: 1.5rem;
+  }
+
+
+
+  .catproductos-categoria-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .catproductos-categoria-avatar svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .catproductos-categoria-name {
+    font-size: 0.85rem;
+  }
+
+  .catproductos-action-cell {
+    flex-direction: column;
+  }
+
+  .catproductos-action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+
+  .catproductos-icon-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

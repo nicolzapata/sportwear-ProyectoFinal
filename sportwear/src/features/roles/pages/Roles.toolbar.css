@@ -1,0 +1,249 @@
+/* ── Roles.toolbar.css — loading, modal de confirmación, barra de
+   búsqueda/filtros, inputs de formulario, responsive y barra de acciones. ── */
+
+/* ── Loading ── */
+.roles-loading-container {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 100px 0; gap: 14px;
+}
+.roles-loading-spinner {
+  width: 28px; height: 28px;
+  border: 1.5px solid var(--dvna-border);
+  border-top-color: var(--dvna-circle);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.roles-loading-text {
+  font-family: var(--font-body);
+  font-size: 12px; color: var(--dvna-muted);
+  letter-spacing: 0.04em;
+}
+
+/* ── Modal confirm ── */
+.roles-confirm-modal { max-width: 400px !important; }
+.roles-confirm-info { display: flex; flex-direction: column; gap: 16px; }
+.roles-confirm-rol {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  background: var(--dvna-pale);
+  border-radius: 10px;
+  border: 1px solid var(--dvna-border);
+}
+.roles-confirm-icon {
+  width: 40px; height: 40px;
+  border-radius: 50%; border: 1.5px solid;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; color: var(--dvna-charcoal);
+}
+.roles-confirm-icon svg { width: 20px; height: 20px; }
+.roles-confirm-nombre {
+  font-family: var(--font-body);
+  font-size: 15px; font-weight: 500;
+  color: var(--dvna-charcoal);
+}
+.roles-confirm-warning {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 16px;
+  background: rgba(184,50,50,0.06);
+  border: 1px solid rgba(184,50,50,0.2);
+  border-radius: 10px; color: #b83232;
+  font-family: var(--font-body); font-size: 13px; line-height: 1.5;
+}
+.roles-confirm-warning svg { flex-shrink: 0; margin-top: 1px; }
+.roles-confirm-warning strong { font-weight: 600; }
+.roles-confirm-safe {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: rgba(58,102,72,0.06);
+  border: 1px solid rgba(58,102,72,0.2);
+  border-radius: 10px; color: #3a6648;
+  font-family: var(--font-body); font-size: 13px;
+}
+
+/* ── Barra de búsqueda ── */
+.roles-search-bar {
+  display: flex; align-items: center; gap: 14px;
+  margin-bottom: 24px;
+}
+.roles-search-wrapper {
+  position: relative; display: flex; align-items: center;
+  max-width: 320px; width: 100%;
+}
+.roles-search-icon {
+  position: absolute; left: 14px;
+  display: flex; align-items: center;
+  pointer-events: none; color: var(--dvna-mid);
+}
+.roles-search-icon svg { width: 14px; height: 14px; }
+.roles-search-input {
+  width: 100%;
+  font-family: var(--font-body); font-size: 13px;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 20px;
+  padding: 10px 36px 10px 40px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.roles-search-input:focus {
+  border-color: var(--dvna-circle);
+  box-shadow: 0 0 0 3px rgba(180,151,128,0.1);
+}
+.roles-search-clear {
+  position: absolute; right: 12px;
+  background: none; border: none; cursor: pointer;
+  display: flex; align-items: center; padding: 0;
+  color: var(--dvna-mid); transition: color 0.15s;
+}
+.roles-search-clear:hover { color: var(--dvna-charcoal); }
+.roles-search-clear svg { width: 12px; height: 12px; }
+.roles-search-count {
+  font-family: var(--font-body); font-size: 11px; font-weight: 300;
+  color: var(--dvna-muted); white-space: nowrap;
+}
+
+/* ── Filtro por estado (chips sueltos, estilo catadmin-chip) ── */
+.roles-filter-toggle {
+  display: flex;
+  gap: 0.5rem;
+  width: fit-content;
+}
+.roles-filter-btn {
+  display: inline-flex; align-items: center;
+  padding: 0.5rem 1rem;
+  border-radius: 40px;
+  border: 1px solid var(--dvna-border, #e8e0d8);
+  background: var(--dvna-white, #fff);
+  font-family: var(--font-body); font-size: 0.8rem; font-weight: 500;
+  color: var(--dvna-muted, #999);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.roles-filter-btn:hover {
+  border-color: var(--dvna-circle, #b49780);
+  color: var(--dvna-charcoal, #1a1a1a);
+}
+.roles-filter-btn.active {
+  background: var(--dvna-circle, #b49780);
+  border-color: var(--dvna-circle, #b49780);
+  color: #fff;
+}
+
+/* Inputs de formulario */
+.ms-form-group { display: flex; flex-direction: column; gap: 6px; }
+.ms-form-label {
+  font-family: var(--font-body); font-size: 12px; font-weight: 500;
+  color: var(--dvna-charcoal); letter-spacing: 0.03em;
+}
+.ms-req { color: var(--dvna-circle, #b49780); margin-left: 2px; }
+.ms-form-input {
+  font-family: var(--font-body); font-size: 13px; font-weight: 300;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 10px;
+  padding: 10px 14px; outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.ms-form-input::placeholder { color: var(--dvna-muted, #999); }
+.ms-form-input:focus {
+  border-color: var(--dvna-circle);
+  box-shadow: 0 0 0 3px rgba(180,151,128,0.1);
+}
+.ms-form-input.error { border-color: #b83232; }
+.ms-form-error { font-family: var(--font-body); font-size: 11px; color: #b83232; }
+.ms-form-hint { font-family: var(--font-body); font-size: 11px; color: var(--dvna-muted); margin: 0; }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .roles-grid { grid-template-columns: 1fr; }
+  .role-scene { height: 340px; }
+  .roles-form-modal { max-height: 95vh; }
+  .roles-modal-header { padding: 20px 20px 0; }
+  .roles-modal-body { padding: 0 20px; }
+  .roles-modal-footer { padding: 16px 20px; }
+}
+
+/* Selector calificado con `.roles-container` a propósito: hay una versión
+   vieja de estas mismas clases duplicada en App.css (residuo de una copia
+   anterior) y esto asegura que esta regla, más específica, gane siempre
+   sin depender del orden de carga entre archivos. */
+@media (max-width: 768px) {
+  /* Buscador + botón "Nuevo rol" comparten la primera fila; el contador de
+     resultados queda debajo, alineado desde la izquierda. Solo responsive
+     — el orden en escritorio no se toca. */
+  .roles-container .roles-actions-bar {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    row-gap: 10px;
+  }
+  .roles-container .roles-actions-left {
+    display: contents;
+  }
+  .roles-container .roles-search-wrapper {
+    order: 1;
+    max-width: none;
+    flex: 1 1 140px;
+    min-width: 120px;
+    width: auto;
+  }
+  .roles-container .roles-filter-toggle {
+    order: 2;
+  }
+  .roles-container .roles-btn-nuevo {
+    order: 3;
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .roles-container .roles-search-count {
+    order: 4;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .roles-container .roles-btn-nuevo { font-size: 0; padding: 10px 12px; gap: 0; }
+  .roles-container .roles-btn-nuevo span { font-size: 13px; }
+}
+/* ── Barra de acciones ── */
+.roles-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 1rem;
+}
+
+.roles-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* ── Botón Nuevo rol ── */
+.roles-btn-nuevo {
+  background: var(--brown);
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.75rem;
+  border-radius: 40px;
+  font-size: 12px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.roles-btn-nuevo:hover {
+  background: var(--accent);
+  transform: translateY(-1px);
+}

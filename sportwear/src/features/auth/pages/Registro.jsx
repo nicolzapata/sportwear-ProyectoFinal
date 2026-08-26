@@ -7,74 +7,13 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../../shared/services/api";
 import logo from "../../../shared/assets/LOGO.png";
-import { soloDigitos, maxLongitudDocumento, validarNumeroDocumento, validarTelefono, validarNombre, validarEmail, LONGITUD_TELEFONO } from "../../../shared/utils/numerico";
+import { soloDigitos, validarNumeroDocumento, validarEmail, LONGITUD_TELEFONO } from "../../../shared/utils/numerico";
 import "./Login.css";
 import "./Registro.css";
-
-const TIPOS_DOC = ["CC", "CE", "TI", "NIT", "PP"];
-const CAMPOS_NUMERICOS = ["documento", "telefono"];
-
-const IconUser = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-    <circle cx="8" cy="5" r="3" stroke="#b49780" strokeWidth="1.4"/>
-    <path d="M2 14c0-3 2-5 6-5s6 2 6 5" stroke="#b49780" strokeWidth="1.4" strokeLinecap="round"/>
-  </svg>
-);
-const IconMail = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-    <path d="M2 4l6 5 6-5M2 4h12v9H2V4z" stroke="#b49780" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-const IconPhone = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-    <path d="M3 2h3l1.5 3.5-2 1.5a8 8 0 003.5 3.5l1.5-2L14 12v3a1 1 0 01-1 1A11 11 0 012 3a1 1 0 011-1z"
-      stroke="#b49780" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-const IconLocation = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-    <path d="M8 1a5 5 0 015 5c0 4-5 9-5 9S3 10 3 6a5 5 0 015-5z" stroke="#b49780" strokeWidth="1.4"/>
-    <circle cx="8" cy="6" r="1.5" stroke="#b49780" strokeWidth="1.4"/>
-  </svg>
-);
-const IconLock = () => (
-  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-    <rect x="3" y="7" width="10" height="8" rx="1.5" stroke="#b49780" strokeWidth="1.4"/>
-    <path d="M5 7V5a3 3 0 016 0v2" stroke="#b49780" strokeWidth="1.4" strokeLinecap="round"/>
-  </svg>
-);
-const IconEyeOpen = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16">
-    <ellipse cx="8" cy="8" rx="6" ry="4" stroke="#b49780" strokeWidth="1.4" fill="none"/>
-    <circle cx="8" cy="8" r="2" fill="#b49780"/>
-  </svg>
-);
-const IconEyeClosed = () => (
-  <svg width="16" height="16" viewBox="0 0 16 16">
-    <ellipse cx="8" cy="8" rx="6" ry="4" stroke="#b49780" strokeWidth="1.4" fill="none"/>
-    <line x1="5" y1="8" x2="11" y2="8" stroke="#b49780" strokeWidth="1.4"/>
-  </svg>
-);
-
-// Declarado fuera de Registro: si viviera dentro del componente se recrearía
-// en cada render y React remontaría el <input> en cada tecla, perdiendo el foco.
-const Field = ({ icon, name, type = "text", placeholder, required, label, value, onChange, onFocus, onBlur, error, maxLength }) => (
-  <div className="form-group">
-    <label>{icon} {label} {required && <span className="req">*</span>}</label>
-    <div className="input-wrapper">
-      <span className="input-icon">{icon}</span>
-      <input
-        type={type} name={name} placeholder={placeholder}
-        inputMode={CAMPOS_NUMERICOS.includes(name) ? "numeric" : undefined}
-        maxLength={maxLength}
-        value={value} onChange={onChange}
-        onFocus={onFocus} onBlur={onBlur}
-      />
-      <div className="input-bar" />
-    </div>
-    {error && <span className="field-error">{error}</span>}
-  </div>
-);
+import { CAMPOS_NUMERICOS, calcularErrores } from "../utils/registroHelpers";
+import DatosPersonalesFields from "../components/registro/DatosPersonalesFields";
+import ContactoFields from "../components/registro/ContactoFields";
+import SeguridadFields from "../components/registro/SeguridadFields";
 
 export default function Registro() {
   const navigate = useNavigate();
@@ -122,32 +61,6 @@ export default function Registro() {
       // Si la verificación falla (red, etc.) no bloqueamos al usuario; el submit
       // igual rechaza duplicados con el 409 del backend.
     }
-  };
-
-  // Calcula TODOS los errores del formulario a partir de un estado dado, sin tocar el state.
-  const calcularErrores = (formValue) => {
-    const e = {};
-    const errorNombres = validarNombre(formValue.nombres, "El nombre es obligatorio.");
-    if (errorNombres) e.nombres = errorNombres;
-    const errorApellidos = validarNombre(formValue.apellidos, "El apellido es obligatorio.");
-    if (errorApellidos) e.apellidos = errorApellidos;
-    if (!formValue.documento.trim()) e.documento = "El documento es obligatorio.";
-    else {
-      const errorLongitud = validarNumeroDocumento(formValue.tipo_doc, formValue.documento);
-      if (errorLongitud) e.documento = errorLongitud;
-    }
-    const errorTelefono = validarTelefono(formValue.telefono);
-    if (errorTelefono) e.telefono = errorTelefono;
-    const errorEmail = validarEmail(formValue.email, "El correo es obligatorio.");
-    if (errorEmail) e.email = errorEmail;
-    if (!formValue.direccion.trim()) e.direccion = "La dirección es obligatoria.";
-    if (!formValue.contrasena) e.contrasena = "La contraseña es obligatoria.";
-    else if (formValue.contrasena.length < 6) e.contrasena = "Debe tener al menos 6 caracteres.";
-    // eslint-disable-next-line no-useless-escape
-    else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(formValue.contrasena)) e.contrasena = "Debe contener un carácter especial (!*&#).";
-    if (!formValue.confirmar) e.confirmar = "Confirma tu contraseña.";
-    else if (formValue.contrasena !== formValue.confirmar) e.confirmar = "Las contraseñas no coinciden.";
-    return e;
   };
 
   // Aplica al state de errores solo los campos marcados como "tocados" (validación en tiempo real
@@ -265,102 +178,15 @@ export default function Registro() {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
+            <DatosPersonalesFields form={form} errores={errores} handleChange={handleChange} onFocus={onFocus} onBlur={onBlur} />
 
-            <h3 className="registro-section-titulo">Datos personales</h3>
+            <ContactoFields form={form} errores={errores} handleChange={handleChange} onFocus={onFocus} onBlur={onBlur} />
 
-            <div className="registro-row">
-              <div className="form-group">
-                <label>Tipo doc <span className="req">*</span></label>
-                <select name="tipo_doc" className="form-control"
-                  value={form.tipo_doc} onChange={handleChange} onBlur={onBlur}>
-                  {TIPOS_DOC.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>N° documento <span className="req">*</span></label>
-                <div className="input-wrapper">
-                  <input type="text" name="documento" placeholder="1001234567" inputMode={form.tipo_doc === "PP" ? "text" : "numeric"}
-                    maxLength={maxLongitudDocumento(form.tipo_doc)}
-                    value={form.documento} onChange={handleChange}
-                    onFocus={onFocus} onBlur={onBlur}
-                    style={{ paddingLeft: "14px" }}/>
-                  <div className="input-bar" />
-                </div>
-                {errores.documento && <span className="field-error">{errores.documento}</span>}
-              </div>
-            </div>
-
-            <div className="registro-row">
-              <Field icon={<IconUser />} name="nombres" label="Nombres"
-                placeholder="Ana Sofía" required
-                value={form.nombres} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-                error={errores.nombres} />
-
-              <Field icon={<IconUser />} name="apellidos" label="Apellidos"
-                placeholder="López Ríos" required
-                value={form.apellidos} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-                error={errores.apellidos} />
-            </div>
-
-            <h3 className="registro-section-titulo">Datos de contacto</h3>
-
-            <Field icon={<IconMail />} name="email" type="email" label="Correo electrónico"
-              placeholder="correo@ejemplo.com" required
-              value={form.email} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-              error={errores.email} />
-
-            <Field icon={<IconPhone />} name="telefono" label="Teléfono" required maxLength={LONGITUD_TELEFONO}
-              placeholder="3001234567"
-              value={form.telefono} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-              error={errores.telefono} />
-
-            <Field icon={<IconLocation />} name="direccion" label="Dirección" required
-              placeholder="Cra 43A # 10-20 Apto 301"
-              value={form.direccion} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-              error={errores.direccion} />
-
-            <h3 className="registro-section-titulo">Seguridad</h3>
-
-            <div className="registro-row">
-              <div className="form-group">
-                <label><IconLock /> Contraseña <span className="req">*</span></label>
-                <div className="input-wrapper">
-                  <span className="input-icon"><IconLock /></span>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="contrasena"
-                    placeholder="Mín. 6 caracteres"
-                    value={form.contrasena}
-                    onChange={handleChange}
-                    onFocus={onFocus} onBlur={onBlur}
-                  />
-                  <div className="input-bar" />
-                  <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>
-                    {showPassword ? <IconEyeOpen /> : <IconEyeClosed />}
-                  </span>
-                </div>
-                {errores.contrasena && <span className="field-error">{errores.contrasena}</span>}
-              </div>
-              <div className="form-group">
-                <label><IconLock /> Confirmar <span className="req">*</span></label>
-                <div className="input-wrapper">
-                  <span className="input-icon"><IconLock /></span>
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmar"
-                    placeholder="Repite tu contraseña"
-                    value={form.confirmar}
-                    onChange={handleChange}
-                    onFocus={onFocus} onBlur={onBlur}
-                  />
-                  <div className="input-bar" />
-                  <span className="input-icon" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
-                    {showConfirmPassword ? <IconEyeOpen /> : <IconEyeClosed />}
-                  </span>
-                </div>
-                {errores.confirmar && <span className="field-error">{errores.confirmar}</span>}
-              </div>
-            </div>
+            <SeguridadFields
+              form={form} errores={errores} handleChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+              showPassword={showPassword} setShowPassword={setShowPassword}
+              showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword}
+            />
 
             {error && <div className="error-message">{error}</div>}
 

@@ -3,91 +3,17 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCart } from "../../../shared/contexts/CartContext";
 import api from "../../../shared/services/api";
-import "./DetalleProducto.css";
-
-const fmt = (n) =>
-  Number(n || 0).toLocaleString("es-CO", {
-    style: "currency", currency: "COP", minimumFractionDigits: 0,
-  });
-
-const IconArrowLeft = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 12H5M12 5l-7 7 7 7"/>
-  </svg>
-);
-const IconCart = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-  </svg>
-);
-const IconCheck = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>
-);
-const IconMinus = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-);
-const IconPlus = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-);
-const IconChevronLeft = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M15 18l-6-6 6-6"/>
-  </svg>
-);
-const IconChevronRight = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 18l6-6-6-6"/>
-  </svg>
-);
-const IconX = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
-const IconSparkle = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8L12 2z"/>
-  </svg>
-);
-const IconTagPromo = () => (
-  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20.59 13.41L11 3.83A2 2 0 0 0 9.59 3.17H4a1 1 0 0 0-1 1v5.59a2 2 0 0 0 .66 1.41l9.59 9.59a2 2 0 0 0 2.83 0l5-5a2 2 0 0 0 0-2.83z"/>
-    <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none"/>
-  </svg>
-);
-
-// ── Helpers ───────────────────────────────────────────────────
-const extraerColores = (vars) => [
-  ...new Map(
-    (vars || [])
-      .filter(v => v.id_color && v.color_nombre)
-      .map(v => [v.id_color, { id_color: v.id_color, nombre: v.color_nombre, codigo_hex: v.codigo_hex }])
-  ).values(),
-];
-
-const tallasDeColor = (vars, id_color) =>
-  [...new Set(
-    (vars || [])
-      .filter(v => v.id_color === id_color)
-      .map(v => v.talla)
-      .filter(Boolean)
-  )];
-
-const filtrarImagenes = (imgs, id_color) => {
-  if (!imgs?.length) return [];
-  if (!id_color) return imgs.map(i => i.url ?? i);
-  const delColor  = imgs.filter(i => i.id_color === id_color);
-  if (delColor.length > 0) return delColor.map(i => i.url);
-  const generales = imgs.filter(i => !i.id_color);
-  return (generales.length > 0 ? generales : imgs).map(i => i.url ?? i);
-};
+// DetalleProducto.css se dividió por sección para facilitar el
+// mantenimiento; el orden de los imports preserva la cascada del archivo
+// original.
+import "./DetalleProducto.layout.css";
+import "./DetalleProducto.preview.css";
+import "./DetalleProducto.variantes.css";
+import { IconArrowLeft } from "../components/detalle-producto/detalleProductoIcons";
+import Galeria from "../components/detalle-producto/Galeria";
+import InfoPanel from "../components/detalle-producto/InfoPanel";
+import PreviewOverlay from "../components/detalle-producto/PreviewOverlay";
+import { extraerColores, tallasDeColor, filtrarImagenes } from "../utils/detalleProductoHelpers";
 
 export default function DetalleProducto() {
   const { id }      = useParams();
@@ -241,210 +167,28 @@ export default function DetalleProducto() {
       </button>
 
       <div className="dp-layout">
+        <Galeria
+          imgUrls={imgUrls} imgActiva={imgActiva} setImgActiva={setImgActiva}
+          producto={producto} prev={prev} next={next}
+          agotado={agotado} sinSeleccion={sinSeleccion} stockMostrado={stockMostrado}
+          onPreview={() => setPreview(true)}
+        />
 
-        {/* ── Galería ── */}
-        <div className="dp-gallery">
-          {total > 1 && (
-            <div className="dp-thumbs">
-              {imgUrls.map((url, i) => (
-                <button
-                  key={i}
-                  className={`dp-thumb${i === imgActiva ? " active" : ""}`}
-                  onClick={() => setImgActiva(i)}
-                >
-                  <img src={url} alt={`Vista ${i + 1}`} />
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="dp-main-img-wrap">
-            {total > 0 ? (
-              <>
-                <img
-                  className="dp-main-img"
-                  src={imgUrls[imgActiva]}
-                  alt={producto.nombre}
-                  onClick={() => setPreview(true)}
-                  style={{ cursor: "zoom-in" }}
-                />
-
-                {total > 1 && (
-                  <>
-                    <button className="dp-arrow dp-arrow-left" onClick={prev}>
-                      <IconChevronLeft />
-                    </button>
-                    <button className="dp-arrow dp-arrow-right" onClick={next}>
-                      <IconChevronRight />
-                    </button>
-                    <div className="dp-img-dots">
-                      {imgUrls.map((_, i) => (
-                        <button
-                          key={i}
-                          className={`dp-img-dot${i === imgActiva ? " active" : ""}`}
-                          onClick={() => setImgActiva(i)}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {producto.destacado === "Nuevo" && <span className="dp-badge dp-badge-nuevo"><IconSparkle /> Nuevo</span>}
-                {producto.destacado === "Promocion" && <span className="dp-badge dp-badge-promo"><IconTagPromo /> Promoción</span>}
-                {agotado && !sinSeleccion && (
-                  <span className="dp-badge dp-badge-out" style={producto.destacado ? { top: 42 } : undefined}>Agotado</span>
-                )}
-                {!agotado && !sinSeleccion && stockMostrado < 5 && (
-                  <span className="dp-badge dp-badge-warn" style={producto.destacado ? { top: 42 } : undefined}>Pocas unidades</span>
-                )}
-              </>
-            ) : (
-              <div className="dp-no-img">Sin imagen</div>
-            )}
-          </div>
-        </div>
-
-        {/* ── Info ── */}
-        <div className="dp-info">
-          <p className="dp-brand">SPORTWEAR</p>
-          <h1 className="dp-nombre">{producto.nombre}</h1>
-
-          {(colores.length > 0 || tallas.length > 0) && (
-            <div className="dp-variant-line">
-              {colores.length > 0 && (
-                <div className="dp-colores">
-                  <span className="dp-attr-label">
-                    Color: <span className="dp-attr-val">{colorSel?.nombre ?? "—"}</span>
-                  </span>
-                  <div className="dp-color-chips-row">
-                    {colores.map(c => (
-                      <button
-                        key={c.id_color}
-                        title={c.nombre}
-                        className={`dp-color-chip-btn${colorSel?.id_color === c.id_color ? " selected" : ""}`}
-                        style={{ background: c.codigo_hex || "#ccc" }}
-                        onClick={() => handleColorClick(c)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {tallas.length > 0 && (
-                <div className="dp-tallas">
-                  <span className="dp-attr-label">Talla:</span>
-                  <div className="dp-talla-chips-row">
-                    {tallas.map(t => {
-                      const varT     = variantes.find(v => v.id_color === colorSel?.id_color && v.talla === t);
-                      const sinStock = Number(varT?.stock ?? 0) === 0;
-                      return (
-                        <button
-                          key={t}
-                          className={`dp-talla-chip${tallaSel === t ? " selected" : ""}${sinStock ? " agotada" : ""}`}
-                          onClick={() => !sinStock && handleTallaClick(t)}
-                          title={sinStock ? "Agotada" : t}
-                        >
-                          {t}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="dp-precio-wrap">
-            <span className="dp-precio">{fmt(precioMostrado)}</span>
-          </div>
-
-          <div className="dp-stock-row">
-            {sinSeleccion
-              ? <span className="dp-stock-out" style={{ fontStyle: "italic" }}>Selecciona color y talla</span>
-              : agotado
-                ? <span className="dp-stock-out">Sin stock disponible</span>
-                : stockMostrado < 5
-                  ? <span className="dp-stock-low">Solo quedan {stockMostrado} unidades</span>
-                  : <span className="dp-stock-ok">Stock disponible: {stockMostrado} unidades</span>
-            }
-          </div>
-
-          {!agotado && !sinSeleccion && (
-            <div className="dp-cantidad-row">
-              <span className="dp-cantidad-label">Cantidad:</span>
-              <div className="dp-cantidad-controls">
-                <button className="dp-cantidad-btn" onClick={decrementar} disabled={cantidad <= 1}>
-                  <IconMinus />
-                </button>
-                <span className="dp-cantidad-value">{cantidad}</span>
-                <button className="dp-cantidad-btn" onClick={incrementar} disabled={cantidad >= stockMostrado}>
-                  <IconPlus />
-                </button>
-              </div>
-            </div>
-          )}
-
-          <button
-            className={`dp-btn-agregar${agregado ? " agregado" : ""}${(agotado || sinSeleccion) ? " disabled" : ""}`}
-            onClick={handleAgregar}
-            disabled={agotado || sinSeleccion}
-          >
-            {agregado
-              ? <><IconCheck /> ¡Agregado al carrito!</>
-              : agotado
-                ? "Agotado"
-                : sinSeleccion
-                  ? "Selecciona color y talla"
-                  : <><IconCart /> Agregar al carrito</>
-            }
-          </button>
-
-          <div className="dp-divider" />
-
-          <div className="dp-detalles">
-            {producto.descripcion && (
-              <div className="dp-detalle-row">
-                <span className="dp-detalle-label">Descripción</span>
-                <span className="dp-detalle-val">{producto.descripcion}</span>
-              </div>
-            )}
-            <div className="dp-detalle-row">
-              <span className="dp-detalle-label">Categoría</span>
-              <span className="dp-detalle-val">{producto.categoria || "—"}</span>
-            </div>
-            <div className="dp-detalle-row">
-              <span className="dp-detalle-label">Referencia</span>
-              <span className="dp-detalle-val">#{String(producto.id_producto).padStart(6, "0")}</span>
-            </div>
-          </div>
-        </div>
+        <InfoPanel
+          producto={producto} colores={colores} tallas={tallas}
+          colorSel={colorSel} tallaSel={tallaSel} variantes={variantes}
+          handleColorClick={handleColorClick} handleTallaClick={handleTallaClick}
+          precioMostrado={precioMostrado} sinSeleccion={sinSeleccion} agotado={agotado} stockMostrado={stockMostrado}
+          cantidad={cantidad} decrementar={decrementar} incrementar={incrementar}
+          agregado={agregado} handleAgregar={handleAgregar}
+        />
       </div>
 
-      {/* ── Preview / zoom ── */}
       {preview && (
-        <div className="dp-preview-overlay" onClick={() => setPreview(false)}>
-          <button className="dp-preview-close" onClick={() => setPreview(false)}>
-            <IconX />
-          </button>
-          {total > 1 && (
-            <>
-              <button className="dp-preview-arrow dp-preview-arrow-left"
-                onClick={(e) => { e.stopPropagation(); prev(); }}>
-                <IconChevronLeft />
-              </button>
-              <button className="dp-preview-arrow dp-preview-arrow-right"
-                onClick={(e) => { e.stopPropagation(); next(); }}>
-                <IconChevronRight />
-              </button>
-            </>
-          )}
-          <img
-            className="dp-preview-img"
-            src={imgUrls[imgActiva]}
-            alt="Vista ampliada"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
+        <PreviewOverlay
+          imgUrls={imgUrls} imgActiva={imgActiva} total={total}
+          prev={prev} next={next} onClose={() => setPreview(false)}
+        />
       )}
     </div>
   );

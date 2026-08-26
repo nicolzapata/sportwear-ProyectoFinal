@@ -1,0 +1,399 @@
+/* GestProductos — layout base: contenedor, header, barra de acciones,
+   buscador, tarjetas de vitrina (grid legado) y esqueleto de modal. */
+
+.gestproductos-container {
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: var(--font-body);
+}
+
+/* Red de seguridad: si la suma de columnas no cabe en el ancho disponible,
+   aparece scroll horizontal en vez de que una celda quede tapada por la
+   celda vecina (ver .gestproductos-th-variantes). El margen negativo deja
+   que la tabla use también el padding lateral del contenedor, ganando ancho
+   extra sin achicar el resto de la página. */
+.gestproductos-table-container {
+  overflow-x: auto;
+  margin: 0 -2rem;
+  padding: 0 1rem;
+}
+
+/* Header */
+.gestproductos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.gestproductos-title {
+  font-size: 2rem;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  margin: 0 0 0.25rem 0;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+
+/* Actions Bar */
+.gestproductos-actions-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.gestproductos-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.gestproductos-search-wrapper {
+  position: relative;
+  width: 320px;
+}
+
+.gestproductos-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--dvna-mid);
+  display: flex;
+  align-items: center;
+}
+
+.gestproductos-search-icon svg { width: 14px; height: 14px; }
+
+.gestproductos-search-input {
+  width: 100%;
+  padding: 0.8rem 2.5rem 0.8rem 2.5rem;
+  border: 1px solid var(--dvna-border);
+  border-radius: 40px;
+  font-size: 13px;
+  font-family: var(--font-body);
+  transition: all 0.2s ease;
+  background: var(--dvna-white);
+  color: var(--dvna-charcoal);
+}
+
+.gestproductos-search-input:focus {
+  outline: none;
+  border-color: var(--dvna-circle);
+  box-shadow: 0 0 0 3px rgba(180,151,128,0.1);
+}
+
+.gestproductos-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--dvna-mid);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.gestproductos-search-clear svg { width: 12px; height: 12px; }
+.gestproductos-search-clear:hover { color: var(--dvna-charcoal); }
+
+.gestproductos-actions-right {
+  display: flex;
+   align-items: center;
+   gap: 0.5rem;
+ }
+
+ .gestproductos-btn-primary {
+   background: var(--brown);
+   color: #fff;
+   border: none;
+   padding: 0.75rem 1.75rem;
+   border-radius: 40px;
+   font-size: 12px;
+   font-family: var(--font-body);
+   font-weight: 500;
+   cursor: pointer;
+   transition: all 0.2s ease;
+   display: flex;
+   align-items: center;
+   gap: 6px;
+ }
+
+ .gestproductos-btn-primary:hover { background: var(--dvna-circle); transform: translateY(-1px); }
+
+.gestproductos-btn-secondary {
+  background: transparent;
+  color: var(--dvna-charcoal);
+  border: 1px solid var(--dvna-border);
+  padding: 0.75rem 1.75rem;
+  border-radius: 40px;
+  font-size: 12px;
+  font-family: var(--font-body);
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gestproductos-btn-secondary:hover { border-color: var(--dvna-mid); background: var(--dvna-pale); }
+
+.gestproductos-results-count {
+  font-size: 11px;
+  font-family: var(--font-body);
+  font-weight: 300;
+  color: var(--dvna-muted);
+  margin-bottom: 1rem;
+  letter-spacing: 0.04em;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ── Vitrina de productos (grid de tarjetas, reemplaza la tabla) ──
+   ══════════════════════════════════════════════════════════════ */
+.gestproductos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.gestproductos-card {
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+}
+.gestproductos-card:hover {
+  border-color: var(--dvna-mid);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.gestproductos-card-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: var(--dvna-pale);
+  overflow: hidden;
+}
+.gestproductos-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gestproductos-card-img-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dvna-mid);
+}
+.gestproductos-card-img-placeholder svg { width: 32px; height: 32px; }
+
+.gestproductos-card-badge-publicado {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  letter-spacing: 0.03em;
+}
+.gestproductos-card-badge-publicado.visible {
+  background: rgba(46, 125, 50, 0.9);
+}
+
+.gestproductos-card-badge-inactivo {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: rgba(184, 50, 50, 0.9);
+  color: #fff;
+  letter-spacing: 0.03em;
+}
+
+.gestproductos-card-body {
+  padding: 0.9rem 1rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.gestproductos-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.gestproductos-card-nombre {
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gestproductos-card-precio {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--brown, #b49780);
+}
+
+.gestproductos-card-variantes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+.gestproductos-card-variante-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: 20px;
+  padding: 2px 8px;
+  color: var(--dvna-charcoal);
+}
+.gestproductos-card-variante-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+.gestproductos-card-variante-mas {
+  font-size: 0.65rem;
+  color: var(--dvna-muted);
+  align-self: center;
+}
+.gestproductos-card-sin-variantes {
+  font-size: 0.7rem;
+  color: var(--dvna-muted);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.gestproductos-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-top: 1px solid var(--dvna-border);
+  background: var(--dvna-pale);
+}
+.gestproductos-card-footer-left {
+  display: flex;
+  gap: 0.3rem;
+}
+.gestproductos-card-footer-right {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.gestproductos-empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--dvna-muted);
+  font-style: italic;
+  border: 1px dashed var(--dvna-border);
+  border-radius: 16px;
+}
+
+/* Action buttons — mismo diseño en todas las tablas de la página
+   (36x36, radio 10px, hover neutro para ver/editar, tinte rojo/verde
+   para eliminar/activar). */
+.gestproductos-action-cell {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.gestproductos-action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--dvna-border);
+  background: var(--dvna-white);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dvna-muted);
+  flex-shrink: 0;
+}
+
+.gestproductos-action-btn:hover {
+  border-color: var(--dvna-mid);
+  background: var(--dvna-pale);
+}
+
+.gestproductos-delete-btn:hover {
+  border-color: rgba(184, 50, 50, 0.3);
+  background: rgba(184, 50, 50, 0.06);
+}
+
+/* Modal */
+.gestproductos-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.gestproductos-modal {
+  background: var(--dvna-white);
+  border-radius: 32px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--dvna-border);
+}
+
+.gestproductos-modal-sm {
+  max-width: 400px;
+}
+
+/* Modal ampliado tipo factura, un solo panel sin pasos */
+.gestproductos-modal-factura {
+  max-width: 820px;
+}
+
+.gestproductos-factura-body {
+  padding: 1.5rem;
+}

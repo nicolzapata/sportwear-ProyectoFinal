@@ -16,7 +16,11 @@ const IconStore = () => (
     <path d="M9 20v-6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v6" />
   </svg>
 );
-import './Navbar.css';
+// Navbar.css se dividió por sección para facilitar el mantenimiento; el
+// orden de los imports preserva la cascada del archivo original.
+import './Navbar.base.css';
+import './Navbar.responsive.css';
+import './Navbar.buscador.css';
 import { createPortal } from "react-dom";
 
 const titulos = {

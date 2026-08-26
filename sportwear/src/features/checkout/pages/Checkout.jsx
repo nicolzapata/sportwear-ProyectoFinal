@@ -5,88 +5,13 @@ import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useCart } from "../../../shared/contexts/CartContext";
 import api from "../../../shared/services/api";
 import PaymentModal from "../../ventas/components/PaymentModal";
-import "./Checkout.css";
-
-const fmt = (n) =>
-  Number(n || 0).toLocaleString("es-CO", {
-    style: "currency", currency: "COP", minimumFractionDigits: 0,
-  });
-
-// ── NUEVO: monto mínimo permitido para un abono/cuota — evita que una
-// cuota termine siendo de $1 o cualquier valor sin sentido frente al
-// precio real de los productos. ──
-const MONTO_MINIMO_ABONO = 20000;
-
-const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DIAS  = ['D','L','M','X','J','V','S'];
-
-// ── Etiquetas más descriptivas para los métodos de pago conocidos — si el
-// admin agrega uno nuevo que no esté aquí, se usa su nombre tal cual. ──
-const ETIQUETAS_METODO = {
-  Efectivo: "Efectivo (contra entrega)",
-  Transferencia: "Transferencia bancaria",
-};
-
-// ── Mini calendario por cuota ─────────────────────────────────────────────
-function MiniCalendario({ fecha, cuota, monto }) {
-  const anio      = fecha.getFullYear();
-  const mes       = fecha.getMonth();
-  const diaPago   = fecha.getDate();
-  const primerDia = new Date(anio, mes, 1).getDay();
-  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
-  const hoy       = new Date();
-
-  return (
-    <div className="cal-cuota">
-      <div className="cal-cuota-header">
-        <span className="cal-cuota-badge">Cuota {cuota}</span>
-        <p className="cal-cuota-mes">{MESES[mes]} {anio}</p>
-      </div>
-      <div className="cal-cuota-grid">
-        {DIAS.map(d => (
-          <div key={d} className="cal-dia-nombre">{d}</div>
-        ))}
-        {Array.from({ length: primerDia }).map((_, e) => <div key={`e${e}`} />)}
-        {Array.from({ length: diasEnMes }, (_, idx) => {
-          const d = idx + 1;
-          const esHoy  = hoy.getFullYear() === anio && hoy.getMonth() === mes && hoy.getDate() === d;
-          const esPago = d === diaPago;
-          return (
-            <div key={d} className={`cal-dia${esPago ? " cal-dia--pago" : esHoy ? " cal-dia--hoy" : ""}`}>
-              {d}
-            </div>
-          );
-        })}
-      </div>
-      <p className="cal-cuota-monto">{fmt(monto)}</p>
-      <p className="cal-cuota-fecha">
-        {fecha.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}
-      </p>
-    </div>
-  );
-}
-
-// ── Calcular fechas de cuotas (retorna objetos Date) ──────────────────────
-function getFechasCuotas(numCuotas) {
-  const fechasDate = [];
-  const hoy = new Date();
-  const dia = hoy.getDate();
-  for (let i = 0; i < numCuotas; i++) {
-    let fecha;
-    if (i === 0) {
-      fecha = dia < 15
-        ? new Date(hoy.getFullYear(), hoy.getMonth(), 15)
-        : new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-    } else {
-      const ant = fechasDate[i - 1];
-      fecha = ant.getDate() === 15
-        ? new Date(ant.getFullYear(), ant.getMonth() + 1, 0)
-        : new Date(ant.getFullYear(), ant.getMonth() + 1, 15);
-    }
-    fechasDate.push(fecha);
-  }
-  return fechasDate;
-}
+// Checkout.css se dividió por sección para facilitar el mantenimiento; el
+// orden de los imports preserva la cascada del archivo original.
+import "./Checkout.layout.css";
+import "./Checkout.cuotas.css";
+import ProductosList from "../components/checkout/ProductosList";
+import CheckoutPanel from "../components/checkout/CheckoutPanel";
+import { MONTO_MINIMO_ABONO, getFechasCuotas } from "../utils/checkoutHelpers";
 
 export default function Checkout() {
   const { usuario }                                    = useAuth();
@@ -194,37 +119,6 @@ export default function Checkout() {
     });
     setErrorStock(null);
   };
-
-  // ── Bloque reutilizable de la alerta de stock + sugerencias ──
-  const AlertaStock = errorStock && (
-    <div className="checkout-stock-alerta">
-      <p className="checkout-stock-alerta-titulo">
-        Sin stock suficiente de "{errorStock.producto}" — pediste {errorStock.solicitado}, hay {errorStock.disponible} disponibles.
-      </p>
-      {errorStock.alternativas?.length > 0 ? (
-        <>
-          <p className="checkout-stock-alerta-sub">Elige otra opción disponible para reemplazarla:</p>
-          <div className="checkout-stock-alternativas">
-            {errorStock.alternativas.map((alt) => (
-              <button
-                key={alt.id_variante}
-                type="button"
-                className="checkout-stock-alt-btn"
-                onClick={() => elegirAlternativa(alt)}
-              >
-                {alt.talla}{alt.color ? ` · ${alt.color}` : ""}
-                <span className="checkout-stock-alt-stock">{alt.stock} disp.</span>
-              </button>
-            ))}
-          </div>
-        </>
-      ) : (
-        <p className="checkout-stock-alerta-sub">
-          No hay otras tallas o colores disponibles para este producto ahora mismo. Ajusta la cantidad o quítalo del carrito e inténtalo de nuevo.
-        </p>
-      )}
-    </div>
-  );
 
   // ── Validación del panel único (antes repartida en validarPasoEntrega/validarPasoPago del modal) ──
   const validarFormulario = () => {
@@ -343,187 +237,19 @@ export default function Checkout() {
       </div>
 
       <div className="checkout-layout">
-        {/* Lista de productos */}
-        <div className="checkout-productos">
-          <h2 className="checkout-section-titulo">Productos</h2>
-          {items.map((item) => (
-            <div key={item.id_variante ?? item.id} className="checkout-item">
-              <div className="checkout-item-img">
-                {item.imagen ? (
-                  <img src={item.imagen} alt={item.nombre} />
-                ) : (
-                  <div className="checkout-item-img-placeholder">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <rect x="3" y="3" width="18" height="18" rx="2"/>
-                      <path d="m9 9 6 6m0-6-6 6"/>
-                    </svg>
-                  </div>
-                )}
-              </div>
-              <div className="checkout-item-info">
-                <span className="checkout-item-nombre">{item.nombre}</span>
-                {item.talla && <span className="checkout-item-detalle">Talla: {item.talla}</span>}
-                {item.color && <span className="checkout-item-detalle">Color: {item.color}</span>}
-              </div>
-              <div className="checkout-item-cant">× {item.cantidad}</div>
-              <div className="checkout-item-precio">{fmt(item.precio * item.cantidad)}</div>
-            </div>
-          ))}
-        </div>
+        <ProductosList items={items} />
 
-        {/* Panel derecho — todos los datos y la confirmación en un solo lugar */}
-        <div className="checkout-panel">
-          <h2 className="checkout-section-titulo">Datos del pedido</h2>
-
-          <div className="checkout-campo">
-            <label className="checkout-label">Cliente</label>
-            <div className="checkout-valor">{usuario?.nombre}</div>
-          </div>
-          <div className="checkout-campo">
-            <label className="checkout-label">Correo</label>
-            <div className="checkout-valor">{usuario?.email ?? usuario?.correo ?? "—"}</div>
-          </div>
-          <div className="checkout-campo">
-            <label className="checkout-label">Dirección de entrega</label>
-            <input
-              type="text"
-              className={`form-control${erroresPaso.direccion ? " input-error" : ""}`}
-              value={direccion}
-              onChange={(e) => {
-                setDireccion(e.target.value);
-                if (erroresPaso.direccion) setErroresPaso((prev) => ({ ...prev, direccion: "" }));
-              }}
-              placeholder="Cra 70 # 48-15 Apto 201, Medellín"
-            />
-            {erroresPaso.direccion && <div className="checkout-error-message">{erroresPaso.direccion}</div>}
-          </div>
-
-          {/* ── NUEVO: Ciudad fija + Barrio (antes vivían en el registro) ── */}
-          <div className="checkout-campo">
-            <label className="checkout-label">Ciudad</label>
-            <div className="checkout-valor">Medellín</div>
-            <p className="checkout-aviso-domicilios">Por ahora solo hacemos domicilios en Medellín.</p>
-          </div>
-          <div className="checkout-campo">
-            <label className="checkout-label">Barrio</label>
-            {cargandoBarrios ? (
-              <div className="checkout-valor">Cargando barrios...</div>
-            ) : (
-              <select
-                className={`form-control${erroresPaso.barrio ? " input-error" : ""}`}
-                value={idBarrio}
-                onChange={(e) => {
-                  setIdBarrio(e.target.value);
-                  if (erroresPaso.barrio) setErroresPaso((prev) => ({ ...prev, barrio: "" }));
-                }}
-              >
-                <option value="">Selecciona tu barrio...</option>
-                {barrios.map((b) => (
-                  <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>
-                ))}
-              </select>
-            )}
-            {erroresPaso.barrio && <div className="checkout-error-message">{erroresPaso.barrio}</div>}
-          </div>
-          <div className="checkout-campo">
-            <label className="checkout-label">Método de pago</label>
-            {cargandoMetodos ? (
-              <div className="checkout-valor">Cargando métodos de pago...</div>
-            ) : metodosPago.length === 0 ? (
-              <p className="checkout-error-message">No hay métodos de pago habilitados en este momento. Contáctanos para completar tu pedido.</p>
-            ) : (
-              <select
-                className={`form-control${erroresPaso.metodo ? " input-error" : ""}`}
-                value={metodo}
-                onChange={(e) => {
-                  setMetodo(e.target.value);
-                  if (erroresPaso.metodo) setErroresPaso((prev) => ({ ...prev, metodo: "" }));
-                }}
-              >
-                {metodosPago.map((m) => (
-                  <option key={m.id_metodo} value={m.nombre}>
-                    {ETIQUETAS_METODO[m.nombre] || m.nombre}
-                  </option>
-                ))}
-              </select>
-            )}
-            {erroresPaso.metodo && <div className="checkout-error-message">{erroresPaso.metodo}</div>}
-          </div>
-
-          {permisoCuotas && (
-            <div className="checkout-campo" style={{ marginTop: 15 }}>
-              <label className="checkout-label">Opción de pago</label>
-              <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 5 }}>
-                <input type="radio" name="tipoPago2" value="completo" checked={tipoPago === "completo"} onChange={() => setTipoPago("completo")} />
-                Pago completo
-              </label>
-              {opcionesCuotas.length > 0 && (
-                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 5 }}>
-                  <input type="radio" name="tipoPago2" value="cuotas" checked={tipoPago === "cuotas"} onChange={() => setTipoPago("cuotas")} />
-                  Pagar en cuotas
-                </label>
-              )}
-              {tipoPagoActivo === "cuotas" && (
-                <div style={{ marginTop: 10, paddingLeft: 24 }}>
-                  <label className="checkout-label">Número de cuotas</label>
-                  <select value={numCuotasActivo} onChange={(e) => setNumCuotas(Number(e.target.value))} className="form-control" style={{ marginTop: 4 }}>
-                    {opcionesCuotas.map((n) => (
-                      <option key={n} value={n}>{n} cuotas de {fmt(Math.ceil(total / n))}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="checkout-divider" />
-
-          <div className="checkout-resumen-lineas">
-            {items.map((item) => (
-              <div key={item.id_variante ?? item.id} className="checkout-resumen-linea">
-                <span>{item.nombre} × {item.cantidad}</span>
-                <span>{fmt(item.precio * item.cantidad)}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="checkout-divider" />
-
-          <div className="checkout-total">
-            <span>{tipoPagoActivo === "cuotas" ? `Total cuota (1/${numCuotasActivo})` : "Total a pagar"}</span>
-            <span>{fmt(tipoPagoActivo === "cuotas" ? valorCuota : total)}</span>
-          </div>
-
-          {tipoPagoActivo === "cuotas" && (
-            <>
-              <p style={{ fontSize: 11, color: "var(--muted)", marginBottom: 16 }}>
-                Total del pedido: {fmt(total)} en {numCuotasActivo} cuotas de {fmt(valorCuota)}
-              </p>
-              <label className="checkout-label" style={{ marginBottom: 8 }}>Fechas de pago</label>
-              <div className="cal-cuotas-wrap">
-                {fechasCuotas.map((fecha, i) => (
-                  <MiniCalendario key={i} fecha={fecha} cuota={i + 1} monto={valorCuota} />
-                ))}
-              </div>
-            </>
-          )}
-
-          {error && <p className="checkout-error">{error}</p>}
-          {AlertaStock}
-
-          <button
-            className="checkout-btn-primary"
-            style={{ width: "100%", marginTop: 16 }}
-            onClick={handleConfirmar}
-            disabled={enviando || metodosPago.length === 0}
-          >
-            {enviando ? "Procesando..." : "Confirmar pedido"}
-          </button>
-
-          <button className="btn btn-outline" style={{ width: "100%", marginTop: 10 }} onClick={() => navigate("/carrito")} disabled={enviando}>
-            Volver al carrito
-          </button>
-        </div>
+        <CheckoutPanel
+          usuario={usuario} items={items}
+          direccion={direccion} setDireccion={setDireccion} erroresPaso={erroresPaso} setErroresPaso={setErroresPaso}
+          cargandoBarrios={cargandoBarrios} barrios={barrios} idBarrio={idBarrio} setIdBarrio={setIdBarrio}
+          cargandoMetodos={cargandoMetodos} metodosPago={metodosPago} metodo={metodo} setMetodo={setMetodo}
+          permisoCuotas={permisoCuotas} tipoPago={tipoPago} setTipoPago={setTipoPago} opcionesCuotas={opcionesCuotas}
+          tipoPagoActivo={tipoPagoActivo} numCuotasActivo={numCuotasActivo} setNumCuotas={setNumCuotas}
+          total={total} valorCuota={valorCuota} fechasCuotas={fechasCuotas}
+          error={error} errorStock={errorStock} elegirAlternativa={elegirAlternativa}
+          enviando={enviando} handleConfirmar={handleConfirmar} navigate={navigate}
+        />
       </div>
 
       {/* ── Modal de Pago (después de confirmar pedido) ── */}

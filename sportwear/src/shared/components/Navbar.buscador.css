@@ -1,0 +1,254 @@
+/* ── Navbar.buscador.css — dropdown de sugerencias del buscador y el
+   mega menú de categorías del navbar público. ── */
+
+/* ══════════════════════════════════════════════════════════════
+   ── NUEVO (HU 04.2.9): dropdown de sugerencias en vivo del buscador ──
+   ══════════════════════════════════════════════════════════════ */
+.search-input-wrap {
+  position: relative;
+}
+
+.navbar-sugerencias {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  min-width: 320px;
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+  overflow: hidden;
+  z-index: 200;
+  animation: navbar-sugerencias-in 0.15s ease;
+}
+@keyframes navbar-sugerencias-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.navbar-sugerencia-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+.navbar-sugerencia-item:hover,
+.navbar-sugerencia-item.activo {
+  background: var(--dvna-pale);
+}
+
+.navbar-sugerencia-img {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--dvna-pale);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dvna-mid);
+}
+.navbar-sugerencia-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.navbar-sugerencia-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.navbar-sugerencia-nombre {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.navbar-sugerencia-categoria {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--dvna-muted);
+}
+
+.navbar-sugerencia-precio {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dvna-circle);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.navbar-sugerencia-vertodos {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-top: 1px solid var(--dvna-border);
+  background: var(--dvna-pale);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--dvna-circle);
+  text-align: left;
+}
+.navbar-sugerencia-vertodos:hover { background: var(--dvna-border); }
+.navbar-sugerencia-vertodos svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+.navbar-sugerencia-vacio {
+  padding: 16px 14px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--dvna-muted);
+  text-align: center;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .navbar-sugerencias { min-width: 0; z-index: 1060; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ── NUEVO: menú de categorías tipo "mega menú" ──
+   Reemplaza la fila de botones sueltos (uno por categoría) que se
+   desbordaba al agregar más categorías. Ahora vive en un único
+   desplegable, con una imagen de referencia por categoría.
+   ══════════════════════════════════════════════════════════════ */
+.navbar-categorias-dropdown {
+  position: relative;
+}
+
+.navbar-categorias-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.navbar-categorias-chevron {
+  display: inline-flex;
+  transition: transform 0.2s ease;
+}
+.navbar-categorias-chevron.abierto {
+  transform: rotate(180deg);
+}
+
+.navbar-categorias-panel {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 4px;
+  min-width: 320px;
+  max-width: 620px;
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(0,0,0,0.14);
+  padding: 12px;
+  z-index: 250;
+  animation: navbar-categorias-in 0.15s ease;
+}
+@keyframes navbar-categorias-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-6px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.navbar-categoria-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+.navbar-categoria-item:hover {
+  background: var(--dvna-pale);
+}
+.navbar-categoria-item.activo {
+  background: var(--dvna-pale);
+}
+.navbar-categoria-item.activo .navbar-categoria-nombre {
+  color: var(--dvna-circle);
+  font-weight: 600;
+}
+
+.navbar-categoria-img {
+  width: 48px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: var(--dvna-pale);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dvna-mid);
+}
+.navbar-categoria-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.navbar-categoria-nombre {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+}
+
+/* En móvil, el panel vive dentro del drawer vertical — ya no tiene sentido
+   como overlay flotante centrado, así que se aplana en una lista simple. */
+@media (max-width: 768px) {
+  .navbar-categorias-dropdown {
+    border-bottom: 1px solid var(--dvna-border);
+  }
+  .navbar-categorias-trigger {
+    width: 100%;
+    justify-content: space-between;
+    padding: 14px 8px;
+    border-bottom: none !important;
+  }
+  .navbar-categorias-panel {
+    position: static;
+    transform: none;
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: none;
+    min-width: 0;
+    max-width: none;
+    box-shadow: none;
+    border: none;
+    border-radius: 0;
+    padding: 0 0 8px;
+    animation: none;
+  }
+  .navbar-categoria-item {
+    border-radius: 8px;
+  }
+  .navbar-categoria-img {
+    width: 40px;
+    height: 46px;
+  }
+}

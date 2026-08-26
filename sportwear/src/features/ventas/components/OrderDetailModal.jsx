@@ -3,7 +3,11 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import api from "../../../shared/services/api";
 import { useToast } from "../../../shared/contexts/ToastContext";
-import "./OrderDetailModal.css";
+// OrderDetailModal.css se dividió por sección para facilitar el mantenimiento;
+// el orden de los imports preserva la cascada del archivo original.
+import "./OrderDetailModal.base.css";
+import "./OrderDetailModal.productos.css";
+import "./OrderDetailModal.timeline.css";
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("es-CO", {

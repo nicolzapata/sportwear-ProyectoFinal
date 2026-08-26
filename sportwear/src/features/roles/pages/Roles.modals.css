@@ -1,0 +1,280 @@
+/* ── Roles.modals.css — card "Nuevo rol", modal base, formulario de rol
+   (con tabla de permisos) y sus botones/chips. ── */
+
+/* ════════════════════════════════
+   Card "Nuevo rol"
+   ════════════════════════════════ */
+.role-add-card {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  border: 1.5px dashed var(--dvna-border, #e8e0d8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: border-color 0.2s, background 0.2s;
+  cursor: pointer;
+}
+.role-add-card:hover {
+  border-color: var(--dvna-circle, #b49780);
+  background: rgba(180, 151, 128, 0.05);
+}
+.role-add-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--dvna-border, #e8e0d8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  color: var(--dvna-muted, #999);
+  transition: border-color 0.2s, color 0.2s;
+}
+.role-add-card:hover .role-add-icon {
+  border-color: var(--dvna-circle, #b49780);
+  color: var(--dvna-circle, #b49780);
+}
+.role-add-label {
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--dvna-muted, #999);
+  letter-spacing: 0.06em;
+  transition: color 0.2s;
+}
+.role-add-card:hover .role-add-label { color: var(--dvna-circle, #b49780); }
+
+/* ════════════════════════════════
+   Modal overlay & base
+   ════════════════════════════════ */
+.roles-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 24px;
+  animation: overlayIn 0.25s ease;
+}
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+.roles-modal {
+  background: var(--dvna-white);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 32px 80px rgba(10,10,10,0.25);
+  animation: modalSlide 0.28s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+@keyframes modalSlide {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Modal formulario — más alto para acomodar todo en un paso */
+.roles-form-modal {
+  max-width: 620px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.roles-modal-accent { height: 4px; background: var(--dvna-circle, #b49780); flex-shrink: 0; }
+
+.roles-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 28px 32px 0;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+.roles-modal-title {
+  font-family: var(--font-body);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--dvna-charcoal);
+  margin: 0 0 4px;
+  line-height: 1.1;
+}
+.roles-modal-subtitle {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--dvna-muted);
+  margin: 0;
+}
+.roles-modal-close {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--dvna-border);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 4px;
+  transition: background 0.2s;
+  color: var(--dvna-muted);
+}
+.roles-modal-close:hover { background: var(--dvna-pale); }
+.roles-modal-close svg { width: 12px; height: 12px; }
+
+.roles-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 0 32px;
+}
+
+/* Cuerpo del formulario scrolleable */
+.roles-form-body {
+  overflow-y: auto;
+  flex: 1;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--dvna-border) transparent;
+}
+.roles-form-body::-webkit-scrollbar { width: 4px; }
+.roles-form-body::-webkit-scrollbar-thumb {
+  background: var(--dvna-border);
+  border-radius: 4px;
+}
+
+.roles-modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 0;
+  padding: 20px 32px;
+  border-top: 1px solid var(--dvna-border);
+  background: var(--dvna-pale);
+  border-radius: 0 0 20px 20px;
+  flex-shrink: 0;
+}
+
+/* ── Tabla de permisos en formulario ── */
+.roles-permisos-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--dvna-border);
+  border-radius: 10px;
+  margin-top: 8px;
+}
+.roles-permisos-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.roles-permisos-table thead tr {
+  border-bottom: 1px solid var(--dvna-border);
+  background: var(--dvna-bg2, var(--dvna-pale));
+}
+.roles-permisos-table thead th {
+  padding: 9px 12px;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--dvna-muted);
+  text-transform: uppercase;
+}
+.roles-permisos-table thead th:last-child {
+  text-align: center;
+}
+.roles-permisos-table tbody tr {
+  border-bottom: 1px solid var(--dvna-border);
+  transition: background 0.12s;
+}
+.roles-permisos-table tbody tr:last-child { border-bottom: none; }
+.roles-tr-alt { background: var(--dvna-pale, #f7f4f1); }
+.roles-td-modulo {
+  padding: 9px 16px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+  vertical-align: middle;
+  width: 1%;
+}
+.roles-td-acciones {
+  padding: 7px 20px;
+  vertical-align: middle;
+  border-left: 1px solid var(--dvna-border);
+}
+.roles-chips-wrap {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: left;
+}
+
+/* Botones modal */
+.roles-btn-primary {
+  font-family: var(--font-body);
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--dvna-white);
+  background: var(--brown, #8c6e5a);
+  border: none; border-radius: 20px;
+  padding: 11px 28px; cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.roles-btn-primary:hover { background: var(--dvna-circle); transform: translateY(-1px); }
+
+.roles-btn-secondary {
+  font-family: var(--font-body);
+  font-size: 12px; font-weight: 400;
+  color: var(--dvna-charcoal);
+  background: transparent;
+  border: 1px solid var(--dvna-border);
+  border-radius: 20px;
+  padding: 11px 28px; cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.roles-btn-secondary:hover { background: var(--dvna-white); border-color: var(--dvna-mid); }
+
+.roles-btn-danger {
+  font-family: var(--font-body);
+  font-size: 12px; font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #fff; background: #b83232;
+  border: none; border-radius: 20px;
+  padding: 11px 28px; cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.roles-btn-danger:hover { background: #9a2828; transform: translateY(-1px); }
+
+/* ── Chips permisos en formulario ── */
+.roles-permiso-chip {
+  font-family: var(--font-body);
+  font-size: 11px; font-weight: 400;
+  color: var(--dvna-muted);
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: 20px;
+  padding: 4px 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.roles-permiso-chip:hover {
+  border-color: var(--dvna-circle);
+  color: var(--dvna-circle);
+  background: rgba(180,151,128,0.06);
+}
+.roles-permiso-chip.selected {
+  background: var(--dvna-circle);
+  border-color: var(--dvna-circle);
+  color: #fff;
+}

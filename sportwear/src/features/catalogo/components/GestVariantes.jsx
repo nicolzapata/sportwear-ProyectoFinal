@@ -3,73 +3,10 @@ import { useState, useEffect } from "react";
 import api from "../../../shared/services/api";
 import { useConfirm } from "../../../shared/contexts/ConfirmContext";
 import "./GestVariantes.css";
-
-const TALLAS = ["XS","S","M","L","XL","XXL","Única","28","30","32","34","36","38","40","42","44"];
-
-const IconPlus = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-);
-const IconCheck = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12"/>
-  </svg>
-);
-const IconX = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
-const IconInfo = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.5"/><circle cx="12" cy="7.8" r="0.9" fill="currentColor" stroke="none"/>
-  </svg>
-);
-// Agrupa una lista de variantes por color — mismo criterio que el chip de
-// Tallas/Colores de la tabla y el modal de detalle de GestProductos: un
-// chip por color con sus tallas adentro, no un chip por combinación.
-const agruparPorColor = (lista) => {
-  const grupos = new Map();
-  lista.forEach(v => {
-    if (!grupos.has(v.id_color)) grupos.set(v.id_color, { id_color: v.id_color, color_nombre: v.color_nombre, codigo_hex: v.codigo_hex, items: [] });
-    grupos.get(v.id_color).items.push({ talla: v.talla, stock: v.stock, id_variante: v.id_variante });
-  });
-  return [...grupos.values()];
-};
-
-// ── Lista de chips por color (mismo lenguaje visual que "ver detalle") ──────
-// Cada talla es su propio tag de solo lectura (el stock nunca se edita aquí,
-// solo se ve): "×" para eliminarla; al final del chip un "+" para agregar
-// otra talla a ese color.
-function ChipsColorList({ grupos, onEliminar, onAgregarTalla }) {
-  return (
-    <div className="gv-chips-lista">
-      {grupos.map(g => (
-        <div key={g.id_color} className="gv-chip-row">
-          <span className="gv-chip-row-swatch" style={{ background: g.codigo_hex || "#ccc" }} />
-          <span className="gv-chip-row-nombre">{g.color_nombre}</span>
-          <div className="gv-chip-row-tallas">
-            {g.items.map(({ talla, stock, id_variante }) => (
-              <span key={talla} className={`gv-talla-tag${stock === 0 ? " agotada" : ""}`}>
-                {/* El stock solo se ve aquí — se actualiza registrando una compra en el módulo Compras. */}
-                <span className="gv-talla-tag-view">
-                  {talla} <span className="gv-talla-tag-stock">{stock === 0 ? "Agotado" : stock}</span>
-                </span>
-                <button type="button" className="gv-talla-tag-del" onClick={() => onEliminar(g, talla, id_variante)} title="Eliminar">
-                  <IconX />
-                </button>
-              </span>
-            ))}
-            <button type="button" className="gv-talla-tag-add" onClick={() => onAgregarTalla(g)} title={`Agregar talla en ${g.color_nombre}`}>
-              <IconPlus />
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+import { agruparPorColor } from "../utils/gestVariantesHelpers";
+import { IconPlus, IconX } from "./gest-variantes/icons";
+import ChipsColorList from "./gest-variantes/ChipsColorList";
+import EditorNuevas from "./gest-variantes/EditorNuevas";
 
 /**
  * GestVariantes
@@ -206,7 +143,7 @@ export default function GestVariantes({
     const resultados = await Promise.all(promesas);
     const omitidas = resultados.filter(r => r?.skipped).length;
     if (omitidas) setError(`${omitidas} combinación(es) ya existían y fueron omitidas.`);
-    
+
     const { data: todasVariantes } = await api.get(`/variantes?id_producto=${idProducto}`);
     const stockTotal = todasVariantes.reduce((acc, v) => acc + (v.stock || 0), 0);
     if (stockTotal === 0 && estadoProducto === 'Activo') {
@@ -447,78 +384,5 @@ export default function GestVariantes({
         )}
       </div>
     </div>
-  );
-}
-
-// ── Subcomponente reutilizable: editor de nuevas variantes (matriz) ──────────
-// El stock NUNCA se pide aquí: toda combinación nueva nace con stock 0 y solo
-// aumenta al registrar una compra en el módulo Compras (tanto al crear un
-// producto como al agregarle tallas/colores nuevos después).
-function EditorNuevas({ colores, coloresSel, toggleColor, tallasSel, toggleTalla, onGuardar, labelGuardar, guardando, colorBloqueado, tallasBloqueadas = [] }) {
-  const tallaStepNum = colorBloqueado ? 1 : 2;
-  const resumenStepNum = colorBloqueado ? 2 : 3;
-  const tallasDisponibles = TALLAS.filter(t => !tallasBloqueadas.includes(t));
-
-  return (
-    <>
-      {colorBloqueado ? (
-        <div className="gv-locked-color">
-          <span className="gv-color-dot" style={{ background: colorBloqueado.codigo_hex || "#ccc" }} />
-          Agregando talla para <strong>{colorBloqueado.nombre}</strong>
-        </div>
-      ) : (
-        <div className="gv-step">
-          <p className="gv-step-label"><span className="gv-step-num">1</span> Selecciona los colores</p>
-          <div className="gv-color-chips">
-            {colores.map(c => {
-              const activo = coloresSel.some(x => x.id_color === c.id_color);
-              return (
-                <button key={c.id_color} className={`gv-color-chip${activo ? " active" : ""}`} onClick={() => toggleColor(c)}>
-                  <span className="gv-chip-dot" style={{ background: c.codigo_hex || "#ccc" }} />
-                  {c.nombre}
-                  {activo && <span className="gv-chip-check"><IconCheck /></span>}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="gv-step">
-        <p className="gv-step-label"><span className="gv-step-num">{tallaStepNum}</span> Selecciona las tallas</p>
-        <div className="gv-talla-chips">
-          {tallasDisponibles.map(t => (
-            <button key={t} className={`gv-talla-chip${tallasSel.includes(t) ? " active" : ""}`} onClick={() => toggleTalla(t)}>
-              {t}
-            </button>
-          ))}
-        </div>
-        {tallasDisponibles.length === 0 && (
-          <p className="gv-empty">Este color ya tiene todas las tallas agregadas.</p>
-        )}
-      </div>
-
-      {coloresSel.length > 0 && tallasSel.length > 0 && (
-        <div className="gv-step">
-          <p className="gv-step-label"><span className="gv-step-num">{resumenStepNum}</span> Combinaciones a agregar</p>
-          <div className="gv-combo-preview">
-            {coloresSel.map(c => (
-              <div key={c.id_color} className="gv-combo-preview-row">
-                <span className="gv-color-dot" style={{ background: c.codigo_hex || "#ccc" }} />
-                <span className="gv-combo-preview-color">{c.nombre}</span>
-                <span className="gv-combo-preview-tallas">{tallasSel.join(" · ")}</span>
-              </div>
-            ))}
-          </div>
-          <div className="gv-aviso-stock">
-            <IconInfo />
-            El stock de estas combinaciones inicia siempre en 0 — se define registrando una compra en el módulo Compras.
-          </div>
-          <button className="gv-btn-guardar" onClick={onGuardar} disabled={guardando}>
-            {guardando ? "Guardando..." : <><IconCheck /> {labelGuardar}</>}
-          </button>
-        </div>
-      )}
-    </>
   );
 }

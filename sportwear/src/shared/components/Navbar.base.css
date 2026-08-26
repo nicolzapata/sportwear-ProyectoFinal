@@ -1,0 +1,346 @@
+/* ── Navbar.base.css — Paleta DVNA · Estilo ETHKL. Layout base, izquierda
+   (logo/links), centro (nav), derecha (acciones/usuario/page title). ── */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 48px;
+  background: var(--dvna-white);
+  border-bottom: 1px solid var(--dvna-border);
+  font-family: var(--font-body);
+}
+
+/* Navbar del catálogo público: fijo de verdad, sin depender de contenedores
+   de scroll ni de que "sticky" resuelva bien su ancestro. Nunca se oculta
+   ni se desplaza al hacer scroll. */
+.navbar--public-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+/* ── Izquierda: Logo/Marca ── */
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 160px;
+}
+
+/* Botón hamburguesa — solo visible en móvil, abre el drawer del sidebar */
+.navbar-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r);
+  color: var(--dvna-charcoal);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.navbar-menu-btn:hover { background: var(--dvna-pale); }
+.navbar-menu-btn svg { width: 17px; height: 17px; display: block; }
+
+/* Links al lado del logo */
+.navbar-left-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-left: 24px;
+}
+
+/* Navbar nav - links y filtros juntos */
+.navbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Filtros inline con links */
+.navbar-nav button.navbar-link {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--dvna-charcoal);
+  text-decoration: none;
+  padding: 4px 0;
+  position: relative;
+  transition: color 0.2s;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  outline: none;
+}
+.navbar-nav button.navbar-link:focus {
+  outline: none;
+}
+.navbar-nav button.navbar-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--dvna-circle);
+  transition: width 0.25s ease;
+}
+.navbar-nav button.navbar-link:hover {
+  color: var(--dvna-circle);
+}
+.navbar-nav button.navbar-link:hover::after {
+  width: 100%;
+}
+.navbar-nav button.navbar-link.active {
+  color: var(--dvna-circle);
+}
+.navbar-nav button.navbar-link.active::after {
+  width: 100%;
+}
+
+/* Buscador en navbar */
+.navbar-search {
+  max-width: 280px;
+  margin-left: 24px;
+}
+
+.navbar-search .search-input-wrap svg {
+  left: 12px;
+  width: 14px;
+  height: 14px;
+}
+
+.navbar-search .search-input {
+  font-size: 12px;
+  padding: 8px 70px 8px 36px;
+}
+
+.navbar-brand {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+
+  color: var(--dvna-charcoal);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-brand-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.navbar-brand-icon img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  display: block;
+}
+
+/* ── Centro: Links de navegación ── */
+.navbar-center {
+  display: flex;
+  align-items: center;
+  gap: 36px;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.navbar-link {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--dvna-charcoal);
+  text-decoration: none;
+  padding: 4px 0;
+  position: relative;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+
+.navbar-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--dvna-circle);
+  transition: width 0.25s ease;
+}
+
+.navbar-link:hover {
+  color: var(--dvna-circle);
+}
+.navbar-link:hover::after {
+  width: 100%;
+}
+
+.navbar-link.active {
+  color: var(--dvna-circle);
+}
+.navbar-link.active::after {
+  width: 100%;
+}
+
+/* ── Derecha: Acciones ── */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 160px;
+  justify-content: flex-end;
+}
+
+.navbar-btn {
+  position: relative;
+  background: transparent;
+  border: none;
+  color: var(--dvna-charcoal);
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  border-radius: 50%;
+  transition: color 0.2s, background 0.2s;
+}
+.navbar-btn:hover {
+  color: var(--dvna-circle);
+  background: var(--dvna-pale);
+}
+.navbar-btn svg { width: 17px; height: 17px; }
+
+.navbar-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  background: var(--dvna-circle);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 8px;
+  font-weight: 700;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.navbar-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--dvna-border);
+  margin: 0 4px;
+}
+
+/* Login link */
+.navbar-login {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--dvna-charcoal);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s;
+  padding: 4px 0;
+}
+.navbar-login:hover { color: var(--dvna-circle); }
+
+/* ── Usuario (Admin) ── */
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: var(--r);
+  cursor: default;
+  transition: background 0.2s;
+}
+.navbar-user:hover { background: var(--dvna-pale); }
+
+.navbar-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--dvna-circle);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.05em;
+}
+
+.navbar-user-info { display: flex; flex-direction: column; }
+.navbar-user-name {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+}
+.navbar-user-role {
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  color: var(--dvna-muted);
+}
+
+/* ── Page title (Admin only) ── */
+.navbar-page {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.navbar-page-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r);
+  background: rgba(180,151,128,0.12);
+  color: var(--dvna-circle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.navbar-page-icon svg { width: 15px; height: 15px; }
+.navbar-page-label {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--dvna-charcoal);
+}
+.navbar-page-date {
+  font-size: 9px;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  color: var(--dvna-muted);
+  margin-top: 2px;
+  text-transform: capitalize;
+}

@@ -1,0 +1,229 @@
+/* src/components/PaymentModal.base.css — overlay, modal, header, resumen
+   de saldo, tipo de pago y sus estados. */
+
+.pm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  animation: pm-fade-in 0.18s ease;
+}
+
+@keyframes pm-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.pm-modal {
+  background: var(--dvna-white);
+  border: 0.5px solid var(--dvna-border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.12);
+  animation: pm-slide-up 0.22s ease;
+  font-family: 'DM Sans', system-ui, sans-serif;
+}
+
+.pm-modal--receipt {
+  max-width: 440px;
+}
+
+@keyframes pm-slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.pm-accent {
+  height: 4px;
+  border-radius: 12px 12px 0 0;
+  background: var(--brown);
+}
+.pm-accent--success { background: #3a6648; }
+.pm-accent--partial { background: var(--dvna-circle); }
+
+.pm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 20px 12px;
+  border-bottom: 0.5px solid var(--dvna-border);
+}
+
+.pm-title {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--dvna-charcoal);
+  margin: 0 0 2px;
+  text-transform: none;
+}
+
+.pm-subtitle {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--dvna-muted);
+  margin: 0;
+}
+
+.pm-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 0.5px solid var(--dvna-border);
+  background: var(--dvna-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--dvna-muted);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.pm-close:hover { background: var(--dvna-pale); color: var(--dvna-charcoal); }
+
+.pm-summary {
+  margin: 14px 20px;
+  background: var(--dvna-pale);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pm-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--dvna-muted);
+}
+
+.pm-summary-row--highlight {
+  padding-top: 6px;
+  border-top: 1px dashed var(--dvna-border);
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--dvna-charcoal);
+}
+
+.pm-paid { color: #3a6648; }
+.pm-debt { color: var(--dvna-circle); font-size: 15px !important; font-weight: 600 !important; }
+
+.pm-section {
+  padding: 0 20px 12px;
+}
+
+.pm-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--dvna-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+.pm-tipo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.pm-tipo-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border: 1px solid var(--dvna-border);
+  border-radius: 10px;
+  background: var(--dvna-white);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.pm-tipo-btn:hover {
+  border-color: var(--dvna-circle);
+  background: var(--dvna-pale);
+}
+
+.pm-tipo-btn.active {
+  border-color: var(--brown);
+  background: var(--dvna-pale);
+}
+
+.pm-tipo-btn--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 10px;
+  border: 1px solid var(--dvna-border);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.pm-tipo-icon { font-size: 20px; }
+.pm-tipo-title { font-family: 'DM Sans', system-ui, sans-serif; font-size: 12px; font-weight: 500; color: var(--dvna-charcoal); }
+.pm-tipo-amount { font-family: 'DM Sans', system-ui, sans-serif; font-size: 14px; font-weight: 600; color: var(--dvna-circle); }
+.pm-tipo-desc { font-family: 'DM Sans', system-ui, sans-serif; font-size: 10px; color: var(--dvna-muted); }
+
+.pm-section-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.pm-section-label-row .pm-section-label { margin-bottom: 0; }
+
+/* ── NUEVO: sello de pago seguro ── */
+.pm-secure-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: #3a6648;
+  background: rgba(58,102,72,0.08);
+  border: 0.5px solid rgba(58,102,72,0.25);
+  border-radius: 20px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+/* ── NUEVO: checkmark visible en la opción seleccionada (Total completo / Cuota) ── */
+.pm-tipo-btn { position: relative; }
+.pm-tipo-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--brown);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

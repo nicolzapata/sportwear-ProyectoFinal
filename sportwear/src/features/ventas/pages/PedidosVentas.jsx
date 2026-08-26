@@ -1,54 +1,27 @@
 // src/pages/pedidosVentas/PedidosVentas.jsx
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
-import { createPortal } from "react-dom";
-import './PedidosVentas.css';
+import { useState, useEffect, useRef } from "react";
+// PedidosVentas.css se dividió por sección para facilitar el mantenimiento;
+// el orden de los imports preserva la cascada del archivo original.
+import './PedidosVentas.layout.css';
+import './PedidosVentas.modals.css';
+import './PedidosVentas.form.css';
 import api from "../../../shared/services/api";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useToast } from "../../../shared/contexts/ToastContext";
-import { validarMonto, MAX_MONTO, MAX_LONGITUD_TEXTO_LIBRE, MAX_LONGITUD_DIRECCION } from "../../../shared/utils/numerico";
-import { DetalleItem, DetalleGrid } from "../../../shared/components/ModalDetalle";
+import { MAX_MONTO } from "../../../shared/utils/numerico";
 import Loader from "../../../shared/components/Loader";
-import { IconDollar, IconEye, IconSearch, IconX } from "../../../shared/components/Icons";
+import { IconSearch, IconX } from "../../../shared/components/Icons";
+import OrigenFilterToggle from "../components/pedidos-ventas/OrigenFilterToggle";
+import VentasTable from "../components/pedidos-ventas/VentasTable";
+import VentaDetalleModal from "../components/pedidos-ventas/VentaDetalleModal";
+import AbonosModal from "../components/pedidos-ventas/AbonosModal";
+import NuevaVentaModal from "../components/pedidos-ventas/NuevaVentaModal";
+import {
+  FILAS_POR_PAGINA, HOY_ISO, nuevoItem, formVentaInicial,
+  errorItemCantidad, errorItemPrecio, errorItemDescuento,
+  MAX_NUM_CUOTAS,
+} from "../utils/pedidosVentasHelpers";
 
-const fmt = (n) => Number(n||0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
-const FILAS_POR_PAGINA = 10;
-const HOY_ISO = new Date().toISOString().split("T")[0];
-
-const nuevoItem = () => ({ id_producto: "", id_variante: "", cantidad: 1, precio_unitario: "", descuento_linea: 0 });
-
-const formVentaInicial = () => ({
-  id_cliente: "",
-  fecha: new Date().toISOString().split("T")[0],
-  estado: "Pendiente",       // Pendiente | Pagado
-  tipo_pago: "completo",     // completo | cuotas
-  num_cuotas: "",
-  metodo_pago: "Efectivo",
-  descuento: 0,
-  motivo_descuento: "",
-  impuesto: 0,
-  observaciones: "",
-  direccion_entrega: "",
-  items: [nuevoItem()],
-});
-
-// ── Dropdown de estado (mismo patrón que Pedidos.jsx) ──
-const ESTADOS_ORDEN_VENTA = ['Pendiente', 'Pagado'];
-const TRANSICIONES_VENTA = {
-  'Pendiente': ['Pagado', 'Anulado'],
-  'Pagado':    ['Anulado'],
-  'Anulado':   [],
-};
-
-const IconChevronDown = () => (
-  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-const IconCheckSm = () => (
-  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
 // ── NUEVO: ícono propio de "reporte" (documento con líneas + gráfica
 // pequeña) — antes se usaba IconPrint, que no se leía como un reporte. ──
 const IconReporte = () => (
@@ -59,116 +32,6 @@ const IconReporte = () => (
     <line x1="8" y1="17" x2="12" y2="17"/>
   </svg>
 );
-
-function EstadoDropdownVenta({ venta, abierto, onToggle, onCambiar, cambiando, tienePerm }) {
-  const btnRef = useRef(null);
-  const panelRef = useRef(null);
-  const [coords, setCoords] = useState(null);
-
-  const estadoActual = venta.estado;
-  const esAnulado = estadoActual === 'Anulado';
-  const idxActual = ESTADOS_ORDEN_VENTA.indexOf(estadoActual);
-  const siguientes = TRANSICIONES_VENTA[estadoActual] || [];
-  const puedeEditar = tienePerm('Ventas.estado') && siguientes.length > 0;
-
-  useEffect(() => {
-    if (!abierto || !btnRef.current) return;
-    const r = btnRef.current.getBoundingClientRect();
-    setCoords({ top: r.bottom + 6, left: r.left, width: r.width, arriba: false });
-  }, [abierto]);
-
-  // ── NUEVO: voltea el panel hacia arriba si no cabe debajo del botón. ──
-  useLayoutEffect(() => {
-    if (!abierto || !coords || coords.arriba || !panelRef.current || !btnRef.current) return;
-    const panelAlto = panelRef.current.getBoundingClientRect().height;
-    const r = btnRef.current.getBoundingClientRect();
-    const espacioAbajo = window.innerHeight - r.bottom;
-    if (panelAlto + 12 > espacioAbajo) {
-      setCoords({ top: r.top - panelAlto - 6, left: r.left, width: r.width, arriba: true });
-    }
-  }, [abierto, coords]);
-
-  useEffect(() => {
-    if (!abierto) return;
-    const cerrar = (e) => {
-      if (
-        btnRef.current && !btnRef.current.contains(e.target) &&
-        panelRef.current && !panelRef.current.contains(e.target)
-      ) onToggle(null);
-    };
-    const cerrarPorScroll = () => onToggle(null);
-    document.addEventListener('mousedown', cerrar);
-    window.addEventListener('scroll', cerrarPorScroll, true);
-    window.addEventListener('resize', cerrarPorScroll);
-    return () => {
-      document.removeEventListener('mousedown', cerrar);
-      window.removeEventListener('scroll', cerrarPorScroll, true);
-      window.removeEventListener('resize', cerrarPorScroll);
-    };
-  }, [abierto, onToggle]);
-
-  const badgeClase = estadoActual === 'Pagado' ? 'active' : estadoActual === 'Anulado' ? 'inactive' : 'pending';
-
-  return (
-    <div className="pedidosventas-estado-dropdown">
-      <button
-        ref={btnRef}
-        type="button"
-        className={`pedidosventas-estado-trigger pedidosventas-badge-${badgeClase}`}
-        onClick={() => puedeEditar && onToggle(abierto ? null : venta.id_venta)}
-        disabled={!puedeEditar}
-      >
-        {estadoActual}
-        {puedeEditar && <IconChevronDown />}
-      </button>
-
-      {abierto && puedeEditar && coords && createPortal(
-        <div
-          ref={panelRef}
-          className="pedidosventas-estado-panel"
-          style={{ position: 'fixed', top: coords.top, left: coords.left, minWidth: Math.max(coords.width, 190) }}
-        >
-          {esAnulado ? (
-            <div className="pedidosventas-estado-anulado-msg">Venta anulada</div>
-          ) : (
-            <>
-              {ESTADOS_ORDEN_VENTA.map((estado, i) => {
-                const yaPaso   = i < idxActual;
-                const esActual = i === idxActual;
-                const habilitado = siguientes.includes(estado);
-                return (
-                  <button
-                    key={estado}
-                    type="button"
-                    className={`pedidosventas-estado-item${yaPaso ? " done" : ""}${esActual ? " current" : ""}${habilitado ? " clickable" : ""}`}
-                    disabled={!habilitado || cambiando}
-                    onClick={() => { onCambiar(venta.id_venta, estado); onToggle(null); }}
-                  >
-                    <span className="pedidosventas-estado-dot">
-                      {yaPaso || esActual ? <IconCheckSm /> : null}
-                    </span>
-                    <span className="pedidosventas-estado-item-label">{estado}</span>
-                  </button>
-                );
-              })}
-              <div className="pedidosventas-estado-divider" />
-              <button
-                type="button"
-                className={`pedidosventas-estado-item pedidosventas-estado-item-cancelar${siguientes.includes('Anulado') ? " clickable" : ""}`}
-                disabled={!siguientes.includes('Anulado') || cambiando}
-                onClick={() => { onCambiar(venta.id_venta, 'Anulado'); onToggle(null); }}
-              >
-                <span className="pedidosventas-estado-dot" />
-                <span className="pedidosventas-estado-item-label">Anular venta</span>
-              </button>
-            </>
-          )}
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-}
 
 export default function PedidosVentas() {
   const { usuario } = useAuth();
@@ -205,10 +68,6 @@ export default function PedidosVentas() {
   // Usuarios. Filtra según quién registró la venta: el cliente desde la
   // Landing, o el administrador directamente aquí. ──
   const [filtroOrigen, setFiltroOrigen] = useState(""); // "" = Todas | "Landing" | "Admin"
-  // ── NUEVO: buscador de cliente con autocompletar — con muchos clientes,
-  // desplazarse en un <select> plano es incómodo. Se reemplaza por un input
-  // que filtra mientras escribes, mismo patrón que ya usa el buscador de
-  // productos del catálogo público. ──
   const [busquedaCliente, setBusquedaCliente] = useState("");
   const [clienteDropdownAbierto, setClienteDropdownAbierto] = useState(false);
   const clienteInputRef = useRef(null);
@@ -392,24 +251,6 @@ export default function PedidosVentas() {
   }, 0);
   const totalVenta = subtotalVenta - (Number(formVenta.descuento) || 0) + (Number(formVenta.impuesto) || 0);
 
-  const MAX_CANTIDAD = 9999;
-  const MAX_NUM_CUOTAS = 60;
-
-  const errorItemCantidad = (cantidad) => {
-    if (!cantidad || Number(cantidad) <= 0) return "Cantidad inválida";
-    if (!Number.isInteger(Number(cantidad))) return "Debe ser un número entero";
-    if (Number(cantidad) > MAX_CANTIDAD) return `No puede ser mayor a ${MAX_CANTIDAD}`;
-    return "";
-  };
-  const errorItemPrecio = (precio) => validarMonto(precio, { mensajeVacio: "Precio inválido" });
-  const errorItemDescuento = (descuento, cantidad, precioUnitario) => {
-    const d = Number(descuento) || 0;
-    if (d < 0) return "No puede ser negativo";
-    const subtotalLinea = (Number(cantidad) || 0) * (Number(precioUnitario) || 0);
-    if (d > subtotalLinea) return "No puede ser mayor al subtotal de la línea";
-    return "";
-  };
-
   const validarVenta = () => {
     const e = {};
     if (!formVenta.id_cliente) e.id_cliente = "El cliente es obligatorio";
@@ -542,15 +383,6 @@ export default function PedidosVentas() {
     }
   };
 
-  const getEstadoBadge = (estado) => {
-    switch(estado) {
-      case "Pagado":   return "pedidosventas-badge-active";
-      case "Pendiente":return "pedidosventas-badge-pending";
-      case "Anulado":  return "pedidosventas-badge-inactive";
-      default:         return "pedidosventas-badge-info";
-    }
-  };
-
   if (cargando && !primerCargaHecha.current) return <Loader text="Cargando ventas..." />;
 
   if (errorMsg) return (
@@ -561,80 +393,14 @@ export default function PedidosVentas() {
 
   return (
     <div className="pedidosventas-container">
-      <div className="pedidosventas-actions-bar"> 
+      <div className="pedidosventas-actions-bar">
         <div className="pedidosventas-actions-left">
           <div className="pedidosventas-search-wrapper">
             <span className="pedidosventas-search-icon"><IconSearch /></span>
             <input type="text" className="pedidosventas-search-input" placeholder="Buscar por cliente o ID..." value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
             {busqueda && <button className="pedidosventas-search-clear" onClick={() => setBusqueda("")}><IconX /></button>}
           </div>
-          {/* ── CORREGIDO: antes cada botón solo cambiaba de color de golpe al
-              hacer clic — ahora hay una "píldora" que se desliza de una
-              posición a otra con transform + transition, como un selector
-              deslizante de verdad. Se arma aparte (sin tocar Usuarios.css
-              directamente) para no arriesgarme a romper la pestaña real de
-              Usuarios sin haber visto su JSX. ── */}
-          {/* ── NUEVO: regla con !important directa aquí — los dos intentos
-              anteriores (outline en línea, luego blur() al soltar el clic)
-              no bastaron, así que esto gana pase lo que pase, sin importar
-              si el aro venía de "outline" o de "box-shadow" en algún estilo
-              global. ── */}
-          <style>{`
-            .pv-origen-btn,
-            .pv-origen-btn:focus,
-            .pv-origen-btn:focus-visible,
-            .pv-origen-btn:active {
-              outline: none !important;
-              box-shadow: none !important;
-              -webkit-tap-highlight-color: transparent !important;
-            }
-          `}</style>
-          <div className="usuarios-filter-toggle" style={{ position: "relative" }}>
-            <div
-              style={{
-                position: "absolute",
-                top: 4, bottom: 4, left: 4,
-                width: "calc((100% - 8px) / 3)",
-                borderRadius: 40,
-                background: "var(--brown)",
-                transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
-                transform: `translateX(${["", "Landing", "Admin"].indexOf(filtroOrigen) * 100}%)`,
-                zIndex: 0,
-              }}
-            />
-            {[
-              { valor: "", etiqueta: "Todas" },
-              { valor: "Landing", etiqueta: "Cliente" },
-              { valor: "Admin", etiqueta: "Admin" },
-            ].map((op) => (
-              <button
-                key={op.valor}
-                type="button"
-                onClick={() => { setFiltroOrigen(op.valor); setPagina(1); }}
-                // ── NUEVO: se limpia el foco de forma imperativa (no solo
-                // por CSS) — así se gana contra cualquier estilo global de
-                // ":focus"/":focus-visible" que use box-shadow en vez de
-                // outline, que un simple "outline: none" en línea no toca. ──
-                onMouseUp={(e) => e.currentTarget.blur()}
-                className="pv-origen-btn"
-                style={{
-                  position: "relative", zIndex: 1,
-                  flex: 1, textAlign: "center",
-                  border: "none", background: "transparent",
-                  borderRadius: 40, padding: "0.55rem 1.2rem",
-                  fontFamily: "var(--font-body)", fontSize: "0.85rem", fontWeight: 500,
-                  color: filtroOrigen === op.valor ? "#fff" : "var(--dvna-muted)",
-                  cursor: "pointer", transition: "color 0.2s ease",
-                  outline: "none",
-                  boxShadow: "none",
-                  WebkitTapHighlightColor: "transparent",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {op.etiqueta}
-              </button>
-            ))}
-          </div>
+          <OrigenFilterToggle filtroOrigen={filtroOrigen} setFiltroOrigen={setFiltroOrigen} setPagina={setPagina} />
         </div>
         <div className="pedidosventas-actions-right">
           {tienePerm('Ventas.crear') && (
@@ -650,703 +416,40 @@ export default function PedidosVentas() {
         {`${total} venta${total !== 1 ? 's' : ''} encontrada${total !== 1 ? 's' : ''}`}
       </div>
 
-      <div className="tbl-container pedidosventas-tbl-container" style={{ opacity: cargando ? 0.6 : 1, transition: "opacity 0.15s" }}>
-        <table className="tbl">
-          <thead className="tbl-header">
-            <tr>
-              <th className="tbl-th">Cliente</th>
-              <th className="tbl-th">Producto</th>
-              <th className="tbl-th">Total</th>
-              <th className="tbl-th">Tipo</th>
-              <th className="tbl-th">Pago</th>
-              <th className="tbl-th">Fecha</th>
-              <th className="tbl-th">Estado</th>
-              <th className="tbl-th">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="tbl-body">
-            {datos.map((v) => {
-              const cantTotal = v.items?.reduce((sum, i) => sum + i.cantidad, 0) || 0;
-              const saldo = v.total - (v.total_pagado || 0);
-              const pct = v.total > 0 ? Math.min(100, Math.round(((v.total_pagado || 0) / v.total) * 100)) : 0;
-              return (
-              <tr key={v.id_venta} className="tbl-row">
-                <td className="tbl-td"><span className="pedidosventas-cliente-name">{v.cliente}</span></td>
-                <td className="tbl-td pedidosventas-producto-cell">
-                  {v.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
-                  {cantTotal > 0 && <span className="pedidosventas-producto-cant"> · {cantTotal} uds</span>}
-                </td>
-                <td className="tbl-td pedidosventas-total-cell">{fmt(v.total)}</td>
-                <td className="tbl-td">
-                  {v.tipo_pago === 'cuotas'
-                    ? <span className="pedidosventas-badge pedidosventas-badge-info">Cuotas ({v.num_cuotas})</span>
-                    : <span className="pedidosventas-badge">Completo</span>}
-                </td>
-                <td className="tbl-td">
-                  <button className="pedidosventas-pago-cell" onClick={() => setAbonosModal(v)} title="Ver abonos">
-                    <div className="pedidosventas-pago-bar-track">
-                      <div className="pedidosventas-pago-bar-fill" style={{ width: `${pct}%` }} />
-                    </div>
-                    <div className="pedidosventas-pago-textos">
-                      <span className="pedidosventas-pago-abonado">{fmt(v.total_pagado || 0)}</span>
-                      <span className="pedidosventas-pago-saldo">{saldo > 0 ? `Saldo ${fmt(saldo)}` : 'Sin saldo'}</span>
-                    </div>
-                  </button>
-                </td>
-                <td className="tbl-td pedidosventas-fecha-cell">{v.fecha?.toString().split("T")[0]}</td>
-                <td className="tbl-td">
-                  <EstadoDropdownVenta
-                    venta={v}
-                    abierto={filaAbierta === v.id_venta}
-                    onToggle={setFilaAbierta}
-                    onCambiar={cambiarEstado}
-                    cambiando={cambiandoEstado}
-                    tienePerm={tienePerm}
-                  />
-                </td>
-                <td className="tbl-td">
-                  <div className="pedidosventas-action-cell">
-                    <button className="pedidosventas-action-btn pedidosventas-view-btn" onClick={() => setVerDetalle(v)}><IconEye /></button>
-                  </div>
-                </td>
-              </tr>
-              );
-            })}
-            {datos.length === 0 && (
-              <tr><td colSpan={8} style={{ padding: 0 }}>
-                <div className="pedidosventas-empty-state"><IconDollar /><p>No hay ventas registradas.</p></div>
-              </td></tr>
-            )}
-          </tbody>
-        </table>
-
-        {totalPaginas > 1 && (
-          <div className="paginador">
-            <button className="paginador-btn" onClick={() => setPagina(p => Math.max(p - 1, 1))} disabled={pagina === 1}>‹</button>
-            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
-              <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
-            ))}
-            <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-            <span className="paginador-info">Página {pagina} de {totalPaginas} · {total} registros</span>
-          </div>
-        )}
-      </div>
+      <VentasTable
+        datos={datos} cargando={cargando} tienePerm={tienePerm}
+        filaAbierta={filaAbierta} setFilaAbierta={setFilaAbierta}
+        cambiandoEstado={cambiandoEstado} cambiarEstado={cambiarEstado}
+        setVerDetalle={setVerDetalle} setAbonosModal={setAbonosModal}
+        totalPaginas={totalPaginas} pagina={pagina} setPagina={setPagina} total={total}
+      />
 
       {/* ── Modal "ver detalle" — panel único tipo factura (sin stepper) ── */}
-      {verDetalle && (
-        <div className="pedidosventas-modal-overlay" onClick={() => setVerDetalle(null)}>
-          <div className="pedidosventas-modal pedidosventas-modal-factura" onClick={(e) => e.stopPropagation()}>
-            <div className="pedidosventas-modal-header">
-              <div>
-                <h2 className="pedidosventas-modal-title">V-{String(verDetalle.id_venta).padStart(3, "0")}</h2>
-                <p className="pedidosventas-modal-subtitulo">Detalle de venta</p>
-              </div>
-              <button className="pedidosventas-modal-close" onClick={() => setVerDetalle(null)}><IconX /></button>
-            </div>
+      <VentaDetalleModal verDetalle={verDetalle} setVerDetalle={setVerDetalle} />
 
-            <div className="pedidosventas-modal-body pedidosventas-factura-body">
-              <div className="pedidosventas-factura-seccion">
-                <h3 className="pedidosventas-factura-titulo">Información</h3>
-                <DetalleGrid>
-                  <DetalleItem label="Cliente" value={verDetalle.cliente} />
-                  <DetalleItem label="Fecha" value={verDetalle.fecha?.toString().split("T")[0]} />
-                  <DetalleItem label="Tipo de pago" value={verDetalle.tipo_pago === 'cuotas' ? `Cuotas (${verDetalle.num_cuotas})` : 'Completo'} />
-                  <DetalleItem label="Estado" value={<span className={`pedidosventas-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>} />
-                  {verDetalle.direccion_entrega && (
-                    <DetalleItem label="Dirección de entrega" value={verDetalle.direccion_entrega} full />
-                  )}
-                </DetalleGrid>
-              </div>
-
-              <div className="pedidosventas-factura-seccion">
-                <h3 className="pedidosventas-factura-titulo">Productos</h3>
-                {(verDetalle.items || []).map((item, i) => (
-                  <div key={i} className="pedidosventas-detalle-item-linea">
-                    <span>{item.producto} {item.talla ? `(${item.talla})` : ""} × {item.cantidad}</span>
-                    <span>{fmt(item.subtotal)}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pedidosventas-factura-seccion">
-                <h3 className="pedidosventas-factura-titulo">Pago</h3>
-                <DetalleGrid>
-                  <DetalleItem label="Total" value={fmt(verDetalle.total)} />
-                  <DetalleItem label="Abonado" value={fmt(verDetalle.total_pagado || 0)} />
-                  <DetalleItem label="Saldo" value={fmt(verDetalle.total - (verDetalle.total_pagado || 0))} />
-                  {Number(verDetalle.descuento) > 0 && (
-                    <DetalleItem label="Descuento" value={fmt(verDetalle.descuento)} />
-                  )}
-                  {verDetalle.motivo_descuento && (
-                    <DetalleItem label="Motivo del descuento" value={verDetalle.motivo_descuento} full />
-                  )}
-                </DetalleGrid>
-              </div>
-
-              {verDetalle.abonos?.length > 0 && (
-                <div className="pedidosventas-factura-seccion">
-                  <h3 className="pedidosventas-factura-titulo">Historial de abonos</h3>
-                  {verDetalle.abonos.map((a, i) => (
-                    <div key={i} className="pedidosventas-detalle-item-linea">
-                      <span>{a.num_cuota ? `Cuota ${a.num_cuota}` : `Abono ${i + 1}`}</span>
-                      <span>{fmt(a.monto)} · {a.estado}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="pedidosventas-modal-footer">
-              <button className="pedidosventas-btn-secondary" onClick={() => setVerDetalle(null)}>Cerrar</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {abonosModal && (
-        <div className="pedidosventas-modal-overlay">
-          <div className="pedidosventas-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="pedidosventas-modal-header">
-              <h2 className="pedidosventas-modal-title">
-                {abonosModal.tipo_pago === "cuotas" ? "Gestionar Abonos" : "Gestionar Pago"}
-              </h2>
-              <button className="pedidosventas-modal-close" onClick={() => setAbonosModal(null)}><IconX /></button>
-            </div>
-            <div className="pedidosventas-modal-body">
-              <div className="pedidosventas-abonos-summary">
-                <div className="pedidosventas-abonos-summary-item">
-                  <span className="pedidosventas-abonos-summary-label">Total</span>
-                  <span className="pedidosventas-abonos-summary-value">{fmt(abonosModal.total)}</span>
-                </div>
-                <div className="pedidosventas-abonos-summary-item">
-                  <span className="pedidosventas-abonos-summary-label">{abonosModal.tipo_pago === "cuotas" ? "Abonado" : "Pagado"}</span>
-                  <span className="pedidosventas-abonos-summary-value">{fmt(abonosModal.total_pagado || 0)}</span>
-                </div>
-                <div className="pedidosventas-abonos-summary-item">
-                  <span className="pedidosventas-abonos-summary-label">Saldo</span>
-                  <span className="pedidosventas-abonos-summary-value pedidosventas-abonos-summary-saldo">{fmt(abonosModal.total - (abonosModal.total_pagado || 0))}</span>
-                </div>
-              </div>
-
-              {abonosModal.abonos?.length > 0 && (
-                <div className="pedidosventas-abonos-list">
-                  <h4 className="pedidosventas-abonos-list-title">
-                    {abonosModal.tipo_pago === "cuotas" ? "Historial de Abonos" : "Historial de Pagos"}
-                  </h4>
-                  {abonosModal.abonos.map((a, idx) => (
-                    <div key={idx} className="pedidosventas-abono-item">
-                      <div className="pedidosventas-abono-item-info">
-                        <span className="pedidosventas-abono-item-monto">{fmt(a.monto)}</span>
-                        <span className="pedidosventas-abono-item-fecha">{a.fecha?.toString().split("T")[0]}</span>
-                      </div>
-                      <span className="pedidosventas-badge pedidosventas-badge-active">{a.estado}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {tienePerm('Pagos.crear') && abonosModal.estado !== "Pagado" && abonosModal.estado !== "Anulado" && (
-                <div className="pedidosventas-form-section">
-                  <h4 className="pedidosventas-form-section-title">
-                    {abonosModal.tipo_pago === "cuotas" ? "Nuevo Abono" : "Registrar pago"}
-                  </h4>
-                  <div className="pedidosventas-form-row">
-                    {abonosModal.tipo_pago === "cuotas" ? (
-                      <div className="pedidosventas-form-group">
-                        <label className="pedidosventas-form-label">Monto (COP)</label>
-                        <input
-                          type="number"
-                          className={`pedidosventas-form-input${erroresAbono.monto ? " input-error" : ""}`}
-                          placeholder={`Máx: ${fmt(abonosModal.total - (abonosModal.total_pagado || 0))}`}
-                          value={formAbono.monto}
-                          onChange={(e) => {
-                            setFormAbono({ ...formAbono, monto: e.target.value });
-                            if (erroresAbono.monto) setErroresAbono(prev => ({ ...prev, monto: "" }));
-                          }}
-                        />
-                        {erroresAbono.monto && <span className="pedidosventas-field-error">{erroresAbono.monto}</span>}
-                      </div>
-                    ) : (
-                      <div className="pedidosventas-form-group">
-                        <label className="pedidosventas-form-label">Monto a cobrar</label>
-                        <div className="pedidosventas-monto-fijo">
-                          {fmt(abonosModal.total - (abonosModal.total_pagado || 0))}
-                        </div>
-                      </div>
-                    )}
-                    <div className="pedidosventas-form-group">
-                      <label className="pedidosventas-form-label">Método</label>
-                      <select
-                        className="pedidosventas-form-select"
-                        value={formAbono.metodo}
-                        onChange={(e) => setFormAbono({ ...formAbono, metodo: e.target.value })}
-                      >
-                        {metodosPago.map((m) => (
-                          <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div className="pedidosventas-form-row">
-                    <div className="pedidosventas-form-group">
-                      <label className="pedidosventas-form-label">Fecha</label>
-                      <input
-                        type="date"
-                        max={HOY_ISO}
-                        className={`pedidosventas-form-input${erroresAbono.fecha ? " input-error" : ""}`}
-                        value={formAbono.fecha}
-                        onChange={(e) => {
-                          setFormAbono({ ...formAbono, fecha: e.target.value });
-                          if (erroresAbono.fecha) setErroresAbono(prev => ({ ...prev, fecha: "" }));
-                        }}
-                      />
-                      {erroresAbono.fecha && <span className="pedidosventas-field-error">{erroresAbono.fecha}</span>}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="pedidosventas-modal-footer">
-              <button className="pedidosventas-btn-secondary" onClick={() => setAbonosModal(null)} disabled={guardandoAbono}>Cerrar</button>
-              {tienePerm('Pagos.crear') && abonosModal.estado !== "Pagado" && abonosModal.estado !== "Anulado" && (
-                <button className="pedidosventas-btn-primary" onClick={agregarAbono} disabled={guardandoAbono}>
-                  <IconDollar /> {guardandoAbono ? "Guardando..." : (abonosModal.tipo_pago === "cuotas" ? "Registrar Abono" : "Registrar Pago")}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <AbonosModal
+        abonosModal={abonosModal} setAbonosModal={setAbonosModal} tienePerm={tienePerm}
+        formAbono={formAbono} setFormAbono={setFormAbono}
+        erroresAbono={erroresAbono} setErroresAbono={setErroresAbono}
+        metodosPago={metodosPago} guardandoAbono={guardandoAbono} agregarAbono={agregarAbono}
+      />
 
       {/* ── Modal "Nueva venta" ── */}
-      {modalVenta && (
-        <div className="pedidosventas-modal-overlay" onClick={() => !guardandoVenta && setModalVenta(false)}>
-          <div className="pedidosventas-modal pedidosventas-modal-factura" style={{ maxWidth: 1100, width: "95%" }} onClick={(e) => e.stopPropagation()}>
-            <div className="pedidosventas-modal-header">
-              <h2 className="pedidosventas-modal-title">Nueva venta</h2>
-              <button className="pedidosventas-modal-close" onClick={() => setModalVenta(false)}><IconX /></button>
-            </div>
-            <div className="pedidosventas-modal-body">
-              <div className="pedidosventas-form-row">
-                <div className="pedidosventas-form-group">
-                  <label className="pedidosventas-form-label">Cliente</label>
-                  <div style={{ position: "relative" }} ref={clienteInputRef}>
-                    <input
-                      type="text"
-                      className={`pedidosventas-form-input${erroresVenta.id_cliente ? " input-error" : ""}`}
-                      placeholder="Buscar cliente por nombre..."
-                      value={
-                        clienteDropdownAbierto
-                          ? busquedaCliente
-                          : (clientes.find((c) => String(c.id_cliente) === String(formVenta.id_cliente))?.nombre || "")
-                      }
-                      onFocus={() => { setBusquedaCliente(""); setClienteDropdownAbierto(true); }}
-                      onChange={(e) => {
-                        setBusquedaCliente(e.target.value);
-                        setClienteDropdownAbierto(true);
-                        if (formVenta.id_cliente) setFormVenta({ ...formVenta, id_cliente: "" });
-                      }}
-                    />
-                    {clienteDropdownAbierto && (
-                      <div style={{
-                        position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
-                        background: "var(--dvna-white, #fff)", border: "1px solid var(--dvna-border, #e5e5e5)",
-                        borderRadius: 10, boxShadow: "0 10px 30px rgba(0,0,0,0.14)",
-                        maxHeight: 220, overflowY: "auto", padding: 4,
-                      }}>
-                        {clientes
-                          .filter((c) => c.nombre.toLowerCase().includes(busquedaCliente.toLowerCase()))
-                          .slice(0, 30)
-                          .map((c) => (
-                            <button
-                              type="button"
-                              key={c.id_cliente}
-                              onClick={() => {
-                                setFormVenta({ ...formVenta, id_cliente: c.id_cliente });
-                                setErroresVenta((prev) => ({ ...prev, id_cliente: "" }));
-                                setBusquedaCliente("");
-                                setClienteDropdownAbierto(false);
-                              }}
-                              style={{
-                                display: "block", width: "100%", textAlign: "left", padding: "8px 10px",
-                                border: "none", background: "transparent", borderRadius: 6, cursor: "pointer",
-                                fontSize: 13, color: "var(--dvna-charcoal, #1a1a1a)",
-                              }}
-                              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--dvna-pale, #f4f4f4)"; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-                            >
-                              {c.nombre}
-                            </button>
-                          ))}
-                        {clientes.filter((c) => c.nombre.toLowerCase().includes(busquedaCliente.toLowerCase())).length === 0 && (
-                          <div style={{ padding: "10px", fontSize: 12, color: "var(--dvna-muted, #888)", fontStyle: "italic" }}>Sin resultados</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  {erroresVenta.id_cliente && <span className="pedidosventas-field-error">{erroresVenta.id_cliente}</span>}
-                  {cargandoDatosVenta && (
-                    <span className="pedidosventas-field-error" style={{ color: "var(--muted)" }}>Cargando clientes...</span>
-                  )}
-                  {!cargandoDatosVenta && errorDatosVenta && (
-                    <span className="pedidosventas-field-error">{errorDatosVenta}</span>
-                  )}
-                  {!cargandoDatosVenta && !errorDatosVenta && clientes.length === 0 && (
-                    <span className="pedidosventas-field-error" style={{ color: "var(--muted)" }}>No hay clientes registrados.</span>
-                  )}
-                </div>
-                <div className="pedidosventas-form-group">
-                  <label className="pedidosventas-form-label">Fecha</label>
-                  <input
-                    type="date"
-                    max={HOY_ISO}
-                    className={`pedidosventas-form-input${erroresVenta.fecha ? " input-error" : ""}`}
-                    value={formVenta.fecha}
-                    onChange={(e) => { setFormVenta({ ...formVenta, fecha: e.target.value }); setErroresVenta((prev) => ({ ...prev, fecha: "" })); }}
-                  />
-                  {erroresVenta.fecha && <span className="pedidosventas-field-error">{erroresVenta.fecha}</span>}
-                </div>
-              </div>
-
-              <div className="pedidosventas-form-row">
-                <div className="pedidosventas-form-group">
-                  <label className="pedidosventas-form-label">Tipo de pago</label>
-                  <select
-                    className="pedidosventas-form-select"
-                    value={formVenta.tipo_pago}
-                    onChange={(e) => setFormVenta({ ...formVenta, tipo_pago: e.target.value, num_cuotas: "" })}
-                  >
-                    <option value="completo">Pago completo</option>
-                    <option value="cuotas">Cuotas</option>
-                  </select>
-                </div>
-                {formVenta.tipo_pago === "cuotas" && formVenta.id_cliente && (
-                  <div className="pedidosventas-credito-banner">
-                    {cargandoCredito ? (
-                      <span style={{ color: "var(--muted)" }}>Consultando cupo de crédito...</span>
-                    ) : creditoInfo?.cupo_credito !== null && creditoInfo?.cupo_credito !== undefined ? (
-                      <>
-                        <span>Cupo: <b>{fmt(creditoInfo.cupo_credito)}</b></span>
-                        <span>Deuda actual: <b>{fmt(creditoInfo.deuda_actual)}</b></span>
-                        <span className={totalVenta > (creditoInfo.disponible ?? Infinity) ? "pedidosventas-credito-excedido" : "pedidosventas-credito-ok"}>
-                          Disponible: <b>{fmt(creditoInfo.disponible)}</b>
-                        </span>
-                      </>
-                    ) : (
-                      <span style={{ color: "var(--muted)" }}>Este cliente no tiene cupo de crédito asignado (sin límite).</span>
-                    )}
-                  </div>
-                )}
-                {formVenta.tipo_pago === "cuotas" ? (
-                  <div className="pedidosventas-form-group">
-                    <label className="pedidosventas-form-label">Número de cuotas</label>
-                    <input
-                      type="number"
-                      min="2"
-                      max={MAX_NUM_CUOTAS}
-                      step={1}
-                      className={`pedidosventas-form-input${erroresVenta.num_cuotas ? " input-error" : ""}`}
-                      value={formVenta.num_cuotas}
-                      onChange={(e) => { setFormVenta({ ...formVenta, num_cuotas: e.target.value }); setErroresVenta((prev) => ({ ...prev, num_cuotas: "" })); }}
-                    />
-                    {erroresVenta.num_cuotas && <span className="pedidosventas-field-error">{erroresVenta.num_cuotas}</span>}
-                  </div>
-                ) : (
-                  <div className="pedidosventas-form-group">
-                    <label className="pedidosventas-form-label">Estado</label>
-                    <select className="pedidosventas-form-select" value={formVenta.estado} onChange={(e) => setFormVenta({ ...formVenta, estado: e.target.value })}>
-                      <option value="Pendiente">Pendiente</option>
-                      <option value="Pagado">Pagado (registrar como ya pagada)</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              <div className="pedidosventas-form-row">
-                {/* ── NUEVO: si la venta es a cuotas, no tiene sentido pedir UN
-                    método de pago general — cada abono ya tiene el suyo
-                    propio al registrarlo. Solo se pide para pago completo. ── */}
-                {formVenta.tipo_pago !== "cuotas" && (
-                  <div className="pedidosventas-form-group">
-                    <label className="pedidosventas-form-label">Método de pago</label>
-                    <select className="pedidosventas-form-select" value={formVenta.metodo_pago} onChange={(e) => setFormVenta({ ...formVenta, metodo_pago: e.target.value })}>
-                      {metodosPago.map((m) => (
-                        <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                {formVenta.tipo_pago === "cuotas" && (
-                  <div className="pedidosventas-form-group">
-                    <label className="pedidosventas-form-label">Estado inicial</label>
-                    <select className="pedidosventas-form-select" value={formVenta.estado} onChange={(e) => setFormVenta({ ...formVenta, estado: e.target.value })}>
-                      <option value="Pendiente">Pendiente</option>
-                      <option value="Pagado">Primera cuota confirmada</option>
-                    </select>
-                  </div>
-                )}
-                {/* ── NUEVO: si se confirma la primera cuota de una vez al
-                    crear la venta, hay que saber CÓMO se pagó esa cuota
-                    puntual — las demás cuotas futuras ya piden su propio
-                    método cada vez que se registran desde "Gestionar
-                    Abonos", así que esto solo aplica a la cuota inicial. ── */}
-                {formVenta.tipo_pago === "cuotas" && formVenta.estado === "Pagado" && (
-                  <div className="pedidosventas-form-group">
-                    <label className="pedidosventas-form-label">Método de pago (cuota inicial)</label>
-                    <select className="pedidosventas-form-select" value={formVenta.metodo_pago} onChange={(e) => setFormVenta({ ...formVenta, metodo_pago: e.target.value })}>
-                      {metodosPago.map((m) => (
-                        <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              <div className="pedidosventas-items-section">
-                <div className="pedidosventas-items-header">
-                  <label className="pedidosventas-form-label">Productos de la venta</label>
-                  <button type="button" className="pedidosventas-btn-add-item" onClick={agregarItemVenta}>+ Agregar producto</button>
-                </div>
-
-                <div className="pedidosventas-item-titulos">
-                  <span>Producto</span>
-                  <span>Talla / Color</span>
-                  <span>Cantidad</span>
-                  <span>Precio unitario</span>
-                  <span>Descuento</span>
-                  <span>Subtotal</span>
-                  <span></span>
-                </div>
-
-                {formVenta.items.map((item, i) => {
-                  const cant = Number(item.cantidad) || 0;
-                  const precio = Number(item.precio_unitario) || 0;
-                  const desc = Number(item.descuento_linea) || 0;
-                  const lineaTotal = cant * precio - desc;
-                  const productoSel = productos.find((p) => String(p.id_producto) === String(item.id_producto));
-                  const variantesActivas = (productoSel?.variantes || []).filter((v) => v.estado === "Activo");
-                  return (
-                    <div className="pedidosventas-item-row" key={i}>
-                      <div>
-                        <select
-                          className={`pedidosventas-form-select${erroresVenta[`item_${i}_producto`] ? " input-error" : ""}`}
-                          value={item.id_producto}
-                          onChange={(e) => actualizarItemVenta(i, "id_producto", e.target.value)}
-                        >
-                          <option value="">Producto...</option>
-                          {productos.map((p) => {
-                            // ── NUEVO: "p.stock" viene de un SUM() en Postgres
-                            // (llega como texto vía la librería pg) — se
-                            // coerciona a número para comparar bien, mismo
-                            // fix que ya se aplicó en el catálogo público. Si
-                            // el producto no tiene stock en NINGUNA de sus
-                            // variantes, no se puede seleccionar. ──
-                            const stockProducto = Number(p.stock ?? 0);
-                            return (
-                              <option key={p.id_producto} value={p.id_producto} disabled={stockProducto === 0}>
-                                {p.nombre}{stockProducto === 0 ? " — Sin stock" : ""}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </div>
-                      <div>
-                        <select
-                          className={`pedidosventas-form-select${erroresVenta[`item_${i}_variante`] ? " input-error" : ""}`}
-                          value={item.id_variante}
-                          onChange={(e) => {
-                            actualizarItemVenta(i, "id_variante", e.target.value);
-                            // ── NUEVO: revalida la cantidad contra el stock de la
-                            // variante recién elegida (puede que la que tenía
-                            // antes ya no aplique). ──
-                            if (erroresVenta[`item_${i}_cantidad`]) {
-                              setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: "" }));
-                            }
-                          }}
-                          disabled={!item.id_producto || variantesActivas.length === 0}
-                        >
-                          <option value="">
-                            {!item.id_producto ? "Elige un producto" : variantesActivas.length === 0 ? "Sin variantes" : "Talla / color..."}
-                          </option>
-                          {variantesActivas.map((v) => {
-                            const stockVariante = Number(v.stock ?? 0);
-                            return (
-                              <option key={v.id_variante} value={v.id_variante} disabled={stockVariante === 0}>
-                                {v.talla} · {v.color_nombre} {stockVariante === 0 ? "— Agotado" : `(stock: ${stockVariante})`}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </div>
-                      <div>
-                        <input
-                          type="number"
-                          min="1"
-                          max={MAX_CANTIDAD}
-                          step={1}
-                          placeholder="Cant."
-                          className={`pedidosventas-form-input${erroresVenta[`item_${i}_cantidad`] ? " input-error" : ""}`}
-                          value={item.cantidad}
-                          onChange={(e) => {
-                            actualizarItemVenta(i, "cantidad", e.target.value);
-                            if (erroresVenta[`item_${i}_cantidad`]) {
-                              const itemActualizado = { ...item, cantidad: e.target.value };
-                              const msg = errorItemCantidad(e.target.value) || errorItemStock(itemActualizado);
-                              setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: msg }));
-                            }
-                          }}
-                          onBlur={() => {
-                            const msg = errorItemCantidad(item.cantidad) || errorItemStock(item);
-                            setErroresVenta((prev) => ({ ...prev, [`item_${i}_cantidad`]: msg }));
-                          }}
-                        />
-                        {erroresVenta[`item_${i}_cantidad`] && <span className="pedidosventas-field-error">{erroresVenta[`item_${i}_cantidad`]}</span>}
-                      </div>
-                      <div>
-                        <input
-                          type="number"
-                          min="0"
-                          max={MAX_MONTO}
-                          placeholder="Precio"
-                          className={`pedidosventas-form-input${erroresVenta[`item_${i}_precio`] ? " input-error" : ""}`}
-                          value={item.precio_unitario}
-                          onChange={(e) => {
-                            actualizarItemVenta(i, "precio_unitario", e.target.value);
-                            if (erroresVenta[`item_${i}_precio`]) setErroresVenta((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(e.target.value) }));
-                          }}
-                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(item.precio_unitario) }))}
-                        />
-                      </div>
-                      <div>
-                        <input
-                          type="number"
-                          min="0"
-                          max={MAX_MONTO}
-                          placeholder="Desc."
-                          className={`pedidosventas-form-input${erroresVenta[`item_${i}_descuento`] ? " input-error" : ""}`}
-                          value={item.descuento_linea}
-                          onChange={(e) => {
-                            actualizarItemVenta(i, "descuento_linea", e.target.value);
-                            if (erroresVenta[`item_${i}_descuento`]) setErroresVenta((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(e.target.value, item.cantidad, item.precio_unitario) }));
-                          }}
-                          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(item.descuento_linea, item.cantidad, item.precio_unitario) }))}
-                        />
-                      </div>
-                      <div className="pedidosventas-item-subtotal">{fmt(lineaTotal)}</div>
-                      <button
-                        type="button"
-                        className="pedidosventas-item-remove"
-                        onClick={() => quitarItemVenta(i)}
-                        disabled={formVenta.items.length === 1}
-                        title="Quitar producto"
-                      >
-                        <IconX />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="pedidosventas-form-row">
-                <div className="pedidosventas-form-group">
-                  <label className="pedidosventas-form-label">Descuento general (COP)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max={MAX_MONTO}
-                    className={`pedidosventas-form-input${erroresVenta.descuento ? " input-error" : ""}`}
-                    value={formVenta.descuento}
-                    onChange={(e) => {
-                      const descuento = e.target.value;
-                      setFormVenta({ ...formVenta, descuento });
-                      if (erroresVenta.motivo_descuento && Number(descuento) === 0) {
-                        setErroresVenta((prev) => ({ ...prev, motivo_descuento: "" }));
-                      }
-                      if (erroresVenta.descuento) {
-                        const msg = Number(descuento) < 0 ? "No puede ser negativo" : Number(descuento) > subtotalVenta ? "No puede ser mayor al subtotal" : "";
-                        setErroresVenta((prev) => ({ ...prev, descuento: msg }));
-                      }
-                    }}
-                  />
-                  {erroresVenta.descuento && <span className="pedidosventas-field-error">{erroresVenta.descuento}</span>}
-                </div>
-                <div className="pedidosventas-form-group">
-                  <label className="pedidosventas-form-label">Impuesto (COP)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max={MAX_MONTO}
-                    className={`pedidosventas-form-input${erroresVenta.impuesto ? " input-error" : ""}`}
-                    value={formVenta.impuesto}
-                    onChange={(e) => {
-                      const impuesto = e.target.value;
-                      setFormVenta({ ...formVenta, impuesto });
-                      if (erroresVenta.impuesto) {
-                        const msg = Number(impuesto) < 0 ? "No puede ser negativo" : Number(impuesto) > MAX_MONTO ? `No puede ser mayor a ${MAX_MONTO.toLocaleString("es-CO")}` : "";
-                        setErroresVenta((prev) => ({ ...prev, impuesto: msg }));
-                      }
-                    }}
-                  />
-                  {erroresVenta.impuesto && <span className="pedidosventas-field-error">{erroresVenta.impuesto}</span>}
-                </div>
-              </div>
-
-              {Number(formVenta.descuento) > 0 && (
-                <div className="pedidosventas-form-group">
-                  <label className="pedidosventas-form-label">Motivo del descuento</label>
-                  <input
-                    type="text"
-                    maxLength={MAX_LONGITUD_TEXTO_LIBRE}
-                    placeholder="Ej: Cliente frecuente, producto con detalle menor, promoción..."
-                    className={`pedidosventas-form-input${erroresVenta.motivo_descuento ? " input-error" : ""}`}
-                    value={formVenta.motivo_descuento}
-                    onChange={(e) => {
-                      const motivo_descuento = e.target.value;
-                      setFormVenta({ ...formVenta, motivo_descuento });
-                      if (erroresVenta.motivo_descuento) setErroresVenta((prev) => ({ ...prev, motivo_descuento: motivo_descuento.trim() ? "" : prev.motivo_descuento }));
-                    }}
-                  />
-                  {erroresVenta.motivo_descuento && <span className="pedidosventas-field-error">{erroresVenta.motivo_descuento}</span>}
-                </div>
-              )}
-
-              <div className="pedidosventas-form-group">
-                <label className="pedidosventas-form-label">Dirección de entrega (opcional)</label>
-                <input
-                  type="text"
-                  maxLength={MAX_LONGITUD_DIRECCION}
-                  placeholder="Ej: Cra 43A # 18-20 Apto 302 — déjalo vacío si la venta es en persona"
-                  className="pedidosventas-form-input"
-                  value={formVenta.direccion_entrega}
-                  onChange={(e) => setFormVenta({ ...formVenta, direccion_entrega: e.target.value })}
-                />
-              </div>
-
-              <div className="pedidosventas-form-group">
-                <label className="pedidosventas-form-label">Observaciones (opcional)</label>
-                <textarea
-                  className="pedidosventas-form-input"
-                  rows={2}
-                  maxLength={MAX_LONGITUD_TEXTO_LIBRE}
-                  value={formVenta.observaciones}
-                  onChange={(e) => setFormVenta({ ...formVenta, observaciones: e.target.value })}
-                />
-              </div>
-
-              <div className="pedidosventas-total-resumen">
-                <span>Subtotal: {fmt(subtotalVenta)}</span>
-                <span className="pedidosventas-total-final">Total: {fmt(totalVenta)}</span>
-              </div>
-            </div>
-            <div className="pedidosventas-modal-footer">
-              <button className="pedidosventas-btn-secondary" onClick={() => setModalVenta(false)} disabled={guardandoVenta}>Cancelar</button>
-              <button className="pedidosventas-btn-primary" onClick={guardarVenta} disabled={guardandoVenta}>
-                {guardandoVenta ? "Guardando..." : "Registrar venta"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <NuevaVentaModal
+        modalVenta={modalVenta} setModalVenta={setModalVenta}
+        guardandoVenta={guardandoVenta} guardarVenta={guardarVenta}
+        formVenta={formVenta} setFormVenta={setFormVenta}
+        erroresVenta={erroresVenta} setErroresVenta={setErroresVenta}
+        clientes={clientes} productos={productos} metodosPago={metodosPago}
+        busquedaCliente={busquedaCliente} setBusquedaCliente={setBusquedaCliente}
+        clienteDropdownAbierto={clienteDropdownAbierto} setClienteDropdownAbierto={setClienteDropdownAbierto}
+        clienteInputRef={clienteInputRef}
+        cargandoDatosVenta={cargandoDatosVenta} errorDatosVenta={errorDatosVenta}
+        cargandoCredito={cargandoCredito} creditoInfo={creditoInfo}
+        actualizarItemVenta={actualizarItemVenta} agregarItemVenta={agregarItemVenta}
+        quitarItemVenta={quitarItemVenta} errorItemStock={errorItemStock}
+        subtotalVenta={subtotalVenta} totalVenta={totalVenta}
+      />
     </div>
   );
 }

@@ -1,0 +1,123 @@
+/* ── Catalogo.variantes.css ── overlay de "ver detalle", selector de
+   color/talla y controles de cantidad de la tarjeta de producto. ── */
+
+/* ── Overlay "Ver detalle" al hover en imagen ── */
+.catalog-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.25s;
+  z-index: 2;
+}
+.catalog-card-img:hover .catalog-img-overlay { opacity: 1; }
+.catalog-overlay-label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: #fff;
+  background: rgba(26,26,26,0.55);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: var(--r);
+  padding: 8px 18px;
+  backdrop-filter: blur(4px);
+}
+
+/* ── Variantes: color y talla ── */
+.catalog-variant-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.catalog-variant-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  gap: 8px;
+}
+.catalog-colores { display: flex; gap: 6px; }
+.catalog-tallas  { display: flex; gap: 4px; }
+
+.catalog-color-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  outline: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: outline-color 0.15s, transform 0.15s;
+  flex-shrink: 0;
+}
+.catalog-color-dot:hover { transform: scale(1.15); }
+.catalog-color-dot.selected {
+  outline: 2px solid var(--dvna-accent, #b49780);
+  outline-offset: 2px;
+}
+
+.catalog-talla-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.catalog-talla-chip {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid var(--dvna-border, #ddd);
+  background: transparent;
+  color: var(--dvna-text, #333);
+  cursor: pointer;
+  transition: background 0.13s, border-color 0.13s, color 0.13s;
+  line-height: 1.6;
+}
+.catalog-talla-chip:hover {
+  border-color: var(--dvna-accent, #b49780);
+  color: var(--dvna-accent, #b49780);
+}
+.catalog-talla-chip.selected {
+  background: var(--dvna-accent, #b49780);
+  border-color: var(--dvna-accent, #b49780);
+  color: #fff;
+}
+
+/* ── Controles de cantidad ── */
+.catalog-qty-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.catalog-qty-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: 4px;
+  color: var(--dvna-charcoal);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s;
+}
+.catalog-qty-btn:hover:not(:disabled) { background: var(--dvna-border); }
+.catalog-qty-btn:disabled { color: var(--dvna-muted); cursor: not-allowed; }
+.catalog-qty-value {
+  min-width: 24px;
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+}

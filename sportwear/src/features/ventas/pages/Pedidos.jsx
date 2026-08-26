@@ -1,164 +1,14 @@
 // src/pages/pedidos/Pedidos.jsx
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect, useRef } from "react";
 import './Pedidos.css';
 import api from "../../../shared/services/api";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useToast } from "../../../shared/contexts/ToastContext";
-import { DetalleItem, DetalleGrid } from "../../../shared/components/ModalDetalle";
 import Loader from "../../../shared/components/Loader";
-import { IconEye, IconPrint, IconSearch, IconX, IconBox } from "../../../shared/components/Icons";
-
-const FILAS_POR_PAGINA = 10;
-
-// Orden natural del flujo (sin contar Cancelado, que es una rama aparte)
-const ESTADOS_ORDEN = ['Pendiente', 'En preparación', 'Enviado', 'Entregado'];
-
-// Debe calzar con TRANSICIONES del backend (pedidos.service.js)
-const TRANSICIONES = {
-  'Pendiente':      ['En preparación', 'Cancelado'],
-  'En preparación': ['Enviado', 'Cancelado'],
-  'Enviado':        ['Entregado', 'Cancelado'],
-  'Entregado':      [],
-  'Cancelado':      [],
-};
-
-const IconChevronDown = () => (
-  <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-const IconCheckSm = () => (
-  <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-// ── NUEVO: si el pago de la venta asociada ya fue realizado o no — dato que
-// el backend ya trae (v.estado AS estado_venta en pedidos.service.js), solo
-// faltaba mostrarlo aquí. ──
-const getPagoBadge = (estadoVenta) => {
-  switch (estadoVenta) {
-    case "Pagado":     return "pedidos-badge-active";
-    case "Anulado":    return "pedidos-badge-inactive";
-    case "Confirmado": return "pedidos-badge-info";
-    default:            return "pedidos-badge-pending"; // Pendiente
-  }
-};
-const getPagoTexto = (estadoVenta) => estadoVenta || "—";
-
-// ── Dropdown de estado (portal, para no quedar recortado por el overflow de la tabla) ──
-function EstadoDropdown({ pedido, abierto, onToggle, onCambiar, cambiando, tienePerm }) {
-  const btnRef = useRef(null);
-  const panelRef = useRef(null);
-  const [coords, setCoords] = useState(null);
-
-  const estadoActual = pedido.estado_pedido;
-  const esCancelado = estadoActual === 'Cancelado';
-  const idxActual = ESTADOS_ORDEN.indexOf(estadoActual);
-  const siguientes = TRANSICIONES[estadoActual] || [];
-  const puedeEditar = tienePerm('Pedidos.estado') && siguientes.length > 0;
-
-  useEffect(() => {
-    if (!abierto || !btnRef.current) return;
-    const r = btnRef.current.getBoundingClientRect();
-    setCoords({ top: r.bottom + 6, left: r.left, width: r.width, arriba: false });
-  }, [abierto]);
-
-  // ── NUEVO: voltea el panel hacia arriba si no cabe debajo del botón
-  // (ej. pedidos al final de la tabla) — mismo criterio que el resto de
-  // desplegables de estado del sitio. ──
-  useLayoutEffect(() => {
-    if (!abierto || !coords || coords.arriba || !panelRef.current || !btnRef.current) return;
-    const panelAlto = panelRef.current.getBoundingClientRect().height;
-    const r = btnRef.current.getBoundingClientRect();
-    const espacioAbajo = window.innerHeight - r.bottom;
-    if (panelAlto + 12 > espacioAbajo) {
-      setCoords({ top: r.top - panelAlto - 6, left: r.left, width: r.width, arriba: true });
-    }
-  }, [abierto, coords]);
-
-  useEffect(() => {
-    if (!abierto) return;
-    const cerrar = (e) => {
-      if (
-        btnRef.current && !btnRef.current.contains(e.target) &&
-        panelRef.current && !panelRef.current.contains(e.target)
-      ) onToggle(null);
-    };
-    const cerrarPorScroll = () => onToggle(null);
-    document.addEventListener('mousedown', cerrar);
-    window.addEventListener('scroll', cerrarPorScroll, true);
-    window.addEventListener('resize', cerrarPorScroll);
-    return () => {
-      document.removeEventListener('mousedown', cerrar);
-      window.removeEventListener('scroll', cerrarPorScroll, true);
-      window.removeEventListener('resize', cerrarPorScroll);
-    };
-  }, [abierto, onToggle]);
-
-  const badgeClase = estadoActual === 'Entregado' ? 'active' : estadoActual === 'Cancelado' ? 'inactive' : estadoActual === 'Enviado' ? 'info' : 'pending';
-
-  return (
-    <div className="pedidos-estado-dropdown">
-      <button
-        ref={btnRef}
-        type="button"
-        className={`pedidos-estado-trigger pedidos-badge-${badgeClase}`}
-        onClick={() => puedeEditar && onToggle(abierto ? null : pedido.id_pedido)}
-        disabled={!puedeEditar}
-      >
-        {estadoActual}
-        {puedeEditar && <IconChevronDown />}
-      </button>
-
-      {abierto && puedeEditar && coords && createPortal(
-        <div
-          ref={panelRef}
-          className="pedidos-estado-panel"
-          style={{ position: 'fixed', top: coords.top, left: coords.left, minWidth: Math.max(coords.width, 190) }}
-        >
-          {esCancelado ? (
-            <div className="pedidos-estado-cancelado-msg">Pedido cancelado</div>
-          ) : (
-            <>
-              {ESTADOS_ORDEN.map((estado, i) => {
-                const yaPaso   = i < idxActual;
-                const esActual = i === idxActual;
-                const habilitado = siguientes.includes(estado);
-                return (
-                  <button
-                    key={estado}
-                    type="button"
-                    className={`pedidos-estado-item${yaPaso ? " done" : ""}${esActual ? " current" : ""}${habilitado ? " clickable" : ""}`}
-                    disabled={!habilitado || cambiando}
-                    onClick={() => { onCambiar(pedido.id_pedido, estado); onToggle(null); }}
-                  >
-                    <span className="pedidos-estado-dot">
-                      {yaPaso || esActual ? <IconCheckSm /> : null}
-                    </span>
-                    <span className="pedidos-estado-item-label">{estado}</span>
-                  </button>
-                );
-              })}
-              <div className="pedidos-estado-divider" />
-              <button
-                type="button"
-                className={`pedidos-estado-item pedidos-estado-item-cancelar${siguientes.includes('Cancelado') ? " clickable" : ""}`}
-                disabled={!siguientes.includes('Cancelado') || cambiando}
-                onClick={() => { onCambiar(pedido.id_pedido, 'Cancelado'); onToggle(null); }}
-              >
-                <span className="pedidos-estado-dot" />
-                <span className="pedidos-estado-item-label">Cancelar pedido</span>
-              </button>
-            </>
-          )}
-        </div>,
-        document.body
-      )}
-    </div>
-  );
-}
+import { IconSearch, IconX, IconPrint } from "../../../shared/components/Icons";
+import { FILAS_POR_PAGINA } from "../utils/pedidosHelpers";
+import PedidosTable from "../components/pedidos/PedidosTable";
+import PedidoDetalleModal from "../components/pedidos/PedidoDetalleModal";
 
 export default function Pedidos() {
   const { usuario } = useAuth();
@@ -237,16 +87,6 @@ export default function Pedidos() {
 
   const totalPaginas = Math.ceil(total / FILAS_POR_PAGINA) || 1;
 
-  const getEstadoBadge = (estado) => {
-    switch (estado) {
-      case "Entregado":      return "pedidos-badge-active";
-      case "Cancelado":      return "pedidos-badge-inactive";
-      case "Enviado":        return "pedidos-badge-info";
-      case "En preparación": return "pedidos-badge-pending";
-      default:                return "pedidos-badge-pending";
-    }
-  };
-
   if (cargando && !primerCargaHecha.current) return <Loader text="Cargando pedidos..." />;
 
   if (errorMsg) return (
@@ -284,140 +124,23 @@ export default function Pedidos() {
         {`${total} pedido${total !== 1 ? 's' : ''} encontrado${total !== 1 ? 's' : ''}`}
       </div>
 
-      <div className="tbl-container pedidos-tbl-container" style={{ opacity: cargando ? 0.6 : 1, transition: "opacity 0.15s" }}>
-        <table className="tbl">
-          <thead className="tbl-header">
-            <tr>
-              <th className="tbl-th">Cliente</th>
-              <th className="tbl-th">Documento</th>
-              <th className="tbl-th">Productos</th>
-              <th className="tbl-th">Dirección</th>
-              <th className="tbl-th">Actualizado</th>
-              <th className="tbl-th">Pago</th>
-              <th className="tbl-th">Envío</th>
-              <th className="tbl-th">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="tbl-body">
-            {datos.map((p) => (
-              <tr key={p.id_pedido} className="tbl-row">
-                <td className="tbl-td">{p.cliente}</td>
-                <td className="tbl-td">{p.cliente_documento || "—"}</td>
-                <td className="tbl-td pedidos-producto-cell">
-                  {p.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
-                </td>
-                <td className="tbl-td">{p.direccion_entrega || "—"}</td>
-                <td className="tbl-td">{p.fecha_actualizacion?.toString().split("T")[0]}</td>
-                <td className="tbl-td">
-                  <span className={`pedidos-badge ${getPagoBadge(p.estado_venta)}`}>{getPagoTexto(p.estado_venta)}</span>
-                </td>
-                <td className="tbl-td">
-                  <EstadoDropdown
-                    pedido={p}
-                    abierto={filaAbierta === p.id_pedido}
-                    onToggle={setFilaAbierta}
-                    onCambiar={cambiarEstado}
-                    cambiando={cambiando}
-                    tienePerm={tienePerm}
-                  />
-                </td>
-                <td className="tbl-td">
-                  <div className="pedidos-action-cell">
-                    <button className="pedidos-action-btn pedidos-view-btn" onClick={() => abrirDetalle(p)} title="Ver detalle">
-                      <IconEye />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-            {datos.length === 0 && (
-              <tr><td colSpan={8} style={{ padding: 0 }}>
-                <div className="pedidos-empty-state"><IconBox /><p>No hay pedidos registrados.</p></div>
-              </td></tr>
-            )}
-          </tbody>
-        </table>
+      <PedidosTable
+        datos={datos}
+        cargando={cargando}
+        filaAbierta={filaAbierta}
+        setFilaAbierta={setFilaAbierta}
+        cambiarEstado={cambiarEstado}
+        cambiando={cambiando}
+        tienePerm={tienePerm}
+        abrirDetalle={abrirDetalle}
+        totalPaginas={totalPaginas}
+        pagina={pagina}
+        setPagina={setPagina}
+        total={total}
+      />
 
-        {totalPaginas > 1 && (
-          <div className="paginador">
-            <button className="paginador-btn" onClick={() => setPagina(p => Math.max(p - 1, 1))} disabled={pagina === 1}>‹</button>
-            {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(n => (
-              <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
-            ))}
-            <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-            <span className="paginador-info">Página {pagina} de {totalPaginas} · {total} registros</span>
-          </div>
-        )}
-      </div>
-
-      {/* ── Modal "ver detalle" — panel único tipo factura ── */}
       {verDetalle && (
-        <div className="pedidos-modal-overlay" onClick={() => setVerDetalle(null)}>
-          <div className="pedidos-modal pedidos-modal-factura" onClick={(e) => e.stopPropagation()}>
-            <div className="pedidos-modal-header">
-              <div>
-                <h2 className="pedidos-modal-title">P-{String(verDetalle.id_pedido).padStart(3, "0")}</h2>
-                <p className="pedidos-modal-subtitulo">Detalle de pedido</p>
-              </div>
-              <button className="pedidos-modal-close" onClick={() => setVerDetalle(null)}><IconX /></button>
-            </div>
-
-            <div className="pedidos-modal-body pedidos-factura-body">
-              <div className="pedidos-factura-seccion">
-                <h3 className="pedidos-factura-titulo">Información</h3>
-                <DetalleGrid>
-                  <DetalleItem label="Cliente" value={verDetalle.cliente} />
-                  <DetalleItem label="Documento" value={verDetalle.cliente_documento} />
-                  <DetalleItem label="Dirección" value={verDetalle.direccion_entrega} />
-                  <DetalleItem label="Venta" value={`V-${String(verDetalle.id_venta).padStart(3, "0")}`} />
-                  <DetalleItem label="Método de pago" value={verDetalle.metodo_pago || "—"} />
-                  <DetalleItem label="Pago" value={<span className={`pedidos-badge ${getPagoBadge(verDetalle.estado_venta)}`}>{getPagoTexto(verDetalle.estado_venta)}</span>} />
-                  <DetalleItem label="Estado de envío" value={<span className={`pedidos-badge ${getEstadoBadge(verDetalle.estado_pedido)}`}>{verDetalle.estado_pedido}</span>} />
-                </DetalleGrid>
-              </div>
-
-              <div className="pedidos-factura-seccion">
-                <h3 className="pedidos-factura-titulo">Productos</h3>
-                {(verDetalle.items || []).map((item, i) => (
-                  <div key={i} className="pedidos-detalle-producto-row">
-                    <div className="pedidos-detalle-producto-thumb">
-                      {item.producto_imagen ? (
-                        <img src={item.producto_imagen} alt={item.producto} />
-                      ) : (
-                        <IconBox />
-                      )}
-                    </div>
-                    <div className="pedidos-detalle-producto-info">
-                      <span className="pedidos-detalle-producto-nombre">{item.producto}</span>
-                      <div className="pedidos-detalle-producto-tags">
-                        {item.producto_codigo && <span className="pedidos-detalle-tag pedidos-detalle-tag-ref">{item.producto_codigo}</span>}
-                        {item.talla && <span className="pedidos-detalle-tag">Talla: {item.talla}</span>}
-                        {item.color_nombre && <span className="pedidos-detalle-tag">{item.color_nombre}</span>}
-                      </div>
-                    </div>
-                    <span className="pedidos-detalle-producto-cant">Cant: {item.cantidad}</span>
-                  </div>
-                ))}
-              </div>
-
-              {verDetalle.historial?.length > 0 && (
-                <div className="pedidos-factura-seccion">
-                  <h3 className="pedidos-factura-titulo">Historial de estados</h3>
-                  {verDetalle.historial.map((h, i) => (
-                    <div key={i} className="pedidos-detalle-item-linea">
-                      <span>{h.estado}</span>
-                      <span>{h.fecha?.toString().split("T")[0]} {h.usuario ? `· ${h.usuario}` : ""}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="pedidos-modal-footer">
-              <button className="pedidos-btn-secondary" onClick={() => setVerDetalle(null)}>Cerrar</button>
-            </div>
-          </div>
-        </div>
+        <PedidoDetalleModal verDetalle={verDetalle} setVerDetalle={setVerDetalle} />
       )}
     </div>
   );

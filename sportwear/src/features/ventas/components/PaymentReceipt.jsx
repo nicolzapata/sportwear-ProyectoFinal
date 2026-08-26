@@ -1,6 +1,8 @@
 // src/components/PaymentReceipt.jsx
 import { createPortal } from "react-dom";
-import "./PaymentModal.css";
+import "./PaymentModal.base.css";
+import "./PaymentModal.card.css";
+import "./PaymentModal.receipt.css";
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("es-CO", {

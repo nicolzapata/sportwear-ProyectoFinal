@@ -1,0 +1,215 @@
+/* ── Navbar.responsive.css — responsive del navbar y modal de logout. ── */
+
+@media (max-width: 768px) {
+  .navbar { padding: 0 14px; height: 56px; }
+  .navbar-menu-btn { display: flex; }
+  .navbar-user-role,
+  .navbar-page-date { display: none; }
+  .navbar-brand-icon { display: none; }
+  .navbar-left { min-width: 0; }
+  .navbar-right { min-width: 0; }
+
+  /* Admin: no tiene panel móvil propio (el sidebar cubre la navegación),
+     así que su .navbar-center/.navbar-nav se ocultan tal cual antes. */
+  .navbar:not(.navbar--public-fixed) .navbar-center,
+  .navbar:not(.navbar--public-fixed) .navbar-nav {
+    display: none;
+  }
+
+  /* Público (.navbar--public-fixed): fila más alta y con más aire — antes
+     quedaba todo muy apretado (logo+hamburguesa+buscador+usuario en 56px). */
+  .navbar--public-fixed {
+    height: 64px;
+    padding: 0 16px;
+  }
+  .navbar--public-fixed .navbar-left {
+    gap: 14px;
+  }
+
+  /* El buscador queda siempre visible en la fila principal (donde antes
+     estaba la hamburguesa — que ahora vive junto al nombre de la marca, en
+     .navbar-left). Solo los links/categorías (.navbar-nav) se colapsan en
+     un panel desplegable con la hamburguesa. */
+  .navbar--public-fixed .navbar-center {
+    display: flex;
+    position: static;
+    transform: none;
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+    gap: 0;
+    margin: 0 10px;
+  }
+  .navbar--public-fixed .navbar-nav {
+    display: none;
+    position: fixed;
+    top: 64px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    max-height: calc(100vh - 64px);
+    overflow-y: auto;
+    background: var(--dvna-white);
+    border-bottom: 1px solid var(--dvna-border);
+    box-shadow: 0 16px 40px rgba(0,0,0,0.14);
+    padding: 8px 16px 16px;
+    z-index: 1050;
+  }
+  .navbar--public-fixed .navbar-center.navbar-center-mobile-open .navbar-nav {
+    display: flex;
+  }
+  .navbar--public-fixed .navbar-nav .navbar-link {
+    padding: 14px 8px;
+    border-bottom: 1px solid var(--dvna-border);
+    text-align: left;
+  }
+
+  /* Buscador: siempre visible, ocupa el espacio disponible en la fila */
+  .navbar--public-fixed .navbar-search {
+    max-width: none;
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+    margin-left: 0;
+  }
+  .navbar--public-fixed .navbar-search .search-input {
+    font-size: 13px;
+    padding: 10px 40px 10px 36px;
+  }
+  .navbar--public-fixed .navbar-right {
+    gap: 10px;
+  }
+
+  /* El backdrop solo debe cerrar el panel de links, no tapar el buscador */
+  .navbar-mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    top: 64px;
+    background: rgba(10,10,10,0.35);
+    z-index: 1040;
+  }
+}
+
+@media (max-width: 400px) {
+  .navbar { padding: 0 10px; }
+  .navbar-page-label { font-size: 12px; }
+}
+
+/* ── Modal logout ── */
+.navbar-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 24px;
+  animation: overlayIn 0.25s ease;
+}
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+.navbar-modal {
+  background: var(--dvna-white);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 32px 80px rgba(10,10,10,0.25);
+  animation: modalSlide 0.28s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+@keyframes modalSlide {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.navbar-modal-accent {
+  height: 4px;
+  background: var(--dvna-circle);
+}
+
+.navbar-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 28px 32px 0;
+  margin-bottom: 24px;
+}
+.navbar-modal-title {
+  font-family: var(--font-body);
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--dvna-charcoal);
+  margin: 0;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+.navbar-modal-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--dvna-border);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 4px;
+  transition: background 0.2s, border-color 0.2s;
+  color: var(--dvna-muted);
+}
+.navbar-modal-close:hover { background: var(--dvna-pale); border-color: var(--dvna-mid); }
+.navbar-modal-close svg { width: 12px; height: 12px; }
+
+.navbar-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 0 32px;
+}
+
+.navbar-modal-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 28px;
+  padding: 20px 32px;
+  border-top: 1px solid var(--dvna-border);
+  background: var(--dvna-pale);
+  border-radius: 0 0 20px 20px;
+}
+
+.navbar-btn-secondary {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: var(--dvna-charcoal);
+  background: transparent;
+  border: 1px solid var(--dvna-border);
+  border-radius: 20px;
+  padding: 11px 28px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.navbar-btn-secondary:hover { background: var(--dvna-white); border-color: var(--dvna-mid); }
+
+.navbar-btn-danger {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: #b83232;
+  border: none;
+  border-radius: 20px;
+  padding: 11px 28px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.navbar-btn-danger:hover { background: #9a2828; transform: translateY(-1px); }

@@ -4,28 +4,17 @@ import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import api from "../services/api";
-import { IconCart, IconUser, IconLogOut, IconSearch, IconMenu, IconX } from "./Icons";
+import { IconMenu, IconX } from "./Icons";
 import logo from "../assets/LOGO.png";
-import "./Navbar.css";
-
-const fmt = (n) =>
-  Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
-
-const IconBoxMini = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <rect x="3" y="3" width="18" height="18" rx="2"/>
-    <path d="m9 9 6 6m0-6-6 6"/>
-  </svg>
-);
-// ── NUEVO: flechita del disparador del menú de categorías ──
-const IconChevronDownSm = () => (
-  <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
-    <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-);
-
-const MIN_CARACTERES = 2;
-const MAX_SUGERENCIAS = 6;
+// Navbar.css se dividió por sección para facilitar el mantenimiento; el
+// orden de los imports preserva la cascada del archivo original.
+import "./Navbar.base.css";
+import "./Navbar.responsive.css";
+import "./Navbar.buscador.css";
+import { MIN_CARACTERES, MAX_SUGERENCIAS } from "../utils/publicNavbarHelpers";
+import CategoriasMenu from "./public-navbar/CategoriasMenu";
+import BuscadorNavbar from "./public-navbar/BuscadorNavbar";
+import AccionesNavbar from "./public-navbar/AccionesNavbar";
 
 export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, setFiltroCategoria, categorias }) {
   const { usuario, logout } = useAuth();
@@ -188,42 +177,15 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
             Inicio
           </Link>
 
-          {/* ── NUEVO: menú de categorías tipo mega-menú con imagen de referencia ── */}
-          {listaCategorias.length > 0 && (
-            <div className="navbar-categorias-dropdown" ref={categoriasRef}>
-              <button
-                type="button"
-                className={`navbar-link navbar-categorias-trigger${filtroCategoria !== "Todos" ? " active" : ""}`}
-                onClick={() => setMenuCategoriasAbierto((v) => !v)}
-                aria-expanded={menuCategoriasAbierto}
-              >
-                {filtroCategoria !== "Todos" ? filtroCategoria : "Categorías"}
-                <span className={`navbar-categorias-chevron${menuCategoriasAbierto ? " abierto" : ""}`}>
-                  <IconChevronDownSm />
-                </span>
-              </button>
-
-              {menuCategoriasAbierto && (
-                <div className="navbar-categorias-panel">
-                  {listaCategorias.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      className={`navbar-categoria-item${filtroCategoria === cat ? " activo" : ""}`}
-                      onClick={() => irACategoria(cat)}
-                    >
-                      <span className="navbar-categoria-img">
-                        {imagenPorCategoria[cat]
-                          ? <img src={imagenPorCategoria[cat]} alt={cat} />
-                          : <IconBoxMini />}
-                      </span>
-                      <span className="navbar-categoria-nombre">{cat}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          <CategoriasMenu
+            listaCategorias={listaCategorias}
+            categoriasRef={categoriasRef}
+            filtroCategoria={filtroCategoria}
+            menuCategoriasAbierto={menuCategoriasAbierto}
+            setMenuCategoriasAbierto={setMenuCategoriasAbierto}
+            imagenPorCategoria={imagenPorCategoria}
+            irACategoria={irACategoria}
+          />
 
           <NavLink
             to="/sobre-nosotros"
@@ -233,119 +195,22 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
             Sobre nosotros
           </NavLink>
         </nav>
-        {busqueda !== undefined && (
-          <div className="search-input-wrap navbar-search" ref={buscadorRef}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            </svg>
-            <input
-              ref={inputRef}
-              className="search-input"
-              placeholder="Buscar producto..."
-              value={busqueda}
-              onChange={(e) => {
-                setBusqueda(e.target.value);
-                setSugerenciasAbiertas(true);
-                setIndiceActivo(-1);
-              }}
-              onFocus={() => { setSugerenciasAbiertas(true); cerrarMenuMovil(); }}
-              onKeyDown={handleKeyDown}
-              role="combobox"
-              aria-expanded={sugerenciasAbiertas && termino.length >= MIN_CARACTERES}
-              aria-autocomplete="list"
-              autoComplete="off"
-            />
-            {(busqueda || filtroCategoria !== "Todos") && (
-              <button
-                className="navbar-clear-btn"
-                onClick={() => {
-                  setBusqueda("");
-                  setFiltroCategoria("Todos");
-                  setSugerenciasAbiertas(false);
-                }}
-                title="Limpiar filtros"
-              >
-                ✕
-              </button>
-            )}
-
-            {/* ── Dropdown de sugerencias en vivo ── */}
-            {sugerenciasAbiertas && termino.length >= MIN_CARACTERES && (
-              <div className="navbar-sugerencias">
-                {sugerencias.length > 0 ? (
-                  <>
-                    {sugerencias.map((p, i) => (
-                      <button
-                        key={p.id_producto}
-                        type="button"
-                        className={`navbar-sugerencia-item${i === indiceActivo ? " activo" : ""}`}
-                        onMouseDown={(e) => { e.preventDefault(); irAProducto(p); }}
-                        onMouseEnter={() => setIndiceActivo(i)}
-                      >
-                        <span className="navbar-sugerencia-img">
-                          {p.imagen_principal
-                            ? <img src={p.imagen_principal} alt={p.nombre} />
-                            : <IconBoxMini />}
-                        </span>
-                        <span className="navbar-sugerencia-info">
-                          <span className="navbar-sugerencia-nombre">{p.nombre}</span>
-                          <span className="navbar-sugerencia-categoria">{p.categoria}</span>
-                        </span>
-                        <span className="navbar-sugerencia-precio">{fmt(p.precio)}</span>
-                      </button>
-                    ))}
-                    <button type="button" className="navbar-sugerencia-vertodos" onMouseDown={(e) => { e.preventDefault(); verTodosLosResultados(); }}>
-                      <IconSearch /> Ver todos los resultados para "{busqueda}"
-                    </button>
-                  </>
-                ) : (
-                  <div className="navbar-sugerencia-vacio">
-                    No hay productos que coincidan con "{busqueda}".
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+        <BuscadorNavbar
+          busqueda={busqueda} setBusqueda={setBusqueda}
+          filtroCategoria={filtroCategoria} setFiltroCategoria={setFiltroCategoria}
+          buscadorRef={buscadorRef} inputRef={inputRef}
+          sugerenciasAbiertas={sugerenciasAbiertas} setSugerenciasAbiertas={setSugerenciasAbiertas}
+          setIndiceActivo={setIndiceActivo} indiceActivo={indiceActivo}
+          cerrarMenuMovil={cerrarMenuMovil} handleKeyDown={handleKeyDown}
+          termino={termino} sugerencias={sugerencias}
+          irAProducto={irAProducto} verTodosLosResultados={verTodosLosResultados}
+        />
       </div>
 
-      {/* ── Derecha: Acciones ── */}
-      <div className="navbar-right">
-        {usuario ? (
-          <>
-            <span style={{
-              fontSize: "11px", fontWeight: 500, letterSpacing: "0.1em",
-              textTransform: "uppercase", color: "var(--dvna-charcoal)", whiteSpace: "nowrap"
-            }}>
-              {usuario.nombre}
-            </span>
-            <Link to={usuario?.rol === "Cliente" ? "/mi-cuenta" : "/dashboard"} className="navbar-btn" title="Mi cuenta">
-              <IconUser />
-            </Link>
-            <button className="navbar-btn" onClick={handleLogout} title="Cerrar sesión" style={{ cursor: "pointer" }}>
-              <IconLogOut />
-            </button>
-          </>
-        ) : (
-          <Link to="/login" className="navbar-btn" title="Iniciar sesión">
-            <IconUser />
-          </Link>
-        )}
-
-        {/* ── El carrito se ve sin sesión; solo se oculta para admins. ── */}
-        {!esAdmin && (
-          <>
-            <div className="navbar-divider" />
-
-            <Link to="/carrito" className="navbar-btn" title="Carrito" style={{ position: "relative" }}>
-              <IconCart />
-              {!oculto && totalItems > 0 && (
-                <span className="navbar-badge">{totalItems}</span>
-              )}
-            </Link>
-          </>
-        )}
-      </div>
+      <AccionesNavbar
+        usuario={usuario} esAdmin={esAdmin} handleLogout={handleLogout}
+        totalItems={totalItems} oculto={oculto}
+      />
     </header>
   );
 }

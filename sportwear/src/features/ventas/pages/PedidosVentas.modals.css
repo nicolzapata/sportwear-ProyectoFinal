@@ -1,0 +1,191 @@
+/* PedidosVentas — modal base, celda de pago, dropdown de estado, banner
+   de crédito y el shell del modal tipo factura (header/body/footer). */
+
+.pedidosventas-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 1.5rem;
+}
+
+.pedidosventas-modal {
+  background: white;
+  border-radius: 32px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--dvna-pale);
+}
+
+/* ── Ancho fijo de la columna "Estado" (7ª columna, tras fusionar Cant./Abonos/Saldo)
+     para que no empuje el resto de la tabla cuando el texto del estado cambia de largo ── */
+.tbl th:nth-child(7), .tbl td:nth-child(7) {
+  width: 160px;
+  min-width: 160px;
+}
+
+/* ── Celda "Pago" compacta: barra de progreso + abonado/saldo en una sola columna ── */
+.pedidosventas-pago-cell {
+  display: flex; flex-direction: column; gap: 4px;
+  border: none; background: none; cursor: pointer; text-align: left;
+  padding: 2px 0; min-width: 130px; font-family: inherit;
+}
+.pedidosventas-pago-bar-track {
+  width: 100%; height: 4px; border-radius: 2px; background: #f0ede8; overflow: hidden;
+}
+.pedidosventas-pago-bar-fill {
+  height: 100%; background: var(--success); border-radius: 2px;
+  transition: width 0.6s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+.pedidosventas-pago-textos {
+  display: flex; justify-content: space-between; gap: 8px; font-size: 0.72rem;
+}
+.pedidosventas-pago-abonado { color: var(--dvna-charcoal); font-weight: 600; }
+.pedidosventas-pago-saldo { color: #b96422; }
+.pedidosventas-pago-cell:hover .pedidosventas-pago-abonado { text-decoration: underline; }
+
+.pedidosventas-producto-cant { color: var(--dvna-muted); font-size: 0.78em; }
+
+/* ── Dropdown de estado (mismo patrón que Pedidos.jsx) ── */
+.pedidosventas-estado-dropdown { position: relative; display: inline-block; }
+
+.pedidosventas-estado-trigger {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;
+  border: 1px solid var(--dvna-border); background: white; border-radius: 20px;
+  padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 500; cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 140px;
+  white-space: nowrap;
+}
+.pedidosventas-estado-trigger:disabled { cursor: default; opacity: 0.85; }
+.pedidosventas-estado-trigger:not(:disabled):hover { border-color: var(--dvna-charcoal); background: #fafafa; }
+
+.pedidosventas-estado-trigger.pedidosventas-badge-active   { border-color: #bfe0c4; color: var(--success); background: #f0f9f1; }
+.pedidosventas-estado-trigger.pedidosventas-badge-pending  { border-color: #ffd7b5; color: #b96422; background: #fff6ee; }
+.pedidosventas-estado-trigger.pedidosventas-badge-inactive { border-color: #ddd; color: #757575; background: #f7f7f7; }
+
+.pedidosventas-estado-panel {
+  z-index: 999;
+  background: white; border: 1px solid var(--dvna-border); border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.14);
+  padding: 0.4rem;
+  display: flex; flex-direction: column; gap: 2px;
+  animation: pedidosventas-panel-in 0.12s ease;
+}
+@keyframes pedidosventas-panel-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pedidosventas-estado-item {
+  display: flex; align-items: center; gap: 10px;
+  border: none; background: none; text-align: left;
+  padding: 0.55rem 0.6rem; border-radius: 8px; font-size: 0.82rem; color: var(--dvna-muted);
+  cursor: not-allowed; width: 100%;
+}
+.pedidosventas-estado-item.done    { color: var(--success); }
+.pedidosventas-estado-item.current { color: var(--dvna-charcoal); font-weight: 600; background: var(--dvna-pale); }
+.pedidosventas-estado-item.clickable { color: var(--dvna-charcoal); cursor: pointer; }
+.pedidosventas-estado-item.clickable:hover { background: var(--dvna-pale); }
+
+.pedidosventas-estado-dot {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid #ddd; color: white;
+}
+.pedidosventas-estado-item.done .pedidosventas-estado-dot    { background: var(--success); border-color: var(--success); }
+.pedidosventas-estado-item.current .pedidosventas-estado-dot { background: var(--dvna-charcoal); border-color: var(--dvna-charcoal); }
+
+.pedidosventas-estado-divider { height: 1px; background: #eee; margin: 4px 2px; }
+
+.pedidosventas-estado-item-cancelar { color: var(--danger); }
+.pedidosventas-estado-item-cancelar.clickable:hover { background: #fbeaea; }
+.pedidosventas-estado-item-cancelar .pedidosventas-estado-dot { border-color: #e0b3b3; }
+
+.pedidosventas-estado-anulado-msg { padding: 0.6rem; font-size: 0.8rem; color: #757575; text-align: center; }
+
+.pedidosventas-credito-banner {
+  grid-column: 1 / -1;
+  display: flex; flex-wrap: wrap; gap: 1rem;
+  background: #f7f5f2; border: 1px solid #eee; border-radius: 12px;
+  padding: 0.7rem 1rem; margin-bottom: 1rem; font-size: 0.8rem; color: var(--dvna-muted);
+}
+.pedidosventas-credito-ok { color: var(--success); }
+.pedidosventas-credito-excedido { color: var(--danger); font-weight: 700; }
+
+.pedidosventas-monto-fijo {
+  padding: 0.8rem 1rem; border: 1px solid var(--dvna-border); border-radius: 12px;
+  font-size: 0.9rem; background: #f7f5f2; color: var(--dvna-charcoal); font-weight: 600;
+}
+
+/* Modal ampliado tipo factura, un solo panel sin pasos (igual a Proveedores/Pagos) */
+.pedidosventas-modal-factura { max-width: 680px; }
+.pedidosventas-factura-body { padding: 1.5rem; }
+.pedidosventas-factura-seccion {
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px dashed #e5e5e5;
+}
+.pedidosventas-factura-seccion:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.pedidosventas-factura-titulo {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--brown, #b49780);
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.pedidosventas-modal-subtitulo { font-size: 0.78rem; color: var(--dvna-muted); margin: 2px 0 0; font-weight: 300; }
+.pedidosventas-detalle-item-linea {
+  display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--dvna-pale); font-size: 0.85rem;
+}
+.pedidosventas-detalle-item-linea:last-child { border-bottom: none; }
+@media (max-width: 900px) { .pedidosventas-modal-factura { max-width: 95%; } }
+
+.pedidosventas-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--dvna-pale);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+.pedidosventas-modal-title {
+  font-size: 1.2rem; font-weight: 500; color: var(--dvna-charcoal); margin: 0; text-transform: none;
+}
+
+.pedidosventas-modal-close {
+  background: none;
+  border: 1px solid var(--dvna-border);
+  border-radius: 40px;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: var(--dvna-muted);
+}
+.pedidosventas-modal-close:hover { background: var(--dvna-pale); border-color: var(--dvna-muted); }
+
+.pedidosventas-modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; min-height: 0; }
+
+.pedidosventas-modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid var(--dvna-pale);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 1rem;
+  background: #fafafa;
+  flex-shrink: 0;
+}

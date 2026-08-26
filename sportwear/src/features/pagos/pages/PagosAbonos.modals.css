@@ -1,0 +1,319 @@
+/* PagosAbonos — modal, formulario, loading y responsive. */
+
+/* Modal */
+.pagosabonos-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1.5rem;
+}
+
+.pagosabonos-modal {
+  background: white;
+  border-radius: 32px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--dvna-pale);
+}
+
+.pagosabonos-modal-sm {
+  max-width: 450px;
+}
+
+/* Modal ampliado tipo factura, un solo panel sin pasos */
+.pagosabonos-modal-factura {
+  max-width: 650px;
+}
+
+.pagosabonos-factura-body {
+  padding: 1.5rem;
+}
+
+.pagosabonos-factura-seccion {
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px dashed #e5e5e5;
+}
+.pagosabonos-factura-seccion:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.pagosabonos-factura-titulo {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--brown, #b49780);
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.pagosabonos-modal-subtitulo {
+  font-size: 0.78rem;
+  color: var(--dvna-muted);
+  margin: 2px 0 0;
+  font-weight: 300;
+}
+
+@media (max-width: 900px) {
+  .pagosabonos-modal-factura { max-width: 95%; }
+}
+
+.pagosabonos-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--dvna-pale);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+.pagosabonos-modal-title {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  margin: 0;
+  text-transform: none;
+}
+
+.pagosabonos-modal-close {
+  background: none;
+  border: 1px solid var(--dvna-border);
+  border-radius: 40px;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: var(--dvna-muted);
+}
+
+.pagosabonos-modal-close:hover {
+  background: var(--dvna-pale);
+  border-color: var(--dvna-muted);
+}
+
+.pagosabonos-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.pagosabonos-modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid var(--dvna-pale);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+/* Form */
+.pagosabonos-form-group {
+  margin-bottom: 1rem;
+}
+
+.pagosabonos-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.pagosabonos-form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--dvna-muted);
+  margin-bottom: 0.3rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.pagosabonos-form-input::placeholder {
+  color: var(--dvna-muted);
+  opacity: 1;
+}
+
+.pagosabonos-form-input,
+.pagosabonos-form-select {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--dvna-border);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-family: var(--font-body);
+  transition: all 0.2s ease;
+  background: var(--dvna-white);
+}
+
+.pagosabonos-form-input:focus,
+.pagosabonos-form-select:focus {
+  outline: none;
+  border-color: var(--dvna-charcoal);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
+}
+
+.pagosabonos-form-input.input-error,
+.pagosabonos-form-select.input-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(184, 50, 50, 0.08);
+}
+
+.pagosabonos-field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--danger);
+  text-transform: none;
+}
+
+.pagosabonos-detail-value {
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  font-size: 0.95rem;
+}
+
+.pagosabonos-detail-currency {
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+}
+
+/* Loading */
+.pagosabonos-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.pagosabonos-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--dvna-pale);
+  border-top-color: var(--dvna-charcoal);
+  border-radius: 50%;
+  animation: pagosabonos-spin 1s linear infinite;
+}
+
+.pagosabonos-loading-text {
+  color: var(--dvna-muted);
+  font-size: 0.9rem;
+}
+
+@keyframes pagosabonos-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive — TODO agrupado correctamente dentro de la media query */
+@media (max-width: 1200px) {
+  .pagosabonos-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .pagosabonos-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .pagosabonos-actions-right .pagosabonos-btn-primary { font-size: 0; padding: 10px 12px; gap: 0; }
+  .pagosabonos-actions-right .pagosabonos-btn-primary span { font-size: 13px; }
+
+  .pagosabonos-title { font-size: 1.6rem; }
+  .pagosabonos-stat-value { font-size: 1.5rem; }
+  .pagosabonos-stat-value-currency { font-size: 1rem; }
+  .pagosabonos-table-th, .pagosabonos-table-td { padding: 0.8rem 0.5rem; font-size: 0.8rem; }
+  .pagosabonos-monto-cell { font-size: 0.85rem; }
+  .pagosabonos-action-btn { width: 32px; height: 32px; font-size: 0.9rem; }
+
+  .pagosabonos-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .pagosabonos-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Buscador + botón crear comparten la primera fila; el resto va debajo
+     en su propia fila, alineado desde la izquierda. Solo responsive. */
+  .pagosabonos-actions-bar {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    row-gap: 10px;
+  }
+
+  .pagosabonos-actions-left { display: contents; }
+  .pagosabonos-actions-right { display: contents; }
+
+  .pagosabonos-search-wrapper {
+    order: 1;
+    flex: 1 1 140px;
+    min-width: 120px;
+    width: auto;
+  }
+
+  .pagosabonos-btn-primary {
+    order: 2;
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    justify-content: center;
+  }
+
+  .pagosabonos-actions-right .btn-print { order: 3; }
+  .pagosabonos-actions-right .export-buttons { order: 4; }
+
+  .pagosabonos-table-th,
+  .pagosabonos-table-td {
+    padding: 1rem 0.8rem;
+    font-size: 0.85rem;
+  }
+
+  .pagosabonos-cliente-cell {
+    gap: 0.6rem;
+  }
+
+  .pagosabonos-cliente-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+
+  .pagosabonos-form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .pagosabonos-action-cell {
+    flex-wrap: wrap;
+  }
+}

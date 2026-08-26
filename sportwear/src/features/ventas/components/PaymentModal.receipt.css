@@ -1,0 +1,214 @@
+/* src/components/PaymentModal.receipt.css — recibo de pago, impresión,
+   responsive y vista de "pedido registrado" (efectivo/transferencia). */
+
+.receipt-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 20px 4px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+}
+.receipt-status-badge.success {
+  background: rgba(58,102,72,0.1);
+  color: #3a6648;
+}
+.receipt-status-badge.partial {
+  background: var(--dvna-pale);
+  color: var(--dvna-circle);
+}
+
+.receipt-body {
+  padding: 4px 20px 4px;
+}
+
+.receipt-brand {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0 10px;
+}
+.receipt-brand-name {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  letter-spacing: 0.02em;
+}
+.receipt-brand-tag {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  color: var(--dvna-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.receipt-divider {
+  height: 1px;
+  background: var(--dvna-border);
+  margin: 8px 0;
+}
+.receipt-divider--dashed {
+  background: none;
+  border-top: 1px dashed var(--dvna-border);
+}
+
+.receipt-section {
+  padding: 6px 0;
+}
+
+.receipt-section-title {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--dvna-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 8px;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--dvna-muted);
+  padding: 4px 0;
+  gap: 12px;
+}
+.receipt-row span { flex-shrink: 0; }
+.receipt-row strong { text-align: right; color: var(--dvna-charcoal); }
+
+.receipt-products {
+  font-size: 11px !important;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.receipt-row--highlight {
+  background: var(--dvna-pale);
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin: 2px 0;
+}
+
+.receipt-row--total strong {
+  color: #3a6648;
+}
+
+.receipt-row--debt strong {
+  color: var(--dvna-circle);
+}
+
+.receipt-amount-paid {
+  color: #3a6648 !important;
+  font-size: 15px !important;
+}
+
+.receipt-debt {
+  color: var(--dvna-circle) !important;
+}
+
+@media print {
+  .pm-overlay { position: static; background: none; }
+  .pm-modal { box-shadow: none; max-height: none; }
+  .pm-close, .pm-footer { display: none; }
+}
+
+@media (max-width: 500px) {
+  .pm-modal {
+    border-radius: 10px 10px 0 0;
+    max-width: 100%;
+  }
+}
+/* ── NUEVO: vista de "pedido registrado" para Efectivo/Transferencia (sin formulario de tarjeta) ── */
+.pm-pendiente-body {
+  padding: 8px 20px 20px;
+  text-align: center;
+}
+.pm-pendiente-icono {
+  color: var(--dvna-circle, #b96422);
+  margin: 4px auto 10px;
+  display: flex;
+  justify-content: center;
+}
+.pm-pendiente-titulo {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  margin: 0 0 8px;
+}
+.pm-pendiente-texto {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--dvna-muted);
+  margin: 0 0 16px;
+}
+.pm-pendiente-monto {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--dvna-pale);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  color: var(--dvna-muted);
+}
+.pm-pendiente-monto strong {
+  font-size: 16px;
+  color: var(--dvna-charcoal);
+}
+
+/* ── NUEVO: caja de datos bancarios (placeholder, editar con los datos reales) ── */
+.pm-cuenta-box {
+  text-align: left;
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+.pm-cuenta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--dvna-muted);
+  padding: 3px 0;
+}
+.pm-cuenta-row strong {
+  color: var(--dvna-charcoal);
+  text-align: right;
+}
+
+/* ── NUEVO: botón real de WhatsApp para enviar el comprobante — reemplaza la
+   nota de texto plano que antes solo mencionaba el número sin poder tocarlo. ── */
+.pm-whatsapp-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: #25D366;
+  color: #fff;
+  border-radius: 8px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s, transform 0.15s;
+}
+.pm-whatsapp-btn:hover {
+  background: #1ebe5a;
+  transform: translateY(-1px);
+}

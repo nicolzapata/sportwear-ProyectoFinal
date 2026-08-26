@@ -1,0 +1,237 @@
+/* Modal */
+.catproductos-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.catproductos-modal {
+  background: white;
+  border-radius: 32px;
+  width: 90%;
+  max-width: 450px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
+  border: 1px solid #f0f0f0;
+}
+
+.catproductos-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.catproductos-modal-title {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin: 0;
+  text-transform: none;
+}
+
+.catproductos-modal-close {
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 40px;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: #666;
+}
+
+.catproductos-modal-close:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+.catproductos-modal-body {
+  padding: 1.5rem;
+}
+
+.catproductos-modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  background: #fafafa;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+}
+
+/* Form */
+.catproductos-form-group {
+  margin-bottom: 1.2rem;
+}
+
+.catproductos-form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 0.3rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.catproductos-form-input,
+.catproductos-form-select {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.catproductos-form-input:focus,
+.catproductos-form-select:focus {
+  outline: none;
+  border-color: #1a1a1a;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
+}
+
+/* Icon selector */
+.catproductos-icon-selector {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.catproductos-icon-selector:hover {
+  border-color: #1a1a1a;
+}
+
+.catproductos-icon-selector-preview {
+  width: 32px;
+  height: 32px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
+  border: 1px solid #eaeaea;
+  flex-shrink: 0;
+}
+
+.catproductos-icon-selector-preview svg {
+  width: 18px;
+  height: 18px;
+}
+
+.catproductos-icon-selector-text {
+  flex: 1;
+  text-align: left;
+  color: #555;
+  font-size: 0.85rem;
+}
+
+.catproductos-icon-selector-arrow {
+  font-size: 0.65rem;
+  color: #aaa;
+}
+
+/* Icon grid */
+.catproductos-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin-top: 0.5rem;
+  padding: 0.8rem;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 14px;
+}
+
+.catproductos-icon-option {
+  width: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #eaeaea;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #555;
+  padding: 8px;
+}
+
+.catproductos-icon-option svg {
+  width: 20px;
+  height: 20px;
+}
+
+.catproductos-icon-option:hover {
+  border-color: #1a1a1a;
+  background: #f5f5f5;
+  color: #1a1a1a;
+  transform: scale(1.08);
+}
+
+.catproductos-icon-option.selected {
+  border-color: #1a1a1a;
+  background: var(--brown);
+  color: white;
+}
+
+/* Loading */
+.catproductos-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.catproductos-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #f0f0f0;
+  border-top-color: #1a1a1a;
+  border-radius: 50%;
+  animation: catproductos-spin 1s linear infinite;
+}
+
+.catproductos-loading-text {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+@keyframes catproductos-spin {
+  to { transform: rotate(360deg); }
+}

@@ -1,0 +1,130 @@
+.od-products {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.od-product-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--dvna-pale);
+  border-radius: 10px;
+  gap: 12px;
+  /* Cinturón de seguridad: si por lo que sea el contenido interno quisiera
+     ser más ancho que la fila (ej. una imagen sin object-fit), esto evita
+     que rompa el layout del modal con scroll horizontal. */
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* ── Miniatura del producto — más prominente que un simple ícono, para
+   que el detalle de pedido del cliente se sienta tan cuidado como el
+   detalle de producto del admin. Tamaño fijo con doble seguro
+   (width/height + max-width/max-height) para que nunca pueda desbordar,
+   sin importar el tamaño real de la imagen original. ── */
+.od-product-thumb {
+  width: 56px;
+  height: 56px;
+  max-width: 56px;
+  max-height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--dvna-white);
+  border: 0.5px solid var(--dvna-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dvna-mid);
+  flex-shrink: 0;
+}
+.od-product-thumb img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.od-product-thumb svg {
+  width: 20px;
+  height: 20px;
+}
+
+.od-product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+
+.od-product-name {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.od-product-meta {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.od-tag {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--dvna-muted);
+  background: var(--dvna-white);
+  padding: 2px 7px;
+  border-radius: 99px;
+  border: 0.5px solid var(--dvna-border);
+}
+
+/* ── La referencia/código se distingue un poco del resto de tags (talla,
+   color), ya que es un identificador, no una característica del producto. ── */
+.od-tag-ref {
+  color: var(--dvna-circle);
+  font-weight: 600;
+  border-color: rgba(180,151,128,0.35);
+}
+
+/* ── NUEVO: precio y cantidad alineados a la derecha, en columna — mismo
+   patrón que "STOCK/uds" a la derecha en el detalle de producto del admin. ── */
+.od-product-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.od-product-price {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+}
+
+.od-product-cant {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--dvna-muted);
+  white-space: nowrap;
+}
+
+.od-empty {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--dvna-muted);
+  font-style: italic;
+}

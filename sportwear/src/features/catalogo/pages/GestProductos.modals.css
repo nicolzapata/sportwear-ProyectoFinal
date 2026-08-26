@@ -1,0 +1,396 @@
+/* GestProductos — cuerpo de modal tipo factura, formularios, detalle,
+   toasts y animaciones asociadas. */
+
+.gestproductos-factura-seccion {
+  padding-bottom: 2rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px dashed var(--dvna-border);
+}
+.gestproductos-factura-seccion:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.gestproductos-factura-titulo {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--brown, #b49780);
+  margin: 0 0 1rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.gestproductos-modal-subtitulo {
+  font-size: 0.78rem;
+  color: var(--dvna-muted);
+  margin: 2px 0 0;
+  font-weight: 300;
+}
+
+/* Variantes del modal de detalle: mismo lenguaje visual que los chips de
+   la tabla (swatch con borde reforzado en colores claros, borde de la
+   familia café en vez de gris genérico). Las variantes sin stock se
+   atenúan y muestran "Agotado" en rojo, y se agrupan aparte con un
+   divisor, para que se detecten de un vistazo. */
+.gestproductos-detalle-variantes-cell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gestproductos-detalle-variante-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-mid);
+  border-radius: var(--r);
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--dvna-charcoal);
+}
+.gestproductos-detalle-variante-chip.agotada {
+  opacity: 0.55;
+}
+.gestproductos-detalle-variante-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+.gestproductos-detalle-variante-stock {
+  font-weight: 600;
+}
+.gestproductos-detalle-variante-chip.agotada .gestproductos-detalle-variante-stock {
+  color: var(--danger);
+}
+/* Mismo patrón que .md-seccion-titulo: el texto va arriba de una línea
+   completa debajo, no al lado de una línea parcial. */
+.gestproductos-detalle-variantes-divider {
+  margin: 12px 0 6px;
+  padding-bottom: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--dvna-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--dvna-border);
+}
+
+@media (max-width: 900px) {
+  .gestproductos-modal-factura { max-width: 95%; }
+}
+
+.gestproductos-modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--dvna-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--dvna-pale);
+  flex-shrink: 0;
+}
+
+.gestproductos-modal-title {
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  margin: 0;
+  text-transform: none;
+}
+
+.gestproductos-modal-close {
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 40px;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: var(--dvna-muted);
+}
+
+.gestproductos-modal-close:hover {
+  background: var(--dvna-pale);
+  border-color: var(--dvna-mid);
+}
+
+.gestproductos-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.gestproductos-modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid var(--dvna-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  background: var(--dvna-pale);
+  flex-shrink: 0;
+}
+
+/* Form */
+.gestproductos-form-group {
+  margin-bottom: 1.2rem;
+}
+
+.gestproductos-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.gestproductos-form-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  margin-bottom: 0.3rem;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.gestproductos-form-input::placeholder {
+  color: var(--dvna-muted, #999);
+  opacity: 1;
+}
+
+.gestproductos-form-input,
+.gestproductos-form-select {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--dvna-border);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  background: var(--dvna-white);
+  color: var(--dvna-charcoal);
+  box-sizing: border-box;
+}
+
+.gestproductos-form-input:focus,
+.gestproductos-form-select:focus {
+  outline: none;
+  border-color: var(--brown);
+  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.08);
+}
+
+/* Input con error */
+.gestproductos-form-input.input-error,
+.gestproductos-form-select.input-error {
+  border-color: #b83232;
+  box-shadow: 0 0 0 3px rgba(184, 50, 50, 0.08);
+}
+
+.gestproductos-form-input.input-error:focus,
+.gestproductos-form-select.input-error:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(209, 58, 47, 0.08);
+}
+
+/* Selector "Ordenar por" de la pestaña Categorías: más angosto que el resto de selects del formulario */
+.gestproductos-orden-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.gestproductos-orden-select {
+  width: auto;
+  min-width: 200px;
+  padding: 0.5rem 0.8rem;
+  font-family: var(--font-body);
+}
+
+/* Mensaje de error por campo */
+.gestproductos-field-error {
+  margin: 0.3rem 0 0 0;
+  font-size: 0.75rem;
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Banner de error general (del servidor) */
+.gestproductos-error-banner {
+  background: var(--danger-bg);
+  border: 1px solid #ffd0cd;
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+  font-size: 0.85rem;
+  color: #c53030;
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Asterisco obligatorio */
+.gestproductos-required {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin-left: 2px;
+}
+
+/* Etiqueta opcional */
+.gestproductos-optional {
+  color: var(--dvna-muted);
+  font-weight: 400;
+  font-size: 0.72rem;
+  margin-left: 4px;
+}
+
+/* Nota de campos obligatorios */
+.gestproductos-required-note {
+  font-size: 0.75rem;
+  color: var(--dvna-muted);
+  margin: 0.5rem 0 0 0;
+}
+
+/* Input tipo file */
+.gestproductos-form-input[type="file"] {
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  color: var(--dvna-charcoal);
+  font-size: 0.85rem;
+}
+
+.gestproductos-form-input[type="file"]::file-selector-button {
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: 8px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  cursor: pointer;
+  margin-right: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.gestproductos-form-input[type="file"]::file-selector-button:hover {
+  background: var(--dvna-border);
+  border-color: var(--dvna-mid);
+}
+
+/* Preview de imagen */
+.gestproductos-imagen-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.gestproductos-imagen-preview img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid var(--dvna-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.gestproductos-imagen-quitar {
+  font-size: 0.8rem;
+  color: var(--danger);
+  background: none;
+  border: 1px solid #ffd0cd;
+  border-radius: 8px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.gestproductos-imagen-quitar:hover {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
+
+/* Detail */
+.gestproductos-detail-avatar {
+  width: 90px;
+  height: 90px;
+  background: var(--dvna-pale);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  margin: 0 auto 1.5rem;
+  border: 1px solid var(--dvna-border);
+  overflow: hidden;
+}
+
+.gestproductos-detail-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 19px;
+}
+
+.gestproductos-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--dvna-border);
+}
+
+.gestproductos-detail-item:last-child {
+  border-bottom: none;
+}
+
+.gestproductos-detail-label {
+  font-size: 0.8rem;
+  color: var(--dvna-muted);
+}
+
+.gestproductos-detail-value {
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  font-size: 0.95rem;
+}
+
+/* Toast */
+.gestproductos-toast {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 2000;
+  padding: 0.9rem 1.4rem;
+  border-radius: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  animation: gestproductos-toast-in 0.3s ease;
+}
+
+.gestproductos-toast-exito {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid #bbf7d0;
+}
+
+.gestproductos-toast-error {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid #ffd0cd;
+}
+
+@keyframes gestproductos-toast-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}

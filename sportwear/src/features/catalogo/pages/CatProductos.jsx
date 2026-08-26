@@ -4,7 +4,11 @@ import api from "../../../shared/services/api";
 import ModalSteps from "../../../shared/components/ModalSteps";
 import StatusToggle from "../../../shared/components/StatusToggle";
 import Loader from "../../../shared/components/Loader";
-import './CatProductos.css';
+// CatProductos.css se dividió por sección para facilitar el mantenimiento; el
+// orden de los imports preserva la cascada del archivo original.
+import './CatProductos.layout.css';
+import './CatProductos.modals.css';
+import './CatProductos.responsive.css';
 import { IconBan, IconCheck, IconEdit, IconSearch, IconX } from "../../../shared/components/Icons";
 
 const ICONOS = [

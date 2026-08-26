@@ -1,0 +1,200 @@
+/* Proveedores — loading, toggle de tipo de proveedor, banner de error y
+   responsive. */
+
+/* Loading */
+.proveedores-loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+}
+
+.proveedores-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--dvna-pale);
+  border-top-color: var(--dvna-charcoal);
+  border-radius: 50%;
+  animation: proveedores-spin 1s linear infinite;
+}
+
+.proveedores-loading-text {
+  color: var(--dvna-muted);
+  font-size: 0.9rem;
+}
+
+@keyframes proveedores-spin {
+  to { transform: rotate(360deg); }
+}
+
+.proveedores-loading {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: var(--dvna-muted);
+  font-size: 0.9rem;
+}
+
+/* Toggle Empresa / Persona natural dentro del modal */
+.proveedores-tipo-toggle {
+  display: flex;
+  gap: 0.5rem;
+  padding: 4px;
+  background: var(--dvna-pale);
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.proveedores-tipo-btn {
+  border: none;
+  background: transparent;
+  padding: 0.5rem 1.2rem;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--dvna-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.proveedores-tipo-btn.active {
+  background: white;
+  color: var(--dvna-charcoal);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Texto fijo del tipo de proveedor cuando se está editando (no editable) */
+.proveedores-tipo-fijo {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: var(--dvna-pale);
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  margin: 0;
+}
+
+/* Banner de error al cargar la lista (y compartido con Compras) */
+.proveedores-error-banner,
+.compras-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #fdecec;
+  border: 1px solid #f3c6c6;
+  color: #a33;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.proveedores-error-banner button {
+  background: none;
+  border: 1px solid #a33;
+  color: #a33;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .proveedores-container {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .proveedores-modal-factura {
+    max-width: 95%;
+  }
+  .proveedores-form-row-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .proveedores-container {
+    padding: 1rem;
+  }
+
+  .proveedores-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .proveedores-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  /* Buscador + botón crear comparten la primera fila; exportar va debajo,
+     alineado desde la izquierda. Solo responsive. */
+  .proveedores-actions-bar {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    row-gap: 10px;
+  }
+
+  .proveedores-actions-left { display: contents; }
+  .proveedores-actions-right { display: contents; }
+
+  .proveedores-search-wrapper {
+    order: 1;
+    flex: 1 1 140px;
+    min-width: 120px;
+    width: auto;
+  }
+
+  .proveedores-actions-right .export-buttons { order: 3; }
+
+  .proveedores-btn-primary {
+    order: 2;
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    justify-content: center;
+  }
+
+  .proveedores-empresa-name,
+  .proveedores-empresa-sub {
+    max-width: 140px;
+  }
+
+  .proveedores-form-row,
+  .proveedores-form-row-3 {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Cuando ya no cabe la frase completa, el botón crear se reduce a "+" */
+  .proveedores-actions-right .proveedores-btn-primary { font-size: 0; padding: 10px 12px; gap: 0; }
+  .proveedores-actions-right .proveedores-btn-primary span { font-size: 13px; }
+
+  .proveedores-title {
+    font-size: 1.6rem;
+  }
+
+  .proveedores-stat-value {
+    font-size: 1.5rem;
+  }
+
+  .proveedores-nit-code {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .proveedores-action-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+}
