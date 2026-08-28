@@ -2,8 +2,8 @@ import StatusToggle from "../../../../shared/components/StatusToggle";
 import { IconEdit, IconEye, IconTrash } from "../../../../shared/components/Icons";
 import VariantesMasDropdown from "./VariantesMasDropdown";
 import {
-  precioMostrado, stockBadge, agruparVariantesPorColor, esColorClaro, anchoChip,
-  ANCHO_COL_VARIANTES, ANCHO_CHIP_MAS, GAP_CHIPS,
+  precioMostrado, stockBadge, agruparVariantesPorColor,
+  ANCHO_COL_VARIANTES, ANCHO_CIRCULO, ANCHO_CHEVRON, GAP_CHIPS,
 } from "../../utils/gestProductosHelpers.jsx";
 
 export default function ProductosTable({
@@ -50,9 +50,9 @@ export default function ProductosTable({
               <td className="tbl-td gestproductos-td-compacto gestproductos-stock-cell">{stockBadge(p.stock ?? 0)}</td>
               <td className="tbl-td">
                 {p.variantes?.length > 0 ? (() => {
-                  // ── NUEVO: cada talla muestra su stock exacto entre
-                  // paréntesis — antes solo se veían las tallas/colores que
-                  // existen, sin decir cuántas unidades hay de cada una. ──
+                  // La celda solo muestra un círculo por color (sin texto);
+                  // el detalle de tallas y stock de cada color se ve al
+                  // desplegar, no en la fila.
                   const grupos = agruparVariantesPorColor(p.variantes).map(g => ({
                     ...g,
                     texto: g.tallas.map(t => {
@@ -61,41 +61,21 @@ export default function ProductosTable({
                     }).join(" · "),
                   }));
 
-                  let anchoUsado = 0;
-                  let visibles = [];
-                  for (let i = 0; i < grupos.length; i++) {
-                    const g = grupos[i];
-                    const hayMasDespues = i < grupos.length - 1;
-                    const anchoNecesario = anchoChip(g.texto) + (visibles.length > 0 ? GAP_CHIPS : 0) + (hayMasDespues ? ANCHO_CHIP_MAS + GAP_CHIPS : 0);
-                    if (anchoUsado + anchoNecesario > ANCHO_COL_VARIANTES) break;
-                    visibles.push(g);
-                    anchoUsado += anchoChip(g.texto) + (visibles.length > 1 ? GAP_CHIPS : 0);
-                  }
+                  const anchoDisponible = ANCHO_COL_VARIANTES - ANCHO_CHEVRON - GAP_CHIPS;
+                  const maxCirculos = Math.max(1, Math.floor((anchoDisponible + GAP_CHIPS) / (ANCHO_CIRCULO + GAP_CHIPS)));
+                  const hayOverflow = grupos.length > maxCirculos;
+                  const visibles = hayOverflow ? grupos.slice(0, maxCirculos - 1) : grupos;
                   const restantes = grupos.length - visibles.length;
 
                   return (
-                    <div className="gestproductos-variantes-cell">
-                      {visibles.map(g => {
-                        const swatchStyle = esColorClaro(g.codigo_hex)
-                          ? { background: g.codigo_hex || "#ccc", border: "2px solid #ccc" }
-                          : { background: g.codigo_hex || "#ccc" };
-                        return (
-                          <span key={g.id_color} className="gestproductos-variante-chip" title={`${g.nombre}: ${g.texto}`}>
-                            <span className="gestproductos-variante-swatch" style={swatchStyle} />
-                            <span className="gestproductos-variante-tallas">{g.texto}</span>
-                          </span>
-                        );
-                      })}
-                      {restantes > 0 && (
-                        <VariantesMasDropdown
-                          grupos={grupos.slice(visibles.length)}
-                          restantes={restantes}
-                          productoId={p.id_producto}
-                          abierto={variantesDropdownAbierto === p.id_producto}
-                          onToggle={setVariantesDropdownAbierto}
-                        />
-                      )}
-                    </div>
+                    <VariantesMasDropdown
+                      visibles={visibles}
+                      grupos={grupos}
+                      restantes={restantes}
+                      productoId={p.id_producto}
+                      abierto={variantesDropdownAbierto === p.id_producto}
+                      onToggle={setVariantesDropdownAbierto}
+                    />
                   );
                 })() : (
                   <span className="gestproductos-sin-variantes">Sin variantes</span>

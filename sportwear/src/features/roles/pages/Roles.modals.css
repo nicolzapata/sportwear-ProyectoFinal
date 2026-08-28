@@ -169,6 +169,9 @@
   border-radius: 10px;
   margin-top: 8px;
 }
+.roles-permisos-table-wrap.error {
+  border-color: var(--danger);
+}
 .roles-permisos-table {
   width: 100%;
   border-collapse: collapse;

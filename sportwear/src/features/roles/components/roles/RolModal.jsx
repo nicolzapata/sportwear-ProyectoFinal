@@ -60,7 +60,7 @@ export default function RolModal({ titulo, form, setForm, errores, setErrores, m
           <div className="ms-form-group">
             <label className="ms-form-label">Permisos del rol <span className="ms-req">*</span></label>
             <p className="ms-form-hint">Selecciona los módulos y acciones. Al elegir cualquier acción, "ver" se activa automáticamente.</p>
-            <div className="roles-permisos-table-wrap">
+            <div className={`roles-permisos-table-wrap${errores.permisos ? ' error' : ''}`}>
               <table className="roles-permisos-table">
                 <thead>
                   <tr><th>Módulo</th><th>Acciones</th></tr>
@@ -97,10 +97,7 @@ export default function RolModal({ titulo, form, setForm, errores, setErrores, m
                 </tbody>
               </table>
             </div>
-            {errores.permisos && <span className="ms-form-error" style={{ marginTop: 8, display: 'block' }}>{errores.permisos}</span>}
           </div>
-
-          {errores._general && <p style={{ color: 'var(--danger)', fontSize: 12, textAlign: 'center' }}>{errores._general}</p>}
         </div>
 
         <div className="roles-modal-footer">

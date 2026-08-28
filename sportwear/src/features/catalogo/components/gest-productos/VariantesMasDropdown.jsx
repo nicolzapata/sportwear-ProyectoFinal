@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { createPortal } from "react-dom";
+import { esColorClaro } from "../../utils/gestProductosHelpers.jsx";
 
 const IconChevronDown = () => (
   <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
@@ -7,11 +8,13 @@ const IconChevronDown = () => (
   </svg>
 );
 
-// ── Dropdown "+N más" de Tallas/Colores (mismo patrón visual que el
-// dropdown de estado de Compras): botón pill con chevron que abre, vía
-// portal a document.body, un panel con los colores ocultos — así no queda
-// recortado por el overflow de la tabla ni por el ancho fijo de la celda. ──
-export default function VariantesMasDropdown({ grupos, restantes, abierto, onToggle, productoId }) {
+// ── Celda Tallas/Colores: solo círculos de color, sin texto. Al hacer clic
+// en cualquiera (mismo patrón visual que el dropdown de estado de Compras)
+// se abre, vía portal a document.body, un panel con el detalle completo
+// (tallas + stock) de TODOS los colores del producto — no solo los que no
+// entraron como círculo — así no queda recortado por el overflow de la
+// tabla ni por el ancho fijo de la celda. ──
+export default function VariantesMasDropdown({ visibles, grupos, restantes, abierto, onToggle, productoId }) {
   const btnRef = useRef(null);
   const panelRef = useRef(null);
   const [coords, setCoords] = useState(null);
@@ -62,12 +65,19 @@ export default function VariantesMasDropdown({ grupos, restantes, abierto, onTog
       <button
         ref={btnRef}
         type="button"
-        className="gestproductos-variante-chip gestproductos-variante-mas"
+        className="gestproductos-variantes-cell"
         onClick={() => onToggle(abierto ? null : productoId)}
-        title={`+${restantes} más`}
-        aria-label={`Ver ${restantes} colores más`}
+        title="Ver tallas y stock por color"
+        aria-label="Ver tallas y stock por color"
       >
-        <IconChevronDown />
+        {visibles.map(g => {
+          const swatchStyle = esColorClaro(g.codigo_hex)
+            ? { background: g.codigo_hex || "#ccc", border: "2px solid #ccc" }
+            : { background: g.codigo_hex || "#ccc" };
+          return <span key={g.id_color} className="gestproductos-variante-circulo" style={swatchStyle} />;
+        })}
+        {restantes > 0 && <span className="gestproductos-variante-circulo gestproductos-variante-mas">+{restantes}</span>}
+        <span className={`gestproductos-variantes-chevron${abierto ? ' abierto' : ''}`}><IconChevronDown /></span>
       </button>
 
       {abierto && coords && createPortal(

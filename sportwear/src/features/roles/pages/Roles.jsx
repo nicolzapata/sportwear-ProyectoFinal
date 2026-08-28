@@ -82,7 +82,10 @@ export default function Roles() {
 
   const guardar = async () => {
     const erroresValidacion = validar();
-    if (Object.keys(erroresValidacion).length > 0) return;
+    if (Object.keys(erroresValidacion).length > 0) {
+      showToast('error', erroresValidacion.nombre || erroresValidacion.permisos);
+      return;
+    }
     try {
       if (editar) await api.put(`/roles/${editar}`, form);
       else        await api.post("/roles", form);
@@ -91,7 +94,6 @@ export default function Roles() {
     } catch (err) {
       const backendErrors = err.response?.data?.errors;
       if (backendErrors) setErrores(prev => ({ ...prev, ...backendErrors }));
-      else setErrores(prev => ({ ...prev, _general: err.response?.data?.message || 'Ocurrió un error al guardar.' }));
       showToast('error', err.response?.data?.message || 'Ocurrió un error al guardar el rol.');
     }
   };

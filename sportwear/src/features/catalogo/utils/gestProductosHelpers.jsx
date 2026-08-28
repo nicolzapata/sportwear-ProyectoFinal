@@ -25,24 +25,16 @@ export const ERRORES_INICIALES = { nombre: "", id_categoria: "", precio: "", gen
 export const FORM_VACIO = { nombre: "", descripcion: "", id_categoria: "", precio: "", publicado: false, estado: "Activo", destacado: "" };
 export const MAX_LONGITUD_NOMBRE_COLOR = 40;
 
-// ── Medición de chips de la columna Tallas/Colores ─────────────────────────
-// La columna tiene un ancho fijo (ver .gestproductos-th-variantes en el CSS);
-// en vez de mostrar un número fijo de chips, se estima el ancho real de cada
-// uno (canvas measureText) y se calculan cuántos caben antes de resumir el
-// resto en un chip "+N más".
+// ── Layout de círculos de la columna Tallas/Colores ────────────────────────
+// La columna solo muestra un círculo de color por variante (sin texto): el
+// detalle de tallas/stock se ve al desplegar. Con tamaño fijo por círculo,
+// alcanza con dividir el ancho de la columna para saber cuántos caben antes
+// de resumir el resto en un círculo "+N". Se reserva aparte el espacio de la
+// flechita que indica que la celda se puede desplegar.
 export const ANCHO_COL_VARIANTES = 190;
-export const ANCHO_CHIP_MAS = 56;
-export const ANCHO_CHIP_FIJO = 14 /* swatch */ + 6 /* gap swatch-texto */ + 20 /* padding */ + 2 /* borde */;
+export const ANCHO_CIRCULO = 22;
+export const ANCHO_CHEVRON = 18;
 export const GAP_CHIPS = 6;
-let medirCanvas = null;
-const anchoTexto = (texto) => {
-  if (typeof document === "undefined") return texto.length * 6.5;
-  if (!medirCanvas) medirCanvas = document.createElement("canvas");
-  const ctx = medirCanvas.getContext("2d");
-  ctx.font = "500 12px Jost, sans-serif";
-  return ctx.measureText(texto).width;
-};
-export const anchoChip = (texto) => ANCHO_CHIP_FIJO + anchoTexto(texto);
 
 export const stockBadge = (stock) => {
   if (stock === 0) return <span className="tabla-stock agotado"><IconAlertTriangle /> Agotado</span>;
