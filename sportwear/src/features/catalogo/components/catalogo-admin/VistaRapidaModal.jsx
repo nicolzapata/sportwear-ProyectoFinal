@@ -1,6 +1,6 @@
 import { IconBox, IconEdit, IconX } from "../../../../shared/components/Icons";
 import { IconExternalLink } from "./icons";
-import { fmt } from "../../utils/catalogoAdminHelpers";
+import { precioMostrado } from "../../utils/catalogoAdminHelpers";
 
 export default function VistaRapidaModal({ verRapido, setVerRapido, tienePerm, navigate }) {
   return (
@@ -23,7 +23,7 @@ export default function VistaRapidaModal({ verRapido, setVerRapido, tienePerm, n
 
           <div className="catadmin-modal-info-grid">
             <div><span className="catadmin-modal-info-label">Código</span><span className="catadmin-modal-info-valor">{verRapido.codigo || "—"}</span></div>
-            <div><span className="catadmin-modal-info-label">Precio</span><span className="catadmin-modal-info-valor">{fmt(verRapido.precio)}</span></div>
+            <div><span className="catadmin-modal-info-label">Precio</span><span className="catadmin-modal-info-valor">{precioMostrado(verRapido)}</span></div>
             <div><span className="catadmin-modal-info-label">Stock total</span><span className="catadmin-modal-info-valor">{verRapido.stock ?? 0} unidades</span></div>
             <div><span className="catadmin-modal-info-label">Estado</span><span className={`catadmin-modal-info-valor ${verRapido.estado === "Activo" ? "activo" : "inactivo-txt"}`}>{verRapido.estado}</span></div>
           </div>

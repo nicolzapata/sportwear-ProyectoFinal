@@ -1,6 +1,6 @@
 import { IconBox, IconEdit, IconEye } from "../../../../shared/components/Icons";
 import { IconSparkle, IconTagPromo } from "./icons";
-import { fmt, stockPct, stockClase } from "../../utils/catalogoAdminHelpers";
+import { precioMostrado, stockPct, stockClase } from "../../utils/catalogoAdminHelpers";
 
 export default function ProductoCard({ p, tienePerm, setVerRapido, navigate, togglePublicado, toggleEstado }) {
   return (
@@ -46,7 +46,7 @@ export default function ProductoCard({ p, tienePerm, setVerRapido, navigate, tog
         <span className="catadmin-card-categoria">{p.categoria}</span>
         <h3 className="catadmin-card-nombre" title={p.nombre}>{p.nombre}</h3>
         <div className="catadmin-card-precio-row">
-          <span className="catadmin-card-precio">{fmt(p.precio)}</span>
+          <span className="catadmin-card-precio">{precioMostrado(p)}</span>
           <span className={`catadmin-card-stock-label ${stockClase(p.stock ?? 0)}`}>
             {p.stock === 0 ? "Agotado" : `${p.stock ?? 0} uds`}
           </span>

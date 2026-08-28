@@ -116,8 +116,11 @@ export default function CatalogoAdmin() {
     });
 
     lista = [...lista].sort((a, b) => {
-      if (orden === "precio_asc")  return (a.precio ?? 0) - (b.precio ?? 0);
-      if (orden === "precio_desc") return (b.precio ?? 0) - (a.precio ?? 0);
+      // ── CORREGIDO: ordenar por "precio" a secas se quedaba en $0 para
+      // productos con variantes (ver catalogoAdminHelpers.js) — se ordena
+      // por precio_min, el mismo valor que ahora se muestra en la tarjeta. ──
+      if (orden === "precio_asc")  return (a.precio_min ?? a.precio ?? 0) - (b.precio_min ?? b.precio ?? 0);
+      if (orden === "precio_desc") return (b.precio_min ?? b.precio ?? 0) - (a.precio_min ?? a.precio ?? 0);
       if (orden === "stock")       return (a.stock ?? 0) - (b.stock ?? 0);
       if (orden === "recientes")   return new Date(b.fecha_creacion || 0) - new Date(a.fecha_creacion || 0);
       return (a.nombre || "").localeCompare(b.nombre || "");

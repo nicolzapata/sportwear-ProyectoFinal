@@ -1,6 +1,7 @@
 import ExportButtons from "../../../../shared/components/ExportButtons";
 import { IconSearch, IconX } from "../../../../shared/components/Icons";
 import { IconExternalLink } from "./icons";
+import { precioMostrado } from "../../utils/catalogoAdminHelpers";
 
 export default function FiltrosBar({
   busqueda, setBusqueda, filtroEstado, setFiltroEstado, orden, setOrden, filtrados,
@@ -39,7 +40,7 @@ export default function FiltrosBar({
           { header: "Producto", key: "nombre" },
           { header: "Código", key: "codigo" },
           { header: "Categoría", key: "categoria" },
-          { header: "Precio", key: "precio" },
+          { header: "Precio", value: (p) => precioMostrado(p) },
           { header: "Stock", key: "stock" },
           { header: "Publicado", value: (p) => p.publicado ? "Sí" : "No" },
           { header: "Estado", key: "estado" },
