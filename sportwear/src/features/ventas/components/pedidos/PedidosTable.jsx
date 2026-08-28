@@ -1,9 +1,9 @@
-import { IconEye, IconBox } from "../../../../shared/components/Icons";
-import { getPagoBadge, getPagoTexto } from "../../utils/pedidosHelpers";
+import { IconEye, IconBox, IconEdit } from "../../../../shared/components/Icons";
+import { getPagoBadge, getPagoTexto, ESTADOS_EDITABLES } from "../../utils/pedidosHelpers";
 import EstadoDropdown from "./EstadoDropdown";
 
 export default function PedidosTable({
-  datos, cargando, filaAbierta, setFilaAbierta, cambiarEstado, cambiando, tienePerm, abrirDetalle,
+  datos, cargando, filaAbierta, setFilaAbierta, cambiarEstado, cambiando, tienePerm, abrirDetalle, abrirEditar,
   totalPaginas, pagina, setPagina, total,
 }) {
   return (
@@ -49,6 +49,16 @@ export default function PedidosTable({
                   <button className="pedidos-action-btn pedidos-view-btn" onClick={() => abrirDetalle(p)} title="Ver detalle">
                     <IconEye />
                   </button>
+                  {tienePerm('Pedidos.editar') && (
+                    <button
+                      className="pedidos-action-btn pedidos-edit-btn"
+                      onClick={() => abrirEditar(p)}
+                      disabled={!ESTADOS_EDITABLES.includes(p.estado_pedido)}
+                      title={ESTADOS_EDITABLES.includes(p.estado_pedido) ? "Editar pedido" : `No se puede editar un pedido "${p.estado_pedido}"`}
+                    >
+                      <IconEdit />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

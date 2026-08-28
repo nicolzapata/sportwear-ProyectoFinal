@@ -84,6 +84,24 @@
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
 }
 
+/* ── NUEVO: filtro de estado de pago, a propósito como desplegable en vez
+   de otra píldora — misma altura y lenguaje visual que el buscador. ── */
+.pedidosventas-filtro-estado-select {
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--dvna-border);
+  border-radius: 40px;
+  font-size: 0.9rem;
+  background: white;
+  color: var(--dvna-charcoal);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.pedidosventas-filtro-estado-select:focus {
+  outline: none;
+  border-color: var(--dvna-charcoal);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.02);
+}
+
 .pedidosventas-search-clear {
   position: absolute;
   right: 12px;

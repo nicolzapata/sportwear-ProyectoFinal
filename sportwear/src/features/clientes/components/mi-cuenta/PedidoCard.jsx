@@ -1,6 +1,6 @@
 import { IconCreditCard } from "../../../../shared/components/Icons";
 import { IconImagenVacia } from "./miCuentaIcons";
-import { fmt, getBadgeClass, getEnvioBadgeClass, getEnvioTexto } from "../../utils/miCuentaHelpers";
+import { fmt, getBadgeClass, getBadgeTexto, getEnvioBadgeClass, getEnvioTexto } from "../../utils/miCuentaHelpers";
 
 // ── Tarjeta de un pedido — se reutiliza tanto en la vista compacta de la
 // página como dentro de la ventana "Ver todos mis pedidos". ──
@@ -26,8 +26,8 @@ export default function PedidoCard({ pedido, setPagoModal, cargarDetallePedido }
           <span className="mc-pedido-card-fecha">{new Date(pedido.fecha).toLocaleDateString("es-CO", { timeZone: "UTC" })}</span>
         </div>
         <div className="mc-pedido-card-badges">
-          <span className={`badge ${getBadgeClass(pedido.estado)}`}>{pedido.estado}</span>
-          <span className={`badge ${getEnvioBadgeClass(pedido.estado_envio)}`}>{getEnvioTexto(pedido.estado_envio)}</span>
+          <span className={`badge ${getBadgeClass(pedido.estado)}`} title="Estado del pago">{getBadgeTexto(pedido.estado)}</span>
+          <span className={`badge ${getEnvioBadgeClass(pedido.estado_envio)}`} title="Estado del envío">{getEnvioTexto(pedido.estado_envio)}</span>
         </div>
       </div>
 

@@ -14,31 +14,45 @@ export const dividirNombre = (nombreCompleto) => {
 
 export const errorEmailPerfil = (valor) => validarEmail(valor);
 
+// ── CORREGIDO: estas dos funciones devolvían "exito" / "pendiente" /
+// "error" / "info" a secas, pero en todo el proyecto NUNCA existió una
+// clase CSS con esos nombres (ni ".exito", ni ".badge-exito") — las que sí
+// existen, definidas en shared/styles/global.css, son ".badge-active",
+// ".badge-pending", ".badge-inactive" y ".badge-info". Sin la clase real,
+// el badge se pintaba sin ningún color (solo el pill vacío de ".badge"),
+// así que "Pago: Pendiente" y "Envío: Pendiente" se veían exactamente
+// iguales — ni el texto los distinguía (ver más abajo) ni el color. ──
+
 // ── estado del envío (distinto del estado del pago) — viene de
 // "Pedidos.estado_pedido" a través de /ventas/mis-pedidos. ──
 export const getEnvioBadgeClass = (estado) => {
   switch (estado) {
-    case "Entregado":      return "exito";
-    case "Enviado":        return "info";
-    case "En preparación": return "pendiente";
-    case "Cancelado":      return "error";
-    default:                return "pendiente"; // Pendiente o sin registrar aún
+    case "Entregado":      return "badge-active";
+    case "Enviado":        return "badge-info";
+    case "En preparación": return "badge-pending";
+    case "Cancelado":      return "badge-inactive";
+    default:                return "badge-pending"; // Pendiente o sin registrar aún
   }
 };
-export const getEnvioTexto = (estado) => estado || "Pendiente";
+// ── NUEVO: "Envío: X" en vez de solo "X" — antes, con pago y envío ambos
+// en "Pendiente", las dos etiquetas se veían idénticas y no había forma de
+// saber cuál de las dos cosas era la que faltaba. ──
+export const getEnvioTexto = (estado) => `Envío: ${estado || "Pendiente"}`;
 
 export const getBadgeClass = (estado) => {
   switch (estado) {
-    case "Pagado": case "Confirmado": case "Abonado": return "exito";
-    case "Pendiente": return "pendiente";
+    case "Pagado": case "Confirmado": case "Abonado": return "badge-active";
+    case "Pendiente": return "badge-pending";
     // ── CORREGIDO: "Cancelado" no es un valor real de Ventas.estado — el
     // que sí se usa es "Anulado" (distinto de Pedidos.estado_pedido, que
     // sí usa "Cancelado" — por eso getEnvioBadgeClass, más arriba, no se
     // toca). Se dejan los dos por seguridad, sin que ninguno estorbe. ──
-    case "Cancelado": case "Anulado": return "error";
-    default: return "info";
+    case "Cancelado": case "Anulado": return "badge-inactive";
+    default: return "badge-info";
   }
 };
+// ── NUEVO: "Pago: X" — misma razón que getEnvioTexto de arriba. ──
+export const getBadgeTexto = (estado) => `Pago: ${estado}`;
 
 export const fmt = (n) =>
   Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });

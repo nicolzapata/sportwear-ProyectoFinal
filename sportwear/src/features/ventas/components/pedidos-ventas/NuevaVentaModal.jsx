@@ -150,15 +150,19 @@ export default function NuevaVentaModal({
           )}
 
           <div className="pedidosventas-form-group">
-            <label className="pedidosventas-form-label">Dirección de entrega (opcional)</label>
+            <label className="pedidosventas-form-label">Dirección de entrega</label>
             <input
               type="text"
               maxLength={MAX_LONGITUD_DIRECCION}
-              placeholder="Ej: Cra 43A # 18-20 Apto 302 — déjalo vacío si la venta es en persona"
-              className="pedidosventas-form-input"
+              placeholder="Ej: Cra 43A # 18-20 Apto 302"
+              className={`pedidosventas-form-input${erroresVenta.direccion_entrega ? " input-error" : ""}`}
               value={formVenta.direccion_entrega}
-              onChange={(e) => setFormVenta({ ...formVenta, direccion_entrega: e.target.value })}
+              onChange={(e) => {
+                setFormVenta({ ...formVenta, direccion_entrega: e.target.value });
+                if (erroresVenta.direccion_entrega) setErroresVenta((prev) => ({ ...prev, direccion_entrega: e.target.value.trim() ? "" : prev.direccion_entrega }));
+              }}
             />
+            {erroresVenta.direccion_entrega && <span className="pedidosventas-field-error">{erroresVenta.direccion_entrega}</span>}
           </div>
 
           <div className="pedidosventas-form-group">

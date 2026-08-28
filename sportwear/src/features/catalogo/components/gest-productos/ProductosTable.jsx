@@ -2,7 +2,7 @@ import StatusToggle from "../../../../shared/components/StatusToggle";
 import { IconEdit, IconEye, IconTrash } from "../../../../shared/components/Icons";
 import VariantesMasDropdown from "./VariantesMasDropdown";
 import {
-  fmt, stockBadge, agruparVariantesPorColor, esColorClaro, anchoChip,
+  precioMostrado, stockBadge, agruparVariantesPorColor, esColorClaro, anchoChip,
   ANCHO_COL_VARIANTES, ANCHO_CHIP_MAS, GAP_CHIPS,
 } from "../../utils/gestProductosHelpers.jsx";
 
@@ -46,11 +46,20 @@ export default function ProductosTable({
                 <div className="gestproductos-product-name" title={p.nombre}>{p.nombre}</div>
                 <span className="tabla-categoria" title={p.categoria}>{p.categoria}</span>
               </td>
-              <td className="tbl-td gestproductos-td-compacto gestproductos-precio-cell">{fmt(p.precio)}</td>
+              <td className="tbl-td gestproductos-td-compacto gestproductos-precio-cell">{precioMostrado(p)}</td>
               <td className="tbl-td gestproductos-td-compacto gestproductos-stock-cell">{stockBadge(p.stock ?? 0)}</td>
               <td className="tbl-td">
                 {p.variantes?.length > 0 ? (() => {
-                  const grupos = agruparVariantesPorColor(p.variantes).map(g => ({ ...g, texto: g.tallas.join(" · ") }));
+                  // ── NUEVO: cada talla muestra su stock exacto entre
+                  // paréntesis — antes solo se veían las tallas/colores que
+                  // existen, sin decir cuántas unidades hay de cada una. ──
+                  const grupos = agruparVariantesPorColor(p.variantes).map(g => ({
+                    ...g,
+                    texto: g.tallas.map(t => {
+                      const v = p.variantes.find(v => v.id_color === g.id_color && v.talla === t);
+                      return `${t} (${Number(v?.stock ?? 0)})`;
+                    }).join(" · "),
+                  }));
 
                   let anchoUsado = 0;
                   let visibles = [];
@@ -71,7 +80,7 @@ export default function ProductosTable({
                           ? { background: g.codigo_hex || "#ccc", border: "2px solid #ccc" }
                           : { background: g.codigo_hex || "#ccc" };
                         return (
-                          <span key={g.id_color} className="gestproductos-variante-chip" title={`${g.nombre}: ${g.tallas.join(", ")}`}>
+                          <span key={g.id_color} className="gestproductos-variante-chip" title={`${g.nombre}: ${g.texto}`}>
                             <span className="gestproductos-variante-swatch" style={swatchStyle} />
                             <span className="gestproductos-variante-tallas">{g.texto}</span>
                           </span>

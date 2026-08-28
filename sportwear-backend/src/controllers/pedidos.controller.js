@@ -3,8 +3,8 @@ const pedidosService = require('../services/pedidos.service');
 
 const getPedidos = async (req, res) => {
   try {
-    const { page, limit, q } = req.query;
-    const data = await pedidosService.getPedidos({ page, limit, q });
+    const { page, limit, q, estado } = req.query;
+    const data = await pedidosService.getPedidos({ page, limit, q, estado });
     res.json(data);
   } catch (err) {
     res.status(err.status || 500).json({ message: err.message });
@@ -39,4 +39,13 @@ const cambiarEstado = async (req, res) => {
   }
 };
 
-module.exports = { getPedidos, getPedidoById, getHistorialPedido, cambiarEstado };
+const editarPedido = async (req, res) => {
+  try {
+    const data = await pedidosService.editarPedido(req.params.id, req.body);
+    res.json(data);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+module.exports = { getPedidos, getPedidoById, getHistorialPedido, cambiarEstado, editarPedido };

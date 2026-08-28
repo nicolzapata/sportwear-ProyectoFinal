@@ -3,8 +3,8 @@ const pagosService = require('../services/pagos.service');
 
 const getPagos = async (req, res) => {
   try {
-    const { page, limit, q } = req.query;
-    const data = await pagosService.getPagos({ page, limit, q });
+    const { page, limit, q, estado } = req.query;
+    const data = await pagosService.getPagos({ page, limit, q, estado });
     res.json(data);
   } catch (err) {
     console.error('ERROR getPagos:', err);

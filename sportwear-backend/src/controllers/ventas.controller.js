@@ -7,8 +7,8 @@ const getVentas = async (req, res) => {
     // ── CORREGIDO: nunca se destructuraba "origen" de req.query, así que el
     // filtro Todas/Cliente/Admin (Landing/Admin) nunca llegaba al service,
     // sin importar qué tan bien estuviera el resto del código. ──
-    const { page, limit, q, origen } = req.query;
-    const data = await ventasService.getVentas({ page, limit, q, origen });
+    const { page, limit, q, origen, estado_pago } = req.query;
+    const data = await ventasService.getVentas({ page, limit, q, origen, estado_pago });
     res.json(data);
   } catch (err) {
     console.error('ERROR getVentas:', err);

@@ -1,7 +1,7 @@
 import GaleriaImagenes from "../../../../shared/components/GaleriaImagenes";
 import { DetalleItem, DetalleGrid } from "../../../../shared/components/ModalDetalle";
 import { IconEdit, IconX } from "../../../../shared/components/Icons";
-import { fmt, agruparVariantesPorColor, esColorClaro } from "../../utils/gestProductosHelpers.jsx";
+import { fmt, precioMostrado, agruparVariantesPorColor, esColorClaro } from "../../utils/gestProductosHelpers.jsx";
 
 export default function ProductoDetalleModal({ verDetalle, setVerDetalle, tienePerm, abrirEditar }) {
   if (!verDetalle) return null;
@@ -14,7 +14,8 @@ export default function ProductoDetalleModal({ verDetalle, setVerDetalle, tieneP
           <DetalleItem label="ID" value={`#${String(verDetalle.id_producto).padStart(3, "0")}`} />
           <DetalleItem label="Código" value={verDetalle.codigo} />
           <DetalleItem label="Categoría" value={verDetalle.categoria} />
-          <DetalleItem label="Precio base" value={fmt(verDetalle.precio)} />
+          <DetalleItem label="Precio de venta" value={precioMostrado(verDetalle)} />
+          <DetalleItem label="Precio base (respaldo sin variante)" value={fmt(verDetalle.precio)} />
           <DetalleItem label="Stock total" value={`${verDetalle.stock ?? 0} unidades`} />
           <DetalleItem label="Publicado" value={verDetalle.publicado ? "Sí, visible en catálogo" : "No publicado"} />
           <DetalleItem label="Estado" value={<span className={`tabla-status${verDetalle.estado === "Activo" ? " activo" : " inactivo"}`}>{verDetalle.estado}</span>} />
@@ -40,71 +41,62 @@ export default function ProductoDetalleModal({ verDetalle, setVerDetalle, tieneP
   const DetalleVariantesImagenes = (
     <>
       {verDetalle.variantes?.length > 0 && (() => {
-        const conStock = verDetalle.variantes.filter(v => v.stock > 0);
-        const sinStock = verDetalle.variantes.filter(v => v.stock === 0);
-        const gruposConStock = agruparVariantesPorColor(conStock);
-        const gruposSinStock = agruparVariantesPorColor(sinStock);
-        // ── NUEVO: cada variante (talla) puede tener su propio precio —
-        // antes el chip solo mostraba "L, M, S" sin decir a qué precio
-        // vende cada una. Se arma un mapa talla->precio por color para
-        // mostrar el precio de cada talla individualmente cuando alguna
-        // difiere del precio base del producto. ──
+        // ── CORREGIDO: antes esto agrupaba por color y solo separaba en dos
+        // baldes ("con stock" / "sin stock"), sin decir el número exacto de
+        // unidades de cada talla — el admin no tenía forma de saber, por
+        // ejemplo, si la talla M tiene 2 unidades o 20. Ahora cada color
+        // muestra una fila por talla con su stock exacto y su precio real
+        // (el de la variante si tiene uno propio, si no el precio base). ──
+        const grupos = agruparVariantesPorColor(verDetalle.variantes);
         const preciosPorColor = new Map();
+        const stockPorColor = new Map();
         verDetalle.variantes.forEach(v => {
           if (!preciosPorColor.has(v.id_color)) preciosPorColor.set(v.id_color, new Map());
           preciosPorColor.get(v.id_color).set(v.talla, v.precio);
+          if (!stockPorColor.has(v.id_color)) stockPorColor.set(v.id_color, new Map());
+          stockPorColor.get(v.id_color).set(v.talla, v.stock);
         });
-        const renderChip = (g, agotada) => {
-          const swatchStyle = esColorClaro(g.codigo_hex)
-            ? { background: g.codigo_hex || "#ccc", border: "2px solid #ccc" }
-            : { background: g.codigo_hex || "#ccc" };
-          const mapaPrecios = preciosPorColor.get(g.id_color) || new Map();
-          // Si TODAS las tallas de este color tienen el mismo precio (o
-          // ninguna tiene precio propio), se muestra un solo precio al
-          // final. Si varían entre sí, se muestra el precio junto a cada talla.
-          const preciosDistintos = new Set(
-            g.tallas.map(t => Number(mapaPrecios.get(t) ?? verDetalle.precio))
-          );
-          const hayVariacion = preciosDistintos.size > 1;
-          return (
-            <div key={g.id_color} className={`gestproductos-detalle-variante-chip${agotada ? " agotada" : ""}`}>
-              <span className="gestproductos-detalle-variante-dot" style={swatchStyle} />
-              {hayVariacion ? (
-                <span>
-                  {g.nombre}: {g.tallas.map((t, i) => (
-                    <span key={t}>
-                      {i > 0 && ", "}
-                      {t} <span style={{ color: "var(--dvna-circle)", fontWeight: 600 }}>({fmt(mapaPrecios.get(t) ?? verDetalle.precio)})</span>
-                    </span>
-                  ))}
-                </span>
-              ) : (
-                <span>
-                  {g.nombre}: {g.tallas.join(", ")}
-                  {" "}<span style={{ color: "var(--dvna-circle)", fontWeight: 600 }}>({fmt([...preciosDistintos][0])})</span>
-                </span>
-              )}
-              {agotada && <span className="gestproductos-detalle-variante-stock"> · Agotado</span>}
-            </div>
-          );
-        };
         return (
           <div className="gestproductos-factura-seccion">
-            <h3 className="gestproductos-factura-titulo">Variantes</h3>
+            <h3 className="gestproductos-factura-titulo">Variantes — stock y precio por talla/color</h3>
             <p style={{ fontSize: 11, color: "var(--dvna-muted)", margin: "0 0 10px" }}>
               Si una talla no tiene precio propio, se usa el precio base del producto (mostrado arriba).
             </p>
-            <div className="gestproductos-detalle-variantes-cell">
-              {gruposConStock.map(g => renderChip(g, false))}
+            <div className="gestproductos-detalle-variantes-grupos">
+              {grupos.map(g => {
+                const swatchStyle = esColorClaro(g.codigo_hex)
+                  ? { background: g.codigo_hex || "#ccc", border: "2px solid #ccc" }
+                  : { background: g.codigo_hex || "#ccc" };
+                const mapaPrecios = preciosPorColor.get(g.id_color) || new Map();
+                const mapaStock = stockPorColor.get(g.id_color) || new Map();
+                return (
+                  <div key={g.id_color} className="gestproductos-detalle-color-grupo">
+                    <div className="gestproductos-detalle-color-header">
+                      <span className="gestproductos-detalle-variante-dot" style={swatchStyle} />
+                      <span>{g.nombre}</span>
+                    </div>
+                    <table className="gestproductos-detalle-variantes-tabla">
+                      <thead>
+                        <tr><th>Talla</th><th>Stock</th><th>Precio</th></tr>
+                      </thead>
+                      <tbody>
+                        {g.tallas.map(t => {
+                          const stock = mapaStock.get(t) ?? 0;
+                          const precio = mapaPrecios.get(t) ?? verDetalle.precio;
+                          return (
+                            <tr key={t} className={stock === 0 ? "agotada" : ""}>
+                              <td>{t}</td>
+                              <td>{stock === 0 ? <span className="gestproductos-detalle-agotado-tag">Agotado</span> : `${stock} uds`}</td>
+                              <td>{fmt(precio)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
             </div>
-            {gruposSinStock.length > 0 && (
-              <>
-                <div className="gestproductos-detalle-variantes-divider"><span>Sin stock</span></div>
-                <div className="gestproductos-detalle-variantes-cell">
-                  {gruposSinStock.map(g => renderChip(g, true))}
-                </div>
-              </>
-            )}
           </div>
         );
       })()}

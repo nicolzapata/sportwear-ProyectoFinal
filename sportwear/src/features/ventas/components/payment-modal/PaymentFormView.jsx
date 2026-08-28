@@ -1,5 +1,6 @@
 import { useState } from "react";
 import api from "../../../../shared/services/api";
+import AceptarTerminos from "../../../../shared/components/AceptarTerminos";
 import { fmt, formatCardNumber, formatExpiry, detectarMarca } from "../../utils/paymentModalHelpers";
 import { IconX, IconCard, IconCalendar, IconAlert, IconCheckCircle, IconLock, IconCheckSm } from "./paymentModalIcons";
 
@@ -11,6 +12,9 @@ export default function PaymentFormView({ pedido, cliente, onClose, onPagoConfir
   const [card, setCard]             = useState({ numero: "", nombre: "", expiry: "", cvv: "" });
   const [errores, setErrores]       = useState({});
   const [procesando, setProcesando] = useState(false);
+  // ── NUEVO: el cliente debe aceptar los términos y condiciones antes de
+  // poder confirmar el pago. ──
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
   // ── NUEVO: la tarjeta se voltea mientras el CVV está enfocado ──
   const [cvvFocus, setCvvFocus]     = useState(false);
   const marca = detectarMarca(card.numero);
@@ -32,6 +36,7 @@ export default function PaymentFormView({ pedido, cliente, onClose, onPagoConfir
     if (card.expiry.length < 5) e.expiry = "Fecha inválida (MM/AA)";
     if (card.cvv.length < 3)    e.cvv    = "CVV inválido";
     if (montoPagar <= 0)        e.monto  = "No hay monto pendiente";
+    if (!aceptaTerminos)        e.terminos = "Debes aceptar los términos y condiciones para continuar.";
     setErrores(e);
     return Object.keys(e).length === 0;
   };
@@ -273,6 +278,14 @@ export default function PaymentFormView({ pedido, cliente, onClose, onPagoConfir
               <span>Monto a pagar:</span>
               <strong>{fmt(montoPagar)}</strong>
             </div>
+            <AceptarTerminos
+              aceptado={aceptaTerminos}
+              setAceptado={(val) => {
+                setAceptaTerminos(val);
+                if (errores.terminos) setErrores((prev) => ({ ...prev, terminos: val ? "" : prev.terminos }));
+              }}
+              error={errores.terminos}
+            />
             <div className="pm-footer-btns">
               <button className="pm-btn-secondary" onClick={onClose} disabled={procesando}>
                 Cancelar

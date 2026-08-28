@@ -79,6 +79,56 @@
   border-bottom: 1px solid var(--dvna-border);
 }
 
+/* ── NUEVO: desglose de stock y precio por talla/color en el detalle del
+   producto — reemplaza el chip "con stock/sin stock" que solo agrupaba en
+   dos baldes sin decir el número exacto de unidades de cada talla. ── */
+.gestproductos-detalle-variantes-grupos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.gestproductos-detalle-color-grupo {
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r);
+  padding: 10px 12px;
+  min-width: 180px;
+}
+.gestproductos-detalle-color-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+  margin-bottom: 8px;
+}
+.gestproductos-detalle-variantes-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.gestproductos-detalle-variantes-tabla th {
+  text-align: left;
+  color: var(--dvna-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  padding: 2px 8px 4px 0;
+}
+.gestproductos-detalle-variantes-tabla td {
+  padding: 3px 8px 3px 0;
+  color: var(--dvna-charcoal);
+}
+.gestproductos-detalle-variantes-tabla tr.agotada td {
+  opacity: 0.6;
+}
+.gestproductos-detalle-agotado-tag {
+  color: var(--danger);
+  font-weight: 600;
+}
+
 @media (max-width: 900px) {
   .gestproductos-modal-factura { max-width: 95%; }
 }

@@ -3,6 +3,20 @@ export const FILAS_POR_PAGINA = 10;
 // Orden natural del flujo (sin contar Cancelado, que es una rama aparte)
 export const ESTADOS_ORDEN = ['Pendiente', 'En preparación', 'Enviado', 'Entregado'];
 
+// ── NUEVO: solo se puede editar un pedido en estos estados de envío —
+// coincide con la misma regla que aplica el backend. ──
+export const ESTADOS_EDITABLES = ['Pendiente', 'En preparación'];
+
+// ── NUEVO: filtro por estado de envío en la tabla de Pedidos — "" = Todos. ──
+export const ESTADOS_FILTRO = [
+  { valor: "", etiqueta: "Todos los estados" },
+  { valor: "Pendiente", etiqueta: "Pendiente" },
+  { valor: "En preparación", etiqueta: "En preparación" },
+  { valor: "Enviado", etiqueta: "Enviado" },
+  { valor: "Entregado", etiqueta: "Entregado" },
+  { valor: "Cancelado", etiqueta: "Cancelado" },
+];
+
 // Debe calzar con TRANSICIONES del backend (pedidos.service.js)
 export const TRANSICIONES = {
   'Pendiente':      ['En preparación', 'Cancelado'],

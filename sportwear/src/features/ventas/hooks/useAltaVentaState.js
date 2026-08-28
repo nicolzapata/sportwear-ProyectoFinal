@@ -154,6 +154,9 @@ export function useAltaVentaState({ cargar }) {
   const validarVenta = () => {
     const e = {};
     if (!formVenta.id_cliente) e.id_cliente = "El cliente es obligatorio";
+    // ── NUEVO: la dirección de entrega ahora es obligatoria — antes era
+    // opcional, pero sin ella no hay forma real de despachar la venta. ──
+    if (!formVenta.direccion_entrega?.trim()) e.direccion_entrega = "La dirección de entrega es obligatoria";
     if (!formVenta.fecha) e.fecha = "La fecha es obligatoria";
     else if (formVenta.fecha > HOY_ISO) e.fecha = "La fecha no puede ser futura";
     if (formVenta.tipo_pago === "cuotas") {

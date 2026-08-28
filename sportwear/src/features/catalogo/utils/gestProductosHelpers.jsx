@@ -3,6 +3,24 @@ import { IconAlertTriangle } from "../../../shared/components/Icons";
 
 export const fmt = (n) => Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
 
+// ── NUEVO: precio a mostrar en la tabla/detalle — antes se mostraba
+// "p.precio" a secas, que solo es el precio de RESPALDO para productos sin
+// variantes. Para un producto con variantes (el caso normal), el precio de
+// venta real vive en cada variante (ProductoVariantes.precio, actualizado
+// al recibir una compra) — "p.precio" se queda en $0 para siempre y el
+// admin veía "el precio no cambió, quedó en 0" aunque sí se había
+// actualizado, solo que en otro campo. El backend ya calcula precio_min y
+// precio_max (con el mismo respaldo a p.precio si una variante no tiene
+// precio propio); esto solo arma el texto: un solo valor si todas las
+// variantes venden igual, o un rango si difieren entre sí. ──
+export const precioMostrado = (p) => {
+  const min = p.precio_min ?? p.precio;
+  const max = p.precio_max ?? p.precio;
+  if (min === null || min === undefined) return fmt(p.precio);
+  if (Number(min) === Number(max)) return fmt(min);
+  return `${fmt(min)} - ${fmt(max)}`;
+};
+
 export const ERRORES_INICIALES = { nombre: "", id_categoria: "", precio: "", general: "" };
 export const FORM_VACIO = { nombre: "", descripcion: "", id_categoria: "", precio: "", publicado: false, estado: "Activo", destacado: "" };
 export const MAX_LONGITUD_NOMBRE_COLOR = 40;

@@ -35,6 +35,8 @@
   transition: all 0.2s ease; flex-shrink: 0;
 }
 .pedidos-action-btn:hover { border-color: var(--dvna-mid, #c8ab96); background: var(--dvna-pale, #f4f4f4); }
+.pedidos-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pedidos-action-btn:disabled:hover { border-color: var(--dvna-border, #e5e5e5); background: var(--dvna-white, #fff); }
 
 /* ── Ancho fijo de la columna "Envío" (7ª columna) para que no empuje
      el resto de la tabla cuando el texto del estado cambia de largo ── */

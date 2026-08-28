@@ -56,6 +56,9 @@ export default function Checkout() {
   const [pedidoConfirmado, setPedidoConfirmado] = useState(null);
   // ── Errores de validación del panel único (antes vivían repartidos entre los 4 pasos del modal) ──
   const [erroresPaso, setErroresPaso] = useState({});
+  // ── NUEVO: el cliente debe aceptar los términos y condiciones antes de
+  // poder confirmar el pedido. ──
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
   useEffect(() => {
     if (!usuario) return;
@@ -131,6 +134,7 @@ export default function Checkout() {
     if (!direccion.trim()) e.direccion = "La dirección es obligatoria para continuar.";
     if (!idBarrio)         e.barrio    = "Selecciona el barrio para continuar.";
     if (!metodo.trim())    e.metodo    = "Selecciona un método de pago antes de continuar.";
+    if (!aceptaTerminos)   e.terminos  = "Debes aceptar los términos y condiciones para continuar.";
     setErroresPaso(e);
     return Object.keys(e).length === 0;
   };
@@ -253,6 +257,7 @@ export default function Checkout() {
           tipoPagoActivo={tipoPagoActivo} numCuotasActivo={numCuotasActivo} setNumCuotas={setNumCuotas}
           total={total} valorCuota={valorCuota} fechasCuotas={fechasCuotas}
           error={error} errorStock={errorStock} elegirAlternativa={elegirAlternativa}
+          aceptaTerminos={aceptaTerminos} setAceptaTerminos={setAceptaTerminos}
           enviando={enviando} handleConfirmar={handleConfirmar} navigate={navigate}
         />
       </div>

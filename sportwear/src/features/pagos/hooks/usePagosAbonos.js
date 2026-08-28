@@ -16,6 +16,8 @@ export function usePagosAbonos() {
   const [errorMsg,   setErrorMsg]   = useState("");
   const [busqueda,   setBusqueda]   = useState("");
   const [busquedaDebounced, setBusquedaDebounced] = useState("");
+  // ── NUEVO: filtro "Realizados" (Confirmado) / "Pendientes" — "" = Todos ──
+  const [filtroEstado, setFiltroEstado] = useState("");
   const [pagina,     setPagina]     = useState(1);
   const [modal,      setModal]      = useState(false);
   const [verDetalle, setVerDetalle] = useState(null);
@@ -65,7 +67,7 @@ export function usePagosAbonos() {
     setCargando(true);
     setErrorMsg("");
     try {
-      const { data } = await api.get("/pagos", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      const { data } = await api.get("/pagos", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined, estado: filtroEstado || undefined } });
       setDatos(data.data);
       setTotalPagos(data.total);
     } catch (err) {
@@ -83,10 +85,10 @@ export function usePagosAbonos() {
     return () => clearTimeout(t);
   }, [busqueda]);
 
-  useEffect(() => { setPagina(1); }, [busquedaDebounced]);
+  useEffect(() => { setPagina(1); }, [busquedaDebounced, filtroEstado]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { cargar(pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
+  useEffect(() => { cargar(pagina, busquedaDebounced); }, [pagina, busquedaDebounced, filtroEstado]);
 
   const handleVentaChange = (id_venta) => {
     // ── CORREGIDO: antes esto siempre fijaba tipo="Pago completo" sin
@@ -195,7 +197,7 @@ export function usePagosAbonos() {
 
   return {
     tienePerm, datos, totalPagos, ventas, cargando, errorMsg, primerCargaHecha,
-    busqueda, setBusqueda, busquedaDebounced, pagina, setPagina,
+    busqueda, setBusqueda, busquedaDebounced, filtroEstado, setFiltroEstado, pagina, setPagina,
     modal, setModal, verDetalle, setVerDetalle, guardando,
     form, setForm, errores, setErrores, filaAbierta, setFilaAbierta, cambiandoEstado,
     metodosPago, modalMetodos, setModalMetodos, nuevoMetodo, setNuevoMetodo,

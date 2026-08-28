@@ -46,6 +46,19 @@ export default function PedidosVentas() {
             {v.busqueda && <button className="pedidosventas-search-clear" onClick={() => v.setBusqueda("")}><IconX /></button>}
           </div>
           <OrigenFilterToggle filtroOrigen={v.filtroOrigen} setFiltroOrigen={v.setFiltroOrigen} setPagina={v.setPagina} />
+          {/* ── NUEVO: filtro de estado de pago — a propósito como
+              desplegable y no como otra píldora, para no verse como una
+              copia del toggle de Cliente/Admin de al lado. ── */}
+          <select
+            className="pedidosventas-filtro-estado-select"
+            value={v.filtroEstadoPago}
+            onChange={(e) => { v.setFiltroEstadoPago(e.target.value); v.setPagina(1); }}
+          >
+            <option value="">Todas las ventas</option>
+            <option value="Pagado">Realizadas</option>
+            <option value="Pendiente">Pendientes</option>
+            <option value="Anulado">Anuladas</option>
+          </select>
         </div>
         <div className="pedidosventas-actions-right">
           {v.tienePerm('Ventas.crear') && (

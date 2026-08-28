@@ -1,0 +1,57 @@
+/* Selector deslizante genérico de pestañas — usado por los filtros de
+   estado en Pagos y Pedidos (Ventas usa un <select> aparte a propósito,
+   para no verse como una copia del toggle de Cliente/Admin). */
+.filter-toggle {
+  position: relative;
+  display: flex;
+  gap: 0;
+  background: var(--dvna-white, #fff);
+  border: 1px solid var(--dvna-border, #e5e5e5);
+  border-radius: 40px;
+  padding: 4px;
+  max-width: 100%;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.filter-toggle-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  border-radius: 40px;
+  background: var(--brown, #b49780);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+
+/* ── Cada botón mide lo que necesite su propio texto (flex-shrink: 0) —
+   así una opción larga ("Todos los estados") nunca recorta ni empuja a las
+   demás a achicarse por debajo de su contenido. ── */
+.filter-toggle-btn {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  text-align: center;
+  border: none;
+  background: transparent;
+  border-radius: 40px;
+  padding: 0.6rem 1.1rem;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--dvna-muted, #888);
+  cursor: pointer;
+  transition: color 0.2s ease;
+  outline: none;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.filter-toggle-btn:focus,
+.filter-toggle-btn:focus-visible,
+.filter-toggle-btn:active {
+  outline: none;
+  box-shadow: none;
+}
+.filter-toggle-btn.active { color: #fff; }

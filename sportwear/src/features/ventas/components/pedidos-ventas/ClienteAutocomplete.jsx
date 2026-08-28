@@ -46,8 +46,15 @@ export default function ClienteAutocomplete({
                   type="button"
                   key={c.id_cliente}
                   onClick={() => {
-                    setFormVenta({ ...formVenta, id_cliente: c.id_cliente });
-                    setErroresVenta((prev) => ({ ...prev, id_cliente: "" }));
+                    // ── NUEVO: al elegir un cliente, se autocompleta la
+                    // dirección de entrega con la que tiene registrada (solo
+                    // si tiene una) — sigue siendo editable después. ──
+                    setFormVenta({
+                      ...formVenta,
+                      id_cliente: c.id_cliente,
+                      direccion_entrega: c.direccion?.trim() || formVenta.direccion_entrega,
+                    });
+                    setErroresVenta((prev) => ({ ...prev, id_cliente: "", direccion_entrega: c.direccion?.trim() ? "" : prev.direccion_entrega }));
                     setBusquedaCliente("");
                     setClienteDropdownAbierto(false);
                   }}

@@ -12,16 +12,24 @@ const { evaluarYMarcarPagada } = require('./pagoLogica.service');
 
 const ESTADOS_VALIDOS = ['Pendiente', 'En preparación', 'Enviado', 'Entregado', 'Cancelado'];
 
-const getPedidos = async ({ page, limit, q } = {}) => {
+const getPedidos = async ({ page, limit, q, estado } = {}) => {
   const params = [];
-  let busquedaSql = '';
+  const condiciones = [];
   if (q) {
     params.push(`%${q}%`);
     // ── NUEVO: buscar también por documento del cliente, no solo por nombre
     // — si hay dos clientes con el mismo nombre, antes no había forma de
     // diferenciarlos desde el buscador. ──
-    busquedaSql = `WHERE (c.nombre ILIKE $${params.length} OR c.documento ILIKE $${params.length})`;
+    condiciones.push(`(c.nombre ILIKE $${params.length} OR c.documento ILIKE $${params.length})`);
   }
+  // ── NUEVO: filtro por estado de envío — antes la única forma de mirar,
+  // por ejemplo, solo los pedidos "Enviado" era buscar a ojo en la tabla
+  // completa. Se filtra por el valor exacto de "estado_pedido". ──
+  if (estado && ESTADOS_VALIDOS.includes(estado)) {
+    params.push(estado);
+    condiciones.push(`p.estado_pedido = $${params.length}`);
+  }
+  const busquedaSql = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
 
   const paginar = page !== undefined;
   let limitOffsetSql = '';
@@ -70,7 +78,9 @@ const getPedidos = async ({ page, limit, q } = {}) => {
 const getPedidoById = async (id_pedido) => {
   const result = await pool.query(`
     SELECT p.id_pedido, p.id_venta, p.estado_pedido, p.fecha_actualizacion,
-           v.total, v.fecha AS fecha_venta, v.direccion_entrega, v.estado AS estado_venta, v.metodo_pago, v.origen,
+           v.total, v.subtotal, v.descuento, v.impuesto, v.tipo_pago, v.num_cuotas,
+           v.fecha AS fecha_venta, v.direccion_entrega, v.observaciones,
+           v.estado AS estado_venta, v.metodo_pago, v.origen,
            c.nombre AS cliente, c.documento AS cliente_documento, c.email AS cliente_email
     FROM "Pedidos" p
     JOIN "Ventas" v    ON p.id_venta = v.id_venta
@@ -326,4 +336,141 @@ const cambiarEstadoPedido = async (id_pedido, nuevoEstado, id_usuario) => {
   } finally { client.release(); }
 };
 
-module.exports = { getPedidos, getPedidoById, getHistorial, cambiarEstadoPedido, ESTADOS_VALIDOS };
+// ── NUEVO: editar un pedido — conectado a Ventas, porque un Pedido no es
+// más que el seguimiento de envío de una Venta real. Editar acá edita la
+// misma Venta/DetalleVenta de una vez, sin una copia aparte de los datos.
+//
+// Reglas de negocio (a propósito, no un CRUD libre):
+// - Solo pedidos "Pendiente" o "En preparación" — ya en camino no tiene
+//   sentido seguir cambiando qué se pidió.
+// - Los productos ya existentes en la venta quedan intocables (ni
+//   cantidad ni precio ni se pueden quitar) — edición solo puede AGREGAR
+//   líneas nuevas, nunca reducir lo ya vendido.
+// - El costo total nunca puede bajar como consecuencia de editar — como
+//   solo se agregan líneas (nunca se quitan ni se bajan), sube o se
+//   queda igual, nunca baja, por construcción.
+// - Dirección/observaciones/método de pago sí se pueden cambiar libremente.
+const editarPedido = async (id_pedido, datos) => {
+  const { direccion_entrega, observaciones, metodo_pago, nuevos_items } = datos;
+  if (!direccion_entrega?.trim()) throw { status: 400, message: 'La dirección de entrega es obligatoria' };
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const actual = await client.query(`
+      SELECT p.estado_pedido, v.id_venta, v.subtotal, v.descuento, v.impuesto, v.tipo_pago, v.stock_descontado
+      FROM "Pedidos" p JOIN "Ventas" v ON p.id_venta = v.id_venta
+      WHERE p.id_pedido = $1 FOR UPDATE OF p
+    `, [id_pedido]);
+    if (!actual.rows.length) throw { status: 404, message: 'Pedido no encontrado' };
+    const pedido = actual.rows[0];
+
+    if (!['Pendiente', 'En preparación'].includes(pedido.estado_pedido)) {
+      throw { status: 400, message: `Solo se pueden editar pedidos en estado "Pendiente" o "En preparación" (este está "${pedido.estado_pedido}").` };
+    }
+
+    await client.query(`
+      UPDATE "Ventas" SET direccion_entrega=$1, observaciones=$2, metodo_pago=$3 WHERE id_venta=$4
+    `, [direccion_entrega.trim(), observaciones?.trim() || null, metodo_pago || null, pedido.id_venta]);
+
+    let sumaNuevosItems = 0;
+    for (const item of (nuevos_items || [])) {
+      const cantidad = Number(item.cantidad);
+      const precio_unitario = Number(item.precio_unitario);
+      if (!item.id_producto || !cantidad || cantidad <= 0) {
+        throw { status: 400, message: 'Producto o cantidad inválida en un producto agregado.' };
+      }
+      if (!precio_unitario || precio_unitario <= 0) {
+        throw { status: 400, message: 'El precio unitario de un producto agregado debe ser mayor a $0.' };
+      }
+
+      if (item.id_variante) {
+        const stockRes = await client.query(
+          `SELECT stock FROM "ProductoVariantes" WHERE id_variante=$1 FOR UPDATE`,
+          [item.id_variante]
+        );
+        const stockDisponible = stockRes.rows[0]?.stock ?? 0;
+        if (stockDisponible < cantidad) {
+          throw { status: 400, message: `Stock insuficiente para la variante seleccionada. Disponible: ${stockDisponible}.` };
+        }
+      }
+
+      const subtotalLinea = cantidad * precio_unitario;
+      await client.query(`
+        INSERT INTO "DetalleVenta" (id_venta, id_producto, id_variante, cantidad, precio_unitario, descuento_linea, subtotal)
+        VALUES ($1,$2,$3,$4,$5,0,$6)
+      `, [pedido.id_venta, item.id_producto, item.id_variante || null, cantidad, precio_unitario, subtotalLinea]);
+
+      // Si el stock de esta venta ya se descuenta de inmediato (contraentrega,
+      // o transferencia ya confirmada), el producto agregado se descuenta ya
+      // mismo también. Si todavía está diferido, se deja igual — se
+      // descontará junto con el resto cuando se confirme el pago
+      // (descontarStockSiHaceFalta ya recorre TODAS las líneas de la venta
+      // en ese momento, así que esta línea nueva queda cubierta sola). ──
+      if (pedido.stock_descontado && item.id_variante) {
+        await client.query(`UPDATE "ProductoVariantes" SET stock = stock - $1 WHERE id_variante=$2`, [cantidad, item.id_variante]);
+      }
+      sumaNuevosItems += subtotalLinea;
+    }
+
+    if (sumaNuevosItems > 0) {
+      const nuevoSubtotal = Number(pedido.subtotal) + sumaNuevosItems;
+      const nuevoTotal = nuevoSubtotal - Number(pedido.descuento) + Number(pedido.impuesto);
+      await client.query(`UPDATE "Ventas" SET subtotal=$1, total=$2 WHERE id_venta=$3`, [nuevoSubtotal, nuevoTotal, pedido.id_venta]);
+
+      // El saldo por cobrar sube en la misma medida — se reparte sobre lo
+      // que todavía esté Pendiente de cobrar, sin tocar lo ya confirmado.
+      if (pedido.tipo_pago === 'cuotas') {
+        const cuotasPendientes = await client.query(
+          `SELECT id_pago FROM "PagosAbonos" WHERE id_venta=$1 AND estado='Pendiente' ORDER BY num_cuota ASC`,
+          [pedido.id_venta]
+        );
+        if (cuotasPendientes.rows.length > 0) {
+          const n = cuotasPendientes.rows.length;
+          const base = Math.floor(sumaNuevosItems / n);
+          const resto = sumaNuevosItems - base * n;
+          for (let i = 0; i < n; i++) {
+            const incremento = base + (i === n - 1 ? resto : 0);
+            await client.query(`UPDATE "PagosAbonos" SET monto = monto + $1 WHERE id_pago=$2`, [incremento, cuotasPendientes.rows[i].id_pago]);
+          }
+        } else {
+          // Todas las cuotas ya estaban confirmadas — se agrega una cuota
+          // extra pendiente por el valor de lo nuevo, sin tocar el
+          // calendario de las cuotas ya pactadas.
+          const maxCuotaRes = await client.query(`SELECT COALESCE(MAX(num_cuota),0) AS max FROM "PagosAbonos" WHERE id_venta=$1`, [pedido.id_venta]);
+          const siguienteCuota = Number(maxCuotaRes.rows[0].max) + 1;
+          await client.query(`
+            INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha, num_cuota)
+            VALUES ($1,$2,'Abono',$3,'Pendiente',now(),$4)
+          `, [pedido.id_venta, sumaNuevosItems, metodo_pago || 'Efectivo', siguienteCuota]);
+          await client.query(`UPDATE "Ventas" SET num_cuotas=$1 WHERE id_venta=$2`, [siguienteCuota, pedido.id_venta]);
+        }
+      } else {
+        const bump = await client.query(
+          `UPDATE "PagosAbonos" SET monto = monto + $1 WHERE id_venta=$2 AND estado='Pendiente' RETURNING id_pago`,
+          [sumaNuevosItems, pedido.id_venta]
+        );
+        if (bump.rows.length === 0) {
+          await client.query(`
+            INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, estado, fecha)
+            VALUES ($1,$2,'Pago completo',$3,'Pendiente',now())
+          `, [pedido.id_venta, sumaNuevosItems, metodo_pago || 'Efectivo']);
+        }
+      }
+
+      // Si la venta ya se había marcado "Pagado", con el producto nuevo ya
+      // no lo está de verdad — vuelve a "Confirmado" para que el saldo
+      // pendiente recién creado se vea y se pueda cobrar desde Pagos.
+      await client.query(`UPDATE "Ventas" SET estado='Confirmado' WHERE id_venta=$1 AND estado='Pagado'`, [pedido.id_venta]);
+    }
+
+    await client.query('COMMIT');
+    return await getPedidoById(id_pedido);
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally { client.release(); }
+};
+
+module.exports = { getPedidos, getPedidoById, getHistorial, cambiarEstadoPedido, editarPedido, ESTADOS_VALIDOS };

@@ -12,13 +12,21 @@ const {
   MONTO_MINIMO_ABONO, mensajeMontoMinimo,
 } = require('./pagoLogica.service');
 
-const getPagos = async ({ page, limit, q } = {}) => {
+const getPagos = async ({ page, limit, q, estado } = {}) => {
   const params = [];
   let busquedaSql = '';
   if (q) {
     params.push(`%${q}%`);
     busquedaSql = `AND (c.nombre ILIKE $${params.length} OR CAST(pa.id_pago AS TEXT) = $${params.length + 1})`;
     params.push(q);
+  }
+  // ── NUEVO: filtro "Realizados" (Confirmado) / "Pendientes" — se suma con
+  // AND a la ventana de arriba, así que un pago Pendiente que ya salió de
+  // la ventana sigue sin verse aunque se filtre por "Pendientes". ──
+  let estadoSql = '';
+  if (estado === 'Confirmado' || estado === 'Pendiente' || estado === 'Anulado') {
+    params.push(estado);
+    estadoSql = `AND pa.estado = $${params.length}`;
   }
 
   const paginar = page !== undefined;
@@ -56,6 +64,7 @@ const getPagos = async ({ page, limit, q } = {}) => {
       OR pa.num_cuota < COALESCE(pp.min_pendiente, 0) + 3
     )
     ${busquedaSql}
+    ${estadoSql}
     ORDER BY pa.id_venta DESC, pa.num_cuota ASC NULLS LAST
     ${limitOffsetSql}
   `, params);

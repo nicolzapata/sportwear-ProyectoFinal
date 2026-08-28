@@ -36,6 +36,8 @@ export function useVentasListado() {
   // Usuarios. Filtra según quién registró la venta: el cliente desde la
   // Landing, o el administrador directamente aquí. ──
   const [filtroOrigen, setFiltroOrigen] = useState(""); // "" = Todas | "Landing" | "Admin"
+  // ── NUEVO: filtro "Realizadas" (pagadas) / "Pendientes" — "" = Todas ──
+  const [filtroEstadoPago, setFiltroEstadoPago] = useState("");
 
   // Buscador con debounce: evita disparar una petición por cada tecla.
   // ── CORREGIDO: antes "resetear a página 1" vivía en un efecto aparte que
@@ -50,7 +52,7 @@ export function useVentasListado() {
   }, [busqueda]);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { cargar(false, pagina, busquedaDebounced); }, [pagina, busquedaDebounced, filtroOrigen]);
+  useEffect(() => { cargar(false, pagina, busquedaDebounced); }, [pagina, busquedaDebounced, filtroOrigen, filtroEstadoPago]);
 
   const cargar = async (silencioso = false, pag = pagina, q = busquedaDebounced) => {
     if (!silencioso) {
@@ -59,7 +61,7 @@ export function useVentasListado() {
     setErrorMsg("");
     const inicio = Date.now();
     try {
-      const { data } = await api.get("/ventas", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined, origen: filtroOrigen || undefined } });
+      const { data } = await api.get("/ventas", { params: { page: pag, limit: FILAS_POR_PAGINA, q: q || undefined, origen: filtroOrigen || undefined, estado_pago: filtroEstadoPago || undefined } });
 
       const ventas = data.data.map(v => {
         const abonos      = v.abonos || [];
@@ -127,6 +129,7 @@ export function useVentasListado() {
     verDetalle, setVerDetalle, filaAbierta, setFilaAbierta,
     cambiandoEstado, setCambiandoEstado,
     filtroOrigen, setFiltroOrigen,
+    filtroEstadoPago, setFiltroEstadoPago,
     totalPaginas, cargar, cambiarEstadoDirecto,
   };
 }

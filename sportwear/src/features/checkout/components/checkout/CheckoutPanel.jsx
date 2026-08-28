@@ -1,6 +1,7 @@
 import OpcionesPago from "./OpcionesPago";
 import CuotasAccordion from "./CuotasAccordion";
 import StockAlerta from "./StockAlerta";
+import AceptarTerminos from "../../../../shared/components/AceptarTerminos";
 import { fmt, ETIQUETAS_METODO } from "../../utils/checkoutHelpers";
 
 export default function CheckoutPanel({
@@ -11,6 +12,7 @@ export default function CheckoutPanel({
   permisoCuotas, tipoPago, setTipoPago, opcionesCuotas,
   tipoPagoActivo, numCuotasActivo, setNumCuotas, total, valorCuota, fechasCuotas,
   error, errorStock, elegirAlternativa,
+  aceptaTerminos, setAceptaTerminos,
   enviando, handleConfirmar, navigate,
 }) {
   return (
@@ -125,6 +127,15 @@ export default function CheckoutPanel({
 
       {error && <p className="checkout-error">{error}</p>}
       <StockAlerta errorStock={errorStock} elegirAlternativa={elegirAlternativa} />
+
+      <AceptarTerminos
+        aceptado={aceptaTerminos}
+        setAceptado={(val) => {
+          setAceptaTerminos(val);
+          if (erroresPaso.terminos) setErroresPaso((prev) => ({ ...prev, terminos: val ? "" : prev.terminos }));
+        }}
+        error={erroresPaso.terminos}
+      />
 
       <button
         className="checkout-btn-primary"

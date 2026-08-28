@@ -174,15 +174,24 @@ export default function ProductCard({ p, onTogglePublicado, esAdmin }) {
 
             {tallas.length > 0 && (
               <div className="catalog-tallas">
-                {tallas.map(t => (
-                  <button
-                    key={t}
-                    className={`catalog-talla-chip${tallaSel === t ? " selected" : ""}`}
-                    onClick={(e) => handleTallaClick(e, t)}
-                  >
-                    {t}
-                  </button>
-                ))}
+                {tallas.map(t => {
+                  // ── NUEVO: igual que en el detalle de producto — una talla
+                  // sin stock se ve marcada (línea diagonal) y no se puede
+                  // elegir, en vez de dejarla seleccionable sin ningún aviso. ──
+                  const varT = (variantes || []).find(v => v.id_color === colorSel?.id_color && v.talla === t);
+                  const sinStock = Number(varT?.stock ?? 0) === 0;
+                  return (
+                    <button
+                      key={t}
+                      className={`catalog-talla-chip${tallaSel === t ? " selected" : ""}${sinStock ? " agotada" : ""}`}
+                      onClick={(e) => { e.stopPropagation(); if (!sinStock) handleTallaClick(e, t); }}
+                      disabled={sinStock}
+                      title={sinStock ? "Agotada" : t}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -196,7 +205,14 @@ export default function ProductCard({ p, onTogglePublicado, esAdmin }) {
                 ? <><span className="catalog-card-price-desde">Desde</span> {fmt(precioMinNum)}</>
                 : fmt(precioMinNum)}
           </div>
-          {!agotado && !esAdmin && (
+          {/* ── CORREGIDO: antes este bloque completo desaparecía cuando el
+              producto estaba agotado (o mientras las variantes ni siquiera
+              habían cargado) — así que otros productos con stock real no
+              mostraban el botón hasta pasar el mouse por encima, y parecía
+              que "faltaba" el botón. Ahora siempre se ve; lo único que
+              cambia es que se deshabilita cuando la talla/color elegida (o
+              el producto entero) no tiene stock — nunca desaparece. ── */}
+          {!esAdmin && (
             <div className="catalog-qty-wrap" onClick={(e) => e.stopPropagation()}>
               <button className="catalog-qty-btn" onClick={decrementar} disabled={cantidad <= 1}>
                 <IconMinus />
@@ -207,6 +223,8 @@ export default function ProductCard({ p, onTogglePublicado, esAdmin }) {
               </button>
               <button
                 className={`btn btn-sm btn-primary ${agregado ? "btn-success" : ""}`}
+                disabled={stockColorTalla === 0}
+                title={stockColorTalla === 0 ? "Sin stock para esta talla y color" : undefined}
                 onClick={(e) => {
                   e.stopPropagation();
                   // ── CORREGIDO: ya no exige sesión para agregar al carrito
@@ -215,6 +233,10 @@ export default function ProductCard({ p, onTogglePublicado, esAdmin }) {
                   // solo se pide al hacer clic en "Finalizar compra". ──
                   if (!colorSel || !tallaSel) {
                     showToast("error", "Por favor selecciona color y talla");
+                    return;
+                  }
+                  if (stockColorTalla === 0) {
+                    showToast("error", "No hay stock para esa talla y color");
                     return;
                   }
                   agregarAlCarrito({
@@ -233,7 +255,7 @@ export default function ProductCard({ p, onTogglePublicado, esAdmin }) {
                   setTimeout(() => setAgregado(false), 1500);
                 }}
               >
-                {agregado ? <IconCheck /> : <IconCart />}
+                {agregado ? <IconCheck /> : stockColorTalla === 0 ? <IconAgotado /> : <IconCart />}
               </button>
             </div>
           )}

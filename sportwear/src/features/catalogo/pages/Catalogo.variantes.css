@@ -91,6 +91,32 @@
   color: #fff;
 }
 
+/* ── NUEVO: talla sin stock — línea diagonal, no clickeable, mismo
+   lenguaje visual que el detalle de producto (.dp-talla-chip.agotada). ── */
+.catalog-talla-chip.agotada {
+  color: var(--dvna-muted);
+  border-color: var(--dvna-border, #ddd);
+  cursor: not-allowed;
+  position: relative;
+  overflow: hidden;
+}
+.catalog-talla-chip.agotada:hover {
+  border-color: var(--dvna-border, #ddd);
+  color: var(--dvna-muted);
+}
+.catalog-talla-chip.agotada::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 0.5px),
+    var(--dvna-border, #ddd) calc(50% - 0.5px),
+    var(--dvna-border, #ddd) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px)
+  );
+}
+
 /* ── Controles de cantidad ── */
 .catalog-qty-wrap {
   display: flex;

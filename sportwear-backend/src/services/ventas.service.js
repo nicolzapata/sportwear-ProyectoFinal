@@ -12,7 +12,7 @@ const {
   MONTO_MINIMO_ABONO, ajustarNumCuotas, calcularFechasVencimiento,
 } = require('./pagoLogica.service');
 
-const getVentas = async ({ page, limit, q, origen } = {}) => {
+const getVentas = async ({ page, limit, q, origen, estado_pago } = {}) => {
   const params = [];
   let busquedaSql = '';
   if (q) {
@@ -25,6 +25,20 @@ const getVentas = async ({ page, limit, q, origen } = {}) => {
   if (origen === 'Landing' || origen === 'Admin') {
     params.push(origen);
     origenSql = `AND v.origen = $${params.length}`;
+  }
+
+  // ── NUEVO: filtro "Realizadas" (pagadas) / "Pendientes" — mismo criterio
+  // que ya usa el frontend para pintar el badge de estado (lo pagado cubre
+  // o no el total), así nunca puede verse una venta bajo un filtro que
+  // contradiga su propio badge. Va en HAVING porque depende del agregado
+  // de abonos confirmados, calculado en el mismo SELECT. ──
+  let havingSql = '';
+  if (estado_pago === 'Pagado') {
+    havingSql = `HAVING v.estado != 'Anulado' AND COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) >= v.total`;
+  } else if (estado_pago === 'Pendiente') {
+    havingSql = `HAVING v.estado != 'Anulado' AND COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) < v.total`;
+  } else if (estado_pago === 'Anulado') {
+    havingSql = `HAVING v.estado = 'Anulado'`;
   }
 
   const paginar = page !== undefined;
@@ -46,6 +60,7 @@ const getVentas = async ({ page, limit, q, origen } = {}) => {
     LEFT JOIN "PagosAbonos" pa ON v.id_venta=pa.id_venta
     WHERE v.estado != 'Abandonado' ${busquedaSql} ${origenSql}
     GROUP BY v.id_venta, c.nombre, c.email
+    ${havingSql}
     ORDER BY v.id_venta DESC
     ${limitOffsetSql}
   `, params);
@@ -198,6 +213,10 @@ const validarCupoCredito = async (id_cliente, montoNuevaVenta) => {
 const crearVenta = async (datos) => {
   const { id_cliente, descuento, impuesto, estado, fecha, observaciones, items, tipo_pago, metodo_pago, motivo_descuento, direccion_entrega, fecha_primera_cuota } = datos;
   if (!id_cliente) throw { status: 400, message: 'El cliente es requerido' };
+  // ── NUEVO: la dirección de entrega ahora es obligatoria — sin ella no
+  // hay forma real de despachar la venta. Validado también en el frontend,
+  // pero la regla real vive aquí. ──
+  if (!direccion_entrega?.trim()) throw { status: 400, message: 'La dirección de entrega es obligatoria' };
 
   const subtotal = items
     ? items.reduce((a, i) => a + i.cantidad * i.precio_unitario - (i.descuento_linea || 0), 0)
@@ -480,6 +499,7 @@ const notificarPedidoRecibido = async (id_venta, metodo_pago) => {
 const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entrega, id_barrio, metodo_pago, tipo_pago, num_cuotas: numCuotasPedido, fecha_primera_cuota, items }) => {
   if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
   if (!id_cliente) throw { status: 400, message: 'Cliente no identificado' };
+  if (!direccion_entrega?.trim()) throw { status: 400, message: 'La dirección de entrega es obligatoria' };
 
   // ── NUEVO: validar cupo de crédito solo cuando el pedido es a cuotas. El
   // número de cuotas se autoajusta al máximo real que permite el total,

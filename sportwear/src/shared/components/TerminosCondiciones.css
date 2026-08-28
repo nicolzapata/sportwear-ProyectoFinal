@@ -1,0 +1,123 @@
+/* ── Modal de Términos y condiciones ── */
+.tyc-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1.5rem;
+}
+
+.tyc-modal {
+  background: var(--white, #fff);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+}
+
+.tyc-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border, #e5e5e5);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.tyc-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text, #1a1a1a);
+}
+
+.tyc-close {
+  background: transparent;
+  border: 1px solid var(--border, #e5e5e5);
+  border-radius: 40px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted, #888);
+}
+.tyc-close:hover { background: var(--pale, #f4f4f4); }
+
+.tyc-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text, #1a1a1a);
+}
+.tyc-body h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 1.1rem 0 0.4rem;
+  color: var(--text, #1a1a1a);
+}
+.tyc-body h3:first-of-type { margin-top: 0; }
+.tyc-body p { margin: 0 0 0.6rem; color: var(--muted, #555); }
+.tyc-fecha { font-size: 11px; color: var(--muted, #999); margin-bottom: 1rem; }
+
+.tyc-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--border, #e5e5e5);
+  display: flex;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.tyc-btn-primary {
+  background: var(--primary-dark, #1a1a1a);
+  color: #fff;
+  border: none;
+  border-radius: 40px;
+  padding: 0.6rem 1.4rem;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* ── Checkbox "Acepto los términos y condiciones" ── */
+.tyc-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text, #1a1a1a);
+  cursor: pointer;
+  margin-top: 10px;
+}
+.tyc-checkbox-row input[type="checkbox"] {
+  margin-top: 2px;
+  cursor: pointer;
+}
+.tyc-checkbox-row--error { color: #c0392b; }
+
+.tyc-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #9a7d66;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.tyc-checkbox-error {
+  font-size: 11px;
+  color: #c0392b;
+  margin: 4px 0 0;
+}

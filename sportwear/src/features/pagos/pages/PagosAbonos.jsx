@@ -8,6 +8,7 @@ import { IconSearch, IconX, IconSettings } from "../../../shared/components/Icon
 import Loader from "../../../shared/components/Loader";
 import ExportButtons from "../../../shared/components/ExportButtons";
 import PagosTable from "../components/pagos-abonos/PagosTable";
+import FilterToggle from "../../../shared/components/FilterToggle";
 import NuevoPagoModal from "../components/pagos-abonos/NuevoPagoModal";
 import PagoDetalleModal from "../components/pagos-abonos/PagoDetalleModal";
 import MetodosPagoModal from "../components/pagos-abonos/MetodosPagoModal";
@@ -28,6 +29,15 @@ export default function PagosAbonos() {
           <input type="text" className="pagosabonos-search-input" placeholder="Buscar por cliente o ID..." value={p.busqueda} onChange={(e) => p.setBusqueda(e.target.value)} />
           {p.busqueda && <button className="pagosabonos-search-clear" onClick={() => p.setBusqueda("")}><IconX /></button>}
           </div>
+          <FilterToggle
+            opciones={[
+              { valor: "", etiqueta: "Todos" },
+              { valor: "Confirmado", etiqueta: "Realizados" },
+              { valor: "Pendiente", etiqueta: "Pendientes" },
+            ]}
+            valor={p.filtroEstado}
+            onChange={(val) => { p.setFiltroEstado(val); p.setPagina(1); }}
+          />
         </div>
         <div className="pagosabonos-actions-right">
           {p.tienePerm('Pagos.editar') && (
@@ -40,7 +50,7 @@ export default function PagosAbonos() {
           )}
           <ExportButtons
             obtenerDatos={async () => {
-              const { data } = await api.get("/pagos", { params: { q: p.busquedaDebounced || undefined } });
+              const { data } = await api.get("/pagos", { params: { q: p.busquedaDebounced || undefined, estado: p.filtroEstado || undefined } });
               return data;
             }}
             columnas={[

@@ -79,7 +79,7 @@ export default function VariantesMasDropdown({ grupos, restantes, abierto, onTog
           {grupos.map(g => (
             <div key={g.id_color} className="gestproductos-variantes-panel-item">
               <span className="gestproductos-variantes-panel-dot" style={{ background: g.codigo_hex || "#ccc" }} />
-              <span className="gestproductos-variantes-panel-label">{g.nombre}: {g.tallas.join(", ")}</span>
+              <span className="gestproductos-variantes-panel-label">{g.nombre}: {g.texto}</span>
             </div>
           ))}
         </div>,
