@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SportWear — Manual Técnico de Implantación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#0a0a0a;
+    --ink:#1a1a18;
+    --paper:#f8f8f6;
+    --white:#ffffff;
+    --primary:#f5e642;
+    --primary-dark:#d4c800;
+    --border:#e8e8e5;
+    --border-dark:#d0d0cc;
+    --muted:#78766f;
+    --danger:#d13a2f; --danger-bg:#fff0ef;
+    --success:#22863a; --success-bg:#eafbee;
+    --info:#1a6fc4; --info-bg:#edf4ff;
+    --font-body:'DM Sans', system-ui, sans-serif;
+    --font-mono:'JetBrains Mono', ui-monospace, Menlo, monospace;
+    --r:4px; --r-md:10px; --r-lg:16px;
+    --sh-xs:0 1px 3px rgba(0,0,0,.06);
+    --sh-sm:0 4px 16px rgba(0,0,0,.09);
+    --sh-md:0 8px 32px rgba(0,0,0,.12);
+    --sidebar-w:272px;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:var(--font-body);
+    background:var(--paper);
+    color:var(--ink);
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-track{background:var(--paper);}
+  ::-webkit-scrollbar-thumb{background:var(--border-dark);border-radius:99px;}
+
+  /* ===== Topbar (mobile only) ===== */
+  .topbar{
+    display:none;
+    position:sticky; top:0; z-index:40;
+    background:var(--black); color:var(--white);
+    align-items:center; justify-content:space-between;
+    padding:14px 20px;
+  }
+  .topbar .word{font-weight:700; letter-spacing:.5px;}
+  .topbar .word span{color:var(--primary);}
+  .menu-btn{
+    background:none; border:1px solid rgba(255,255,255,.25); color:var(--white);
+    border-radius:var(--r); padding:7px 12px; font-family:var(--font-body); font-size:13px; cursor:pointer;
+  }
+
+  /* ===== Sidebar ===== */
+  .sidebar{
+    position:fixed; top:0; left:0; height:100vh; width:var(--sidebar-w);
+    background:var(--black); color:#d8d8d4;
+    overflow-y:auto; z-index:30;
+    display:flex; flex-direction:column;
+  }
+  .sidebar-head{
+    padding:28px 24px 20px; border-bottom:1px solid rgba(255,255,255,.08);
+  }
+  .sidebar-head .word{
+    font-size:20px; font-weight:700; color:var(--white); letter-spacing:.3px;
+  }
+  .sidebar-head .word span{color:var(--primary);}
+  .sidebar-head .sub{
+    margin-top:6px; font-size:12.5px; color:#8a8a85;
+  }
+  .sidebar nav{padding:18px 14px 28px;}
+  .nav-group{margin-bottom:22px;}
+  .nav-group-label{
+    font-size:11.5px; color:#6f6f6a; padding:0 10px 8px; font-weight:500;
+  }
+  .nav-link{
+    display:flex; align-items:baseline; gap:10px;
+    padding:8px 10px; border-radius:var(--r-md);
+    font-size:14px; color:#c6c6c1; text-decoration:none;
+    transition:background .15s var(--ease), color .15s var(--ease);
+  }
+  .nav-link .n{font-family:var(--font-mono); font-size:11.5px; color:#5c5c57; min-width:16px;}
+  .nav-link:hover{background:rgba(255,255,255,.06); color:var(--white);}
+  .nav-link.active{background:rgba(245,230,66,.12); color:var(--primary);}
+  .nav-link.active .n{color:var(--primary);}
+  .sidebar-foot{
+    margin-top:auto; padding:18px 24px 24px; border-top:1px solid rgba(255,255,255,.08);
+    font-size:12px; color:#6f6f6a;
+  }
+  .sidebar-foot a{color:#9c9c96; text-decoration:underline; text-underline-offset:2px;}
+
+  .backdrop{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:25;
+  }
+
+  /* ===== Main ===== */
+  .main{margin-left:var(--sidebar-w);}
+  .hero{
+    background:var(--black); color:var(--white);
+    padding:64px 56px 48px;
+    border-bottom:3px solid var(--primary);
+  }
+  .hero .eyebrow{font-size:13px; color:#a9a9a3; margin-bottom:14px;}
+  .hero h1{
+    font-size:clamp(30px,4vw,44px); font-weight:700; letter-spacing:-.5px; max-width:16ch;
+  }
+  .hero p{
+    margin-top:16px; max-width:62ch; color:#c6c6c1; font-size:16px;
+  }
+  .hero .links{
+    margin-top:28px; display:flex; flex-wrap:wrap; gap:12px;
+  }
+  .pill-link{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:9px 16px; border-radius:99px; font-size:13.5px; font-weight:600;
+    text-decoration:none; border:1.5px solid transparent;
+  }
+  .pill-link.primary{background:var(--primary); color:var(--black);}
+  .pill-link.primary:hover{background:var(--primary-dark);}
+  .pill-link.outline{border-color:rgba(255,255,255,.25); color:var(--white);}
+  .pill-link.outline:hover{border-color:var(--primary); color:var(--primary);}
+
+  .content{padding:48px 56px 100px; max-width:840px;}
+
+  section.block{margin-bottom:56px; scroll-margin-top:24px;}
+  .block-head{position:relative; margin-bottom:22px; padding-bottom:16px; border-bottom:1px solid var(--border);}
+  .block-head::after{content:''; position:absolute; bottom:-1px; left:0; width:48px; height:2px; background:var(--primary);}
+  .block-kicker{font-family:var(--font-mono); font-size:12px; color:var(--muted); margin-bottom:6px;}
+  .block-head h2{font-size:26px; font-weight:700; letter-spacing:-.2px;}
+  .block p{margin-bottom:14px; color:#333330;}
+  .block p.lead{color:var(--ink); font-size:15.5px;}
+
+  .card{
+    background:var(--white); border:1px solid var(--border); border-radius:var(--r-lg);
+    padding:22px 26px; box-shadow:var(--sh-xs); margin-bottom:16px;
+  }
+
+  ul.plain, ol.steps{margin:10px 0 18px 0;}
+  ul.plain{list-style:none;}
+  ul.plain li{
+    position:relative; padding-left:18px; margin-bottom:9px; color:#333330; font-size:15px;
+  }
+  ul.plain li::before{
+    content:''; position:absolute; left:0; top:9px; width:6px; height:6px; border-radius:50%; background:var(--primary-dark);
+  }
+  ol.steps{counter-reset:step; list-style:none; margin-top:18px;}
+  ol.steps li{
+    counter-increment:step; position:relative; padding:14px 18px 14px 52px;
+    background:var(--white); border:1px solid var(--border); border-radius:var(--r-md);
+    margin-bottom:10px; font-size:15px;
+  }
+  ol.steps li::before{
+    content:counter(step); position:absolute; left:16px; top:50%; transform:translateY(-50%);
+    font-family:var(--font-mono); font-weight:500; font-size:13px; color:var(--black);
+    background:var(--primary); width:24px; height:24px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  ol.steps li strong{display:block; margin-bottom:2px;}
+  ol.steps li code{font-size:13px;}
+
+  pre{
+    background:var(--black); color:#eaeae6; border-radius:var(--r-md);
+    padding:16px 18px; overflow-x:auto; font-family:var(--font-mono); font-size:13.5px;
+    margin:12px 0 18px; position:relative; line-height:1.6;
+  }
+  pre code{font-family:var(--font-mono); white-space:pre;}
+  code{font-family:var(--font-mono); background:#eeeee9; padding:1px 6px; border-radius:4px; font-size:13px; overflow-wrap:anywhere;}
+  pre code{background:none; padding:0;}
+  .copy-btn{
+    position:absolute; top:10px; right:10px; background:rgba(255,255,255,.08);
+    color:#c6c6c1; border:1px solid rgba(255,255,255,.15); border-radius:var(--r);
+    font-family:var(--font-body); font-size:11.5px; padding:5px 10px; cursor:pointer;
+  }
+  .copy-btn:hover{background:rgba(255,255,255,.16); color:var(--white);}
+  .copy-btn.copied{color:var(--primary); border-color:var(--primary);}
+
+  table{width:100%; border-collapse:collapse; margin:14px 0 20px; font-size:14px; background:var(--white); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden;}
+  thead th{
+    text-align:left; background:var(--paper); color:var(--muted); font-weight:600; font-size:12.5px;
+    padding:10px 16px; border-bottom:1px solid var(--border);
+  }
+  tbody td{padding:12px 16px; border-bottom:1px solid var(--border); vertical-align:top; overflow-wrap:anywhere;}
+  tbody tr:last-child td{border-bottom:none;}
+  td code{white-space:nowrap;}
+  .col-var{font-family:var(--font-mono); font-size:13px; font-weight:500; white-space:nowrap;}
+
+  .group-label{
+    font-size:12.5px; font-weight:600; color:var(--muted); text-transform:none;
+    margin:22px 0 6px;
+  }
+  .group-label:first-child{margin-top:0;}
+
+  .note{
+    display:flex; gap:12px; padding:14px 18px; border-radius:var(--r-md);
+    background:var(--info-bg); border:1px solid #cfe3fb; font-size:14px; margin:16px 0 20px;
+  }
+  .note strong{color:var(--info);}
+  .note.warn{background:#fff8e6; border-color:#f5e6ae;}
+  .note.warn strong{color:#a3720b;}
+
+  .issue{
+    background:var(--white); border:1px solid var(--border); border-radius:var(--r-lg);
+    padding:22px 26px; margin-bottom:16px;
+  }
+  .issue h3{font-size:16px; margin-bottom:14px;}
+  .issue-row{display:grid; grid-template-columns:100px 1fr; gap:6px 16px; margin-bottom:8px; font-size:14.5px;}
+  .issue-row .k{color:var(--muted); font-size:12.5px; font-weight:600; padding-top:2px;}
+  .issue-row.solution .k{color:var(--success);}
+
+  .tech-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0;}
+  .tech-card{background:var(--white); border:1px solid var(--border); border-radius:var(--r-md); padding:16px 18px;}
+  .tech-card h4{font-size:14px; margin-bottom:8px; color:var(--muted); font-weight:600;}
+
+  .footer-note{
+    margin-top:40px; padding-top:24px; border-top:1px solid var(--border);
+    color:var(--muted); font-size:13px;
+  }
+
+  @media (max-width:960px){
+    .topbar{display:flex;}
+    .sidebar{
+      transform:translateX(-100%); transition:transform .25s var(--ease); box-shadow:var(--sh-md);
+    }
+    .sidebar.open{transform:translateX(0);}
+    .backdrop.open{display:block;}
+    .main{margin-left:0;}
+    .hero{padding:40px 24px 32px;}
+    .content{padding:32px 22px 80px;}
+    .tech-grid{grid-template-columns:1fr;}
+    .issue-row{grid-template-columns:84px 1fr;}
+  }
+  @media (max-width:520px){
+    table{font-size:13px;}
+    thead th, tbody td{padding:9px 10px;}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    *{transition:none !important;}
+  }
+  :focus-visible{outline:2px solid var(--primary); outline-offset:2px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="word">Sport<span>Wear</span> · Manual</div>
+  <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="sidebar">Contenido</button>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-head">
+    <div class="word">Sport<span>Wear</span></div>
+    <div class="sub">Manual técnico de implantación</div>
+  </div>
+  <nav id="navList">
+    <div class="nav-group">
+      <div class="nav-group-label">Visión general</div>
+      <a class="nav-link" href="#info"><span class="n">01</span>Información general</a>
+      <a class="nav-link" href="#requisitos"><span class="n">02</span>Requisitos</a>
+      <a class="nav-link" href="#tecnologias"><span class="n">03</span>Tecnologías</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Puesta en marcha local</div>
+      <a class="nav-link" href="#clonacion"><span class="n">04</span>Clonación</a>
+      <a class="nav-link" href="#dependencias"><span class="n">05</span>Dependencias</a>
+      <a class="nav-link" href="#env"><span class="n">06</span>Variables de entorno</a>
+      <a class="nav-link" href="#basedatos"><span class="n">07</span>Base de datos</a>
+      <a class="nav-link" href="#local"><span class="n">08</span>Ejecución local</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Despliegue</div>
+      <a class="nav-link" href="#deploy-backend"><span class="n">09</span>Backend</a>
+      <a class="nav-link" href="#deploy-frontend"><span class="n">10</span>Frontend</a>
+      <a class="nav-link" href="#produccion"><span class="n">11</span>Producción</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Soporte</div>
+      <a class="nav-link" href="#problemas"><span class="n">12</span>Problemas frecuentes</a>
+    </div>
+  </nav>
+  <div class="sidebar-foot">
+    Proyecto académico · ADSO SENA<br>
+    <a href="https://github.com/nicolzapata/sportwear-ProyectoFinal" target="_blank" rel="noopener">Repositorio en GitHub</a>
+  </div>
+</aside>
+
+<div class="main">
+
+  <header class="hero">
+    <div class="eyebrow">Proyecto final · Modelado, 5.º trimestre ADSO</div>
+    <h1>Manual técnico de implantación de SportWear</h1>
+    <p>Guía completa para clonar, configurar, ejecutar en local y desplegar en producción el sistema de gestión y venta de SportWear: catálogo público, carrito, checkout y panel administrativo.</p>
+    <div class="links">
+      <a class="pill-link primary" href="https://sportwearr.vercel.app/" target="_blank" rel="noopener">Ver aplicación</a>
+      <a class="pill-link outline" href="https://sportwear-proyectofinal.onrender.com/api" target="_blank" rel="noopener">Ver API</a>
+      <a class="pill-link outline" href="https://github.com/nicolzapata/sportwear-ProyectoFinal" target="_blank" rel="noopener">Repositorio</a>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- 01 -->
+    <section class="block" id="info">
+      <div class="block-head">
+        <div class="block-kicker">01</div>
+        <h2>Información general del proyecto</h2>
+      </div>
+      <table>
+        <tbody>
+          <tr><td class="col-var">Nombre</td><td>SportWear</td></tr>
+          <tr><td class="col-var">Descripción</td><td>Sistema web de gestión y venta para una tienda de ropa deportiva.</td></tr>
+          <tr><td class="col-var">Objetivo</td><td>Cubrir el catálogo público de cara al cliente (navegación de productos, carrito, checkout, pedidos) y un panel administrativo completo: productos, variantes, colores, categorías, proveedores, compras, ventas, pagos/abonos, clientes, usuarios, roles y un dashboard de indicadores.</td></tr>
+          <tr><td class="col-var">Aplicación</td><td><a href="https://sportwearr.vercel.app/" target="_blank" rel="noopener">sportwearr.vercel.app</a></td></tr>
+          <tr><td class="col-var">API</td><td><a href="https://sportwear-proyectofinal.onrender.com/api" target="_blank" rel="noopener">sportwear-proyectofinal.onrender.com/api</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 02 -->
+    <section class="block" id="requisitos">
+      <div class="block-head">
+        <div class="block-kicker">02</div>
+        <h2>Requisitos</h2>
+      </div>
+      <p class="lead">Lo que necesitas instalado o creado antes de tocar el código.</p>
+      <ul class="plain">
+        <li>Sistema operativo: cualquiera con soporte para Node.js 18+ (Windows, macOS o Linux). El backend se conteneriza sobre <code>node:18-alpine</code> para producción.</li>
+        <li>Node.js 18 o superior, con npm.</li>
+        <li>Gestor de paquetes: npm.</li>
+        <li>Base de datos: PostgreSQL (instancia local o gestionada en la nube).</li>
+        <li>Cuenta de <a href="https://cloudinary.com/" target="_blank" rel="noopener">Cloudinary</a> para el almacenamiento de imágenes de productos.</li>
+        <li>Cuenta de correo con acceso SMTP, usada para el envío de correos de recuperación de contraseña.</li>
+      </ul>
+    </section>
+
+    <!-- 03 -->
+    <section class="block" id="tecnologias">
+      <div class="block-head">
+        <div class="block-kicker">03</div>
+        <h2>Tecnologías utilizadas</h2>
+      </div>
+      <table>
+        <thead><tr><th>Tecnología</th><th>Uso dentro del proyecto</th></tr></thead>
+        <tbody>
+          <tr><td class="col-var">Node.js + Express</td><td>API REST del backend</td></tr>
+          <tr><td class="col-var">PostgreSQL (pg)</td><td>Persistencia de datos</td></tr>
+          <tr><td class="col-var">JWT</td><td>Autenticación de usuarios</td></tr>
+          <tr><td class="col-var">bcryptjs</td><td>Hash de contraseñas</td></tr>
+          <tr><td class="col-var">Multer + Cloudinary</td><td>Carga y almacenamiento de imágenes de productos</td></tr>
+          <tr><td class="col-var">Nodemailer</td><td>Envío de correos para recuperación de contraseña</td></tr>
+          <tr><td class="col-var">PDFKit</td><td>Generación de reportes en PDF desde el backend</td></tr>
+          <tr><td class="col-var">React 18 + Vite</td><td>Frontend: catálogo público y panel administrativo</td></tr>
+          <tr><td class="col-var">React Router DOM</td><td>Enrutamiento del lado del cliente</td></tr>
+          <tr><td class="col-var">Axios</td><td>Consumo de la API desde el frontend</td></tr>
+          <tr><td class="col-var">jsPDF / xlsx</td><td>Exportación de reportes a PDF y Excel desde el navegador</td></tr>
+          <tr><td class="col-var">Vercel</td><td>Despliegue del frontend</td></tr>
+          <tr><td class="col-var">Render</td><td>Despliegue del backend</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 04 -->
+    <section class="block" id="clonacion">
+      <div class="block-head">
+        <div class="block-kicker">04</div>
+        <h2>Clonación del proyecto</h2>
+      </div>
+      <p>El repositorio es un monorepo con dos aplicaciones independientes: <code>sportwear-backend/</code> (API) y <code>sportwear/</code> (frontend). Cada una se instala y ejecuta por separado.</p>
+      <pre><button class="copy-btn" data-copy>Copiar</button><code>git clone https://github.com/nicolzapata/sportwear-ProyectoFinal.git
+cd sportwear-ProyectoFinal</code></pre>
+      <p>No hay pasos adicionales antes de instalar: la estructura de carpetas ya viene lista para entrar a cada aplicación.</p>
+    </section>
+
+    <!-- 05 -->
+    <section class="block" id="dependencias">
+      <div class="block-head">
+        <div class="block-kicker">05</div>
+        <h2>Instalación de dependencias</h2>
+      </div>
+      <div class="group-label">Backend</div>
+      <pre><button class="copy-btn" data-copy>Copiar</button><code>cd sportwear-backend
+npm install</code></pre>
+      <div class="group-label">Frontend</div>
+      <pre><button class="copy-btn" data-copy>Copiar</button><code>cd sportwear
+npm install</code></pre>
+      <p>No hay dependencias nativas ni pasos especiales: basta con Node 18+ y npm en ambos casos.</p>
+    </section>
+
+    <!-- 06 -->
+    <section class="block" id="env">
+      <div class="block-head">
+        <div class="block-kicker">06</div>
+        <h2>Configuración de variables de entorno</h2>
+      </div>
+      <div class="note warn"><div><strong>Importante.</strong> Los ejemplos de esta tabla muestran solo la estructura esperada. Ningún valor real de contraseña, token o clave se publica aquí ni debe subirse al repositorio.</div></div>
+
+      <div class="group-label">Backend — sportwear-backend/.env</div>
+      <table>
+        <thead><tr><th>Variable</th><th>Propósito</th><th>Ejemplo de estructura</th></tr></thead>
+        <tbody>
+          <tr><td class="col-var">DB_HOST</td><td>Host de PostgreSQL (desarrollo local)</td><td><code>localhost</code></td></tr>
+          <tr><td class="col-var">DB_PORT</td><td>Puerto de PostgreSQL</td><td><code>5432</code></td></tr>
+          <tr><td class="col-var">DB_USER</td><td>Usuario de la base de datos</td><td><code>postgres</code></td></tr>
+          <tr><td class="col-var">DB_PASSWORD</td><td>Contraseña de la base de datos</td><td>no publicar el valor real</td></tr>
+          <tr><td class="col-var">DB_NAME</td><td>Nombre de la base de datos</td><td><code>SportWear</code></td></tr>
+          <tr><td class="col-var">DATABASE_URL</td><td>Cadena de conexión completa. Si está definida, el backend la usa en lugar de las variables <code>DB_*</code>; es la que se configura en producción (Render)</td><td><code>postgresql://usuario:contraseña@host:puerto/basedatos</code></td></tr>
+          <tr><td class="col-var">PORT</td><td>Puerto donde escucha el backend</td><td><code>4000</code></td></tr>
+          <tr><td class="col-var">FRONTEND_URL</td><td>Origen permitido por CORS; debe ser la URL pública del frontend en producción</td><td><code>https://sportwearr.vercel.app</code></td></tr>
+          <tr><td class="col-var">JWT_SECRET</td><td>Clave usada para firmar los tokens de sesión</td><td>cadena aleatoria larga, no publicar</td></tr>
+          <tr><td class="col-var">JWT_EXPIRES_IN</td><td>Tiempo de expiración del token</td><td><code>1d</code></td></tr>
+          <tr><td class="col-var">CLOUDINARY_CLOUD_NAME</td><td>Identificador de la cuenta de Cloudinary</td><td><code>tu_cloud_name</code></td></tr>
+          <tr><td class="col-var">CLOUDINARY_API_KEY</td><td>Llave de API de Cloudinary</td><td>no publicar el valor real</td></tr>
+          <tr><td class="col-var">CLOUDINARY_API_SECRET</td><td>Secreto de API de Cloudinary</td><td>no publicar el valor real</td></tr>
+          <tr><td class="col-var">EMAIL_HOST</td><td>Servidor SMTP para el envío de correos</td><td><code>smtp.gmail.com</code></td></tr>
+          <tr><td class="col-var">EMAIL_PORT</td><td>Puerto SMTP</td><td><code>587</code></td></tr>
+          <tr><td class="col-var">EMAIL_USER</td><td>Cuenta de correo emisora</td><td><code>correo@dominio.com</code></td></tr>
+          <tr><td class="col-var">EMAIL_PASS</td><td>Contraseña o app password de la cuenta</td><td>no publicar el valor real</td></tr>
+        </tbody>
+      </table>
+
+      <div class="group-label">Frontend — sportwear/.env</div>
+      <table>
+        <thead><tr><th>Variable</th><th>Propósito</th><th>Ejemplo de estructura</th></tr></thead>
+        <tbody>
+          <tr><td class="col-var">VITE_API_URL</td><td>URL base de la API que consume el frontend</td><td><code>http://localhost:4000/api</code> en local, <code>https://sportwear-proyectofinal.onrender.com/api</code> en producción</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 07 -->
+    <section class="block" id="basedatos">
+      <div class="block-head">
+        <div class="block-kicker">07</div>
+        <h2>Configuración de la base de datos</h2>
+      </div>
+      <p class="lead">Motor: <strong>PostgreSQL</strong>, mediante el driver <code>pg</code>.</p>
+      <ol class="steps">
+        <li><strong>Crear la base de datos.</strong> Una instancia PostgreSQL vacía, local o gestionada, con el nombre que uses en <code>DB_NAME</code> (o dentro de la cadena <code>DATABASE_URL</code>).</li>
+        <li><strong>Configurar la conexión.</strong> En desarrollo se arma con <code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code> y <code>DB_NAME</code>. Si existe <code>DATABASE_URL</code>, esta tiene prioridad y se usa en su lugar (así funciona en Render), con SSL forzado — requerido por los proveedores de PostgreSQL gestionado.</li>
+        <li><strong>Ejecutar las migraciones incrementales.</strong> Los scripts SQL viven en <code>sportwear-backend/sql/</code>: <code>agregar_cuotas.sql</code>, <code>agregar_fecha_vencimiento.sql</code>, <code>agregar_permiso_cuotas.sql</code>, <code>agregar_tipo_pago.sql</code>, <code>dedupe_y_completar_barrios.sql</code> y <code>eliminar_tipo_cliente_permiso_pagos.sql</code>. Se ejecutan contra la base ya creada.</li>
+        <li><strong>Sincronizar módulos y permisos.</strong> Desde la raíz del monorepo: <code>node fix-and-seed.js</code>. Sincroniza los módulos del sistema (Dashboard, Usuarios, Roles, Productos, Colores, Catálogo, Proveedores, Compras, Pedidos, Ventas, Pagos) con sus acciones <code>ver / crear / editar / eliminar</code>.</li>
+        <li><strong>Verificar la estructura (opcional).</strong> Los scripts <code>check-db.js</code>, <code>check-tables.js</code>, <code>check-schema.js</code>, <code>check-fk.js</code> y <code>check-constraint.js</code>, en la raíz del monorepo, confirman que la base quedó en el estado esperado.</li>
+      </ol>
+    </section>
+
+    <!-- 08 -->
+    <section class="block" id="local">
+      <div class="block-head">
+        <div class="block-kicker">08</div>
+        <h2>Ejecución local del proyecto</h2>
+      </div>
+      <ol class="steps">
+        <li><strong>Configuración previa.</strong> Repositorio clonado, dependencias instaladas y ambos <code>.env</code> configurados (secciones 4 a 6).</li>
+        <li><strong>Base de datos arriba.</strong> PostgreSQL corriendo localmente y con el esquema listo (sección 7).</li>
+        <li><strong>Ejecutar el backend.</strong> <code>cd sportwear-backend && npm run dev</code>. Arranca con <code>nodemon</code> e imprime <code>✅ Conectado a PostgreSQL</code> en consola cuando la conexión es correcta. Queda disponible en <code>http://localhost:4000</code> (o el <code>PORT</code> definido).</li>
+        <li><strong>Ejecutar el frontend.</strong> En otra terminal: <code>cd sportwear && npm run dev</code>. Vite lo sirve en <code>http://localhost:5173</code>.</li>
+        <li><strong>Direcciones de acceso local.</strong> Frontend en <code>http://localhost:5173</code>, API en <code>http://localhost:4000/api</code>.</li>
+        <li><strong>Verificación.</strong> Con ambos servicios activos, abre el frontend, inicia sesión y confirma en la consola del backend o en la pestaña Network del navegador que las peticiones a la API responden correctamente.</li>
+      </ol>
+    </section>
+
+    <!-- 09 -->
+    <section class="block" id="deploy-backend">
+      <div class="block-head">
+        <div class="block-kicker">09</div>
+        <h2>Despliegue del backend</h2>
+      </div>
+      <table>
+        <tbody>
+          <tr><td class="col-var">Plataforma</td><td>Render — servicio <code>sportwear-ProyectoFinal</code></td></tr>
+          <tr><td class="col-var">Configuración</td><td>Repo conectado, con <code>sportwear-backend</code> como carpeta raíz del servicio. El build usa el <code>Dockerfile</code> propio del backend (<code>node:18-alpine</code>).</td></tr>
+          <tr><td class="col-var">Variables de entorno</td><td>Todas las de la sección 6: <code>DATABASE_URL</code>, <code>JWT_SECRET</code>, <code>JWT_EXPIRES_IN</code>, <code>FRONTEND_URL</code> apuntando al dominio de Vercel, más las credenciales de Cloudinary y de correo.</td></tr>
+          <tr><td class="col-var">Comando de inicio</td><td><code>node src/index.js</code> (script <code>start</code> del <code>package.json</code>)</td></tr>
+          <tr><td class="col-var">Conexión con la BD</td><td>Vía <code>DATABASE_URL</code> con SSL habilitado — el patrón estándar para PostgreSQL gestionado</td></tr>
+          <tr><td class="col-var">URL final de la API</td><td><a href="https://sportwear-proyectofinal.onrender.com/api" target="_blank" rel="noopener">sportwear-proyectofinal.onrender.com/api</a></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- 10 -->
+    <section class="block" id="deploy-frontend">
+      <div class="block-head">
+        <div class="block-kicker">10</div>
+        <h2>Despliegue del frontend</h2>
+      </div>
+      <table>
+        <tbody>
+          <tr><td class="col-var">Plataforma</td><td>Vercel</td></tr>
+          <tr><td class="col-var">Configuración</td><td>Repo importado con <code>sportwear</code> como carpeta raíz (Root Directory). Vercel detecta Vite automáticamente.</td></tr>
+          <tr><td class="col-var">Variables de entorno</td><td><code>VITE_API_URL</code> apuntando a la URL de la API en Render</td></tr>
+          <tr><td class="col-var">Proceso de construcción</td><td>Build estándar de Vite (<code>npm run build</code>), genera la carpeta <code>dist</code></td></tr>
+          <tr><td class="col-var">Configuración de la conexión con la API</td><td>Axios usa <code>import.meta.env.VITE_API_URL</code> como base URL de todas las peticiones</td></tr>
+          <tr><td class="col-var">URL final</td><td><a href="https://sportwearr.vercel.app/" target="_blank" rel="noopener">sportwearr.vercel.app</a></td></tr>
+        </tbody>
+      </table>
+      <div class="note"><div><strong>vercel.json.</strong> Incluye una regla de <em>rewrite</em> que redirige cualquier ruta hacia <code>/index.html</code>, necesaria porque React Router maneja el enrutamiento del lado del cliente. Ver el problema documentado en la sección 12.</div></div>
+    </section>
+
+    <!-- 11 -->
+    <section class="block" id="produccion">
+      <div class="block-head">
+        <div class="block-kicker">11</div>
+        <h2>Configuración de producción</h2>
+      </div>
+      <ul class="plain">
+        <li><strong>URLs:</strong> frontend en <code>sportwearr.vercel.app</code>, API en <code>sportwear-proyectofinal.onrender.com/api</code>.</li>
+        <li><strong>Variables de entorno:</strong> cada plataforma mantiene su propio set — Vercel solo necesita <code>VITE_API_URL</code>; Render necesita el set completo del backend.</li>
+        <li><strong>CORS:</strong> el backend restringe el origen con <code>FRONTEND_URL</code>. Ese valor debe coincidir exactamente con el dominio de Vercel (con <code>https://</code>, sin barra final) o el navegador bloquea las peticiones.</li>
+        <li><strong>Conexión frontend–backend:</strong> exclusivamente a través de la URL pública de Render, nunca <code>localhost</code>.</li>
+        <li><strong>Base de datos:</strong> conexión gestionada vía <code>DATABASE_URL</code> con SSL habilitado.</li>
+        <li><strong>HTTPS:</strong> provisto automáticamente por Vercel y Render; no requiere configuración manual.</li>
+      </ul>
+    </section>
+
+    <!-- 12 -->
+    <section class="block" id="problemas">
+      <div class="block-head">
+        <div class="block-kicker">12</div>
+        <h2>Solución de problemas frecuentes</h2>
+      </div>
+
+      <div class="issue">
+        <h3>Build de Vercel falla por sensibilidad a mayúsculas y minúsculas</h3>
+        <div class="issue-row"><div class="k">Causa</div><div>El proyecto funcionaba en local (Windows/macOS no distinguen mayúsculas en las rutas de archivo), pero el build de Vercel corre sobre Linux, que sí las distingue. Un import no coincidía exactamente con el nombre real del archivo.</div></div>
+        <div class="issue-row solution"><div class="k">Solución</div><div>Corregir cada import para que coincida carácter por carácter con el nombre real del archivo en el sistema de archivos.</div></div>
+      </div>
+
+      <div class="issue">
+        <h3>Rutas internas devuelven 404 al recargar la página en producción</h3>
+        <div class="issue-row"><div class="k">Causa</div><div>React Router maneja el enrutamiento en el navegador, pero Vercel no sabe que debe servir <code>index.html</code> para rutas que no corresponden a un archivo real del build.</div></div>
+        <div class="issue-row solution"><div class="k">Solución</div><div>Agregar un <code>vercel.json</code> con una regla de rewrite que redirige todas las rutas hacia <code>/index.html</code>, dejando que React Router resuelva la navegación del lado del cliente.</div></div>
+      </div>
+
+    </section>
+
+    <div class="footer-note">
+      SportWear — Proyecto final del curso de Modelado, 5.º trimestre ADSO · Nicol Zapata y Sofía Suaza.
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('backdrop');
+  const menuBtn = document.getElementById('menuBtn');
+
+  function openMenu(){
+    sidebar.classList.add('open');
+    backdrop.classList.add('open');
+    menuBtn.setAttribute('aria-expanded','true');
+  }
+  function closeMenu(){
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('open');
+    menuBtn.setAttribute('aria-expanded','false');
+  }
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeMenu() : openMenu();
+  });
+  backdrop.addEventListener('click', closeMenu);
+  document.querySelectorAll('.nav-link').forEach(a => a.addEventListener('click', closeMenu));
+
+  // Active link on scroll
+  const links = Array.from(document.querySelectorAll('.nav-link'));
+  const sections = links.map(l => document.querySelector(l.getAttribute('href')));
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        const id = '#' + entry.target.id;
+        links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === id));
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px', threshold: 0 });
+  sections.forEach(s => s && observer.observe(s));
+
+  // Copy buttons
+  document.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.parentElement.querySelector('code').innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = '¡Copiado!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('copied'); }, 1600);
+      });
+    });
+  });
+</script>
+</body>
+</html>
