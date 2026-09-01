@@ -260,14 +260,9 @@
 }
 
 .proveedores-nit-code {
-  display: inline-block;
-  background: var(--dvna-pale);
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.74rem;
-  font-family: 'DM Mono', 'Courier New', monospace;
-  color: var(--dvna-muted);
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  color: var(--dvna-charcoal);
   white-space: nowrap;
 }
 
@@ -282,11 +277,9 @@
 }
 
 .tabla-ciudad {
-  font-size: 0.78rem;
-  color: var(--dvna-muted);
-  background: #f7f5f2;
-  border-radius: 20px;
-  padding: 0.2rem 0.6rem;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: #444;
   white-space: nowrap;
 }
 

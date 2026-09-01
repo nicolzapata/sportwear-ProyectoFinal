@@ -1,4 +1,5 @@
 import { IconDollar, IconX } from "../../../../shared/components/Icons";
+import Select from "../../../../shared/components/Select";
 import { fmt, HOY_ISO } from "../../utils/pedidosVentasHelpers";
 
 export default function AbonosModal({
@@ -83,7 +84,7 @@ export default function AbonosModal({
                 )}
                 <div className="pedidosventas-form-group">
                   <label className="pedidosventas-form-label">Método</label>
-                  <select
+                  <Select
                     className="pedidosventas-form-select"
                     value={formAbono.metodo}
                     onChange={(e) => setFormAbono({ ...formAbono, metodo: e.target.value })}
@@ -91,7 +92,7 @@ export default function AbonosModal({
                     {metodosPago.map((m) => (
                       <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
               <div className="pedidosventas-form-row">

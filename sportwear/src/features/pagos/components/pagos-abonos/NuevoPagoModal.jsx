@@ -1,5 +1,6 @@
 import { MAX_MONTO } from "../../../../shared/utils/numerico";
 import { IconX } from "../../../../shared/components/Icons";
+import Select from "../../../../shared/components/Select";
 
 export default function NuevoPagoModal({
   cerrarModal, ventas, form, setForm, errores, setErrores,
@@ -19,14 +20,14 @@ export default function NuevoPagoModal({
             <div className="pagosabonos-form-row">
               <div className="pagosabonos-form-group">
                 <label className="pagosabonos-form-label">Venta asociada</label>
-                <select
+                <Select
                   className={`pagosabonos-form-select${errores.id_venta ? " input-error" : ""}`}
                   value={form.id_venta}
                   onChange={(e) => handleVentaChange(e.target.value)}
                 >
                   <option value="">Seleccionar venta...</option>
                   {ventas.map(v => <option key={v.id_venta} value={v.id_venta}>V-{String(v.id_venta).padStart(3, "0")} — {v.cliente}</option>)}
-                </select>
+                </Select>
                 {errores.id_venta && <span className="pagosabonos-field-error">{errores.id_venta}</span>}
               </div>
               <div className="pagosabonos-form-group">
@@ -56,11 +57,11 @@ export default function NuevoPagoModal({
               </div>
               <div className="pagosabonos-form-group">
                 <label className="pagosabonos-form-label">Método</label>
-                <select className="pagosabonos-form-select" value={form.metodo} onChange={(e) => setForm({ ...form, metodo: e.target.value })}>
+                <Select className="pagosabonos-form-select" value={form.metodo} onChange={(e) => setForm({ ...form, metodo: e.target.value })}>
                   {metodosPago.filter(m => m.estado === "Activo").map(m => (
                     <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
                   ))}
-                </select>
+                </Select>
               </div>
             </div>
 
@@ -80,10 +81,10 @@ export default function NuevoPagoModal({
               </div>
               <div className="pagosabonos-form-group">
                 <label className="pagosabonos-form-label">Estado</label>
-                <select className="pagosabonos-form-select" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
+                <Select className="pagosabonos-form-select" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
                   <option value="Pendiente">Pendiente</option>
                   <option value="Confirmado">Confirmado</option>
-                </select>
+                </Select>
               </div>
             </div>
           </div>

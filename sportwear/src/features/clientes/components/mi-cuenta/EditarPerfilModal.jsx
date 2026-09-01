@@ -2,6 +2,7 @@ import { createPortal } from "react-dom";
 import { soloDigitos, validarTelefono, validarNombre, LONGITUD_TELEFONO } from "../../../../shared/utils/numerico";
 import { errorEmailPerfil } from "../../utils/miCuentaHelpers";
 import { IconXModal } from "./miCuentaIcons";
+import Select from "../../../../shared/components/Select";
 
 // ── Modal editar perfil — panel único, sin pasos "Siguiente".
 // NUEVO: también va por portal, mismo motivo que TodosPedidosModal. ──
@@ -53,9 +54,9 @@ export default function EditarPerfilModal({
           <div className="ms-form-row">
             <div className="ms-form-group">
               <label className="ms-form-label">Tipo documento</label>
-              <select className="ms-form-select" value={form.tipo_doc || "CC"} disabled title="El documento no se puede modificar" onChange={(e) => setForm({ ...form, tipo_doc: e.target.value })}>
+              <Select className="ms-form-select" value={form.tipo_doc || "CC"} disabled title="El documento no se puede modificar" onChange={(e) => setForm({ ...form, tipo_doc: e.target.value })}>
                 {["CC", "CE", "TI", "NIT", "Pasaporte"].map((t) => <option key={t}>{t}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="ms-form-group">
               <label className="ms-form-label">N° documento <span className="ms-req">*</span></label>
@@ -124,17 +125,17 @@ export default function EditarPerfilModal({
           <div className="ms-form-row">
             <div className="ms-form-group">
               <label className="ms-form-label">Zona / Área</label>
-              <select className="ms-form-select" onChange={(e) => handleZona(e.target.value)}>
+              <Select className="ms-form-select" onChange={(e) => handleZona(e.target.value)}>
                 <option value="">— Todas las zonas —</option>
                 {zonas.map((z) => <option key={z} value={z}>{z}</option>)}
-              </select>
+              </Select>
             </div>
             <div className="ms-form-group">
               <label className="ms-form-label">Barrio</label>
-              <select className="ms-form-select" value={form.id_barrio || ""} onChange={(e) => setForm({ ...form, id_barrio: Number(e.target.value) })}>
+              <Select className="ms-form-select" value={form.id_barrio || ""} onChange={(e) => setForm({ ...form, id_barrio: Number(e.target.value) })}>
                 <option value="">— Seleccionar —</option>
                 {barFiltrados.map((b) => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
-              </select>
+              </Select>
             </div>
           </div>
           <div className="ms-form-group">

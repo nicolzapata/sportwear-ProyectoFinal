@@ -1,11 +1,12 @@
 import { soloDigitos, maxLongitudDocumento, validarTelefono, LONGITUD_TELEFONO } from "../../../../shared/utils/numerico";
+import Select from "../../../../shared/components/Select";
 import { errorNombres, errorApellidos, errorDocumento, errorEmail, errorContrasena, errorConfirmar } from "../../utils/clientesHelpers";
 
 export function PasoDatosCliente({ form, setForm, errores, setErrores, editar, verificarDocumentoDuplicado, verificarEmailDuplicado }) {
   return (
     <div>
       <div className="ms-form-row">
-        <div className="ms-form-group"><label className="ms-form-label">Tipo documento{editar && <span className="ms-campo-bloqueado"> (no editable)</span>}</label><select className="ms-form-select" value={form.tipo_doc} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={e => { const tipo_doc = e.target.value; setForm({ ...form, tipo_doc }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(tipo_doc, form.documento) })); }}>{["CC","CE","TI","NIT","Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
+        <div className="ms-form-group"><label className="ms-form-label">Tipo documento{editar && <span className="ms-campo-bloqueado"> (no editable)</span>}</label><Select className="ms-form-select" value={form.tipo_doc} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={e => { const tipo_doc = e.target.value; setForm({ ...form, tipo_doc }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(tipo_doc, form.documento) })); }}>{["CC","CE","TI","NIT","Pasaporte"].map(t => <option key={t}>{t}</option>)}</Select></div>
         <div className="ms-form-group"><label className="ms-form-label">N° documento <span className="ms-req">*</span>{editar && <span className="ms-campo-bloqueado"> (no editable)</span>}</label><input className={`ms-form-input${errores.documento ? " input-error" : ""}`} placeholder="123456789" inputMode={form.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(form.tipo_doc)} value={form.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} onChange={e => { const documento = form.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value); setForm({ ...form, documento }); if (errores.documento) setErrores(prev => ({ ...prev, documento: errorDocumento(form.tipo_doc, documento) })); }} onBlur={() => {
           const msg = errorDocumento(form.tipo_doc, form.documento);
           setErrores(prev => ({ ...prev, documento: msg }));
@@ -43,10 +44,10 @@ export function PasoUbicacionCliente({ form, setForm, zonas, barFiltrados, handl
           <input className="ms-form-input" value="Medellín" disabled title="Por ahora solo se hacen envíos a Medellín" />
           <span className="ms-form-hint">Por ahora solo se hacen envíos dentro de Medellín.</span>
         </div>
-        <div className="ms-form-group"><label className="ms-form-label">Zona / Área</label><select className="ms-form-select" onChange={e => handleZona(e.target.value)}><option value="">— Todas las zonas —</option>{zonas.map(z => <option key={z} value={z}>{z}</option>)}</select></div>
+        <div className="ms-form-group"><label className="ms-form-label">Zona / Área</label><Select className="ms-form-select" onChange={e => handleZona(e.target.value)}><option value="">— Todas las zonas —</option>{zonas.map(z => <option key={z} value={z}>{z}</option>)}</Select></div>
       </div>
       <div className="ms-form-row">
-        <div className="ms-form-group"><label className="ms-form-label">Barrio</label><select className="ms-form-select" value={form.id_barrio} onChange={e => setForm({ ...form, id_barrio: Number(e.target.value) })}><option value="">— Seleccionar —</option>{barFiltrados.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} ({b.zona})</option>)}</select></div>
+        <div className="ms-form-group"><label className="ms-form-label">Barrio</label><Select className="ms-form-select" value={form.id_barrio} onChange={e => setForm({ ...form, id_barrio: Number(e.target.value) })}><option value="">— Seleccionar —</option>{barFiltrados.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} ({b.zona})</option>)}</Select></div>
         <div className="ms-form-group"><label className="ms-form-label">Dirección completa</label><input className="ms-form-input" placeholder="Cra 70 # 48-15 Apto 201" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })} /></div>
       </div>
     </div>
@@ -62,11 +63,11 @@ export function PasoClasificacionCliente({ form, setForm, errores, setErrores, e
       </div>
       {editar ? (
         <div className="ms-form-row">
-          <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><select className="ms-form-select" value={form.permiso_cuotas} onChange={e => setForm({ ...form, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
-          <div className="ms-form-group"><label className="ms-form-label">Estado</label><select className="ms-form-select" value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+          <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><Select className="ms-form-select" value={form.permiso_cuotas} onChange={e => setForm({ ...form, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></Select></div>
+          <div className="ms-form-group"><label className="ms-form-label">Estado</label><Select className="ms-form-select" value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></Select></div>
         </div>
       ) : (
-        <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><select className="ms-form-select" value={form.permiso_cuotas} onChange={e => setForm({ ...form, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
+        <div className="ms-form-group"><label className="ms-form-label">Pago por cuotas</label><Select className="ms-form-select" value={form.permiso_cuotas} onChange={e => setForm({ ...form, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></Select></div>
       )}
     </div>
   );

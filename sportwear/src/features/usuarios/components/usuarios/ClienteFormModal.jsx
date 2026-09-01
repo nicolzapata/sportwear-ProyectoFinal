@@ -3,6 +3,7 @@ import {
   LONGITUD_TELEFONO, MAX_LONGITUD_DIRECCION, MAX_LONGITUD_CONTRASENA,
 } from "../../../../shared/utils/numerico";
 import { IconX } from "../../../../shared/components/Icons";
+import Select from "../../../../shared/components/Select";
 import {
   errorEmailCliente, revisarContrasenaCliente, revisarConfirmarCliente,
 } from "../../utils/usuariosHelpers";
@@ -25,7 +26,7 @@ export default function ClienteFormModal({
           <div className="usuarios-factura-seccion">
             <h3 className="usuarios-factura-titulo">Datos personales</h3>
             <div className="usuarios-form-row">
-              <div className="usuarios-form-group"><label className="usuarios-form-label">Tipo documento{editar && <span className="usuarios-campo-bloqueado"> (no editable)</span>}</label><select className="usuarios-form-select" value={clienteForm.tipo_doc} disabled={!!editar}
+              <div className="usuarios-form-group"><label className="usuarios-form-label">Tipo documento{editar && <span className="usuarios-campo-bloqueado"> (no editable)</span>}</label><Select className="usuarios-form-select" value={clienteForm.tipo_doc} disabled={!!editar}
                 onChange={e => {
                   const tipo_doc = e.target.value;
                   setClienteForm({ ...clienteForm, tipo_doc });
@@ -33,7 +34,7 @@ export default function ClienteFormModal({
                     const msg = !clienteForm.documento.trim() ? "El documento es obligatorio" : validarNumeroDocumento(tipo_doc, clienteForm.documento);
                     setErroresCliente(prev => ({ ...prev, documento: msg }));
                   }
-                }}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</select></div>
+                }}>{["CC", "CE", "TI", "NIT", "Pasaporte"].map(t => <option key={t}>{t}</option>)}</Select></div>
               <div className="usuarios-form-group"><label className="usuarios-form-label">N° documento <span className="usuarios-req">*</span>{editar && <span className="usuarios-campo-bloqueado"> (no editable)</span>}</label><input className={`usuarios-form-input${erroresCliente.documento ? " input-error" : ""}`} placeholder="123456789" value={clienteForm.documento} disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined} inputMode={clienteForm.tipo_doc === "Pasaporte" ? "text" : "numeric"} maxLength={maxLongitudDocumento(clienteForm.tipo_doc)}
                 onChange={e => {
                   const documento = clienteForm.tipo_doc === "Pasaporte" ? e.target.value : soloDigitos(e.target.value);
@@ -85,7 +86,7 @@ export default function ClienteFormModal({
             <div className="usuarios-form-row">
               <div className="usuarios-form-group">
                 <label className="usuarios-form-label">Barrio <span className="usuarios-req">*</span></label>
-                <select className={`usuarios-form-select${erroresCliente.id_barrio ? " input-error" : ""}`} value={clienteForm.id_barrio}
+                <Select className={`usuarios-form-select${erroresCliente.id_barrio ? " input-error" : ""}`} value={clienteForm.id_barrio}
                   onChange={e => {
                     const id_barrio = Number(e.target.value);
                     setClienteForm({ ...clienteForm, id_barrio });
@@ -94,7 +95,7 @@ export default function ClienteFormModal({
                   onBlur={() => setErroresCliente(prev => ({ ...prev, id_barrio: clienteForm.id_barrio ? "" : "Selecciona un barrio" }))}>
                   <option value="">— Seleccionar —</option>
                   {barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
-                </select>
+                </Select>
                 {erroresCliente.id_barrio && <span className="usuarios-form-error">{erroresCliente.id_barrio}</span>}
               </div>
               <div className="usuarios-form-group">
@@ -129,11 +130,11 @@ export default function ClienteFormModal({
             </div>
             {editar ? (
               <div className="usuarios-form-row">
-                <div className="usuarios-form-group"><label className="usuarios-form-label">Pago por cuotas</label><select className="usuarios-form-select" value={clienteForm.permiso_cuotas} onChange={e => setClienteForm({ ...clienteForm, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
-                <div className="usuarios-form-group"><label className="usuarios-form-label">Estado</label><select className="usuarios-form-select" value={clienteForm.estado} onChange={e => setClienteForm({ ...clienteForm, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+                <div className="usuarios-form-group"><label className="usuarios-form-label">Pago por cuotas</label><Select className="usuarios-form-select" value={clienteForm.permiso_cuotas} onChange={e => setClienteForm({ ...clienteForm, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></Select></div>
+                <div className="usuarios-form-group"><label className="usuarios-form-label">Estado</label><Select className="usuarios-form-select" value={clienteForm.estado} onChange={e => setClienteForm({ ...clienteForm, estado: e.target.value })}><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></Select></div>
               </div>
             ) : (
-              <div className="usuarios-form-group"><label className="usuarios-form-label">Pago por cuotas</label><select className="usuarios-form-select" value={clienteForm.permiso_cuotas} onChange={e => setClienteForm({ ...clienteForm, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></select></div>
+              <div className="usuarios-form-group"><label className="usuarios-form-label">Pago por cuotas</label><Select className="usuarios-form-select" value={clienteForm.permiso_cuotas} onChange={e => setClienteForm({ ...clienteForm, permiso_cuotas: Number(e.target.value) })}><option value={1}>Permitido</option><option value={0}>Bloqueado</option></Select></div>
             )}
           </div>
         </div>

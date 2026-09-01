@@ -1,5 +1,6 @@
 import { soloDigitos, maxLongitudDocumento, validarTelefono, LONGITUD_TELEFONO, MAX_LONGITUD_NOMBRE } from "../../../../shared/utils/numerico";
 import { IconX } from "../../../../shared/components/Icons";
+import Select from "../../../../shared/components/Select";
 import {
   TIPOS_DOC_POR_PERSONA,
   validarCampoNumeroDoc, validarCampoRazonSocial, validarCampoNombresContacto,
@@ -30,7 +31,7 @@ export default function ProveedorFormModal({
 
             <div className="proveedores-form-group">
               <label className="proveedores-form-label">Tipo de proveedor <span className="proveedores-req">*</span>{editar && <span className="proveedores-opcional"> (no editable)</span>}</label>
-              <select
+              <Select
                 className="proveedores-form-select"
                 value={form.tipo_persona}
                 disabled={!!editar}
@@ -44,13 +45,13 @@ export default function ProveedorFormModal({
               >
                 <option value="Juridica">Persona Jurídica</option>
                 <option value="Natural">Persona Natural</option>
-              </select>
+              </Select>
             </div>
 
             <div className="proveedores-form-row-3">
               <div className="proveedores-form-group">
                 <label className="proveedores-form-label">Tipo de documento <span className="proveedores-req">*</span>{editar && <span className="proveedores-opcional"> (no editable)</span>}</label>
-                <select
+                <Select
                   className="proveedores-form-select"
                   value={form.tipo_doc}
                   disabled={!!editar}
@@ -68,7 +69,7 @@ export default function ProveedorFormModal({
                   {TIPOS_DOC_POR_PERSONA[form.tipo_persona].map((t) => (
                     <option key={t} value={t}>{t === "NIT" ? "NIT" : t === "CC" ? "Cédula de ciudadanía" : "Cédula de extranjería"}</option>
                   ))}
-                </select>
+                </Select>
               </div>
               <div className="proveedores-form-group">
                 <label className="proveedores-form-label">Número de documento <span className="proveedores-req">*</span>{editar && <span className="proveedores-opcional"> (no editable)</span>}</label>
@@ -249,10 +250,10 @@ export default function ProveedorFormModal({
 
             <div className="proveedores-form-group">
               <label className="proveedores-form-label">Estado</label>
-              <select className="proveedores-form-select" value={form.estado} onChange={(e) => set("estado", e.target.value)}>
+              <Select className="proveedores-form-select" value={form.estado} onChange={(e) => set("estado", e.target.value)}>
                 <option value="Activo">Activo</option>
                 <option value="Inactivo">Inactivo</option>
-              </select>
+              </Select>
             </div>
           </div>
         </div>

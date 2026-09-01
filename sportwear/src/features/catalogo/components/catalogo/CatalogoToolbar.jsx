@@ -1,4 +1,5 @@
 import { IconGrid, IconList } from "./catalogoIcons";
+import Select from "../../../../shared/components/Select";
 
 export default function CatalogoToolbar({
   precioMin, setPrecioMin, precioMax, setPrecioMax,
@@ -17,19 +18,19 @@ export default function CatalogoToolbar({
       {tallasDisponibles.length > 0 && (
         <div className="catalog-toolbar-group">
           <label>Talla</label>
-          <select value={filtroTalla} onChange={(e) => setFiltroTalla(e.target.value)}>
+          <Select value={filtroTalla} onChange={(e) => setFiltroTalla(e.target.value)}>
             <option value="">Todas</option>
             {tallasDisponibles.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+          </Select>
         </div>
       )}
       {coloresDisponibles.length > 0 && (
         <div className="catalog-toolbar-group">
           <label>Color</label>
-          <select value={filtroColor} onChange={(e) => setFiltroColor(e.target.value)}>
+          <Select value={filtroColor} onChange={(e) => setFiltroColor(e.target.value)}>
             <option value="">Todos</option>
             {coloresDisponibles.map(c => <option key={c.id_color} value={String(c.id_color)}>{c.nombre}</option>)}
-          </select>
+          </Select>
         </div>
       )}
       <span style={{ fontSize: 12, color: "var(--muted)" }}>

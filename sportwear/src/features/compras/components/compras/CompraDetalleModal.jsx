@@ -1,5 +1,6 @@
 import { DetalleItem, DetalleGrid } from "../../../../shared/components/ModalDetalle";
 import { IconEdit, IconX } from "../../../../shared/components/Icons";
+import Select from "../../../../shared/components/Select";
 import { fmt, getEstadoBadge } from "../../utils/comprasHelpers";
 
 export default function CompraDetalleModal({
@@ -38,7 +39,7 @@ export default function CompraDetalleModal({
               <DetalleItem label="Fecha" value={verDetalle.fecha?.toString().split("T")[0]} />
               <DetalleItem label="Estado" value={
                 modoEdicion ? (
-                  <select
+                  <Select
                     className="compras-form-select compras-detalle-estado-select"
                     value={estadoEditado}
                     onChange={(e) => setEstadoEditado(e.target.value)}
@@ -46,7 +47,7 @@ export default function CompraDetalleModal({
                     <option value="Pendiente">Pendiente</option>
                     <option value="En Tránsito">En Tránsito</option>
                     <option value="Recibido">Recibido</option>
-                  </select>
+                  </Select>
                 ) : (
                   <span className={`compras-badge ${getEstadoBadge(verDetalle.estado)}`}>{verDetalle.estado}</span>
                 )

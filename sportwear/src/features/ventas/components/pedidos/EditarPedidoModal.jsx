@@ -1,4 +1,5 @@
 import { IconX, IconBox } from "../../../../shared/components/Icons";
+import Select from "../../../../shared/components/Select";
 import { fmt } from "../../utils/pedidosVentasHelpers";
 
 // ── NUEVO: editar un pedido — conectado a Ventas (edita la misma venta).
@@ -47,7 +48,7 @@ export default function EditarPedidoModal({
                 </div>
                 <div className="pedidosventas-form-group">
                   <label className="pedidosventas-form-label">Método de pago</label>
-                  <select
+                  <Select
                     className="pedidosventas-form-select"
                     value={form.metodo_pago || ""}
                     onChange={(e) => setForm((f) => ({ ...f, metodo_pago: e.target.value }))}
@@ -55,7 +56,7 @@ export default function EditarPedidoModal({
                     {metodosPago.map((m) => (
                       <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
                     ))}
-                  </select>
+                  </Select>
                 </div>
               </div>
 
@@ -113,7 +114,7 @@ export default function EditarPedidoModal({
                   return (
                     <div key={i} className="pedidosventas-item-row">
                       <div>
-                        <select
+                        <Select
                           className={`pedidosventas-form-select${errores[`linea_${i}_producto`] ? " input-error" : ""}`}
                           value={linea.id_producto}
                           onChange={(e) => actualizarLinea(i, "id_producto", e.target.value)}
@@ -127,11 +128,11 @@ export default function EditarPedidoModal({
                               </option>
                             );
                           })}
-                        </select>
+                        </Select>
                         {errores[`linea_${i}_producto`] && <span className="pedidosventas-field-error">{errores[`linea_${i}_producto`]}</span>}
                       </div>
                       <div>
-                        <select
+                        <Select
                           className={`pedidosventas-form-select${errores[`linea_${i}_variante`] ? " input-error" : ""}`}
                           value={linea.id_variante}
                           onChange={(e) => actualizarLinea(i, "id_variante", e.target.value)}
@@ -145,7 +146,7 @@ export default function EditarPedidoModal({
                               {v.talla} · {v.color_nombre} {Number(v.stock) === 0 ? "— Agotado" : `(stock: ${v.stock})`}
                             </option>
                           ))}
-                        </select>
+                        </Select>
                         {errores[`linea_${i}_variante`] && <span className="pedidosventas-field-error">{errores[`linea_${i}_variante`]}</span>}
                       </div>
                       <div>

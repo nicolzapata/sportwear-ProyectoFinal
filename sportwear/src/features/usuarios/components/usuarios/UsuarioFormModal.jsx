@@ -3,6 +3,7 @@ import {
   LONGITUD_TELEFONO, MAX_LONGITUD_DIRECCION, MAX_LONGITUD_CONTRASENA,
 } from "../../../../shared/utils/numerico";
 import { IconEyeOpen, IconEyeClosed, IconLock, IconX } from "../../../../shared/components/Icons";
+import Select from "../../../../shared/components/Select";
 import { TIPOS_DOC, errorEmailUsuario, revisarContrasena, revisarConfirmar } from "../../utils/usuariosHelpers";
 
 export default function UsuarioFormModal({
@@ -18,7 +19,7 @@ export default function UsuarioFormModal({
       <div className="usuarios-form-row">
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">Tipo doc. <span className="usuarios-req">*</span>{editar && <span className="usuarios-campo-bloqueado"> (no editable)</span>}</label>
-          <select className="usuarios-form-select" value={form.tipo_doc}
+          <Select className="usuarios-form-select" value={form.tipo_doc}
             disabled={!!editar} title={editar ? "El documento no se puede modificar" : undefined}
             onChange={e => {
               const tipo_doc = e.target.value;
@@ -29,7 +30,7 @@ export default function UsuarioFormModal({
               }
             }}>
             {TIPOS_DOC.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+          </Select>
         </div>
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">N° documento <span className="usuarios-req">*</span>{editar && <span className="usuarios-campo-bloqueado"> (no editable)</span>}</label>
@@ -126,7 +127,7 @@ export default function UsuarioFormModal({
       <div className="usuarios-form-row">
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">Barrio <span className="usuarios-req">*</span></label>
-          <select className={`usuarios-form-select${errores.id_barrio ? " input-error" : ""}`} value={form.id_barrio}
+          <Select className={`usuarios-form-select${errores.id_barrio ? " input-error" : ""}`} value={form.id_barrio}
             onChange={e => {
               const id_barrio = e.target.value;
               setForm({ ...form, id_barrio });
@@ -135,7 +136,7 @@ export default function UsuarioFormModal({
             onBlur={() => setErrores(prev => ({ ...prev, id_barrio: form.id_barrio ? "" : "Selecciona un barrio" }))}>
             <option value="">— Selecciona un barrio —</option>
             {barrios.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
-          </select>
+          </Select>
           {errores.id_barrio && <span className="usuarios-form-error">{errores.id_barrio}</span>}
         </div>
         <div className="usuarios-form-group">
@@ -201,13 +202,13 @@ export default function UsuarioFormModal({
       <div className="usuarios-form-row">
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">Rol</label>
-          <select className="usuarios-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
+          <Select className="usuarios-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
             {roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}
-          </select>
+          </Select>
         </div>
         <div className="usuarios-form-group">
           <label className="usuarios-form-label">Estado</label>
-          <select
+          <Select
             className="usuarios-form-select"
             value={esRolAdmin(form.id_rol) ? "Activo" : form.estado}
             disabled={esRolAdmin(form.id_rol)}
@@ -216,15 +217,15 @@ export default function UsuarioFormModal({
           >
             <option value="Activo">Activo</option>
             <option value="Inactivo">Inactivo</option>
-          </select>
+          </Select>
         </div>
       </div>
     ) : (
       <div className="usuarios-form-group">
         <label className="usuarios-form-label">Rol</label>
-        <select className="usuarios-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
+        <Select className="usuarios-form-select" value={form.id_rol} onChange={e => setForm({ ...form, id_rol: Number(e.target.value) })}>
           {roles.map(r => <option key={r.id_rol} value={r.id_rol}>{r.nombre}</option>)}
-        </select>
+        </Select>
       </div>
     )
   );

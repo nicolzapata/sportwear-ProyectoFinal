@@ -1,6 +1,7 @@
 import { MAX_MONTO, MAX_LONGITUD_NOMBRE } from "../../../../shared/utils/numerico";
 import GaleriaImagenes from "../../../../shared/components/GaleriaImagenes";
 import GestVariantes from "../GestVariantes";
+import Select from "../../../../shared/components/Select";
 import { IconAlertTriangle, IconX } from "../../../../shared/components/Icons";
 
 export default function ProductoFormModal({
@@ -45,7 +46,7 @@ export default function ProductoFormModal({
             <div className="gestproductos-form-row">
               <div className="gestproductos-form-group">
                 <label className="gestproductos-form-label">Categoría <span className="gestproductos-required">*</span></label>
-                <select className={`gestproductos-form-select${errores.id_categoria ? " input-error" : ""}`} value={form.id_categoria}
+                <Select className={`gestproductos-form-select${errores.id_categoria ? " input-error" : ""}`} value={form.id_categoria}
                   onChange={e => {
                     const id_categoria = Number(e.target.value);
                     setForm({ ...form, id_categoria });
@@ -54,7 +55,7 @@ export default function ProductoFormModal({
                   onBlur={() => setErrores(p => ({ ...p, id_categoria: form.id_categoria ? "" : "Selecciona una categoría." }))}>
                   <option value="">— Seleccionar —</option>
                   {categorias.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nombre}</option>)}
-                </select>
+                </Select>
                 {errores.id_categoria && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.id_categoria}</p>}
               </div>
 
@@ -91,11 +92,11 @@ export default function ProductoFormModal({
               {editar && (
                 <div className="gestproductos-form-group">
                   <label className="gestproductos-form-label">Estado</label>
-                  <select className="gestproductos-form-select" value={form.estado}
+                  <Select className="gestproductos-form-select" value={form.estado}
                     onChange={e => setForm({ ...form, estado: e.target.value, publicado: e.target.value === "Inactivo" ? false : form.publicado })}>
                     <option value="Activo">Activo</option>
                     <option value="Inactivo">Inactivo</option>
-                  </select>
+                  </Select>
                 </div>
               )}
 
@@ -116,12 +117,12 @@ export default function ProductoFormModal({
 
             <div className="gestproductos-form-group">
               <label className="gestproductos-form-label">Destacar como <span className="gestproductos-optional">(opcional)</span></label>
-              <select className="gestproductos-form-select" value={form.destacado}
+              <Select className="gestproductos-form-select" value={form.destacado}
                 onChange={e => setForm({ ...form, destacado: e.target.value })}>
                 <option value="">Ninguno</option>
                 <option value="Nuevo">Nuevo</option>
                 <option value="Promocion">Promoción</option>
-              </select>
+              </Select>
             </div>
           </div>
 

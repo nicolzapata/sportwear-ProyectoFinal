@@ -1,4 +1,5 @@
 import ExportButtons from "../../../../shared/components/ExportButtons";
+import Select from "../../../../shared/components/Select";
 import { IconSearch, IconX } from "../../../../shared/components/Icons";
 import { IconExternalLink } from "./icons";
 import { precioMostrado } from "../../utils/catalogoAdminHelpers";
@@ -26,13 +27,13 @@ export default function FiltrosBar({
         <button className={`catadmin-estado-tab${filtroEstado === "bajo_stock" ? " active" : ""}`} onClick={() => setFiltroEstado("bajo_stock")}>Bajo stock</button>
       </div>
 
-      <select className="catadmin-select catadmin-select-orden" value={orden} onChange={(e) => setOrden(e.target.value)}>
+      <Select className="catadmin-select catadmin-select-orden" value={orden} onChange={(e) => setOrden(e.target.value)}>
         <option value="nombre">Nombre (A-Z)</option>
         <option value="recientes">Más recientes</option>
         <option value="precio_asc">Precio: menor a mayor</option>
         <option value="precio_desc">Precio: mayor a menor</option>
         <option value="stock">Stock: menor primero</option>
-      </select>
+      </Select>
 
       <ExportButtons
         datos={filtrados}

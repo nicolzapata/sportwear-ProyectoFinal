@@ -6,6 +6,7 @@ import { useAuth } from "../../../shared/contexts/AuthContext";
 import api from "../../../shared/services/api";
 import { opcionesCuotasDisponibles, calcularFechasVencimiento } from "../../../shared/utils/cuotas";
 import CuotasCalendario from "../../checkout/components/checkout/CuotasCalendario";
+import Select from "../../../shared/components/Select";
 import "../../checkout/pages/Checkout.cuotas.css";
 import "./Carrito.css";
 
@@ -201,11 +202,11 @@ export default function Carrito() {
               {tipoPagoActivo === "cuotas" && (
                 <div style={{ marginTop: '10px', paddingLeft: '24px' }}>
                   <label style={{ fontSize: '14px' }}>Número de cuotas:</label>
-                  <select value={numCuotasActivo} onChange={(e) => setNumCuotas(Number(e.target.value))} style={{ marginLeft: '10px', padding: '4px' }}>
+                  <Select value={numCuotasActivo} onChange={(e) => setNumCuotas(Number(e.target.value))} style={{ marginLeft: '10px', padding: '4px' }}>
                     {opcionesCuotas.map((n) => (
                       <option key={n} value={n}>{n} cuotas de {fmt(Math.ceil(total / n))}</option>
                     ))}
-                  </select>
+                  </Select>
                   <div style={{ marginTop: '14px' }}>
                     <CuotasCalendario
                       tipoPagoActivo={tipoPagoActivo} total={total} numCuotasActivo={numCuotasActivo}

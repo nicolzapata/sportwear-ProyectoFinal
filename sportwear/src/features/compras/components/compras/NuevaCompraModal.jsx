@@ -1,5 +1,6 @@
 import { MAX_MONTO, MAX_LONGITUD_CODIGO, MAX_LONGITUD_TEXTO_LIBRE } from "../../../../shared/utils/numerico";
 import { IconX } from "../../../../shared/components/Icons";
+import Select from "../../../../shared/components/Select";
 import CompraItemRow from "./CompraItemRow";
 import { fmt, HOY_ISO, errorFecha, errorDescuentoGeneral } from "../../utils/comprasHelpers";
 
@@ -23,7 +24,7 @@ export default function NuevaCompraModal({
           <div className="compras-form-row">
             <div className="compras-form-group">
               <label className="compras-form-label">Proveedor</label>
-              <select
+              <Select
                 className={`compras-form-select${errores.id_proveedor ? " input-error" : ""}`}
                 value={form.id_proveedor}
                 onChange={(e) => {
@@ -39,7 +40,7 @@ export default function NuevaCompraModal({
                     {p.nombre_comercial || p.razon_social}
                   </option>
                 ))}
-              </select>
+              </Select>
               {errores.id_proveedor && <span className="compras-field-error">{errores.id_proveedor}</span>}
               {proveedores.length === 0 && (
                 <span className="compras-field-hint">
@@ -78,11 +79,11 @@ export default function NuevaCompraModal({
             </div>
             <div className="compras-form-group">
               <label className="compras-form-label">Estado</label>
-              <select className="compras-form-select" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
+              <Select className="compras-form-select" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
                 <option value="Pendiente">Pendiente</option>
                 <option value="En Tránsito">En Tránsito</option>
                 <option value="Recibido">Recibido</option>
-              </select>
+              </Select>
             </div>
           </div>
 

@@ -1,4 +1,5 @@
 import CuotasCalendario from "../../../checkout/components/checkout/CuotasCalendario";
+import Select from "../../../../shared/components/Select";
 import { fmt, HOY_ISO } from "../../utils/pedidosVentasHelpers";
 
 // ── Bloque "tipo de pago" del formulario de Nueva venta: tipo de pago, cupo
@@ -14,14 +15,14 @@ export default function VentaPagoFields({
       <div className="pedidosventas-form-row">
         <div className="pedidosventas-form-group">
           <label className="pedidosventas-form-label">Tipo de pago</label>
-          <select
+          <Select
             className="pedidosventas-form-select"
             value={formVenta.tipo_pago}
             onChange={(e) => setFormVenta({ ...formVenta, tipo_pago: e.target.value, num_cuotas: "" })}
           >
             <option value="completo">Pago completo</option>
             <option value="cuotas">Cuotas</option>
-          </select>
+          </Select>
         </div>
         {formVenta.tipo_pago === "cuotas" && formVenta.id_cliente && (
           <div className="pedidosventas-credito-banner">
@@ -43,7 +44,7 @@ export default function VentaPagoFields({
         {formVenta.tipo_pago === "cuotas" ? (
           <div className="pedidosventas-form-group">
             <label className="pedidosventas-form-label">Número de cuotas</label>
-            <select
+            <Select
               className={`pedidosventas-form-select${erroresVenta.num_cuotas ? " input-error" : ""}`}
               value={formVenta.num_cuotas}
               onChange={(e) => {
@@ -63,16 +64,16 @@ export default function VentaPagoFields({
               {(opcionesCuotasVenta || []).map((n) => (
                 <option key={n} value={n}>{n} cuotas de {fmt(Math.ceil(totalVenta / n))}</option>
               ))}
-            </select>
+            </Select>
             {erroresVenta.num_cuotas && <span className="pedidosventas-field-error">{erroresVenta.num_cuotas}</span>}
           </div>
         ) : (
           <div className="pedidosventas-form-group">
             <label className="pedidosventas-form-label">Estado</label>
-            <select className="pedidosventas-form-select" value={formVenta.estado} onChange={(e) => setFormVenta({ ...formVenta, estado: e.target.value })}>
+            <Select className="pedidosventas-form-select" value={formVenta.estado} onChange={(e) => setFormVenta({ ...formVenta, estado: e.target.value })}>
               <option value="Pendiente">Pendiente</option>
               <option value="Pagado">Pagado (registrar como ya pagada)</option>
-            </select>
+            </Select>
           </div>
         )}
       </div>
@@ -84,20 +85,20 @@ export default function VentaPagoFields({
         {formVenta.tipo_pago !== "cuotas" && (
           <div className="pedidosventas-form-group">
             <label className="pedidosventas-form-label">Método de pago</label>
-            <select className="pedidosventas-form-select" value={formVenta.metodo_pago} onChange={(e) => setFormVenta({ ...formVenta, metodo_pago: e.target.value })}>
+            <Select className="pedidosventas-form-select" value={formVenta.metodo_pago} onChange={(e) => setFormVenta({ ...formVenta, metodo_pago: e.target.value })}>
               {metodosPago.map((m) => (
                 <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
         {formVenta.tipo_pago === "cuotas" && (
           <div className="pedidosventas-form-group">
             <label className="pedidosventas-form-label">Estado inicial</label>
-            <select className="pedidosventas-form-select" value={formVenta.estado} onChange={(e) => setFormVenta({ ...formVenta, estado: e.target.value })}>
+            <Select className="pedidosventas-form-select" value={formVenta.estado} onChange={(e) => setFormVenta({ ...formVenta, estado: e.target.value })}>
               <option value="Pendiente">Pendiente</option>
               <option value="Pagado">Primera cuota confirmada</option>
-            </select>
+            </Select>
           </div>
         )}
         {/* ── NUEVO: si se confirma la primera cuota de una vez al crear
@@ -108,11 +109,11 @@ export default function VentaPagoFields({
         {formVenta.tipo_pago === "cuotas" && formVenta.estado === "Pagado" && (
           <div className="pedidosventas-form-group">
             <label className="pedidosventas-form-label">Método de pago (cuota inicial)</label>
-            <select className="pedidosventas-form-select" value={formVenta.metodo_pago} onChange={(e) => setFormVenta({ ...formVenta, metodo_pago: e.target.value })}>
+            <Select className="pedidosventas-form-select" value={formVenta.metodo_pago} onChange={(e) => setFormVenta({ ...formVenta, metodo_pago: e.target.value })}>
               {metodosPago.map((m) => (
                 <option key={m.id_metodo} value={m.nombre}>{m.nombre}</option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
       </div>

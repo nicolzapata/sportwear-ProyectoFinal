@@ -1,4 +1,5 @@
 import StatusToggle from "../../../../shared/components/StatusToggle";
+import Select from "../../../../shared/components/Select";
 import { IconEdit, IconEye, IconTag } from "../../../../shared/components/Icons";
 
 export default function CategoriasTable({
@@ -10,10 +11,10 @@ export default function CategoriasTable({
   return (
     <div className="gestproductos-table-container">
       <div className="gestproductos-orden-bar">
-        <select id="ordenCategorias" className="gestproductos-form-select gestproductos-orden-select" value={ordenCategorias} onChange={e => setOrdenCategorias(e.target.value)}>
+        <Select id="ordenCategorias" className="gestproductos-form-select gestproductos-orden-select" value={ordenCategorias} onChange={e => setOrdenCategorias(e.target.value)}>
           <option value="nombre">Nombre (A-Z)</option>
           <option value="fecha">Más recientes primero</option>
-        </select>
+        </Select>
       </div>
       <table className="tbl">
         <thead className="tbl-header">

@@ -2,6 +2,7 @@ import OpcionesPago from "./OpcionesPago";
 import CuotasAccordion from "./CuotasAccordion";
 import StockAlerta from "./StockAlerta";
 import AceptarTerminos from "../../../../shared/components/AceptarTerminos";
+import Select from "../../../../shared/components/Select";
 import { fmt, ETIQUETAS_METODO } from "../../utils/checkoutHelpers";
 
 export default function CheckoutPanel({
@@ -53,7 +54,7 @@ export default function CheckoutPanel({
         {cargandoBarrios ? (
           <div className="checkout-valor">Cargando barrios...</div>
         ) : (
-          <select
+          <Select
             className={`form-control${erroresPaso.barrio ? " input-error" : ""}`}
             value={idBarrio}
             onChange={(e) => {
@@ -65,7 +66,7 @@ export default function CheckoutPanel({
             {barrios.map((b) => (
               <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>
             ))}
-          </select>
+          </Select>
         )}
         {erroresPaso.barrio && <div className="checkout-error-message">{erroresPaso.barrio}</div>}
       </div>
@@ -76,7 +77,7 @@ export default function CheckoutPanel({
         ) : metodosPago.length === 0 ? (
           <p className="checkout-error-message">No hay métodos de pago habilitados en este momento. Contáctanos para completar tu pedido.</p>
         ) : (
-          <select
+          <Select
             className={`form-control${erroresPaso.metodo ? " input-error" : ""}`}
             value={metodo}
             onChange={(e) => {
@@ -89,7 +90,7 @@ export default function CheckoutPanel({
                 {ETIQUETAS_METODO[m.nombre] || m.nombre}
               </option>
             ))}
-          </select>
+          </Select>
         )}
         {erroresPaso.metodo && <div className="checkout-error-message">{erroresPaso.metodo}</div>}
       </div>

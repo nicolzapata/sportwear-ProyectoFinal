@@ -297,15 +297,6 @@
   border-color: var(--accent, #b49780);
   box-shadow: 0 0 0 3px rgba(180,151,128,0.12);
 }
-select.form-control {
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'><path d='M4 6l4 4 4-4' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  padding-right: 34px;
-}
 .form-control.input-error {
   border-color: #c0392b;
   box-shadow: 0 0 0 3px rgba(192,57,43,0.08);

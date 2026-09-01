@@ -5,6 +5,7 @@ import './PedidosVentas.layout.css';
 import './PedidosVentas.modals.css';
 import './PedidosVentas.form.css';
 import Loader from "../../../shared/components/Loader";
+import Select from "../../../shared/components/Select";
 import { IconSearch, IconX } from "../../../shared/components/Icons";
 import OrigenFilterToggle from "../components/pedidos-ventas/OrigenFilterToggle";
 import VentasTable from "../components/pedidos-ventas/VentasTable";
@@ -49,7 +50,7 @@ export default function PedidosVentas() {
           {/* ── NUEVO: filtro de estado de pago — a propósito como
               desplegable y no como otra píldora, para no verse como una
               copia del toggle de Cliente/Admin de al lado. ── */}
-          <select
+          <Select
             className="pedidosventas-filtro-estado-select"
             value={v.filtroEstadoPago}
             onChange={(e) => { v.setFiltroEstadoPago(e.target.value); v.setPagina(1); }}
@@ -58,7 +59,7 @@ export default function PedidosVentas() {
             <option value="Pagado">Realizadas</option>
             <option value="Pendiente">Pendientes</option>
             <option value="Anulado">Anuladas</option>
-          </select>
+          </Select>
         </div>
         <div className="pedidosventas-actions-right">
           {v.tienePerm('Ventas.crear') && (

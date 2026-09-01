@@ -1,3 +1,4 @@
+import Select from "../../../../shared/components/Select";
 import { fmt } from "../../utils/checkoutHelpers";
 
 export default function OpcionesPago({
@@ -22,11 +23,11 @@ export default function OpcionesPago({
       {tipoPagoActivo === "cuotas" && (
         <div style={{ marginTop: 10, paddingLeft: 24 }}>
           <label className="checkout-label">Número de cuotas</label>
-          <select value={numCuotasActivo} onChange={(e) => setNumCuotas(Number(e.target.value))} className="form-control" style={{ marginTop: 4 }}>
+          <Select value={numCuotasActivo} onChange={(e) => setNumCuotas(Number(e.target.value))} className="form-control" style={{ marginTop: 4 }}>
             {opcionesCuotas.map((n) => (
               <option key={n} value={n}>{n} cuotas de {fmt(Math.ceil(total / n))}</option>
             ))}
-          </select>
+          </Select>
         </div>
       )}
     </div>

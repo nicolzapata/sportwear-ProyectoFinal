@@ -1,4 +1,5 @@
 import { IconX } from "../../../../shared/components/Icons";
+import Select from "../../../../shared/components/Select";
 import { MAX_MONTO } from "../../../../shared/utils/numerico";
 import { fmt, MAX_CANTIDAD, errorItemCantidad, errorItemPrecio, errorItemDescuento } from "../../utils/pedidosVentasHelpers";
 
@@ -16,7 +17,7 @@ export default function VentaItemRow({
   return (
     <div className="pedidosventas-item-row">
       <div>
-        <select
+        <Select
           className={`pedidosventas-form-select${erroresVenta[`item_${i}_producto`] ? " input-error" : ""}`}
           value={item.id_producto}
           onChange={(e) => actualizarItemVenta(i, "id_producto", e.target.value)}
@@ -35,10 +36,10 @@ export default function VentaItemRow({
               </option>
             );
           })}
-        </select>
+        </Select>
       </div>
       <div>
-        <select
+        <Select
           className={`pedidosventas-form-select${erroresVenta[`item_${i}_variante`] ? " input-error" : ""}`}
           value={item.id_variante}
           onChange={(e) => {
@@ -62,7 +63,7 @@ export default function VentaItemRow({
               </option>
             );
           })}
-        </select>
+        </Select>
       </div>
       <div>
         <input

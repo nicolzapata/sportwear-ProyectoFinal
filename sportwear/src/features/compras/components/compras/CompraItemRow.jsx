@@ -1,4 +1,5 @@
 import { IconAlertTriangle, IconX } from "../../../../shared/components/Icons";
+import Select from "../../../../shared/components/Select";
 import { MAX_MONTO } from "../../../../shared/utils/numerico";
 import {
   fmt, MAX_CANTIDAD, errorItemProducto, errorItemVariante,
@@ -24,7 +25,7 @@ export default function CompraItemRow({
     <div className="compras-item-row">
       <div className="compras-item-field compras-item-field-producto">
         <label className="compras-item-label-movil">Producto</label>
-        <select
+        <Select
           className={`compras-form-select${errores[`item_${i}_producto`] ? " input-error" : ""}`}
           value={item.id_producto}
           onChange={(e) => {
@@ -40,12 +41,12 @@ export default function CompraItemRow({
           {productos.map((p) => (
             <option key={p.id_producto} value={p.id_producto}>{p.nombre}</option>
           ))}
-        </select>
+        </Select>
         {errores[`item_${i}_producto`] && <span className="compras-field-error">{errores[`item_${i}_producto`]}</span>}
       </div>
       <div className="compras-item-field compras-item-field-variante">
         <label className="compras-item-label-movil">Talla / Color</label>
-        <select
+        <Select
           className={`compras-form-select${errores[`item_${i}_variante`] ? " input-error" : ""}`}
           value={item.id_variante}
           onChange={(e) => {
@@ -66,7 +67,7 @@ export default function CompraItemRow({
               {v.talla} · {v.color_nombre} (stock: {v.stock})
             </option>
           ))}
-        </select>
+        </Select>
         {errores[`item_${i}_variante`] && <span className="compras-field-error">{errores[`item_${i}_variante`]}</span>}
       </div>
       <div className="compras-item-field">

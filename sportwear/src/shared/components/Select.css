@@ -1,0 +1,109 @@
+/* Select — dropdown propio que reemplaza al <select> nativo. Las reglas
+   de tamaño/color/tipografía van en :where() a propósito, con
+   especificidad cero, para que cualquier clase propia de cada página
+   (ej. .proveedores-form-select, .pedidosventas-filtro-estado-select)
+   siga ganando y el look se mantenga igual al de antes. */
+
+.ui-select-wrap {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.ui-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.8rem 1.2rem;
+  border: 1px solid var(--dvna-border, var(--border, #e5e5e5));
+  border-radius: 40px;
+  background: var(--dvna-white, #fff);
+  font-family: var(--font-body, inherit);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--dvna-charcoal, var(--text, #222));
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.ui-select-trigger:hover {
+  border-color: var(--dvna-charcoal, var(--text, #222));
+}
+
+.ui-select-trigger:focus,
+.ui-select-wrap.is-open .ui-select-trigger {
+  outline: none;
+  border-color: var(--dvna-charcoal, var(--text, #222));
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
+}
+
+.ui-select-wrap.is-disabled .ui-select-trigger {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ui-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-select-arrow {
+  flex-shrink: 0;
+  color: var(--dvna-muted, var(--muted, #999));
+  transition: transform 0.2s ease;
+}
+
+.ui-select-wrap.is-open .ui-select-arrow {
+  transform: rotate(180deg);
+}
+
+.ui-select-panel {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--dvna-white, #fff);
+  border: 1px solid var(--dvna-border, var(--border, #e5e5e5));
+  border-radius: 22px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+}
+
+.ui-select-option {
+  padding: 0.6rem 1rem;
+  border-radius: 40px;
+  font-family: var(--font-body, inherit);
+  font-size: 0.88rem;
+  font-weight: 400;
+  color: var(--dvna-charcoal, var(--text, #222));
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ui-select-option:hover {
+  background: var(--dvna-pale, var(--border, #f4f4f4));
+}
+
+.ui-select-option.is-selected {
+  background: var(--brown, var(--primary-dark, #8b5e3c));
+  color: #fff;
+  font-weight: 500;
+}
+
+.ui-select-option.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
