@@ -6,6 +6,7 @@ export default function ProveedoresTable({
   totalPaginas, pagina, setPagina, totalProveedores,
 }) {
   return (
+    <div className="tbl-frame">
     <div className="tbl-container">
       <table className="tbl">
         <thead className="tbl-header">
@@ -67,6 +68,7 @@ export default function ProveedoresTable({
           <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalProveedores} registros</span>
         </div>
       )}
+    </div>
     </div>
   );
 }

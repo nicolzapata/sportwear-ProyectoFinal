@@ -70,6 +70,7 @@ export default function Usuarios() {
         </div>
       </div>
 
+      <div className="tbl-frame">
       <div className="tbl-container">
         <table className="tbl">
           {u.filterType === 'usuarios' ? (
@@ -97,6 +98,7 @@ export default function Usuarios() {
             <span className="paginador-info">Página {u.pagina} de {u.totalPaginas} · {u.totalRegistros} registros</span>
           </div>
         )}
+      </div>
       </div>
 
       {u.modal && u.filterType === 'usuarios' && (

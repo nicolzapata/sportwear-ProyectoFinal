@@ -6,6 +6,7 @@ export default function ColoresTable({
   totalPaginas, pagina, setPagina, totalColores,
 }) {
   return (
+    <div className="tbl-frame">
     <div className="tbl-container">
       <table className="tbl">
         <thead className="tbl-header">
@@ -54,6 +55,7 @@ export default function ColoresTable({
           <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalColores} registros</span>
         </div>
       )}
+    </div>
     </div>
   );
 }

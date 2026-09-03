@@ -165,6 +165,7 @@ export default function CatProductos() {
         {filtrados.length} categoría{filtrados.length !== 1 ? 's' : ''} encontrada{filtrados.length !== 1 ? 's' : ''}
       </div>
 
+      <div className="tbl-frame">
       <div className="tbl-container">
         <table className="tbl">
           <thead className="tbl-header">
@@ -229,6 +230,7 @@ export default function CatProductos() {
             </span>
           </div>
         )}
+      </div>
       </div>
 
       {modal && (

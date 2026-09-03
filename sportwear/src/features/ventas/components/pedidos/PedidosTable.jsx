@@ -7,6 +7,7 @@ export default function PedidosTable({
   totalPaginas, pagina, setPagina, total,
 }) {
   return (
+    <div className="tbl-frame">
     <div className="tbl-container pedidos-tbl-container" style={{ opacity: cargando ? 0.6 : 1, transition: "opacity 0.15s" }}>
       <table className="tbl">
         <thead className="tbl-header">
@@ -24,12 +25,12 @@ export default function PedidosTable({
         <tbody className="tbl-body">
           {datos.map((p) => (
             <tr key={p.id_pedido} className="tbl-row">
-              <td className="tbl-td">{p.cliente}</td>
+              <td className="tbl-td pedidos-cliente-cell" title={p.cliente}>{p.cliente}</td>
               <td className="tbl-td">{p.cliente_documento || "—"}</td>
-              <td className="tbl-td pedidos-producto-cell">
+              <td className="tbl-td pedidos-producto-cell" title={p.items?.map(i => i.producto).filter(Boolean).join(', ')}>
                 {p.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
               </td>
-              <td className="tbl-td">{p.direccion_entrega || "—"}</td>
+              <td className="tbl-td pedidos-direccion-cell" title={p.direccion_entrega}>{p.direccion_entrega || "—"}</td>
               <td className="tbl-td">{p.fecha_actualizacion?.toString().split("T")[0]}</td>
               <td className="tbl-td">
                 <span className={`pedidos-badge ${getPagoBadge(p.estado_venta)}`}>{getPagoTexto(p.estado_venta)}</span>
@@ -81,6 +82,7 @@ export default function PedidosTable({
           <span className="paginador-info">Página {pagina} de {totalPaginas} · {total} registros</span>
         </div>
       )}
+    </div>
     </div>
   );
 }

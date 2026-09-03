@@ -9,13 +9,15 @@ export default function CategoriasTable({
   totalPaginasCategorias, paginaCategorias, setPaginaCategorias, totalCategorias,
 }) {
   return (
-    <div className="gestproductos-table-container">
+    <div>
       <div className="gestproductos-orden-bar">
         <Select id="ordenCategorias" className="gestproductos-form-select gestproductos-orden-select" value={ordenCategorias} onChange={e => setOrdenCategorias(e.target.value)}>
           <option value="nombre">Nombre (A-Z)</option>
           <option value="fecha">Más recientes primero</option>
         </Select>
       </div>
+      <div className="tbl-frame">
+      <div className="gestproductos-table-container">
       <table className="tbl">
         <thead className="tbl-header">
           <tr>
@@ -65,6 +67,8 @@ export default function CategoriasTable({
           <span className="paginador-info">Página {paginaCategorias} de {totalPaginasCategorias} · {totalCategorias} registros</span>
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
 }
