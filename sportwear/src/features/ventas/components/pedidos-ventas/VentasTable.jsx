@@ -9,6 +9,7 @@ export default function VentasTable({
   totalPaginas, pagina, setPagina, total,
 }) {
   return (
+    <div className="tbl-frame">
     <div className="tbl-container pedidosventas-tbl-container" style={{ opacity: cargando ? 0.6 : 1, transition: "opacity 0.15s" }}>
       <table className="tbl">
         <thead className="tbl-header">
@@ -30,8 +31,8 @@ export default function VentasTable({
             const pct = v.total > 0 ? Math.min(100, Math.round(((v.total_pagado || 0) / v.total) * 100)) : 0;
             return (
             <tr key={v.id_venta} className="tbl-row">
-              <td className="tbl-td"><span className="pedidosventas-cliente-name">{v.cliente}</span></td>
-              <td className="tbl-td pedidosventas-producto-cell">
+              <td className="tbl-td"><span className="pedidosventas-cliente-name" title={v.cliente}>{v.cliente}</span></td>
+              <td className="tbl-td pedidosventas-producto-cell" title={v.items?.map(i => i.producto).filter(Boolean).join(', ')}>
                 {v.items?.map(i => i.producto).filter(Boolean).join(', ') || '-'}
                 {cantTotal > 0 && <span className="pedidosventas-producto-cant"> · {cantTotal} uds</span>}
               </td>
@@ -89,6 +90,7 @@ export default function VentasTable({
           <span className="paginador-info">Página {pagina} de {totalPaginas} · {total} registros</span>
         </div>
       )}
+    </div>
     </div>
   );
 }

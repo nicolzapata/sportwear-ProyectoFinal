@@ -87,7 +87,7 @@ router.get('/:id', verificarToken, tieneModulo('Usuarios', 'ver'), async (req, r
          u.id_usuario, u.nombre, u.email, u.estado,
          u.ultimo_acceso, u.intentos_fallidos, u.bloqueado_hasta, u.fecha_creacion,
          r.nombre AS rol, r.id_rol,
-         c.tipo_doc, c.documento, c.telefono, c.ciudad, c.direccion,
+         c.tipo_doc, c.documento, c.telefono, c.ciudad, c.direccion, c.id_barrio,
          b.nombre AS barrio
        FROM "Usuarios" u
        JOIN "Roles"    r ON u.id_rol     = r.id_rol

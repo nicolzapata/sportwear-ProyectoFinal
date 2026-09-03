@@ -6,6 +6,7 @@ export default function ClientesTable({
   totalPaginas, pagina, setPagina, totalClientes,
 }) {
   return (
+    <div className="tbl-frame">
     <div className="tbl-container">
       <table className="tbl">
         <thead className="tbl-header">
@@ -55,6 +56,7 @@ export default function ClientesTable({
           <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalClientes} registros</span>
         </div>
       )}
+    </div>
     </div>
   );
 }

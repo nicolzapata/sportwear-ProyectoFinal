@@ -10,13 +10,29 @@
 
 /* Red de seguridad: si la suma de columnas no cabe en el ancho disponible,
    aparece scroll horizontal en vez de que una celda quede tapada por la
-   celda vecina (ver .gestproductos-th-variantes). El margen negativo deja
-   que la tabla use también el padding lateral del contenedor, ganando ancho
-   extra sin achicar el resto de la página. */
+   celda vecina (ver .gestproductos-th-variantes). Antes usaba un margen
+   negativo para "robarle" ancho al padding del contenedor — eso solo
+   funcionaba cuando la tabla no tenía marco propio; dentro de .tbl-frame
+   (que recorta con overflow:hidden) esa técnica descuadraba la tabla hacia
+   la izquierda. Ya no hace falta: el presupuesto de columnas de abajo está
+   calibrado para caber sin scroll, y overflow-x sigue de red de seguridad. */
 .gestproductos-table-container {
   overflow-x: auto;
-  margin: 0 -2rem;
-  padding: 0 1rem;
+}
+
+/* Esta tabla usa table-layout:fixed con un presupuesto de columnas en px
+   (ver GestProductos.colores.css), no width:100% — por diseño, para que
+   ninguna columna se distorsione estirándose. Eso significa que su ancho
+   real casi nunca coincide exactamente con el del contenedor: si el marco
+   (.tbl-frame) se estira a todo el ancho disponible igual que en el resto
+   de tablas, sobra un hueco vacío a la derecha, bien visible ahora que la
+   tabla tiene un borde propio. Por eso, solo para esta tabla, el marco se
+   ajusta al ancho real del contenido en vez de ocupar todo el disponible. */
+.gestproductos-tbl-frame {
+  width: fit-content;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Header */
