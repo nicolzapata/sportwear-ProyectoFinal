@@ -273,7 +273,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 140px;
+  max-width: 190px;
 }
 
 .tabla-ciudad {
@@ -320,16 +320,16 @@
 .proveedores-container .tbl th:nth-child(2),
 .proveedores-container .tbl td:nth-child(2) { white-space: nowrap; }
 .proveedores-container .tbl th:nth-child(3),
-.proveedores-container .tbl td:nth-child(3) { max-width: 115px; }
+.proveedores-container .tbl td:nth-child(3) { max-width: 140px; }
 .proveedores-container .tbl th:nth-child(4),
-.proveedores-container .tbl td:nth-child(4) { max-width: 95px; }
+.proveedores-container .tbl td:nth-child(4) { max-width: 120px; }
 .proveedores-container .tbl th:nth-child(5),
-.proveedores-container .tbl td:nth-child(5) { max-width: 135px; }
+.proveedores-container .tbl td:nth-child(5) { max-width: 190px; }
 .proveedores-container .tbl th:nth-child(6),
-.proveedores-container .tbl td:nth-child(6) { max-width: 90px; }
+.proveedores-container .tbl td:nth-child(6) { max-width: 110px; }
 .proveedores-container .tbl th:nth-child(7),
-.proveedores-container .tbl td:nth-child(7) { text-align: center; width: 60px; }
+.proveedores-container .tbl td:nth-child(7) { text-align: center; width: 70px; }
 .proveedores-container .tbl th:nth-child(8),
-.proveedores-container .tbl td:nth-child(8) { width: 65px; }
+.proveedores-container .tbl td:nth-child(8) { width: 80px; }
 .proveedores-container .tbl th:nth-child(9),
-.proveedores-container .tbl td:nth-child(9) { width: 75px; }
+.proveedores-container .tbl td:nth-child(9) { width: 100px; }

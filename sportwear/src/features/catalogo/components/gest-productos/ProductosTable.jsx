@@ -14,6 +14,7 @@ export default function ProductosTable({
   totalPaginasProductos, paginaProductos, setPaginaProductos, totalProductos,
 }) {
   return (
+    <div className="tbl-frame gestproductos-tbl-frame">
     <div className="gestproductos-table-container">
       <table className="tbl gestproductos-tabla">
         <thead className="tbl-header">
@@ -124,6 +125,7 @@ export default function ProductosTable({
           <span className="paginador-info">Página {paginaProductos} de {totalPaginasProductos} · {totalProductos} registros</span>
         </div>
       )}
+    </div>
     </div>
   );
 }
