@@ -20,7 +20,20 @@
 
 .pedidos-results-count { font-size: 0.8rem; color: var(--dvna-muted); margin-bottom: 1rem; padding-left: 0.5rem; }
 
-.pedidos-producto-cell { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pedidos-cliente-cell,
+.pedidos-producto-cell,
+.pedidos-direccion-cell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Ancho de columnas fijo: con table-layout:fixed la tabla nunca puede
+   ser más ancha que su contenedor (a diferencia del auto-layout, que
+   crecía con el contenido y forzaba scroll horizontal). Cliente, Producto
+   y Dirección quedan sin ancho explícito — se reparten el espacio que
+   sobra después de las columnas de ancho fijo, con elipsis si no alcanza. ── */
+.pedidos-tbl-container table.tbl { table-layout: fixed; }
+.pedidos-tbl-container th:nth-child(2), .pedidos-tbl-container td:nth-child(2) { width: 105px; }
+.pedidos-tbl-container th:nth-child(5), .pedidos-tbl-container td:nth-child(5) { width: 90px; }
+.pedidos-tbl-container th:nth-child(6), .pedidos-tbl-container td:nth-child(6) { width: 105px; }
+.pedidos-tbl-container th:nth-child(8), .pedidos-tbl-container td:nth-child(8) { width: 95px; }
 
 .pedidos-badge { display: inline-flex; align-items: center; font-size: 0.8rem; font-weight: 400; }
 .pedidos-badge-active   { color: var(--success); }
@@ -41,8 +54,8 @@
 /* ── Ancho fijo de la columna "Envío" (7ª columna) para que no empuje
      el resto de la tabla cuando el texto del estado cambia de largo ── */
 .tbl th:nth-child(7), .tbl td:nth-child(7) {
-  width: 170px;
-  min-width: 170px;
+  width: 205px;
+  min-width: 205px;
 }
 
 /* ── Dropdown de estado ── */

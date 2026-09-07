@@ -9,6 +9,7 @@ export default function ComprasTable({
   totalPaginas, pagina, setPagina, totalCompras,
 }) {
   return (
+    <div className="tbl-frame">
     <div className="tbl-container compras-tbl-container">
       <table className="tbl">
         <thead className="tbl-header">
@@ -81,6 +82,7 @@ export default function ComprasTable({
           <span className="paginador-info">Página {pagina} de {totalPaginas} · {totalCompras} registros</span>
         </div>
       )}
+    </div>
     </div>
   );
 }

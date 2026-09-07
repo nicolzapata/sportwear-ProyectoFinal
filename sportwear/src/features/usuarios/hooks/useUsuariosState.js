@@ -67,12 +67,12 @@ export function useUsuariosState({ usuarioActual, tieneUsuarios, roles, busqueda
     setEditar(u.id_usuario);
     setErrores({ nombres: "", apellidos: "", documento: "", email: "", contrasena: "", confirmar: "", telefono: "", direccion: "", id_barrio: "" });
     setForm({ ...dividirNombre(u.nombre), email: u.email || "", contrasena: "", confirmar: "", id_rol: u.id_rol || roles[0]?.id_rol || 1, estado: u.estado || "Activo", tipo_doc: u.tipo_doc || "CC", documento: u.documento || "", telefono: u.telefono || "", ciudad: u.ciudad || "Medellín", id_barrio: u.id_barrio || "", direccion: u.direccion || "" });
-    if (!u.tipo_doc) {
-      try {
-        const { data } = await api.get(`/usuarios/${u.id_usuario}`);
-        setForm(f => ({ ...f, tipo_doc: data.tipo_doc || "CC", documento: data.documento || "", telefono: data.telefono || "", ciudad: data.ciudad || "Medellín", id_barrio: data.id_barrio || "", direccion: data.direccion || "" }));
-      } catch (err) { console.error(err); }
-    }
+    // El listado (GET /usuarios) no trae telefono, ciudad, direccion ni id_barrio,
+    // así que siempre hace falta consultar el detalle completo al editar.
+    try {
+      const { data } = await api.get(`/usuarios/${u.id_usuario}`);
+      setForm(f => ({ ...f, tipo_doc: data.tipo_doc || "CC", documento: data.documento || "", telefono: data.telefono || "", ciudad: data.ciudad || "Medellín", id_barrio: data.id_barrio || "", direccion: data.direccion || "" }));
+    } catch (err) { console.error(err); }
     setModal(true);
   };
 

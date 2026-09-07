@@ -158,6 +158,18 @@ svg {
   stroke: currentColor;
 }
 
+/* La celda de Acciones es siempre la última columna de cada tabla; el grupo
+   de botones vive en un div flex que por defecto se pega a la izquierda,
+   quedando descuadrado dentro de una columna más ancha que su contenido.
+   Centrarlo (y centrar también el header "Acciones") lo alinea con la
+   columna en vez de quedar corrido hacia un lado. */
+[class*="-action-cell"] {
+  justify-content: center;
+}
+table.tbl th.tbl-th:last-child {
+  text-align: center;
+}
+
 /* En reposo todas las acciones se ven igual (gris, del rule de arriba).
    El color propio de cada acción (y el recuadro a juego) solo aparece al
    pasar el mouse: ver=azul, editar=café de marca,
@@ -232,36 +244,61 @@ svg {
   padding: 0 22px;
 }
 
+/* El borde que delimita la tabla vive en un wrapper propio (no en
+   .tbl-container, que sigue siendo solo el scroller horizontal) para poder
+   redondear esquinas sin recortar el scroll ni el sticky header. El
+   borde en rgba con más presencia + sombra en capas + separación propia
+   respecto a la barra de búsqueda/filtros es lo que la lee como una
+   tarjeta aparte del fondo de la página, no como una extensión de ella. */
+.tbl-frame {
+  margin-top: 18px;
+  border: 1px solid rgba(17, 17, 17, 0.14);
+  border-radius: 20px;
+  background: var(--dvna-white);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 10px 24px rgba(16, 24, 40, 0.07);
+}
+
 table.tbl {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 table.tbl thead.tbl-header {
-  background: #f5f5f5;
+  background: #f7f5f2;
 }
 
 table.tbl th.tbl-th {
   text-align: left;
   padding: 14px 16px;
   font-family: var(--font-body);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: 0.05em;
-  color: var(--dvna-muted);
+  letter-spacing: 0.01em;
+  color: #5c5c5c;
   text-transform: none;
-  border-bottom: 2px solid #dcdcdc;
+  border-bottom: 1px solid rgba(17, 17, 17, 0.12);
   white-space: nowrap;
 }
-table.tbl th.tbl-th:first-child { padding-left: 20px; }
-table.tbl th.tbl-th:last-child  { padding-right: 20px; }
+table.tbl th.tbl-th:first-child { padding-left: 22px; }
+table.tbl th.tbl-th:last-child  { padding-right: 22px; }
+
+/* Separadores verticales entre columnas: hairline muy sutil (para que no
+   se lea como cuadrícula rígida), solo dentro del cuerpo de la tabla —
+   no en el borde exterior, que ya lo da .tbl-frame — y se detienen antes
+   de la celda de Acciones para no partirla visualmente. */
+table.tbl th.tbl-th:not(:last-child),
+table.tbl td.tbl-td:not(:last-child) {
+  border-right: 1px solid rgba(17, 17, 17, 0.05);
+}
 
 table.tbl tbody.tbl-body tr.tbl-row:nth-child(even) {
-  background: #fafafa;
+  background: rgba(17, 17, 17, 0.014);
 }
 
 table.tbl tr.tbl-row {
-  border-bottom: 1px solid var(--dvna-border);
+  border-bottom: 1px solid rgba(17, 17, 17, 0.07);
   transition: background 0.15s ease;
 }
 table.tbl tbody.tbl-body tr.tbl-row:last-child {
@@ -272,14 +309,18 @@ table.tbl tr.tbl-row:hover {
 }
 
 table.tbl td.tbl-td {
-  padding: 18px 16px;
+  padding: 16px;
   font-family: var(--font-body);
   font-size: 13px;
   color: var(--dvna-charcoal);
   vertical-align: middle;
 }
-table.tbl td.tbl-td:first-child { padding-left: 20px; }
-table.tbl td.tbl-td:last-child  { padding-right: 20px; }
+table.tbl td.tbl-td:first-child { padding-left: 22px; }
+table.tbl td.tbl-td:last-child  { padding-right: 22px; }
+
+.tbl-frame .paginador {
+  border-top: 1px solid rgba(17, 17, 17, 0.07);
+}
 
 @media (max-width: 640px) {
   table.tbl th.tbl-th,

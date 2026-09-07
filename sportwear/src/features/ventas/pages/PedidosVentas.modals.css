@@ -25,8 +25,8 @@
 /* ── Ancho fijo de la columna "Estado" (7ª columna, tras fusionar Cant./Abonos/Saldo)
      para que no empuje el resto de la tabla cuando el texto del estado cambia de largo ── */
 .tbl th:nth-child(7), .tbl td:nth-child(7) {
-  width: 160px;
-  min-width: 160px;
+  width: 180px;
+  min-width: 180px;
 }
 
 /* ── Celda "Pago" compacta: barra de progreso + abonado/saldo en una sola columna ── */
@@ -50,6 +50,28 @@
 .pedidosventas-pago-cell:hover .pedidosventas-pago-abonado { text-decoration: underline; }
 
 .pedidosventas-producto-cant { color: var(--dvna-muted); font-size: 0.78em; }
+
+/* ── El texto completo de cliente/productos queda en el title (tooltip);
+   la celda se trunca con elipsis al ancho que le toque en la columna. ── */
+.pedidosventas-cliente-name {
+  display: inline-block; max-width: 100%; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; vertical-align: middle;
+}
+.pedidosventas-producto-cell {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── Ancho de columnas fijo: con table-layout:fixed la tabla nunca puede
+   ser más ancha que su contenedor (a diferencia del auto-layout, que
+   crecía con el contenido y forzaba scroll horizontal). Cliente y
+   Producto quedan sin ancho explícito — se reparten el espacio que sobra
+   después de las columnas de ancho fijo, con elipsis si no alcanza. ── */
+.pedidosventas-tbl-container table.tbl { table-layout: fixed; }
+.pedidosventas-tbl-container th:nth-child(3), .pedidosventas-tbl-container td:nth-child(3) { width: 95px; }
+.pedidosventas-tbl-container th:nth-child(4), .pedidosventas-tbl-container td:nth-child(4) { width: 105px; }
+.pedidosventas-tbl-container th:nth-child(5), .pedidosventas-tbl-container td:nth-child(5) { width: 145px; }
+.pedidosventas-tbl-container th:nth-child(6), .pedidosventas-tbl-container td:nth-child(6) { width: 90px; }
+.pedidosventas-tbl-container th:nth-child(8), .pedidosventas-tbl-container td:nth-child(8) { width: 95px; }
 
 /* ── Dropdown de estado (mismo patrón que Pedidos.jsx) ── */
 .pedidosventas-estado-dropdown { position: relative; display: inline-block; }

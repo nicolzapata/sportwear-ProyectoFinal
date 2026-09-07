@@ -219,18 +219,18 @@
 }
 
 .gestproductos-table-img {
-  width: 40px;
-  height: 40px;
+  width: 54px;
+  height: 54px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid var(--dvna-border);
   background: var(--dvna-pale);
 }
 
 .gestproductos-img-placeholder {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
   background: var(--dvna-border);
   border: 1px dashed var(--dvna-border);
   display: flex;
@@ -264,6 +264,7 @@
   flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
+  width: 100%;
   max-width: 200px;
   overflow: hidden;
   background: none;
@@ -289,7 +290,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-left: 2px;
+  margin-left: auto;
   color: var(--dvna-muted);
   transition: transform 0.15s ease, color 0.15s ease;
 }
@@ -369,7 +370,7 @@
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--dvna-charcoal);
-  max-width: 195px;
+  max-width: 175px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -384,7 +385,7 @@
   font-size: 0.72rem;
   font-weight: 500;
   color: var(--dvna-muted);
-  max-width: 195px;
+  max-width: 175px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
