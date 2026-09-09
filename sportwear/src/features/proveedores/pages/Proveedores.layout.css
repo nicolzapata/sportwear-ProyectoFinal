@@ -108,6 +108,31 @@
   line-height: 1.2;
 }
 
+/* ── Vista de tabla: tabla + panel acoplado (mismo criterio que Usuarios) ── */
+.proveedores-contenido { width: 100%; }
+.proveedores-contenido-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.proveedores-panel-columna { min-width: 0; margin-top: 18px; }
+
+/* ── CORREGIDO: con el panel abierto la tabla queda angosta y sí necesita
+   scroll horizontal — ver el comentario largo de esta misma regla en
+   Usuarios.css (.usuarios-contenido-split .tbl-container): el bleed de
+   .tbl-container (index.css) infla su ancho propio 44px más de lo visible,
+   así que el navegador a veces concluye que no hace falta scroll aunque
+   haya columnas tapadas. Con el panel abierto no hace falta ese bleed. ── */
+.proveedores-contenido-split .tbl-container {
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 900px) {
+  .proveedores-contenido-split { grid-template-columns: 1fr; }
+}
+
 /* Actions Bar */
 .proveedores-actions-bar {
   display: flex;

@@ -9,11 +9,21 @@
 
 .layout-admin-content {
   flex: 1;
-  margin-left: 80px;
+  margin-left: 264px;
   display: flex;
   flex-direction: column;
   min-width: 0;
   transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* El sidebar es position:fixed (no empuja el layout por sí solo) — este
+   margen sigue su ancho real, así que responde al toggle Full/Dock sin
+   tener que subir ese estado hasta Layout.jsx. Solo en escritorio: en
+   móvil el sidebar es un drawer superpuesto (ver el media query de abajo),
+   no debe restarle margen al contenido. */
+@media (min-width: 769px) {
+  .layout-admin:has(.sidebar-modo-dock) .layout-admin-content {
+    margin-left: 78px;
+  }
 }
 
 /* Cliente layout */

@@ -22,7 +22,7 @@ export default function UsuariosTable({
           <tr><td colSpan="100%" className="tbl-td usuarios-empty-row">{busqueda ? `No se encontraron resultados para "${busqueda}".` : "No hay registros para mostrar."}</td></tr>
         ) : usuarios.map(u => (
           <tr key={u.id_usuario} className="tbl-row">
-            <td className="tbl-td">{u.documento ? <span className="clientes-doc-badge">{u.tipo_doc} {u.documento}</span> : "—"}</td>
+            <td className="tbl-td">{u.documento ? `${u.tipo_doc} ${u.documento}` : "—"}</td>
             <td className="tbl-td"><div className="usuarios-user-info"><div className="usuarios-user-name">{u.nombre}</div></div></td>
             <td className="tbl-td usuarios-email-cell">{u.email}</td>
             <td className="tbl-td"><span className="tabla-rol">{u.rol || getRoleName(u.id_rol)}</span></td>

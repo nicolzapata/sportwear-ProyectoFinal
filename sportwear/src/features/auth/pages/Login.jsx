@@ -9,6 +9,7 @@ import { useAuth } from "../../../shared/contexts/AuthContext";
 import { MENU_ITEMS } from "../../../shared/utils/permisos";
 import api from "../../../shared/services/api";
 import logo from "../../../shared/assets/LOGO.png";
+import AuthLayout from "./AuthLayout";
 import "./Login.css";
 
 const IconMail = () => (
@@ -149,7 +150,16 @@ if (esCliente) {
   };
 
   return (
-    <div className="login-page">
+    <AuthLayout
+      badge="ACCESO PRIVADO // SPORTWEAR"
+      title={<>Rendimiento y elegancia para tu <i>disciplina diaria.</i></>}
+      description="Entorno de autenticación federada para atletas de alto calibre, directores creativos y administración VIP. Gestiona colecciones privadas, pedidos a medida y reservas de temporada."
+      stats={[
+        { value: "0.8", unit: "s", label: "Autenticación express" },
+        { value: "256", unit: "bit", label: "Cifrado SHA-Vault" },
+        { value: "99.9", unit: "%", label: "Disponibilidad red" },
+      ]}
+    >
       <div className="login-card">
 
         {/* Logo */}
@@ -169,7 +179,7 @@ if (esCliente) {
         {/* Header */}
         <div className="form-header">
           <h2>Iniciar sesión</h2>
-          <p>Accede a tu panel de gestión</p>
+          <p>Ingresa tus credenciales verificadas para gestionar tu cuenta atelier.</p>
         </div>
 
          {/* Formulario */}
@@ -232,6 +242,6 @@ if (esCliente) {
           <span>Dvna · Sportwear</span>
         </div>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

@@ -1,5 +1,5 @@
 // src/pages/roles/Roles.jsx
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import api from "../../../shared/services/api";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import Loader from "../../../shared/components/Loader";
@@ -10,10 +10,30 @@ import './Roles.cards.css';
 import './Roles.modals.css';
 import './Roles.toolbar.css';
 import { IconX, IconSearch } from "../../../shared/components/Icons";
-import RoleCard from "../components/roles/RoleCard";
+import FilterToggle from "../../../shared/components/FilterToggle";
+import RoleListItem from "../components/roles/RoleListItem";
+import RoleDetailPanel from "../components/roles/RoleDetailPanel";
+import RolesTable from "../components/roles/RolesTable";
 import RolModal from "../components/roles/RolModal";
 import ConfirmEstadoModal from "../components/roles/ConfirmEstadoModal";
 import { validarNombreRol, mergeModulos, MODULOS_FALLBACK, esRolProtegido } from "../utils/rolesHelpers";
+
+// ── Iconos del selector de vista (tarjetas / tabla) ──────────────────────────
+const IconVistaTarjetas = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+    <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+  </svg>
+);
+const IconVistaTabla = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
+const OPCIONES_VISTA = [
+  { valor: "tarjetas", etiqueta: <span title="Tarjetas"><IconVistaTarjetas /></span> },
+  { valor: "tabla",    etiqueta: <span title="Tabla"><IconVistaTabla /></span> },
+];
 
 // ── Página principal ──────────────────────────────────────────────────────────
 export default function Roles() {
@@ -23,6 +43,7 @@ export default function Roles() {
   const [datos,              setDatos]              = useState([]);
   const [busqueda,           setBusqueda]           = useState("");
   const [filtroEstado,       setFiltroEstado]       = useState("todos");
+  const [vista,              setVista]              = useState(() => localStorage.getItem("sz_roles_vista") || "tarjetas");
   const [loading,            setLoading]            = useState(true);
   const [modal,              setModal]              = useState(false);
   const [editar,             setEditar]             = useState(null);
@@ -33,14 +54,32 @@ export default function Roles() {
   const [errores, setErrores] = useState({});
   const [toast,   setToast]   = useState(null);
 
+  // ── Selección para la vista de tarjetas (lista + panel de detalle) ──────────
+  const [rolSeleccionadoId, setRolSeleccionadoId] = useState(null);
+  const [detalle, setDetalle] = useState({ permisos: [], loading: false, loadedId: null });
+
   const showToast = (type, message) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 3500);
   };
 
-  const filtrados = datos
+  const cambiarVista = (v) => {
+    setVista(v);
+    localStorage.setItem("sz_roles_vista", v);
+  };
+
+  const filtrados = useMemo(() => datos
     .filter(r => r.nombre.toLowerCase().includes(busqueda.toLowerCase()))
-    .filter(r => filtroEstado === "todos" ? true : r.estado === (filtroEstado === "activos" ? "Activo" : "Inactivo"));
+    .filter(r => filtroEstado === "todos" ? true : r.estado === (filtroEstado === "activos" ? "Activo" : "Inactivo")),
+  [datos, busqueda, filtroEstado]);
+
+  const totalPermisosCatalogo = useMemo(
+    () => Object.values(permisosCatalogo).reduce((acc, acciones) => acc + (Array.isArray(acciones) ? acciones.length : 0), 0),
+    [permisosCatalogo]
+  );
+
+  const conteoActivos   = datos.filter(r => r.estado === 'Activo').length;
+  const conteoInactivos = datos.filter(r => r.estado === 'Inactivo').length;
 
   const cargar = useCallback(async () => {
     try {
@@ -55,6 +94,33 @@ export default function Roles() {
     api.get('/roles/modulos').then(({ data }) => setModulosDisponibles(mergeModulos(data))).catch(() => setModulosDisponibles(MODULOS_FALLBACK));
     api.get('/roles/permisos').then(({ data }) => setPermisosCatalogo(data || {})).catch(() => setPermisosCatalogo({}));
   }, [cargar]);
+
+  // Mantiene una selección válida (primer rol visible) cuando cambia la
+  // vista, la búsqueda o el filtro de estado.
+  useEffect(() => {
+    if (vista !== 'tarjetas') return;
+    if (filtrados.length === 0) { setRolSeleccionadoId(null); return; }
+    if (!filtrados.some(r => r.id_rol === rolSeleccionadoId)) {
+      setRolSeleccionadoId(filtrados[0].id_rol);
+    }
+  }, [vista, filtrados, rolSeleccionadoId]);
+
+  // Carga los permisos del rol seleccionado para la matriz del panel.
+  useEffect(() => {
+    if (!rolSeleccionadoId) return;
+    let cancelado = false;
+    setDetalle(prev => ({ ...prev, loading: true }));
+    api.get(`/roles/${rolSeleccionadoId}/permisos`)
+      .then(({ data }) => {
+        if (cancelado) return;
+        setDetalle({ permisos: Array.isArray(data) ? data : [], loading: false, loadedId: rolSeleccionadoId });
+      })
+      .catch(() => {
+        if (cancelado) return;
+        setDetalle({ permisos: [], loading: false, loadedId: rolSeleccionadoId });
+      });
+    return () => { cancelado = true; };
+  }, [rolSeleccionadoId]);
 
   const abrirRegistrar = () => {
     setEditar(null); setForm({ nombre: "", estado: "Activo", permisos: [] }); setErrores({}); setModal(true);
@@ -90,6 +156,12 @@ export default function Roles() {
       if (editar) await api.put(`/roles/${editar}`, form);
       else        await api.post("/roles", form);
       setModal(false); cargar();
+      if (editar && editar === rolSeleccionadoId) {
+        setDetalle(prev => ({ ...prev, loading: true }));
+        api.get(`/roles/${editar}/permisos`)
+          .then(({ data }) => setDetalle({ permisos: Array.isArray(data) ? data : [], loading: false, loadedId: editar }))
+          .catch(() => setDetalle({ permisos: [], loading: false, loadedId: editar }));
+      }
       showToast('exito', editar ? 'Rol actualizado correctamente.' : 'Rol creado correctamente.');
     } catch (err) {
       const backendErrors = err.response?.data?.errors;
@@ -134,6 +206,10 @@ export default function Roles() {
 
   if (loading) return <Loader text="Cargando roles..." />;
 
+  const rolSeleccionado    = filtrados.find(r => r.id_rol === rolSeleccionadoId) || null;
+  const indexSeleccionado  = filtrados.findIndex(r => r.id_rol === rolSeleccionadoId);
+  const permisosDelDetalle = detalle.loadedId === rolSeleccionadoId ? detalle.permisos : [];
+
   return (
     <div className="roles-container">
       <div className="roles-actions-bar">
@@ -145,12 +221,14 @@ export default function Roles() {
           </div>
 
           <div className="roles-filter-toggle">
-            <button className={`roles-filter-btn${filtroEstado === "todos" ? " active" : ""}`} onClick={() => setFiltroEstado("todos")}>Todos</button>
-            <button className={`roles-filter-btn${filtroEstado === "activos" ? " active" : ""}`} onClick={() => setFiltroEstado("activos")}>Activos</button>
-            <button className={`roles-filter-btn${filtroEstado === "inactivos" ? " active" : ""}`} onClick={() => setFiltroEstado("inactivos")}>Inactivos</button>
+            <button className={`roles-filter-btn${filtroEstado === "todos" ? " active" : ""}`} onClick={() => setFiltroEstado("todos")}>Todos ({datos.length})</button>
+            <button className={`roles-filter-btn${filtroEstado === "activos" ? " active" : ""}`} onClick={() => setFiltroEstado("activos")}>Activos ({conteoActivos})</button>
+            <button className={`roles-filter-btn${filtroEstado === "inactivos" ? " active" : ""}`} onClick={() => setFiltroEstado("inactivos")}>Inactivos ({conteoInactivos})</button>
           </div>
 
-          {(busqueda || filtroEstado !== "todos") && <span className="roles-search-count">{filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}</span>}
+          {busqueda && <span className="roles-search-count">{filtrados.length} resultado{filtrados.length !== 1 ? 's' : ''}</span>}
+
+          <FilterToggle opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
         </div>
 
         {tienePerm('Roles.crear') && (
@@ -158,17 +236,50 @@ export default function Roles() {
         )}
       </div>
 
-      <div className="roles-grid">
-        {filtrados.map((r, i) => (
-          <RoleCard
-            key={r.id_rol} rol={r} index={i}
+      {vista === "tabla" ? (
+        <div className="tbl-frame">
+          <div className="tbl-container">
+            <table className="tbl">
+              <RolesTable
+                roles={filtrados}
+                onEditar={abrirEditar}
+                onCambiarEstado={solicitarCambioEstado}
+                puedeEditar={tienePerm('Roles.editar')}
+                puedeEstado={tienePerm('Roles.estado')}
+                busqueda={busqueda}
+              />
+            </table>
+          </div>
+        </div>
+      ) : filtrados.length === 0 ? (
+        <p className="roles-tabla-empty">{busqueda ? `No se encontraron resultados para "${busqueda}".` : "No hay roles para mostrar."}</p>
+      ) : (
+        <div className="roles-lista-detalle">
+          <div className="roles-lista">
+            {filtrados.map((r, i) => (
+              <RoleListItem
+                key={r.id_rol} rol={r} index={i}
+                seleccionado={r.id_rol === rolSeleccionadoId}
+                totalPermisos={totalPermisosCatalogo}
+                onSeleccionar={setRolSeleccionadoId}
+              />
+            ))}
+          </div>
+
+          <RoleDetailPanel
+            rol={rolSeleccionado}
+            index={indexSeleccionado}
+            permisosCatalogo={permisosCatalogo}
+            permisosOtorgados={permisosDelDetalle}
+            loadingPermisos={detalle.loading && detalle.loadedId !== rolSeleccionadoId}
+            totalPermisosCatalogo={totalPermisosCatalogo}
             onEditar={abrirEditar}
             onCambiarEstado={solicitarCambioEstado}
             puedeEditar={tienePerm('Roles.editar')}
             puedeEstado={tienePerm('Roles.estado')}
           />
-        ))}
-      </div>
+        </div>
+      )}
 
       <ConfirmEstadoModal confirm={confirm} setConfirm={setConfirm} datos={datos} confirmarCambioEstado={confirmarCambioEstado} />
 

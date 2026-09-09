@@ -4,14 +4,20 @@ import {
 } from "../../../../shared/utils/numerico";
 import { IconEyeOpen, IconEyeClosed, IconLock, IconX } from "../../../../shared/components/Icons";
 import Select from "../../../../shared/components/Select";
+import DetallePanel from "../../../../shared/components/DetallePanel";
+import { getInitials, getAvatarColor } from "../../../../shared/utils/texto";
 import { TIPOS_DOC, errorEmailUsuario, revisarContrasena, revisarConfirmar } from "../../utils/usuariosHelpers";
 
+// variante="modal" (por defecto): overlay centrado, usado al crear un usuario.
+// variante="panel": se acopla al lado de la tabla, usado al editar un usuario
+// existente — mismos campos y validaciones, solo cambia el cascarón visual.
 export default function UsuarioFormModal({
   editar, setModal, guardandoModal, handleGuardarUsuario,
   form, setForm, errores, setErrores,
   roles, barrios, esRolAdmin,
   showPassword, setShowPassword,
   formRef, verificarDocumentoDuplicado, verificarEmailDuplicado,
+  variante = 'modal',
 }) {
   // ── Sección: Datos personales (documento primero, como en Registro) ───────
   const PasoPersonal = (
@@ -230,6 +236,52 @@ export default function UsuarioFormModal({
     )
   );
 
+  const cuerpo = (
+    <>
+      <div className="usuarios-factura-seccion">
+        <h3 className="usuarios-factura-titulo">Datos personales</h3>
+        {PasoPersonal}
+      </div>
+      <div className="usuarios-factura-seccion">
+        <h3 className="usuarios-factura-titulo">Datos de contacto</h3>
+        {PasoContacto}
+      </div>
+      {PasoSeguridad && (
+        <div className="usuarios-factura-seccion">
+          <h3 className="usuarios-factura-titulo">Seguridad</h3>
+          {PasoSeguridad}
+        </div>
+      )}
+      <div className="usuarios-factura-seccion">
+        <h3 className="usuarios-factura-titulo">Rol y estado</h3>
+        {PasoRolEstado}
+      </div>
+    </>
+  );
+
+  if (variante === 'panel') {
+    const nombreCompleto = `${form.nombres || ''} ${form.apellidos || ''}`.trim();
+    return (
+      <DetallePanel
+        iniciales={getInitials(nombreCompleto) || '?'}
+        avatarColor={getAvatarColor(editar)}
+        nombre={editar ? "Editar usuario" : "Nuevo usuario"}
+        subtitulo={nombreCompleto || undefined}
+        onClose={() => !guardandoModal && setModal(false)}
+        footer={
+          <>
+            <button className="detalle-panel-btn-secundario" onClick={() => setModal(false)} disabled={guardandoModal}>Cancelar</button>
+            <button className="detalle-panel-btn-primario" onClick={handleGuardarUsuario} disabled={guardandoModal}>
+              {guardandoModal ? "Guardando..." : (editar ? "Actualizar" : "Registrar")}
+            </button>
+          </>
+        }
+      >
+        {cuerpo}
+      </DetallePanel>
+    );
+  }
+
   return (
     <div className="usuarios-modal-overlay" onClick={() => !guardandoModal && setModal(false)}>
       <div className="usuarios-modal usuarios-modal-factura" onClick={(e) => e.stopPropagation()}>
@@ -239,24 +291,7 @@ export default function UsuarioFormModal({
         </div>
 
         <div className="usuarios-modal-body usuarios-factura-body">
-          <div className="usuarios-factura-seccion">
-            <h3 className="usuarios-factura-titulo">Datos personales</h3>
-            {PasoPersonal}
-          </div>
-          <div className="usuarios-factura-seccion">
-            <h3 className="usuarios-factura-titulo">Datos de contacto</h3>
-            {PasoContacto}
-          </div>
-          {PasoSeguridad && (
-            <div className="usuarios-factura-seccion">
-              <h3 className="usuarios-factura-titulo">Seguridad</h3>
-              {PasoSeguridad}
-            </div>
-          )}
-          <div className="usuarios-factura-seccion">
-            <h3 className="usuarios-factura-titulo">Rol y estado</h3>
-            {PasoRolEstado}
-          </div>
+          {cuerpo}
         </div>
 
         <div className="usuarios-modal-footer">

@@ -51,9 +51,8 @@ export default function GestProductos() {
         />
       ) : (
         <ColoresGrid
-          coloresPagina={g.coloresPagina} tienePerm={g.tienePerm}
+          coloresTodos={g.coloresTodos} productos={g.productosDeColores} busqueda={g.busqueda} tienePerm={g.tienePerm}
           cambiarEstadoColor={g.cambiarEstadoColor} abrirEditarColor={g.abrirEditarColor} setEliminarColorId={g.setEliminarColorId}
-          totalPaginasColores={g.totalPaginasColores} paginaColores={g.paginaColores} setPaginaColores={g.setPaginaColores} totalColores={g.totalColores}
         />
       )}
 
@@ -98,7 +97,7 @@ export default function GestProductos() {
       {g.eliminarColorId && (
         <ConfirmModal
           title="Eliminar color"
-          message={`¿Eliminar el color "${g.coloresPagina.find((c) => c.id_color === g.eliminarColorId)?.nombre || ""}"? No se podrá eliminar si está asociado a algún producto.`}
+          message={`¿Eliminar el color "${g.coloresTodos.find((c) => c.id_color === g.eliminarColorId)?.nombre || ""}"? No se podrá eliminar si está asociado a algún producto.`}
           onCancel={() => g.setEliminarColorId(null)}
           onConfirm={g.confirmarEliminarColor}
           confirmLabel="Sí, eliminar"

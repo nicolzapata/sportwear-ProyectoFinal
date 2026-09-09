@@ -37,22 +37,22 @@ export function useGestProductos() {
       categoriasState.cargarCategoriasCompletas(),
       tab === 'productos' ? productosListado.cargarProductos()
         : tab === 'categorias' ? categoriasState.cargarCategoriasPagina()
-        : coloresState.cargarColoresPagina(),
+        : coloresState.cargarColoresTodos(),
     ]);
   };
 
   const categoriasState = useCategoriasState({ busquedaDebounced, setModal, setLoading, mostrarToast, recargarTodo });
   const productosListado = useProductosListado({ busquedaDebounced, setLoading, mostrarToast, recargarTodo });
   const productoFormulario = useProductoFormulario({
-    categorias: categoriasState.categorias, setModal, mostrarToast, recargarTodo,
+    cargarCategoriasCompletas: categoriasState.cargarCategoriasCompletas, setModal, mostrarToast, recargarTodo,
   });
   const coloresState = useColoresState({ busquedaDebounced, setModal, setLoading, mostrarToast, recargarTodo });
 
-  // ── Carga inicial (categorías completas para el <select>) + soporte de deep-link "?edit=ID" ──
-  // La tabla de productos se carga por el efecto de paginación de más abajo.
+  // ── Soporte de deep-link "?edit=ID" ── La tabla de productos se carga por
+  // el efecto de paginación de más abajo; las categorías completas para el
+  // <select> las pide abrirEditar/abrirRegistrar recién al abrir el modal,
+  // no hace falta pedirlas de entrada solo por visitar la pestaña.
   useEffect(() => {
-    categoriasState.cargarCategoriasCompletas();
-
     const editId = searchParams.get('edit');
     if (editId) {
       api.get('/productos', { params: { id: editId } }).then(({ data }) => {
@@ -79,8 +79,18 @@ export function useGestProductos() {
   useEffect(() => { if (tab === 'productos') productosListado.cargarProductos(productosListado.paginaProductos, busquedaDebounced); }, [tab, productosListado.paginaProductos, busquedaDebounced]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'categorias') categoriasState.cargarCategoriasPagina(categoriasState.paginaCategorias, busquedaDebounced); }, [tab, categoriasState.paginaCategorias, busquedaDebounced, categoriasState.ordenCategorias]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (tab === 'colores') coloresState.cargarColoresPagina(coloresState.paginaColores, busquedaDebounced); }, [tab, coloresState.paginaColores, busquedaDebounced]);
+  // La vitrina de "Colores" no pagina en servidor (ver useColoresState): se
+  // trae completa una sola vez al entrar a la pestaña, y el buscador filtra
+  // en el cliente sin volver a pedirla en cada tecla. Junto con los colores
+  // se trae también /productos, para poder calcular "prendas con este
+  // color" en el panel de detalle.
+  useEffect(() => {
+    if (tab === 'colores') {
+      coloresState.cargarColoresTodos();
+      coloresState.cargarProductosDeColores();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   return {
     tienePerm,

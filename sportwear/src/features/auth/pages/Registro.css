@@ -1,40 +1,209 @@
 /* ═══════════════════════════════════════════════════
    Registro.css — DVNA SportWear
-   Extiende Login.css para el formulario de registro
+   Panel de dos columnas (branding + formulario por pasos)
    ═══════════════════════════════════════════════════ */
 
-/* Card más ancha para el registro */
-.registro-card {
-  max-width: 500px;
-  padding: 16px 40px 18px;
+.registro-page {
+  min-height: 100vh;
+  font-family: var(--font-body);
+  background: var(--dvna-cream);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 32px 16px;
+  gap: 16px;
 }
 
-/* Scroll vertical en pantallas pequeñas */
-.login-page.registro-page {
+.registro-shell {
+  width: 100%;
+  max-width: 1180px;
+  display: flex;
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(180,151,128,0.14), 0 1px 8px rgba(0,0,0,0.04);
+}
+
+/* ── Panel de branding (oscuro) ── */
+.registro-brand-panel {
+  flex: 0 0 340px;
+  background: linear-gradient(160deg, #171412 0%, var(--dvna-charcoal) 55%, #241d17 100%);
+  color: var(--dvna-white);
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.registro-brand-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  padding: 6px 12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 999px;
+  color: rgba(255,255,255,0.85);
+}
+.registro-brand-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dvna-circle); }
+
+.registro-brand-mid { margin: 28px 0; }
+.registro-brand-eyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--dvna-circle);
+  margin-bottom: 12px;
+}
+.registro-brand-mid h1 {
+  font-size: 26px;
+  line-height: 1.25;
+  font-weight: 700;
+  margin: 0 0 14px;
+  color: var(--dvna-white);
+}
+.registro-brand-mid p {
+  font-size: 13px;
+  line-height: 1.6;
+  font-weight: 300;
+  color: rgba(255,255,255,0.65);
+}
+
+.registro-brand-guarantee {
+  display: flex;
+  gap: 12px;
   align-items: flex-start;
-  padding: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+}
+.registro-brand-guarantee-icon { font-size: 18px; }
+.registro-brand-guarantee strong {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dvna-white);
+  margin-bottom: 3px;
+}
+.registro-brand-guarantee p {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.6);
+  font-weight: 300;
 }
 
-/* ── Versión compacta: el formulario tiene más campos que el de login,
-   así que se recorta el espaciado para que quepa sin scroll en un
-   escritorio estándar (1366×768) ── */
-.registro-card .card-logo { margin-bottom: 6px; }
-.registro-card .brand-logo-ring {
-  width: 40px;
-  height: 40px;
-  margin-bottom: 4px;
+.registro-brand-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255,255,255,0.12);
 }
-.registro-card .brand-logo-ring img { width: 48px; height: 48px; }
-.registro-card .card-brand-name { font-size: 14px; }
-.registro-card .card-divider { margin: 8px 0; }
-.registro-card .form-header p { margin: 0 0 6px; }
-.registro-card .form-group { margin-bottom: 6px; gap: 4px; }
-.registro-card .form-group input,
-.registro-card .form-group select {
-  padding: 8px 14px;
+.registro-brand-footer img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.9);
+  padding: 2px;
 }
-.registro-card .submit-btn { margin-top: 4px; padding: 10px; }
-.registro-card .form-footer-mark { margin-top: 6px; }
+.registro-brand-footer strong { display: block; font-size: 12px; color: var(--dvna-white); }
+.registro-brand-footer span { font-size: 10.5px; color: rgba(255,255,255,0.55); }
+
+/* ── Panel del formulario ── */
+.registro-form-panel {
+  flex: 1;
+  padding: 32px 40px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.registro-form-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.registro-form-top h2 {
+  font-size: 21px;
+  font-weight: 700;
+  color: var(--dvna-charcoal);
+  margin: 0;
+}
+.registro-form-sub {
+  font-size: 12.5px;
+  font-weight: 300;
+  color: var(--dvna-muted);
+  margin: 4px 0 20px;
+}
+
+.registro-steps { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.registro-step-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--dvna-border);
+  background: var(--dvna-pale);
+  color: var(--dvna-muted);
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.registro-step-dot.activo {
+  background: var(--dvna-circle);
+  border-color: var(--dvna-circle);
+  color: var(--dvna-white);
+}
+.registro-step-line { width: 14px; height: 1px; background: var(--dvna-border); }
+
+/* ── Secciones numeradas en caja ── */
+.registro-section {
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r-md);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.registro-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--dvna-pale);
+  border-bottom: 1px solid var(--dvna-border);
+}
+.registro-section-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dvna-circle);
+  letter-spacing: 0.05em;
+}
+.registro-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dvna-charcoal);
+  flex: 1;
+}
+.registro-section-step {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--dvna-muted);
+}
+.registro-section-body { padding: 16px 16px 6px; }
+.registro-section-body .form-group:last-child { margin-bottom: 0; }
 
 /* Filas de 2 columnas */
 .registro-row {
@@ -43,18 +212,43 @@
   gap: 14px;
 }
 
-/* Títulos de sección del formulario */
-.registro-section-titulo {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--dvna-circle);
-  margin: 8px 0 4px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid rgba(180,151,128,0.25);
+/* ── Barra de fuerza de contraseña ── */
+.registro-fuerza { margin: 4px 0 8px; }
+.registro-fuerza-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--dvna-muted);
+  margin-bottom: 6px;
 }
-.registro-section-titulo:first-of-type { margin-top: 0; }
+.registro-fuerza-head strong { color: var(--dvna-circle); font-weight: 600; }
+.registro-fuerza-bar {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--dvna-border);
+  overflow: hidden;
+}
+.registro-fuerza-fill { display: block; height: 100%; border-radius: 999px; transition: width 0.25s; }
+.registro-fuerza-fill.nivel-1 { width: 33%; background: #c9573a; }
+.registro-fuerza-fill.nivel-2 { width: 66%; background: #d3a23a; }
+.registro-fuerza-fill.nivel-3 { width: 100%; background: #4f9d63; }
+
+/* ── Términos y condiciones ── */
+.registro-terminos {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px 0;
+  cursor: pointer;
+}
+.registro-terminos input { margin-top: 2px; accent-color: var(--dvna-circle); flex-shrink: 0; }
+.registro-terminos span {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dvna-muted);
+  font-weight: 300;
+}
+.registro-terminos span a { color: var(--dvna-circle); text-decoration: underline; }
 
 /* Link a login */
 .registro-login-link {
@@ -62,7 +256,7 @@
   font-size: 12px;
   font-weight: 400;
   color: var(--dvna-muted);
-  margin-top: 6px;
+  margin-top: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -116,7 +310,21 @@
   color: var(--dvna-muted);
 }
 
+/* ── Pie de página ── */
+.registro-footer-mark {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--dvna-muted);
+  text-align: center;
+}
+
+@media (max-width: 900px) {
+  .registro-shell { flex-direction: column; max-width: 560px; }
+  .registro-brand-panel { flex: 0 0 auto; padding: 28px 24px; }
+  .registro-form-panel { max-height: none; padding: 28px 24px; }
+}
+
 @media (max-width: 600px) {
   .registro-row { grid-template-columns: 1fr; }
-  .registro-card { max-width: 100%; padding: 36px 24px; }
+  .registro-form-top { flex-wrap: wrap; }
 }

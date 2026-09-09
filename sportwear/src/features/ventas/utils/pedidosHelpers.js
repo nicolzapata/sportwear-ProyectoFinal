@@ -48,3 +48,20 @@ export const getEstadoBadge = (estado) => {
     default:                return "pedidos-badge-pending";
   }
 };
+
+// "hace X min/h/d" a partir de fecha_actualizacion — solo formateo, el dato
+// (la fecha) ya lo trae el backend.
+export const tiempoRelativo = (fecha) => {
+  if (!fecha) return "—";
+  const diffMs = Date.now() - new Date(fecha).getTime();
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return "justo ahora";
+  if (min < 60) return `hace ${min} min`;
+  const horas = Math.floor(min / 60);
+  if (horas < 24) return `hace ${horas}h ${min % 60}m`;
+  return `hace ${Math.floor(horas / 24)}d`;
+};
+
+// v.origen solo guarda 'Landing' | 'Admin' (ver ventas.service.js) — esto
+// únicamente traduce esos dos valores a un texto legible, no inventa nada.
+export const origenTexto = (origen) => (origen === 'Landing' ? 'Tienda web' : origen === 'Admin' ? 'Registro interno' : origen || '—');

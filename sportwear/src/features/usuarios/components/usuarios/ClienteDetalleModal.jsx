@@ -1,52 +1,45 @@
-import { DetalleItem, DetalleGrid } from "../../../../shared/components/ModalDetalle";
-import { IconEdit, IconX } from "../../../../shared/components/Icons";
+import DetallePanel from "../../../../shared/components/DetallePanel";
+import { getInitials, getAvatarColor } from "../../../../shared/utils/texto";
+import { IconCreditCard, IconHome } from "../../../../shared/components/Icons";
 
 export default function ClienteDetalleModal({ clienteDetalle, setClienteDetalle, tienePerm, abrirEditarCliente }) {
   if (!clienteDetalle) return null;
 
+  const secciones = [
+    {
+      titulo: "Datos y cuenta",
+      icono: <IconCreditCard />,
+      campos: [
+        { label: "Tipo doc.",           value: clienteDetalle.tipo_doc },
+        { label: "Documento",           value: clienteDetalle.documento },
+        { label: "Nombre completo",     value: clienteDetalle.nombre, full: true },
+        { label: "Correo electrónico",  value: clienteDetalle.email },
+        { label: "Teléfono móvil",      value: clienteDetalle.telefono },
+      ],
+    },
+    {
+      titulo: "Ubicación y despacho",
+      icono: <IconHome />,
+      campos: [
+        { label: "Ciudad",             value: clienteDetalle.ciudad },
+        { label: "Barrio",             value: clienteDetalle.barrio_nombre },
+        { label: "Dirección de entrega", value: clienteDetalle.direccion, full: true },
+        { label: "Pago por cuotas",    value: clienteDetalle.permiso_cuotas ? "Permitido" : "Bloqueado" },
+        { label: "Estado",             value: clienteDetalle.estado },
+      ],
+    },
+  ];
+
   return (
-    <div className="usuarios-modal-overlay" onClick={() => setClienteDetalle(null)}>
-      <div className="usuarios-modal usuarios-modal-factura" onClick={(e) => e.stopPropagation()}>
-        <div className="usuarios-modal-header">
-          <div>
-            <h2 className="usuarios-modal-title">{clienteDetalle.nombre}</h2>
-            <p className="usuarios-modal-subtitulo">Detalle del cliente</p>
-          </div>
-          <button className="usuarios-modal-close" onClick={() => setClienteDetalle(null)}><IconX /></button>
-        </div>
-
-        <div className="usuarios-modal-body usuarios-factura-body">
-          <div className="usuarios-factura-seccion">
-            <h3 className="usuarios-factura-titulo">Datos personales</h3>
-            <DetalleGrid>
-              <DetalleItem label="Tipo documento"     value={clienteDetalle.tipo_doc} />
-              <DetalleItem label="N° documento"       value={clienteDetalle.documento} />
-              <DetalleItem label="Nombre completo"    value={clienteDetalle.nombre} full />
-              <DetalleItem label="Teléfono"           value={clienteDetalle.telefono} />
-              <DetalleItem label="Correo electrónico" value={clienteDetalle.email} />
-            </DetalleGrid>
-          </div>
-          <div className="usuarios-factura-seccion">
-            <h3 className="usuarios-factura-titulo">Ubicación y clasificación</h3>
-            <DetalleGrid>
-              <DetalleItem label="Ciudad"             value={clienteDetalle.ciudad} />
-              <DetalleItem label="Barrio"             value={clienteDetalle.barrio_nombre} />
-              <DetalleItem label="Dirección completa" value={clienteDetalle.direccion} full />
-              <DetalleItem label="Pago por cuotas" value={clienteDetalle.permiso_cuotas ? "Permitido" : "Bloqueado"} />
-              <DetalleItem label="Estado"          value={clienteDetalle.estado} />
-            </DetalleGrid>
-          </div>
-        </div>
-
-        <div className="usuarios-modal-footer">
-          <button className="usuarios-btn-secondary" onClick={() => setClienteDetalle(null)}>Cerrar</button>
-          {tienePerm('Clientes.editar') && (
-            <button className="usuarios-btn-primary" onClick={() => { setClienteDetalle(null); abrirEditarCliente(clienteDetalle); }}>
-              <IconEdit /> Editar
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    <DetallePanel
+      iniciales={getInitials(clienteDetalle.nombre)}
+      avatarColor={getAvatarColor(clienteDetalle.id_cliente)}
+      nombre={clienteDetalle.nombre}
+      subtitulo="Perfil del cliente"
+      secciones={secciones}
+      onClose={() => setClienteDetalle(null)}
+      onEditar={tienePerm('Clientes.editar') ? () => { setClienteDetalle(null); abrirEditarCliente(clienteDetalle); } : undefined}
+      editarLabel="Editar cliente"
+    />
   );
 }

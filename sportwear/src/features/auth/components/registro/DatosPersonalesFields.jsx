@@ -6,42 +6,48 @@ import Select from "../../../../shared/components/Select";
 
 export default function DatosPersonalesFields({ form, errores, handleChange, onFocus, onBlur }) {
   return (
-    <>
-      <h3 className="registro-section-titulo">Datos personales</h3>
+    <section className="registro-section">
+      <header className="registro-section-head">
+        <span className="registro-section-num">01</span>
+        <span className="registro-section-label">Identidad personal</span>
+        <span className="registro-section-step">Paso 1 de 3</span>
+      </header>
 
-      <div className="registro-row">
-        <div className="form-group">
-          <label>Tipo doc <span className="req">*</span></label>
-          <Select name="tipo_doc" className="form-control"
-            value={form.tipo_doc} onChange={handleChange} onBlur={onBlur}>
-            {TIPOS_DOC.map(t => <option key={t} value={t}>{t}</option>)}
-          </Select>
-        </div>
-        <div className="form-group">
-          <label>N° documento <span className="req">*</span></label>
-          <div className="input-wrapper">
-            <input type="text" name="documento" placeholder="1001234567" inputMode={form.tipo_doc === "PP" ? "text" : "numeric"}
-              maxLength={maxLongitudDocumento(form.tipo_doc)}
-              value={form.documento} onChange={handleChange}
-              onFocus={onFocus} onBlur={onBlur}
-              style={{ paddingLeft: "14px" }}/>
-            <div className="input-bar" />
+      <div className="registro-section-body">
+        <div className="registro-row">
+          <div className="form-group">
+            <label>Tipo doc <span className="req">*</span></label>
+            <Select name="tipo_doc" className="form-control"
+              value={form.tipo_doc} onChange={handleChange} onBlur={onBlur}>
+              {TIPOS_DOC.map(t => <option key={t} value={t}>{t}</option>)}
+            </Select>
           </div>
-          {errores.documento && <span className="field-error">{errores.documento}</span>}
+          <div className="form-group">
+            <label>N° documento <span className="req">*</span></label>
+            <div className="input-wrapper">
+              <input type="text" name="documento" placeholder="1001234567" inputMode={form.tipo_doc === "PP" ? "text" : "numeric"}
+                maxLength={maxLongitudDocumento(form.tipo_doc)}
+                value={form.documento} onChange={handleChange}
+                onFocus={onFocus} onBlur={onBlur}
+                style={{ paddingLeft: "14px" }}/>
+              <div className="input-bar" />
+            </div>
+            {errores.documento && <span className="field-error">{errores.documento}</span>}
+          </div>
+        </div>
+
+        <div className="registro-row">
+          <Field icon={<IconUser />} name="nombres" label="Nombres"
+            placeholder="Ana Sofía" required
+            value={form.nombres} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+            error={errores.nombres} />
+
+          <Field icon={<IconUser />} name="apellidos" label="Apellidos"
+            placeholder="López Ríos" required
+            value={form.apellidos} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+            error={errores.apellidos} />
         </div>
       </div>
-
-      <div className="registro-row">
-        <Field icon={<IconUser />} name="nombres" label="Nombres"
-          placeholder="Ana Sofía" required
-          value={form.nombres} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-          error={errores.nombres} />
-
-        <Field icon={<IconUser />} name="apellidos" label="Apellidos"
-          placeholder="López Ríos" required
-          value={form.apellidos} onChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-          error={errores.apellidos} />
-      </div>
-    </>
+    </section>
   );
 }

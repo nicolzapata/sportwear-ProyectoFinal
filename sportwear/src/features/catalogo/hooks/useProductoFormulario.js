@@ -11,7 +11,7 @@ import { MAX_LONGITUD_NOMBRE } from "../../../shared/utils/numerico";
  * son parte inseparable del flujo de guardar un producto (no del listado,
  * que vive en useProductosListado).
  */
-export function useProductoFormulario({ categorias, setModal, mostrarToast, recargarTodo }) {
+export function useProductoFormulario({ cargarCategoriasCompletas, setModal, mostrarToast, recargarTodo }) {
   const [editar,           setEditar]           = useState(null);
   const [productoId,       setProductoId]       = useState(null);
   const [guardando,        setGuardando]        = useState(false);
@@ -28,16 +28,23 @@ export function useProductoFormulario({ categorias, setModal, mostrarToast, reca
   // ya que ambos componentes son hermanos y no comparten estado por su cuenta.
   const [variantesVersion, setVariantesVersion] = useState(0);
 
-  const abrirRegistrar = () => {
+  // Las categorías completas (para el <select>) se piden recién acá, al abrir
+  // el formulario — antes se cargaban siempre al entrar a la pestaña
+  // "Productos", generando una petición a /categorias innecesaria para quien
+  // solo viene a ver el listado.
+  const abrirRegistrar = async () => {
     setEditar(null); setProductoId(null); setErrores(ERRORES_INICIALES);
-    setForm({ ...FORM_VACIO, id_categoria: categorias[0]?.id_categoria || "" });
+    const cats = await cargarCategoriasCompletas();
+    setForm({ ...FORM_VACIO, id_categoria: cats[0]?.id_categoria || "" });
     setPendingVariantes([]); setPendingImagenes([]); setModal(true);
   };
 
-  const abrirEditar = (p) => {
+  const abrirEditar = async (p) => {
     setEditar(p.id_producto); setProductoId(p.id_producto); setErrores(ERRORES_INICIALES);
     setForm({ nombre: p.nombre ?? "", descripcion: p.descripcion ?? "", id_categoria: p.id_categoria ?? "", precio: p.precio ?? "", publicado: !!p.publicado, estado: p.estado ?? "Activo", destacado: p.destacado ?? "" });
-    setPendingVariantes([]); setPendingImagenes([]); setModal(true);
+    setPendingVariantes([]); setPendingImagenes([]);
+    await cargarCategoriasCompletas();
+    setModal(true);
   };
 
   const validarNombreProducto = (valor) => {

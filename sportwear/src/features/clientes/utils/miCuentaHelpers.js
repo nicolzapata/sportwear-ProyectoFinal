@@ -1,5 +1,6 @@
 // Funciones y constantes puras usadas por MiCuenta.jsx.
 import { validarEmail } from "../../../shared/utils/numerico";
+export { getInitials } from "../../../shared/utils/texto";
 
 // ── NUEVO: cuántos pedidos se muestran de una en la página — el resto vive
 // en la ventana "Ver todos mis pedidos", para que Mi Cuenta no se vuelva un
@@ -56,8 +57,3 @@ export const getBadgeTexto = (estado) => `Pago: ${estado}`;
 
 export const fmt = (n) =>
   Number(n || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
-
-export const getInitials = (nombre) => {
-  if (!nombre) return "?";
-  return nombre.split(" ").filter(Boolean).map((w) => w[0].toUpperCase()).slice(0, 2).join("");
-};

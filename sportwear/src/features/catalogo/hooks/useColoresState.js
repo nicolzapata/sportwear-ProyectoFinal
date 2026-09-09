@@ -15,6 +15,8 @@ export function useColoresState({ busquedaDebounced, setModal, setLoading, mostr
   const [coloresPagina,   setColoresPagina]   = useState([]);
   const [totalColores,    setTotalColores]    = useState(0);
   const [paginaColores,   setPaginaColores]   = useState(1);
+  const [coloresTodos,    setColoresTodos]    = useState([]); // vitrina: todos los colores activos de una vez, filtro en cliente
+  const [productosDeColores, setProductosDeColores] = useState([]); // para calcular "prendas con este color" en el panel de detalle
   const [formColor,       setFormColor]       = useState({ nombre: "", codigo_hex: "#000000", estado: "Activo" });
   const [editarColor,     setEditarColor]     = useState(null);
   const [erroresColor,    setErroresColor]    = useState({ nombre: "", codigo_hex: "" });
@@ -27,6 +29,28 @@ export function useColoresState({ busquedaDebounced, setModal, setLoading, mostr
       setTotalColores(data.total);
     } catch { mostrarToast("error", "No se pudo cargar."); }
     finally { setLoading(false); }
+  };
+
+  // Vitrina de colores (pestaña "Colores"): la paleta es chica (decenas, no
+  // miles), así que en vez de paginar en el servidor se trae todo de una vez
+  // y el buscador filtra en el cliente.
+  const cargarColoresTodos = async () => {
+    try {
+      const { data } = await api.get("/colores");
+      setColoresTodos(data);
+    } catch { mostrarToast("error", "No se pudo cargar."); }
+    finally { setLoading(false); }
+  };
+
+  // El panel de detalle muestra "prendas con este color" — se arma en el
+  // cliente a partir de las variantes que ya vienen embebidas en cada
+  // producto (mismo /productos que usa la pestaña "Productos"), sin agregar
+  // ningún endpoint ni campo nuevo.
+  const cargarProductosDeColores = async () => {
+    try {
+      const { data } = await api.get("/productos");
+      setProductosDeColores(data);
+    } catch { /* el panel simplemente mostrará "sin productos asociados" */ }
   };
 
   const totalPaginasColores = Math.ceil(totalColores / COLORES_POR_PAGINA) || 1;
@@ -63,6 +87,11 @@ export function useColoresState({ busquedaDebounced, setModal, setLoading, mostr
   const cambiarEstadoColor = async (id, nuevoEstado) => {
     await api.patch(`/colores/${id}/estado`);
     setColoresPagina(prev => prev.map(c => c.id_color === id ? { ...c, estado: nuevoEstado } : c));
+    // El listado sin paginar del backend solo trae Activos — si se desactiva
+    // un color, desaparece de la vitrina igual que ya pasaba en la tabla vieja.
+    setColoresTodos(prev => nuevoEstado === "Activo"
+      ? prev.map(c => c.id_color === id ? { ...c, estado: nuevoEstado } : c)
+      : prev.filter(c => c.id_color !== id));
   };
 
   const confirmarEliminarColor = async () => {
@@ -70,7 +99,7 @@ export function useColoresState({ busquedaDebounced, setModal, setLoading, mostr
     setEliminarColorId(null);
     try {
       await api.delete(`/colores/${id}`);
-      cargarColoresPagina();
+      cargarColoresTodos();
       mostrarToast("exito", "Color eliminado.");
     } catch (err) {
       mostrarToast("error", err.response?.data?.message || "No se pudo eliminar el color.");
@@ -79,9 +108,10 @@ export function useColoresState({ busquedaDebounced, setModal, setLoading, mostr
 
   return {
     coloresPagina, totalColores, paginaColores, setPaginaColores, totalPaginasColores,
+    coloresTodos, productosDeColores,
     formColor, setFormColor, editarColor, erroresColor, setErroresColor,
     eliminarColorId, setEliminarColorId,
-    cargarColoresPagina, abrirRegistrarColor, abrirEditarColor,
+    cargarColoresPagina, cargarColoresTodos, cargarProductosDeColores, abrirRegistrarColor, abrirEditarColor,
     mensajeErrorNombreColor, guardarColor, cambiarEstadoColor, confirmarEliminarColor,
   };
 }

@@ -16,6 +16,39 @@
   gap: 1rem;
 }
 
+/* ── Contenido: tabla sola, o tabla + panel de ver/editar acoplado al lado
+   (igual que Roles) — el panel nunca flota encima, empuja la tabla. ── */
+.usuarios-contenido { width: 100%; }
+.usuarios-contenido-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+/* mismo margin-top que .tbl-frame (index.css) para que el panel quede
+   alineado con el borde superior de la tabla, no más arriba. */
+.usuarios-panel-columna { min-width: 0; margin-top: 18px; }
+
+/* ── CORREGIDO: con el panel abierto la tabla queda angosta y SÍ necesita
+   scroll horizontal para las columnas que no caben — pero .tbl-container
+   (index.css) usa "margin: 0 -22px; padding: 0 22px" para que su marco
+   redondeado quede a ras del borde en la vista de tabla sola. Ese truco
+   infla el ancho propio de .tbl-container 44px más de lo que en verdad se
+   ve (el sobrante lo recorta .tbl-frame con overflow:hidden) — el navegador
+   compara el ancho del contenido contra ese ancho inflado, no contra el
+   visible, así que a veces concluye "no hace falta scroll" aunque haya
+   columnas tapadas. Con el panel abierto ya no hace falta ese bleed (no
+   hay nada más a los lados con lo que alinear el marco), así que se anula
+   acá y la comparación vuelve a ser exacta. ── */
+.usuarios-contenido-split .tbl-container {
+  margin: 0;
+  padding: 0;
+}
+
+@media (max-width: 900px) {
+  .usuarios-contenido-split { grid-template-columns: 1fr; }
+}
+
 .usuarios-actions-left {
   display: flex;
   align-items: center;
@@ -153,6 +186,23 @@
 .usuarios-user-info { display: flex; flex-direction: column; }
 .usuarios-user-name { font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--dvna-charcoal); }
 .usuarios-email-cell { font-size: 13px; color: var(--dvna-muted); }
+
+/* Cliente: nombre + correo apilados en una sola celda */
+.clientes-user-info { display: flex; flex-direction: column; gap: 2px; }
+.clientes-user-name { font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--dvna-charcoal); }
+.clientes-user-email { font-family: var(--font-body); font-size: 12px; color: var(--dvna-muted); }
+
+/* Teléfono — ícono + número en negro */
+.clientes-phone-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+}
+.clientes-phone-cell svg { width: 13px; height: 13px; flex-shrink: 0; color: var(--dvna-mid); }
 
 /* Badges */
 /* Role text - plain with outline */

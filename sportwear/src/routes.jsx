@@ -7,6 +7,7 @@ import { ConfirmProvider } from "./shared/contexts/ConfirmContext";
 import Layout            from "./shared/components/Layout";
 import PublicLayout      from "./shared/components/PublicLayout";
 import ProtectedRoute    from "./shared/components/ProtectedRoute";
+import SessionExpiredNotice from "./shared/components/SessionExpiredNotice";
 import { useAuth }       from "./shared/contexts/AuthContext";
 import RestablecerContrasena from "./features/auth/pages/RestablecerContrasena";
 
@@ -62,6 +63,7 @@ export default function AppRouter() {
     <AuthProvider>
       <CartProvider>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <SessionExpiredNotice />
           <Routes>
 
             {/* Sin navbar */}

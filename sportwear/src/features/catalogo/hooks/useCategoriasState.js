@@ -26,7 +26,8 @@ export function useCategoriasState({ busquedaDebounced, setModal, setLoading, mo
     try {
       const { data } = await api.get("/categorias");
       setCategorias(data);
-    } catch { /* el formulario simplemente mostrará el select vacío */ }
+      return data;
+    } catch { /* el formulario simplemente mostrará el select vacío */ return []; }
   };
 
   const cargarCategoriasPagina = async (pagina = paginaCategorias, q = busquedaDebounced) => {

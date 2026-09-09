@@ -23,6 +23,18 @@ export const FORM_VACIO = {
 
 export const TIPOS_DOC_POR_PERSONA = { Juridica: ["NIT"], Natural: ["CC", "CE"] };
 
+// Mismos tonos que la vista de tarjetas de Roles — fondo del avatar circular
+// de cada proveedor en la lista/panel de detalle, rotando por índice.
+export const PALETAS = ['#f5ede6', '#f0ebe4', '#e8f0e8', '#ede8f5', '#f5f0e0', '#e8f0f5'];
+
+// Iniciales para el avatar: primeras letras de las 2 primeras palabras del
+// nombre comercial (o razón social si no hay nombre comercial).
+export const inicialesProveedor = (p) => {
+  const nombre = p.nombre_comercial || p.razon_social || "";
+  const palabras = nombre.trim().split(/\s+/).filter(Boolean);
+  return (palabras[0]?.[0] || "") + (palabras[1]?.[0] || "");
+};
+
 // "nombre_contacto" completo (BD) -> se separa en nombres y apellidos. Con 4
 // o más palabras se asumen 2 apellidos (convención CO), así el segundo
 // nombre no termina metido en el campo de apellidos.

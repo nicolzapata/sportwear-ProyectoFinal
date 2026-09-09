@@ -246,59 +246,271 @@ td.gestproductos-td-compacto {
   background: rgba(58, 102, 72, 0.06);
 }
 
-/* ── Pestaña Colores: grid de muestras propio de esta página (no reutiliza
-   las clases de la vieja Colores.css) — así el ancho mínimo de columna se
-   calibra para lo que esta tarjeta necesita: toggle + editar + eliminar en
-   una sola fila (~142px con padding). El breakpoint de Colores.css bajaba
-   ese mínimo a 130px, más angosto de lo que la fila de acciones necesita,
-   y los controles quedaban amontonados/solapados en pantallas angostas. ── */
+/* ── Pestaña "Colores": vitrina + panel de detalle acoplado a la derecha
+   (mismo criterio que .detalle-panel de Roles). La grilla no pagina en
+   servidor (ver useColoresState / cargarColoresTodos): al ser una paleta
+   chica, se trae completa y el buscador filtra en el cliente. ── */
+.gestproductos-colores-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+.gestproductos-colores-main {
+  flex: 1;
+  min-width: 0;
+}
+
 .gestproductos-colores-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1.1rem;
   margin-bottom: 1rem;
 }
 .gestproductos-colores-card {
   background: var(--dvna-white);
   border-radius: 16px;
   border: 1px solid var(--dvna-pale);
-  overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0.7rem 0.7rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }
-.gestproductos-colores-swatch {
-  height: 100px;
-  border-bottom: 1px solid var(--dvna-pale);
+.gestproductos-colores-card:hover {
+  border-color: var(--dvna-mid);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
 }
-.gestproductos-colores-info { padding: 0.8rem; }
-.gestproductos-colores-name {
-  font-weight: 500;
-  color: var(--dvna-charcoal);
-  font-size: 0.9rem;
-  margin-bottom: 0.2rem;
+.gestproductos-colores-card.selected {
+  border-color: var(--brown, #b49780);
+  box-shadow: 0 0 0 2px rgba(180, 151, 128, 0.25);
 }
-.gestproductos-colores-hex {
-  font-size: 0.7rem;
-  color: var(--dvna-muted);
-  font-family: monospace;
-}
-.gestproductos-colores-actions {
+
+/* Fila superior, fuera de la muestra de color — badge de estado + toggle. */
+.gestproductos-colores-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  margin-top: 10px;
+}
+.gestproductos-colores-badge-activo {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--success);
+  background: var(--success-bg);
+  border-radius: 20px;
+  padding: 3px 10px;
+  letter-spacing: 0.02em;
+}
+
+.gestproductos-colores-swatch {
+  position: relative;
+  height: 120px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.gestproductos-colores-hexpill,
+.gestproductos-colores-refpill {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  font-size: 0.68rem;
+  font-family: monospace;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 20px;
+  padding: 2px 9px;
+}
+.gestproductos-colores-hexpill.claro,
+.gestproductos-colores-refpill.claro {
+  color: var(--dvna-charcoal);
+  background: rgba(255, 255, 255, 0.6);
+}
+.gestproductos-colores-refpill {
+  left: auto;
+  right: 10px;
+}
+
+.gestproductos-colores-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.gestproductos-colores-nombre-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 6px;
+  min-width: 0;
+}
+.gestproductos-colores-name {
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+  font-size: 0.92rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gestproductos-colores-prendas-count {
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--dvna-muted);
+  background: var(--dvna-pale);
+  border-radius: 20px;
+  padding: 3px 9px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .gestproductos-colores-actions-btns {
   display: flex;
   gap: 4px;
-  flex-shrink: 0;
+  justify-content: flex-end;
 }
 
-@media (max-width: 480px) {
-  /* En una sola columna hay ancho de sobra: nunca hace falta angostar más
-     abajo de 170px, así que no se toca el minmax acá. */
-  .gestproductos-colores-actions { justify-content: center; }
+/* ── Panel de detalle: mismo criterio visual que .detalle-panel (Roles),
+   versión compacta propia de esta vitrina (swatch grande + acciones). ── */
+.gestproductos-colores-detalle {
+  width: 320px;
+  flex-shrink: 0;
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: 16px;
+  overflow: hidden;
+  position: sticky;
+  top: 1rem;
+}
+.gestproductos-colores-detalle-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--dvna-pale);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+}
+.gestproductos-colores-detalle-header > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gestproductos-colores-detalle-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+}
+.gestproductos-colores-detalle-close {
+  background: none;
+  border: none;
+  color: var(--dvna-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.gestproductos-colores-detalle-close:hover { color: var(--dvna-charcoal); }
+.gestproductos-colores-detalle-swatch {
+  position: relative;
+  height: 170px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 10px;
+}
+.gestproductos-colores-detalle-nombre {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+  padding: 0.9rem 1rem 0.2rem;
+}
+.gestproductos-colores-detalle-estado {
+  padding: 0 1rem;
+}
+.gestproductos-colores-detalle-seccion {
+  padding: 1rem;
+  border-top: 1px solid var(--dvna-pale);
+  margin-top: 0.9rem;
+}
+.gestproductos-colores-detalle-seccion-titulo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--dvna-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.6rem;
+}
+.gestproductos-colores-detalle-vacio {
+  font-size: 0.8rem;
+  color: var(--dvna-muted);
+  font-style: italic;
+  margin: 0;
+}
+.gestproductos-colores-detalle-prendas {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.gestproductos-colores-prenda-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gestproductos-colores-prenda-thumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--dvna-pale);
+  color: var(--dvna-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.gestproductos-colores-prenda-thumb svg { width: 16px; height: 16px; }
+.gestproductos-colores-prenda-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.gestproductos-colores-prenda-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.gestproductos-colores-prenda-nombre {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gestproductos-colores-prenda-meta {
+  font-size: 0.7rem;
+  color: var(--dvna-muted);
+}
+.gestproductos-colores-detalle-footer {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+}
+.gestproductos-colores-detalle-footer .gestproductos-btn-primary,
+.gestproductos-colores-detalle-footer .gestproductos-btn-secondary {
+  padding: 0.6rem 1rem;
+  font-size: 0.75rem;
+  flex: 1;
+  justify-content: center;
+}
+
+@media (max-width: 900px) {
+  .gestproductos-colores-layout { flex-direction: column; }
+  .gestproductos-colores-detalle { width: 100%; position: static; }
 }
 
 /* ── NUEVO: distintivo de "Destacado" (Nuevo/Promoción) sobre la miniatura —

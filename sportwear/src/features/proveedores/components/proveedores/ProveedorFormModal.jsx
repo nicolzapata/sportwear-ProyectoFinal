@@ -1,31 +1,29 @@
 import { soloDigitos, maxLongitudDocumento, validarTelefono, LONGITUD_TELEFONO, MAX_LONGITUD_NOMBRE } from "../../../../shared/utils/numerico";
 import { IconX } from "../../../../shared/components/Icons";
 import Select from "../../../../shared/components/Select";
+import DetallePanel from "../../../../shared/components/DetallePanel";
+import { getInitials, getAvatarColor } from "../../../../shared/utils/texto";
 import {
   TIPOS_DOC_POR_PERSONA,
   validarCampoNumeroDoc, validarCampoRazonSocial, validarCampoNombresContacto,
   validarCampoApellidosContacto, validarCampoCiudad, validarCampoDireccion, validarCampoEmail,
 } from "../../utils/proveedoresHelpers";
 
+// variante="modal" (por defecto): overlay centrado, usado al crear un proveedor.
+// variante="panel": se acopla al lado de la tabla, usado al editar un
+// proveedor existente — mismos campos y validaciones, solo cambia el
+// cascarón visual (igual que UsuarioFormModal).
 export default function ProveedorFormModal({
   editar, form, setForm, errores, setErrores, guardando,
-  setModal, pedirConfirmacion,
+  setModal, pedirConfirmacion, variante = 'modal',
 }) {
   const set = (campo, valor) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
     if (errores[campo]) setErrores((prev) => ({ ...prev, [campo]: "" }));
   };
 
-  return (
-    <div className="proveedores-modal-overlay" onClick={() => !guardando && setModal(false)}>
-      <div className="proveedores-modal proveedores-modal-factura" onClick={(e) => e.stopPropagation()}>
-        <div className="proveedores-modal-header">
-          <h2 className="proveedores-modal-title">{editar ? "Editar proveedor" : "Nuevo proveedor"}</h2>
-          <button className="proveedores-modal-close" onClick={() => setModal(false)}><IconX /></button>
-        </div>
-
-        <div className="proveedores-modal-body proveedores-factura-body">
-
+  const cuerpo = (
+    <>
           <div className="proveedores-factura-seccion">
             <h3 className="proveedores-factura-titulo">Datos de la empresa</h3>
 
@@ -256,6 +254,41 @@ export default function ProveedorFormModal({
               </Select>
             </div>
           </div>
+    </>
+  );
+
+  if (variante === 'panel') {
+    return (
+      <DetallePanel
+        iniciales={getInitials(form.razon_social) || '?'}
+        avatarColor={getAvatarColor(editar)}
+        nombre={editar ? "Editar proveedor" : "Nuevo proveedor"}
+        subtitulo={form.razon_social || undefined}
+        onClose={() => !guardando && setModal(false)}
+        footer={
+          <>
+            <button className="detalle-panel-btn-secundario" onClick={() => setModal(false)} disabled={guardando}>Cancelar</button>
+            <button className="detalle-panel-btn-primario" onClick={pedirConfirmacion} disabled={guardando}>
+              {guardando ? "Guardando..." : editar ? "Actualizar" : "Registrar proveedor"}
+            </button>
+          </>
+        }
+      >
+        {cuerpo}
+      </DetallePanel>
+    );
+  }
+
+  return (
+    <div className="proveedores-modal-overlay" onClick={() => !guardando && setModal(false)}>
+      <div className="proveedores-modal proveedores-modal-factura" onClick={(e) => e.stopPropagation()}>
+        <div className="proveedores-modal-header">
+          <h2 className="proveedores-modal-title">{editar ? "Editar proveedor" : "Nuevo proveedor"}</h2>
+          <button className="proveedores-modal-close" onClick={() => setModal(false)}><IconX /></button>
+        </div>
+
+        <div className="proveedores-modal-body proveedores-factura-body">
+          {cuerpo}
         </div>
 
         <div className="proveedores-modal-footer">

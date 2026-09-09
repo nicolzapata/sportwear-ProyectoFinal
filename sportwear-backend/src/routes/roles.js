@@ -170,6 +170,7 @@ router.get('/', verificarToken, tieneModulo('Roles', 'ver'), async (req, res) =>
       const { rows } = await pool.query(
         `SELECT r.*,
            COALESCE(array_agg(DISTINCT p.modulo) FILTER (WHERE p.modulo IS NOT NULL), '{}') AS modulos,
+           COUNT(DISTINCT p.id_permiso) AS permisos_count,
            (SELECT COUNT(*) FROM "Usuarios" u WHERE u.id_rol = r.id_rol AND u.estado = 'Activo') AS usuarios_activos
          FROM "Roles" r
          LEFT JOIN "RolesPermisos" rp ON r.id_rol = rp.id_rol AND rp.estado = 'Activo'

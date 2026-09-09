@@ -113,6 +113,42 @@
   font-size: 1.2rem;
 }
 
+/* ── Tabla + panel acoplado (mismo criterio que Usuarios/Proveedores):
+   "Ver detalle"/"Editar estado" ya no abren un modal centrado. ── */
+.compras-contenido { width: 100%; }
+.compras-contenido-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.compras-panel-columna { min-width: 0; margin-top: 18px; }
+
+/* ── CORREGIDO: con el panel abierto la tabla queda angosta y sí necesita
+   scroll horizontal — ver el comentario largo de esta misma regla en
+   Usuarios.css (.usuarios-contenido-split .tbl-container): el bleed de
+   .tbl-container (index.css) infla su ancho propio 44px más de lo visible,
+   así que el navegador a veces concluye que no hace falta scroll aunque
+   haya columnas tapadas. Con el panel abierto no hace falta ese bleed. ── */
+.compras-contenido-split .tbl-container {
+  margin: 0;
+  padding: 0;
+}
+/* Esta tabla, a diferencia de Usuarios/Proveedores, además pisa el overflow
+   con "overflow: visible" (más abajo en este archivo) para que el
+   desplegable de Estado no se recortara — pero ese desplegable ya se
+   renderiza con un portal a document.body (EstadoDropdownCompra), así que
+   no depende del overflow del contenedor. Ese "visible" bloqueaba también
+   el scroll horizontal (anula el overflow-x:auto de .tbl-container); acá se
+   restaura solo para la vista con panel, donde sí hace falta. */
+.compras-contenido-split .compras-tbl-container {
+  overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+  .compras-contenido-split { grid-template-columns: 1fr; }
+}
+
 /* Actions Bar */
 .compras-actions-bar {
   display: flex;

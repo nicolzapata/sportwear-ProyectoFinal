@@ -29,6 +29,7 @@ export function useVentasListado() {
   const [busquedaDebounced, setBusquedaDebounced] = useState("");
   const [pagina,      setPagina]      = useState(1);
   const [verDetalle,  setVerDetalle]  = useState(null);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
   const [filaAbierta, setFilaAbierta] = useState(null);
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
   // ── NUEVO: filtro de pestañas "Todas / Cliente / Admin" al lado del
@@ -107,6 +108,29 @@ export function useVentasListado() {
 
   const totalPaginas = Math.ceil(total / FILAS_POR_PAGINA) || 1;
 
+  // Abre el panel de detalle con los datos que ya están en la fila (para que
+  // abra de inmediato) y, en paralelo, trae el documento/email del cliente
+  // (GET /ventas/:id, no viene en el listado) y el cronograma real de cuotas
+  // (GET /pagos/venta/:id/todas) — mismo endpoint que ya usa el calendario
+  // de "Mis pagos" del cliente, solo que antes esta pantalla nunca lo
+  // llamaba y por eso "abonos" siempre llegaba vacío tanto acá como en
+  // AbonosModal.
+  const abrirDetalle = async (v) => {
+    setVerDetalle(v);
+    setCargandoDetalle(true);
+    try {
+      const [ventaRes, cuotasRes] = await Promise.all([
+        api.get(`/ventas/${v.id_venta}`),
+        api.get(`/pagos/venta/${v.id_venta}/todas`).catch(() => ({ data: [] })),
+      ]);
+      setVerDetalle({ ...v, ...ventaRes.data, total_pagado: v.total_pagado, estado: v.estado, abonos: cuotasRes.data });
+    } catch {
+      /* se queda con los datos de la fila, ya visibles */
+    } finally {
+      setCargandoDetalle(false);
+    }
+  };
+
   // Cambio de estado directo (no-"Anulado") desde el dropdown de la tabla.
   // El caso "Anulado" lo intercepta el orquestador antes de llegar aquí,
   // porque abre el modal de motivo que vive en useAbonosYAnulacionesState.
@@ -126,7 +150,8 @@ export function useVentasListado() {
   return {
     datos, total, cargando, primerCargaHecha, errorMsg,
     busqueda, setBusqueda, pagina, setPagina,
-    verDetalle, setVerDetalle, filaAbierta, setFilaAbierta,
+    verDetalle, setVerDetalle, abrirDetalle, cargandoDetalle,
+    filaAbierta, setFilaAbierta,
     cambiandoEstado, setCambiandoEstado,
     filtroOrigen, setFiltroOrigen,
     filtroEstadoPago, setFiltroEstadoPago,

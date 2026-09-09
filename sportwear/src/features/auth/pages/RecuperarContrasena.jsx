@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../../shared/services/api";
 import logo from "../../../shared/assets/LOGO.png";
+import AuthLayout from "./AuthLayout";
 import "./Login.css";
 
 const IconMail = () => (
@@ -71,7 +72,17 @@ export default function RecuperarContrasena() {
   };
 
   return (
-    <div className="login-page">
+    <AuthLayout
+      badge="RESTABLECIMIENTO DE CREDENCIALES"
+      title={<>Protección continua para tu <i>experiencia</i> activa.</>}
+      description="Ingresa la dirección asociada a tu cuenta Sportwear. Enviaremos un token criptográfico de un solo uso para que redefinas tu clave sin fricciones."
+      stats={[
+        { value: "01", unit: "min", label: "Envío exprés" },
+        { value: "256", unit: "bit", label: "Cifrado SHA" },
+        { value: "15", unit: "min", label: "Caducidad token" },
+      ]}
+      note="Nuestros protocolos biométricos y de tokenización garantizan la custodia de tus pedidos, medidas personalizadas y membresía DVNA Club."
+    >
       <div className="login-card">
 
         {/* Logo */}
@@ -91,9 +102,9 @@ export default function RecuperarContrasena() {
         {!enviado ? (
           <>
             <div className="form-header">
-              <div className="greeting">Recuperación de acceso</div>
+              <div className="greeting">Acceso exclusivo</div>
               <h2>Recuperar contraseña</h2>
-              <p>Te enviaremos un enlace a tu correo registrado</p>
+              <p>Recibirás un enlace intransferible verificado por nuestro sistema seguro.</p>
             </div>
 
             <form onSubmit={handleSubmit} noValidate>
@@ -125,7 +136,7 @@ export default function RecuperarContrasena() {
               </div>
 
               <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? "Enviando..." : "Enviar enlace →"}
+                {loading ? "Enviando..." : "Enviar Clave de Recuperación →"}
               </button>
             </form>
           </>
@@ -146,6 +157,6 @@ export default function RecuperarContrasena() {
           <span>DVNA · SportWear</span>
         </div>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

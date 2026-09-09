@@ -1,23 +1,28 @@
-/* ── Sidebar.css ── Instagram-style hover expand ── */
+/* ── Sidebar.css — panel claro con secciones, ancho fijo controlado por un
+   toggle Full/Dock (ya no se expande solo al pasar el mouse). ── */
 
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   height: 100vh;
-  width: 78px;
-  background: var(--dark-brown);
+  width: 264px;
+  background: var(--dvna-white);
+  border-right: 1px solid var(--dvna-border);
   display: flex;
   flex-direction: column;
   z-index: 200;
-  overflow: hidden;
+  /* visible (no hidden): la flecha Full/Dock sobresale del borde derecho
+     del header — con overflow:hidden acá el propio sidebar la recortaría
+     aunque su contenedor directo (.sidebar-logo) la deje salir. El nav
+     interno sigue recortando su propio scroll con .sidebar-nav. */
+  overflow: visible;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   will-change: width;
 }
 
-.sidebar:hover {
-  width: 240px;
-  box-shadow: 4px 0 24px rgba(44, 34, 24, 0.25);
+.sidebar.sidebar-modo-dock {
+  width: 78px;
 }
 
 /* ── Backdrop del drawer móvil ── */
@@ -30,185 +35,252 @@
   display: none;
 }
 
-/* ── Logo ──
-   Centrado siempre: colapsado, el nombre no ocupa ancho (max-width/margin en
-   0), así que el único contenido del flex row es la imagen y queda
-   perfectamente en la mitad de la barra angosta. Al expandir (hover), el
-   nombre gana ancho y margen progresivamente y el conjunto imagen+nombre
-   queda centrado en la barra ancha. */
+/* ── Logo ── */
 .sidebar-logo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--dvna-border);
+  min-height: 60px;
+  overflow: visible;
+}
+.sidebar.sidebar-modo-dock .sidebar-logo {
+  justify-content: center;
+  padding: 14px 8px;
+}
+
+/* ── Flecha para contraer/expandir — montada sobre el borde derecho del
+   sidebar (mitad adentro, mitad afuera), a la altura del logo, no metida
+   dentro de su fila. Siempre visible y clickeable en los dos modos (a
+   diferencia de la píldora Full/Dock anterior, que en modo Dock ocultaba
+   el botón para volver a expandir). ── */
+.sidebar-modo-btn {
+  position: absolute;
+  top: 50%;
+  right: -34px;
+  transform: translateY(-50%);
+  box-sizing: border-box;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--dvna-border);
+  background: var(--dvna-white);
+  border-radius: 50%;
+  color: var(--dvna-muted);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 6px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-  min-height: 60px;
-  overflow: hidden;
+  flex-shrink: 0;
+  line-height: 0;
+  z-index: 250;
+  box-shadow: 0 1px 2px rgba(17, 17, 17, 0.06);
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+/* Puente del mismo color del borde del sidebar, entre su canto y el botón
+   — sin esto quedaba flotando con un hueco de por medio y se leía como un
+   elemento aparte; con el puente se lee como una pestaña que sale del
+   propio borde del sidebar. */
+.sidebar-modo-btn::before {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 1px;
+  background: var(--dvna-border);
+  z-index: -1;
+}
+.sidebar-modo-btn:hover {
+  background: var(--dvna-pale);
+  color: var(--dvna-charcoal);
+  border-color: var(--dvna-mid);
+  box-shadow: 0 1px 3px rgba(17, 17, 17, 0.08);
+}
+.sidebar-modo-btn:hover::before {
+  background: var(--dvna-mid);
+}
+.sidebar-modo-btn svg {
+  width: 10px;
+  height: 10px;
+  stroke-width: 2;
+  display: block;
 }
 
 .logo-img {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   object-fit: contain;
   flex-shrink: 0;
-  filter: brightness(0) invert(1);
   border-radius: 50%;
 }
 
 .logo-name {
   font-family: var(--font-body);
-  font-size: 17px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--dvna-charcoal);
   white-space: nowrap;
+  overflow: hidden;
+  margin-left: 10px;
+  opacity: 1;
+  max-width: 160px;
+  transition: opacity 0.2s, max-width 0.2s, margin-left 0.2s;
+}
+.logo-name span { color: var(--dvna-circle); }
+
+.sidebar.sidebar-modo-dock .logo-name {
   opacity: 0;
   max-width: 0;
   margin-left: 0;
-  overflow: hidden;
-  transform: translateX(-8px);
-  transition: opacity 0.2s 0.06s, transform 0.2s 0.06s, max-width 0.25s, margin-left 0.25s;
   pointer-events: none;
 }
-.logo-name span { color: var(--taupe); }
-
-.sidebar:hover .logo-name {
-  opacity: 1;
-  max-width: 160px;
-  margin-left: 12px;
-  transform: translateX(0);
-}
-
-/* ── Role badge ── */
-.role-badge {
-  padding: 8px 18px;
-  overflow: hidden;
-  height: 36px;
-}
-.role-tag {
-  font-family: var(--font-body);
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  color: #161616;
-  background: rgba(255, 255, 255, 0.363);
-  padding: 3px 10px;
-  border-radius: 2px;
-  display: inline-block;
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity 0.2s 0.05s;
-}
-.sidebar:hover .role-tag { opacity: 1; }
-.sidebar:hover .role-badge { height: auto; }
 
 /* ── Nav ── */
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  padding-top: 4px;
 }
 
-.sidebar-nav::-webkit-scrollbar {
-  width: 0;
-  transition: width 0.25s;
-}
-.sidebar:hover .sidebar-nav::-webkit-scrollbar {
-  width: 6px;
-}
-.sidebar-nav::-webkit-scrollbar-track {
-  background: transparent;
-}
+.sidebar-nav::-webkit-scrollbar { width: 6px; }
+.sidebar-nav::-webkit-scrollbar-track { background: transparent; }
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: #161616;
+  background: var(--dvna-border);
   border-radius: 3px;
 }
-.sidebar:hover .sidebar-nav {
-  scrollbar-width: thin;
+
+.nav-seccion { margin-bottom: 4px; }
+.nav-seccion-titulo {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dvna-muted);
+  padding: 14px 18px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.sidebar.sidebar-modo-dock .nav-seccion-titulo {
+  opacity: 0;
+  height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 6px 0 0;
 }
 
 .nav-divider {
   height: 1px;
-  background: rgba(255,255,255,0.07);
+  background: var(--dvna-border);
   margin: 6px 14px;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 8px 18px;
+  gap: 12px;
+  margin: 2px 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
   text-decoration: none;
-  color: #ffffff;
+  color: var(--dvna-charcoal);
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
-  letter-spacing: 0.02em;
-  text-transform: none;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   position: relative;
   transition: color 0.2s, background 0.2s;
 }
 
-.nav-item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%) scaleY(0);
-  width: 3px;
-  height: 60%;
-  background: var(--taupe);
-  border-radius: 0 2px 2px 0;
-  transition: transform 0.2s;
-}
 .nav-item:hover {
-  color: var(--warm-white);
-  background: rgba(255,255,255,0.06);
+  background: var(--dvna-pale);
+  color: var(--dvna-charcoal);
 }
 .nav-item.active {
-  color: var(--warm-white);
-  background: rgba(255,255,255,0.1);
+  background: var(--dvna-circle);
+  color: #fff;
 }
-.nav-item.active::before { transform: translateY(-50%) scaleY(1); }
+.nav-item.active:hover {
+  color: #fff;
+}
 
 /* ── Nav icon ── */
 .nav-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   color: inherit;
 }
-.nav-icon svg { width: 18px; height: 18px; }
+.nav-icon svg { width: 17px; height: 17px; }
 
 /* ── Nav label ── */
 .nav-label {
-  opacity: 0;
-  max-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transform: translateX(-6px);
-  transition: max-width 0.2s 0.05s, opacity 0.2s 0.05s, transform 0.2s 0.05s;
-  pointer-events: none;
-}
-.sidebar:hover .nav-label {
   opacity: 1;
   max-width: 200px;
-  transform: translateX(0);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: max-width 0.15s, opacity 0.15s;
+}
+.sidebar.sidebar-modo-dock .nav-label {
+  opacity: 0;
+  max-width: 0;
+  pointer-events: none;
+}
+
+/* Modo Dock: sin la etiqueta a la vista, el ícono solo no dice qué es —
+   al pasar el mouse aparece como una tira flotante al lado, inmediato (no
+   depende del title nativo del navegador, que tarda en aparecer). */
+.sidebar.sidebar-modo-dock .nav-item:hover .nav-label {
+  opacity: 1;
+  max-width: none;
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--dvna-charcoal);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Footer ── */
 .sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid var(--dvna-border);
+  min-height: 64px;
+  overflow: hidden;
+}
+
+/* Tarjeta con borde propio, como en la referencia — separada del fondo
+   liso del sidebar en vez de ser una franja a todo el ancho. */
+.sidebar-footer-card {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 17px;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  min-height: 64px;
-  overflow: visible;
+  padding: 8px 10px;
+  border: 1px solid var(--dvna-border);
+  border-radius: 14px;
+  background: var(--dvna-white);
+  transition: padding 0.2s;
+}
+.sidebar.sidebar-modo-dock .sidebar-footer-card {
+  justify-content: center;
+  padding: 8px 4px;
 }
 
 .user-info {
@@ -219,103 +291,104 @@
   min-width: 0;
 }
 
-/* ── Avatar con inicial ── */
+/* ── Avatar con inicial + punto de sesión activa — color sólido de marca,
+   no la paleta pastel (blanco sobre un pastel muy claro se veía "perdido"). ── */
+.user-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
 .user-avatar {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--dark-brown);
+  background: var(--dvna-circle);
+  color: #fff;
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  letter-spacing: 0;
-  transition: opacity 0.15s, transform 0.15s, width 0.2s 0.05s, margin 0.2s 0.05s;
-  opacity: 1;
-  transform: scale(1);
 }
-
-/* Se oculta al expandir el sidebar */
-.sidebar:hover .user-avatar {
-  opacity: 0;
-  transform: scale(0.7);
-  pointer-events: none;
-  width: 0;
-  margin: 0;
+.user-online-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--success);
+  border: 2px solid var(--dvna-white);
 }
 
 /* ── User text ── */
 .user-text {
-  opacity: 0;
-  transform: translateX(-6px);
-  transition: opacity 0.2s 0.05s, transform 0.2s 0.05s;
+  opacity: 1;
   overflow: hidden;
   min-width: 0;
-  pointer-events: none;
+  transition: opacity 0.15s;
 }
-.sidebar:hover .user-text {
-  opacity: 1;
-  transform: translateX(0);
+.sidebar.sidebar-modo-dock .user-text {
+  opacity: 0;
+  max-width: 0;
+  pointer-events: none;
 }
 
 .user-name {
   font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--warm-white);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--dvna-charcoal);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-transform: none;
 }
 .user-role {
   font-family: var(--font-body);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  color: rgba(255,255,255,0.4);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  color: var(--dvna-muted);
 }
 
-/* ── Logout button ── */
+/* ── Logout button — ícono simple, sin caja, igual que la referencia ── */
 .logout-btn {
   background: transparent;
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: var(--r);
-  color: rgba(255,255,255,0.5) !important;
-  width: 32px;
-  height: 32px;
+  border: none;
+  color: var(--dvna-muted) !important;
+  width: 28px;
+  height: 28px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s, color 0.2s, opacity 0.2s 0.05s;
+  border-radius: 50%;
+  transition: background 0.2s, color 0.2s;
   flex-shrink: 0;
-  opacity: 0;
-  pointer-events: none;
 }
-.sidebar:hover .logout-btn {
-  opacity: 1;
-  pointer-events: auto;
-}
-.logout-btn:hover { background: rgba(255,255,255,0.1); color: var(--warm-white); }
+.logout-btn:hover { background: #fdeaea; color: #b83232 !important; }
 .logout-btn svg {
-  stroke: #ffffff;
+  stroke: currentColor;
   fill: none;
   width: 16px;
   height: 16px;
   display: block;
 }
+.sidebar.sidebar-modo-dock .logout-btn {
+  width: 0;
+  border: none;
+  opacity: 0;
+  pointer-events: none;
+  margin: 0;
+}
 
 @media (max-width: 768px) {
+  .sidebar { width: 264px; }
+  .sidebar:not(.sidebar-mobile-open) { transform: translateX(-100%); }
+  /* En el drawer móvil ya está el botón ✕ del logo para cerrar — la
+     flecha de Full/Dock es un control de escritorio. */
+  .sidebar-modo-btn { display: none; }
   .sidebar-logo { position: relative; }
-  /* Con el drawer abierto el logo+nombre queda centrado por defecto y
-     choca contra el botón de cerrar (✕) en la esquina — se alinea a la
-     izquierda y se deja espacio a la derecha para que no se peguen. */
   .sidebar.sidebar-mobile-open .sidebar-logo {
-    justify-content: flex-start;
     padding: 8px 52px 8px 18px;
   }
   .sidebar.sidebar-mobile-open .sidebar-close-btn {
@@ -324,21 +397,22 @@
     right: 12px;
     width: 30px;
     height: 30px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
+    background: var(--dvna-pale);
+    border: 1px solid var(--dvna-border);
     border-radius: 50%;
-    color: #ffffff;
+    color: var(--dvna-charcoal);
     cursor: pointer;
     flex-shrink: 0;
   }
   .sidebar.sidebar-mobile-open .sidebar-close-btn svg {
     width: 13px;
     height: 13px;
-    stroke: #ffffff;
+    stroke: currentColor;
   }
   .sidebar.sidebar-mobile-open .sidebar-close-btn:hover {
-    background: rgba(255,255,255,0.16);
+    background: var(--dvna-border);
   }
 }

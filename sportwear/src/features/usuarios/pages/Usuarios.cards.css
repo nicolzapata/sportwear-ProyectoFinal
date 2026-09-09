@@ -1,0 +1,109 @@
+/* ── Usuarios.cards.css — vista "lista + panel de detalle" (mismo criterio
+   visual que Pedidos/Proveedores/Compras/Ventas), para las pestañas
+   Usuarios y Clientes. La vista de tabla sigue usando Usuarios[Table] +
+   Usuarios.css, y comparte el mismo panel acoplado (Detalle/Form) con esta
+   vista. ── */
+
+.estado-activo   { color: #3a6648; }
+.estado-inactivo { color: #b83232; }
+
+.usr-lista-detalle {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.usr-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.usr-empty { text-align: center; padding: 40px 0; color: var(--dvna-muted, #999); font-family: var(--font-body); font-size: 13px; }
+
+.usr-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 16px 18px;
+  background: var(--dvna-white, #fff);
+  border: 1px solid var(--dvna-border, #e8e0d8);
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.usr-item:hover { border-color: #c8ab96; }
+.usr-item.seleccionado {
+  border-color: var(--dvna-circle, #b49780);
+  border-width: 1.5px;
+  box-shadow: 0 2px 10px rgba(180, 151, 128, 0.15);
+}
+
+.usr-item-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.usr-item-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(26, 26, 26, 0.7);
+  font-size: 13px;
+  font-weight: 600;
+}
+.usr-item-info { flex: 1; min-width: 0; }
+.usr-item-nombre { font-size: 15px; font-weight: 600; color: var(--dvna-charcoal, #1a1a1a); }
+.usr-item-desc {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--dvna-muted, #999);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.usr-item-ver {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--dvna-muted, #999);
+  white-space: nowrap;
+}
+.usr-item-ver svg { width: 12px; height: 12px; }
+.usr-item.seleccionado .usr-item-ver { color: var(--dvna-circle, #b49780); }
+
+.usr-item-bottom {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--dvna-border, #e8e0d8);
+}
+.usr-item-estado {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.usr-item-doc { font-size: 11px; color: var(--dvna-muted, #999); }
+.usr-item-rol {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--dvna-charcoal, #1a1a1a);
+}
+
+@media (max-width: 900px) {
+  .usr-lista-detalle { grid-template-columns: 1fr; }
+}

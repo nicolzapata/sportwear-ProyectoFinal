@@ -1,14 +1,18 @@
 // src/pages/pedidosVentas/PedidosVentas.jsx
 // PedidosVentas.css se dividió por sección para facilitar el mantenimiento;
 // el orden de los imports preserva la cascada del archivo original.
+import { useState, useEffect } from "react";
 import './PedidosVentas.layout.css';
 import './PedidosVentas.modals.css';
 import './PedidosVentas.form.css';
+import './PedidosVentas.cards.css';
 import Loader from "../../../shared/components/Loader";
 import Select from "../../../shared/components/Select";
+import FilterToggle from "../../../shared/components/FilterToggle";
 import { IconSearch, IconX } from "../../../shared/components/Icons";
 import OrigenFilterToggle from "../components/pedidos-ventas/OrigenFilterToggle";
 import VentasTable from "../components/pedidos-ventas/VentasTable";
+import VentaListItem from "../components/pedidos-ventas/VentaListItem";
 import VentaDetalleModal from "../components/pedidos-ventas/VentaDetalleModal";
 import AbonosModal from "../components/pedidos-ventas/AbonosModal";
 import NuevaVentaModal from "../components/pedidos-ventas/NuevaVentaModal";
@@ -26,8 +30,46 @@ const IconReporte = () => (
   </svg>
 );
 
+// ── Iconos del selector de vista (lista+detalle / tabla) — mismos que Pedidos/Proveedores ──
+const IconVistaTarjetas = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+    <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+  </svg>
+);
+const IconVistaTabla = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
+const OPCIONES_VISTA = [
+  { valor: "tarjetas", etiqueta: <span title="Lista y detalle"><IconVistaTarjetas /></span> },
+  { valor: "tabla",    etiqueta: <span title="Tabla"><IconVistaTabla /></span> },
+];
+
 export default function PedidosVentas() {
   const v = usePedidosVentas();
+  const [vista, setVista] = useState(() => localStorage.getItem("sz_ventas_vista") || "tarjetas");
+
+  // Al cambiar de vista se cierra cualquier panel de ver detalle abierto —
+  // evita pasar a la tabla con el panel acoplado de tarjetas todavía montado.
+  const cambiarVista = (val) => {
+    setVista(val);
+    localStorage.setItem("sz_ventas_vista", val);
+    v.setVerDetalle(null);
+    v.setFilaAbierta(null);
+  };
+
+  // Vista "lista + detalle": mantiene seleccionada la primera venta visible
+  // de la página actual, igual que en Roles/Proveedores/Pedidos.
+  useEffect(() => {
+    if (vista !== 'tarjetas') return;
+    if (v.datos.length === 0) { v.setVerDetalle(null); return; }
+    if (!v.datos.some((d) => d.id_venta === v.verDetalle?.id_venta)) {
+      v.abrirDetalle(v.datos[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vista, v.datos]);
 
   if (v.cargando && !v.primerCargaHecha.current) return <Loader text="Cargando ventas..." />;
 
@@ -67,6 +109,7 @@ export default function PedidosVentas() {
               <span>+</span> Nueva venta
             </button>
           )}
+          <FilterToggle opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
           <button className="btn-print" onClick={() => window.print()} title="Imprimir reporte"><IconReporte /></button>
         </div>
       </div>
@@ -75,16 +118,59 @@ export default function PedidosVentas() {
         {`${v.total} venta${v.total !== 1 ? 's' : ''} encontrada${v.total !== 1 ? 's' : ''}`}
       </div>
 
-      <VentasTable
-        datos={v.datos} cargando={v.cargando} tienePerm={v.tienePerm}
-        filaAbierta={v.filaAbierta} setFilaAbierta={v.setFilaAbierta}
-        cambiandoEstado={v.cambiandoEstado} cambiarEstado={v.cambiarEstado}
-        setVerDetalle={v.setVerDetalle} setAbonosModal={v.setAbonosModal}
-        totalPaginas={v.totalPaginas} pagina={v.pagina} setPagina={v.setPagina} total={v.total}
-      />
+      {vista === "tabla" ? (
+        <div className={v.verDetalle ? "pedidosventas-contenido-split" : "pedidosventas-contenido"}>
+          <VentasTable
+            datos={v.datos} cargando={v.cargando} tienePerm={v.tienePerm}
+            filaAbierta={v.filaAbierta} setFilaAbierta={v.setFilaAbierta}
+            cambiandoEstado={v.cambiandoEstado} cambiarEstado={v.cambiarEstado}
+            setVerDetalle={v.abrirDetalle} setAbonosModal={v.setAbonosModal}
+            totalPaginas={v.totalPaginas} pagina={v.pagina} setPagina={v.setPagina} total={v.total}
+          />
 
-      {/* ── Modal "ver detalle" — panel único tipo factura (sin stepper) ── */}
-      <VentaDetalleModal verDetalle={v.verDetalle} setVerDetalle={v.setVerDetalle} />
+          {v.verDetalle && (
+            <div className="pedidosventas-panel-columna">
+              <VentaDetalleModal
+                verDetalle={v.verDetalle} setVerDetalle={v.setVerDetalle} cargandoDetalle={v.cargandoDetalle}
+                tienePerm={v.tienePerm} setAbonosModal={v.setAbonosModal}
+              />
+            </div>
+          )}
+        </div>
+      ) : v.datos.length === 0 ? (
+        <p className="vta-empty">{v.busqueda ? `No se encontraron resultados para "${v.busqueda}".` : "No hay ventas para mostrar."}</p>
+      ) : (
+        <div className="vta-lista-detalle">
+          <div className="vta-lista">
+            {v.datos.map((venta) => (
+              <VentaListItem
+                key={venta.id_venta} venta={venta}
+                seleccionado={venta.id_venta === v.verDetalle?.id_venta}
+                onSeleccionar={(id) => {
+                  const venta2 = v.datos.find((d) => d.id_venta === id);
+                  if (venta2) v.abrirDetalle(venta2);
+                }}
+              />
+            ))}
+          </div>
+
+          <VentaDetalleModal
+            verDetalle={v.verDetalle} setVerDetalle={v.setVerDetalle} cargandoDetalle={v.cargandoDetalle}
+            tienePerm={v.tienePerm} setAbonosModal={v.setAbonosModal}
+          />
+        </div>
+      )}
+
+      {v.totalPaginas > 1 && vista === "tarjetas" && (
+        <div className="paginador">
+          <button className="paginador-btn" onClick={() => v.setPagina((p) => Math.max(p - 1, 1))} disabled={v.pagina === 1}>‹</button>
+          {Array.from({ length: v.totalPaginas }, (_, i) => i + 1).map((n) => (
+            <button key={n} className={`paginador-btn ${n === v.pagina ? "paginador-btn-active" : ""}`} onClick={() => v.setPagina(n)}>{n}</button>
+          ))}
+          <button className="paginador-btn" onClick={() => v.setPagina((p) => Math.min(p + 1, v.totalPaginas))} disabled={v.pagina === v.totalPaginas}>›</button>
+          <span className="paginador-info">Página {v.pagina} de {v.totalPaginas} · {v.total} registros</span>
+        </div>
+      )}
 
       <AbonosModal
         abonosModal={v.abonosModal} setAbonosModal={v.setAbonosModal} tienePerm={v.tienePerm}
