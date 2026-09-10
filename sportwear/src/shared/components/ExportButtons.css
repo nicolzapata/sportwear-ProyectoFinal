@@ -7,8 +7,8 @@
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  background: #fff;
-  border: 1px solid #e5e5e5;
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   z-index: 50;
@@ -25,13 +25,13 @@
   padding: 10px 14px;
   font-size: 13px;
   cursor: pointer;
-  color: #333;
+  color: var(--dvna-charcoal);
 }
 
 .export-menu button:hover {
-  background: #f5f5f5;
+  background: var(--dvna-pale);
 }
 
 .export-menu button + button {
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--dvna-border);
 }

@@ -18,7 +18,7 @@
   margin-bottom: 1.3rem;
 }
 .catadmin-kpi-card {
-  background: white;
+  background: var(--dvna-white);
   border: 1px solid var(--dvna-pale);
   border-radius: 18px;
   padding: 1.2rem 1.4rem;
@@ -36,10 +36,10 @@
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.catadmin-kpi-icon-neutral { background: #f0ede8; color: var(--dvna-charcoal); }
-.catadmin-kpi-icon-success { background: #eaf6ec; color: var(--success); }
-.catadmin-kpi-icon-warning { background: #fff6ee; color: #b96422; }
-.catadmin-kpi-icon-danger  { background: #fbeaea; color: var(--danger); }
+.catadmin-kpi-icon-neutral { background: var(--dvna-icon-primary-bg); color: var(--dvna-charcoal); }
+.catadmin-kpi-icon-success { background: var(--dvna-icon-success-bg); color: var(--success); }
+.catadmin-kpi-icon-warning { background: var(--dvna-icon-warning-bg); color: #b96422; }
+.catadmin-kpi-icon-danger  { background: var(--dvna-icon-danger-bg); color: var(--danger); }
 .catadmin-kpi-label { display: block; font-size: 0.7rem; color: var(--dvna-muted); letter-spacing: 0.03em; margin-bottom: 2px; }
 .catadmin-kpi-value { display: block; font-size: 1.5rem; font-weight: 700; color: var(--dvna-charcoal); line-height: 1; }
 
@@ -53,18 +53,18 @@
   scrollbar-width: thin;
 }
 .catadmin-chips-row::-webkit-scrollbar { height: 4px; }
-.catadmin-chips-row::-webkit-scrollbar-thumb { background: #e0d5c8; border-radius: 4px; }
+.catadmin-chips-row::-webkit-scrollbar-thumb { background: var(--dvna-border); border-radius: 4px; }
 
 .catadmin-chip {
   display: inline-flex; align-items: center; gap: 6px;
-  border: 1px solid var(--dvna-border); background: white; border-radius: 40px;
+  border: 1px solid var(--dvna-border); background: var(--dvna-white); border-radius: 40px;
   padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; color: var(--dvna-muted);
   cursor: pointer; white-space: nowrap; transition: all 0.15s ease;
   flex-shrink: 0;
 }
-.catadmin-chip:hover { border-color: var(--brown, #b49780); color: var(--dvna-charcoal); }
+.catadmin-chip:hover { border-color: var(--brown); color: var(--dvna-charcoal); }
 .catadmin-chip.active {
-  background: var(--brown, #b49780); border-color: var(--brown, #b49780); color: white;
+  background: var(--brown); border-color: var(--brown); color: var(--sw-secondary);
 }
 .catadmin-chip-count {
   background: rgba(0,0,0,0.08); border-radius: 20px; padding: 1px 7px; font-size: 0.7rem; font-weight: 700;
@@ -83,7 +83,7 @@
 .catadmin-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--dvna-muted); }
 .catadmin-search-input {
   width: 100%; padding: 0.65rem 1rem 0.65rem 2.4rem;
-  border: 1px solid var(--dvna-border); border-radius: 40px; font-size: 0.85rem; background: white;
+  border: 1px solid var(--dvna-border); border-radius: 40px; font-size: 0.85rem; background: var(--dvna-white);
 }
 .catadmin-search-clear {
   position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
@@ -94,7 +94,7 @@
 
 .catadmin-select {
   padding: 0.6rem 1rem; border: 1px solid var(--dvna-border); border-radius: 40px;
-  font-size: 0.82rem; background: white; color: var(--dvna-charcoal); cursor: pointer;
+  font-size: 0.82rem; background: var(--dvna-white); color: var(--dvna-charcoal); cursor: pointer;
 }
 .catadmin-select-orden { margin-left: auto; }
 
@@ -103,22 +103,22 @@
 }
 .catadmin-estado-tab {
   border: none; background: none; padding: 0.5rem 0.9rem; border-radius: 40px;
-  font-size: 0.78rem; font-weight: 500; color: #777; cursor: pointer; transition: all 0.15s ease;
+  font-size: 0.78rem; font-weight: 500; color: var(--dvna-muted); cursor: pointer; transition: all 0.15s ease;
 }
-.catadmin-estado-tab.active { background: var(--brown, #b49780); color: white; }
+.catadmin-estado-tab.active { background: var(--brown); color: var(--sw-secondary); }
 .catadmin-estado-tab:not(.active):hover { color: var(--dvna-charcoal); }
 
 .catadmin-results-count {
   font-size: 0.8rem; color: var(--dvna-muted); margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.8rem;
 }
 .catadmin-limpiar-filtros {
-  border: none; background: none; color: var(--brown, #b49780); font-size: 0.78rem;
+  border: none; background: none; color: var(--brown); font-size: 0.78rem;
   cursor: pointer; text-decoration: underline;
 }
 
 .catadmin-error-banner {
   display: flex; align-items: center; gap: 0.5rem;
-  background: #fdecea; border: 1px solid #f0b8b3; color: var(--danger);
+  background: var(--danger-bg); border: 1px solid #f0b8b3; color: var(--danger);
   padding: 1rem 1.2rem; border-radius: 12px; font-size: 0.85rem; margin: 2rem;
 }
 
@@ -138,7 +138,7 @@
 }
 
 .catadmin-card {
-  background: white;
+  background: var(--dvna-white);
   border: 1px solid var(--dvna-pale);
   border-radius: 20px;
   overflow: hidden;
@@ -149,14 +149,14 @@
 .catadmin-card:hover {
   box-shadow: 0 16px 40px rgba(0,0,0,0.09);
   transform: translateY(-3px);
-  border-color: #e0d5c8;
+  border-color: var(--dvna-border);
 }
 
 .catadmin-card-img-wrap {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  background: #f7f5f2;
+  background: var(--dvna-pale);
   overflow: hidden;
   cursor: pointer;
 }
@@ -166,7 +166,7 @@
 }
 .catadmin-card:hover .catadmin-card-img { transform: scale(1.05); }
 .catadmin-card-img-placeholder {
-  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #ccc;
+  width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--dvna-muted);
 }
 .catadmin-card-img-placeholder svg { width: 36px; height: 36px; }
 
@@ -194,13 +194,13 @@
 .catadmin-card:hover .catadmin-card-overlay { opacity: 1; }
 .catadmin-overlay-btn {
   width: 42px; height: 42px; border-radius: 50%;
-  background: white; border: none; cursor: pointer;
+  background: var(--dvna-white); border: none; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   color: var(--dvna-charcoal); transition: all 0.15s ease;
   transform: translateY(6px);
 }
 .catadmin-card:hover .catadmin-overlay-btn { transform: translateY(0); }
-.catadmin-overlay-btn:hover { background: var(--brown, #b49780); color: white; }
+.catadmin-overlay-btn:hover { background: var(--brown); color: var(--sw-secondary); }
 
 .catadmin-card-body {
   padding: 0.9rem 1rem 0.7rem;
@@ -209,7 +209,7 @@
 }
 .catadmin-card-categoria {
   font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
-  color: var(--brown, #b49780);
+  color: var(--brown);
 }
 .catadmin-card-nombre {
   font-size: 0.92rem; font-weight: 600; color: var(--dvna-charcoal); margin: 0;
@@ -227,7 +227,7 @@
 
 /* ── Barra visual de stock ── */
 .catadmin-stock-bar-track {
-  width: 100%; height: 4px; border-radius: 2px; background: #f0ede8; overflow: hidden; margin-top: 4px;
+  width: 100%; height: 4px; border-radius: 2px; background: var(--dvna-pale); overflow: hidden; margin-top: 4px;
 }
 .catadmin-stock-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
 .catadmin-stock-bar-fill.alto  { background: var(--success); }
@@ -246,7 +246,7 @@
 }
 .catadmin-switch input { display: none; }
 .catadmin-switch-track {
-  width: 30px; height: 17px; border-radius: 20px; background: #ddd;
+  width: 30px; height: 17px; border-radius: 20px; background: var(--dvna-border);
   position: relative; transition: background 0.2s ease; flex-shrink: 0;
 }
 .catadmin-switch-thumb {
@@ -270,14 +270,14 @@
 .catadmin-skeleton { pointer-events: none; }
 .catadmin-skeleton-img {
   width: 100%; aspect-ratio: 1/1;
-  background: linear-gradient(90deg, var(--dvna-pale) 25%, #f7f7f7 37%, var(--dvna-pale) 63%);
+  background: linear-gradient(90deg, var(--dvna-pale) 25%, var(--dvna-border) 37%, var(--dvna-pale) 63%);
   background-size: 400% 100%;
   animation: catadmin-shimmer 1.4s ease infinite;
 }
 .catadmin-skeleton-body { padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 8px; }
 .catadmin-skeleton-line {
   height: 10px; border-radius: 6px;
-  background: linear-gradient(90deg, var(--dvna-pale) 25%, #f7f7f7 37%, var(--dvna-pale) 63%);
+  background: linear-gradient(90deg, var(--dvna-pale) 25%, var(--dvna-border) 37%, var(--dvna-pale) 63%);
   background-size: 400% 100%;
   animation: catadmin-shimmer 1.4s ease infinite;
 }
@@ -294,7 +294,7 @@
   display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1.5rem;
 }
 .catadmin-modal {
-  background: white; border-radius: 24px; width: 92%; max-width: 720px; max-height: 90vh;
+  background: var(--dvna-white); border-radius: 24px; width: 92%; max-width: 720px; max-height: 90vh;
   overflow-y: auto; display: grid; grid-template-columns: 1fr 1.1fr; position: relative;
   box-shadow: 0 30px 60px rgba(0,0,0,0.25);
 }
@@ -305,10 +305,10 @@
 }
 .catadmin-modal-close:hover { background: white; }
 
-.catadmin-modal-img-wrap { background: #f7f5f2; }
+.catadmin-modal-img-wrap { background: var(--dvna-pale); }
 .catadmin-modal-img { width: 100%; height: 100%; object-fit: cover; min-height: 280px; }
 .catadmin-modal-img-placeholder {
-  width: 100%; height: 100%; min-height: 280px; display: flex; align-items: center; justify-content: center; color: #ccc;
+  width: 100%; height: 100%; min-height: 280px; display: flex; align-items: center; justify-content: center; color: var(--dvna-muted);
 }
 .catadmin-modal-img-placeholder svg { width: 44px; height: 44px; }
 
@@ -326,23 +326,23 @@
 .catadmin-modal-info-valor.activo { color: var(--success); }
 .catadmin-modal-info-valor.inactivo-txt { color: var(--danger); }
 
-.catadmin-modal-seccion-titulo { font-size: 0.78rem; font-weight: 600; color: var(--brown, #b49780); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.5rem; }
+.catadmin-modal-seccion-titulo { font-size: 0.78rem; font-weight: 600; color: var(--brown); text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 0.5rem; }
 .catadmin-modal-variantes { display: flex; flex-direction: column; gap: 4px; }
 .catadmin-modal-variante-item {
   display: flex; align-items: center; gap: 8px; font-size: 0.8rem;
-  background: #faf8f6; border: 1px solid var(--dvna-pale); border-radius: 10px; padding: 6px 10px;
+  background: var(--dvna-pale); border: 1px solid var(--dvna-border); border-radius: 10px; padding: 6px 10px;
 }
 .catadmin-modal-variante-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.1); }
 .catadmin-modal-variante-stock { margin-left: auto; font-weight: 600; color: var(--dvna-charcoal); }
 
 .catadmin-modal-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: auto; padding-top: 0.6rem; }
 .catadmin-modal-link-tienda {
-  display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--brown, #b49780); text-decoration: none;
+  display: inline-flex; align-items: center; gap: 5px; font-size: 0.78rem; color: var(--brown); text-decoration: none;
 }
 .catadmin-modal-link-tienda:hover { text-decoration: underline; }
 .catadmin-modal-btn-editar {
   display: inline-flex; align-items: center; gap: 6px;
-  background: var(--brown, #b49780); color: white; border: none; border-radius: 40px;
+  background: var(--brown); color: var(--sw-secondary); border: none; border-radius: 40px;
   padding: 0.6rem 1.2rem; font-size: 0.82rem; font-weight: 500; cursor: pointer;
 }
 .catadmin-modal-btn-editar:hover { opacity: 0.9; }
@@ -376,18 +376,18 @@
   align-items: center;
   gap: 6px;
   padding: 0.6rem 1rem;
-  border: 1px solid var(--brown, #b49780);
+  border: 1px solid var(--brown);
   border-radius: 40px;
   font-size: 0.8rem;
   font-weight: 500;
-  color: var(--brown, #b49780);
-  background: white;
+  color: var(--brown);
+  background: var(--dvna-white);
   text-decoration: none;
   white-space: nowrap;
   transition: all 0.15s ease;
 }
 .catadmin-btn-ver-tienda:hover {
-  background: var(--brown, #b49780);
-  color: white;
+  background: var(--brown);
+  color: var(--sw-secondary);
 }
 .catadmin-btn-ver-tienda svg { width: 13px; height: 13px; }

@@ -11,14 +11,14 @@
 .loader-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #f0f0f0;
-  border-top-color: #1a1a1a;
+  border: 3px solid var(--dvna-border);
+  border-top-color: var(--dvna-charcoal);
   border-radius: 50%;
   animation: loader-spin 1s linear infinite;
 }
 
 .loader-text {
-  color: #666;
+  color: var(--dvna-muted);
   font-size: 0.9rem;
 }
 

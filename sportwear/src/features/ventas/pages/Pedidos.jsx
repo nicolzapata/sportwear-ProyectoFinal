@@ -12,7 +12,9 @@ import PedidosTable from "../components/pedidos/PedidosTable";
 import PedidoListItem from "../components/pedidos/PedidoListItem";
 import PedidoDetalleModal from "../components/pedidos/PedidoDetalleModal";
 import EditarPedidoModal from "../components/pedidos/EditarPedidoModal";
+import AbonosModal from "../components/pedidos-ventas/AbonosModal";
 import FilterToggle from "../../../shared/components/FilterToggle";
+import { useAbonosYAnulacionesState } from "../hooks/useAbonosYAnulacionesState";
 
 const nuevaLinea = () => ({ id_producto: "", id_variante: "", cantidad: 1, precio_unitario: "" });
 
@@ -58,6 +60,13 @@ export default function Pedidos() {
   const [conteos,    setConteos]    = useState({});
   const [cambiando,  setCambiando]  = useState(false);
   const [filaAbierta, setFilaAbierta] = useState(null);
+  // ── NUEVO: métodos de pago para el modal "Confirmar pago" — antes solo se
+  // pedían al abrir "Editar pedido"; ahora también hacen falta para poder
+  // registrar un pago sin pasar por ahí. ──
+  const [metodosPago, setMetodosPago] = useState([]);
+  useEffect(() => {
+    api.get("/metodos-pago?activos=1").then(({ data }) => setMetodosPago(data || [])).catch(() => setMetodosPago([]));
+  }, []);
 
   // Al cambiar de vista se cierra cualquier panel de ver detalle/editar
   // abierto — evita pasar a la tabla con el panel acoplado de la vista de
@@ -99,6 +108,31 @@ export default function Pedidos() {
     } finally {
       setCargando(false);
       primerCargaHecha.current = true;
+    }
+  };
+
+  // ── NUEVO: "Confirmar pago" — mismo flujo de registrar abonos que ya
+  // existe en Ventas (AbonosModal/useAbonosYAnulacionesState), reutilizado
+  // acá porque un pedido de cliente sin pago confirmado no aparece en Ventas
+  // (no se puede llegar a él desde ahí) — necesita su propia puerta de
+  // entrada. Se recarga la lista de Pedidos, no la de Ventas. ──
+  const abonosYAnulaciones = useAbonosYAnulacionesState({
+    cargar: () => cargar(pagina, busquedaDebounced),
+    setCambiandoEstado: setCambiando,
+  });
+
+  const abrirConfirmarPago = async (p) => {
+    try {
+      const [ventaRes, pagosRes] = await Promise.all([
+        api.get(`/ventas/${p.id_venta}`),
+        api.get(`/ventas/${p.id_venta}/pagos`),
+      ]);
+      const total_pagado = (pagosRes.data || [])
+        .filter((a) => a.estado === "Confirmado")
+        .reduce((acc, a) => acc + Number(a.monto), 0);
+      abonosYAnulaciones.setAbonosModal({ ...ventaRes.data, abonos: pagosRes.data, total_pagado });
+    } catch {
+      showToast("error", "No se pudo cargar la información de pago de este pedido.");
     }
   };
 
@@ -328,7 +362,7 @@ export default function Pedidos() {
       </div>
 
       {vista === "tabla" ? (
-        <div className={verDetalle ? "pedidos-contenido-split" : "pedidos-contenido"}>
+        <div className={(verDetalle || modalEditar) ? "pedidos-contenido-split" : "pedidos-contenido"}>
           <PedidosTable
             datos={datos}
             cargando={cargando}
@@ -345,13 +379,26 @@ export default function Pedidos() {
             total={total}
           />
 
-          {verDetalle && (
+          {(verDetalle || modalEditar) && (
             <div className="pedidos-panel-columna">
-              <PedidoDetalleModal
-                verDetalle={verDetalle} setVerDetalle={cerrarDetalle} cargandoDetalle={cargandoDetalle}
-                cambiarEstado={cambiarEstado} cambiando={cambiando} tienePerm={tienePerm}
-                filaAbierta={filaAbierta} setFilaAbierta={setFilaAbierta} abrirEditar={abrirEditar}
-              />
+              {modalEditar ? (
+                <EditarPedidoModal
+                  variante="panel"
+                  pedido={modalEditar} onClose={cerrarEditar}
+                  form={formEditar} setForm={setFormEditar} errores={erroresEditar} setErrores={setErroresEditar}
+                  productos={productosEditar} metodosPago={metodosPagoEditar} cargandoDatos={cargandoDatosEditar}
+                  nuevasLineas={nuevasLineas} agregarLinea={agregarLinea} quitarLinea={quitarLinea} actualizarLinea={actualizarLinea}
+                  totalActual={totalActualEditar} totalNuevo={totalNuevoEditar}
+                  guardando={guardandoEditar} onGuardar={guardarEdicion}
+                />
+              ) : (
+                <PedidoDetalleModal
+                  verDetalle={verDetalle} setVerDetalle={cerrarDetalle} cargandoDetalle={cargandoDetalle}
+                  cambiarEstado={cambiarEstado} cambiando={cambiando} tienePerm={tienePerm}
+                  filaAbierta={filaAbierta} setFilaAbierta={setFilaAbierta} abrirEditar={abrirEditar}
+                  abrirConfirmarPago={abrirConfirmarPago}
+                />
+              )}
             </div>
           )}
         </div>
@@ -372,11 +419,24 @@ export default function Pedidos() {
             ))}
           </div>
 
-          <PedidoDetalleModal
-            verDetalle={verDetalle} setVerDetalle={cerrarDetalle} cargandoDetalle={cargandoDetalle}
-            cambiarEstado={cambiarEstado} cambiando={cambiando} tienePerm={tienePerm}
-            filaAbierta={filaAbierta} setFilaAbierta={setFilaAbierta} abrirEditar={abrirEditar}
-          />
+          {modalEditar ? (
+            <EditarPedidoModal
+              variante="panel"
+              pedido={modalEditar} onClose={cerrarEditar}
+              form={formEditar} setForm={setFormEditar} errores={erroresEditar} setErrores={setErroresEditar}
+              productos={productosEditar} metodosPago={metodosPagoEditar} cargandoDatos={cargandoDatosEditar}
+              nuevasLineas={nuevasLineas} agregarLinea={agregarLinea} quitarLinea={quitarLinea} actualizarLinea={actualizarLinea}
+              totalActual={totalActualEditar} totalNuevo={totalNuevoEditar}
+              guardando={guardandoEditar} onGuardar={guardarEdicion}
+            />
+          ) : (
+            <PedidoDetalleModal
+              verDetalle={verDetalle} setVerDetalle={cerrarDetalle} cargandoDetalle={cargandoDetalle}
+              cambiarEstado={cambiarEstado} cambiando={cambiando} tienePerm={tienePerm}
+              filaAbierta={filaAbierta} setFilaAbierta={setFilaAbierta} abrirEditar={abrirEditar}
+              abrirConfirmarPago={abrirConfirmarPago}
+            />
+          )}
         </div>
       )}
 
@@ -391,16 +451,12 @@ export default function Pedidos() {
         </div>
       )}
 
-      {modalEditar && (
-        <EditarPedidoModal
-          pedido={modalEditar} onClose={cerrarEditar}
-          form={formEditar} setForm={setFormEditar} errores={erroresEditar} setErrores={setErroresEditar}
-          productos={productosEditar} metodosPago={metodosPagoEditar} cargandoDatos={cargandoDatosEditar}
-          nuevasLineas={nuevasLineas} agregarLinea={agregarLinea} quitarLinea={quitarLinea} actualizarLinea={actualizarLinea}
-          totalActual={totalActualEditar} totalNuevo={totalNuevoEditar}
-          guardando={guardandoEditar} onGuardar={guardarEdicion}
-        />
-      )}
+      <AbonosModal
+        abonosModal={abonosYAnulaciones.abonosModal} setAbonosModal={abonosYAnulaciones.setAbonosModal} tienePerm={tienePerm}
+        formAbono={abonosYAnulaciones.formAbono} setFormAbono={abonosYAnulaciones.setFormAbono}
+        erroresAbono={abonosYAnulaciones.erroresAbono} setErroresAbono={abonosYAnulaciones.setErroresAbono}
+        metodosPago={metodosPago} guardandoAbono={abonosYAnulaciones.guardandoAbono} agregarAbono={abonosYAnulaciones.agregarAbono}
+      />
     </div>
   );
 }

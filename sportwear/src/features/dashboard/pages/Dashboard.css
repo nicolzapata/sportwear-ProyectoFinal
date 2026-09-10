@@ -98,11 +98,11 @@
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.06em;
-  color: #fff;
+  color: var(--sw-secondary);
   background: var(--dvna-circle);
   border: none;
   border-radius: 8px;
-  padding: 9px 18px;
+  padding: 8px 16px;
   cursor: pointer;
   transition: background 0.15s;
   white-space: nowrap;
@@ -112,7 +112,7 @@
 .reporte-error {
   font-family: var(--font-body);
   font-size: 12px;
-  color: #b83232;
+  color: var(--danger);
   background: rgba(184,50,50,0.06);
   border-radius: 8px;
   padding: 8px 12px;
@@ -139,7 +139,7 @@
 .reporte-total-icon {
   width: 34px; height: 34px; border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0; background: #e8ddd6; color: var(--dvna-circle);
+  flex-shrink: 0; background: var(--dvna-icon-primary-bg); color: var(--dvna-circle);
 }
 .reporte-total-icon svg { width: 15px; height: 15px; stroke: currentColor; }
 .reporte-total-text {
@@ -200,9 +200,9 @@
   border-radius: 12px 12px 0 0;
   z-index: 0;
 }
-.stat-card-accent.success { background: #3a6648; }
-.stat-card-accent.danger  { background: #b83232; }
-.stat-card-accent.warning { background: #7a5500; }
+.stat-card-accent.success { background: var(--success); }
+.stat-card-accent.danger  { background: var(--danger); }
+.stat-card-accent.warning { background: var(--warning); }
 
 .stat-icon {
   width: 48px; height: 48px; border-radius: 12px;
@@ -211,11 +211,11 @@
   margin-bottom: 8px; z-index: 2;
 }
 .stat-icon svg { width: 20px; height: 20px; stroke: currentColor; }
-.stat-icon-primary { background: #e8ddd6; color: var(--dvna-circle); }
-.stat-icon-info    { background: #e8ddd6; color: var(--dvna-circle); }
-.stat-icon-success { background: #ccddd4; color: #3a6648; }
-.stat-icon-danger  { background: #f0cccc; color: #b83232; }
-.stat-icon-warning { background: #e8d9b8; color: #7a5500; }
+.stat-icon-primary { background: var(--dvna-icon-primary-bg); color: var(--dvna-circle); }
+.stat-icon-info    { background: var(--dvna-icon-primary-bg); color: var(--dvna-circle); }
+.stat-icon-success { background: var(--dvna-icon-success-bg); color: var(--success); }
+.stat-icon-danger  { background: var(--dvna-icon-danger-bg); color: var(--danger); }
+.stat-icon-warning { background: var(--dvna-icon-warning-bg); color: var(--warning); }
 
 .stat-content { display: flex; flex-direction: column; gap: 4px; min-width: 0; align-items: center; text-align: center; }
 .stat-label {
@@ -289,7 +289,7 @@
   font-size: 9px; font-weight: 600; color: var(--dvna-muted); flex-shrink: 0;
 }
 .top-product-rank.gold {
-  background: rgba(138,95,0,0.12); border-color: rgba(138,95,0,0.3); color: #7a5500;
+  background: rgba(138,95,0,0.12); border-color: rgba(138,95,0,0.3); color: var(--warning);
 }
 .top-product-name { font-family: var(--font-body); font-size: 12px; color: var(--dvna-charcoal); flex: 1; }
 .top-product-count { font-family: var(--font-body); font-size: 11px; color: var(--dvna-muted); }
@@ -358,7 +358,7 @@
 /* ── Print button ── */
 .print-button-container { margin-top: 1rem; text-align: right; }
 .btn-print {
-  background: var(--brown); color: white; border: none;
+  background: var(--brown); color: var(--sw-secondary); border: none;
   padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.875rem;
   cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
   transition: all 0.2s ease;
@@ -368,7 +368,7 @@
 /* ── Botón de período (antes no tenía NINGÚN estilo — se veía como texto suelto) ── */
 .dashboard-error-banner {
   display: flex; align-items: center; gap: 0.6rem;
-  background: #fdecea; border: 1px solid #f0b8b3; color: #b83232;
+  background: var(--danger-bg); border: 1px solid var(--danger); color: var(--danger);
   padding: 1rem 1.3rem; border-radius: 12px; font-size: 0.9rem; margin-top: 1.5rem;
 }
 .period-badge {
@@ -426,7 +426,7 @@
 .bajostock-chevron-btn.abierto {
   transform: rotate(90deg);
   background: var(--dvna-circle);
-  color: white;
+  color: var(--sw-secondary);
   border-color: var(--dvna-circle);
 }
 
@@ -434,15 +434,15 @@
   margin-left: 8px;
   font-size: 9px;
   font-weight: 600;
-  color: #7a5500;
-  background: #fdf4e3;
-  border: 0.5px solid #e8d9b8;
+  color: var(--warning);
+  background: var(--warning-bg);
+  border: 0.5px solid var(--dvna-icon-warning-bg);
   border-radius: 20px;
   padding: 3px 9px;
   vertical-align: middle;
 }
 
-.bajostock-row-variante { background: #fbfaf8; }
+.bajostock-row-variante { background: var(--dvna-pale); }
 .bajostock-td-indent {
   padding-left: 28px !important;
   font-size: 13px;

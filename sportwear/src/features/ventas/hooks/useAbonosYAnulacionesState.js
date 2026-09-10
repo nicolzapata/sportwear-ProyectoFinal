@@ -68,11 +68,10 @@ export function useAbonosYAnulacionesState({ cargar, setCambiandoEstado }) {
 
     setGuardandoAbono(true);
     try {
-      await api.post("/pagos", {
+      await api.post("/ventas/pagos", {
         id_venta: abonosModal.id_venta,
         monto:    montoAEnviar,
         metodo:   formAbono.metodo,
-        estado:   "Confirmado",
         fecha:    formAbono.fecha || new Date().toISOString().split("T")[0]
       });
 

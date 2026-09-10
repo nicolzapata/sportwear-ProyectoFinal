@@ -5,24 +5,31 @@
    ================================================================ */
 
 :root {
-  --primary:      #f5e642;
-  --primary-dark: #d4c800;
-  --primary-bg:   rgba(245,230,66,0.10);
-  --black:        #0a0a0a;
-  --dark:         #141414;
-  --dark-2:       #1c1c1c;
-  --dark-3:       #242424;
-  --white:        #ffffff;
-  --off-white:    #f8f8f6;
-  --light:        #f0f0ee;
-  --border:       #e8e8e5;
-  --border-dark:  #d0d0cc;
-  --muted:        #888884;
-  --text:         #1a1a18;
-  --success:     #22863a; --success-bg: #eafbee;
-  --danger:      #d13a2f; --danger-bg:  #fff0ef;
-  --warning:     #c47f00; --warning-bg: #fff8e6;
-  --info:        #1a6fc4; --info-bg:    #edf4ff;
+  /* Re-apuntado a los tokens centrales de theme.css
+     (src/shared/styles/theme.css) para la paleta dorado/charcoal
+     y el soporte de modo oscuro en Checkout/Carrito. */
+  --primary:      var(--sw-primary);
+  --primary-dark: var(--sw-primary-strong);
+  --primary-bg:   rgba(200,164,106,0.14);
+  --black:        var(--sw-text);
+  --dark:         var(--sw-text);
+  --dark-2:       var(--sw-surface-alt);
+  --dark-3:       var(--sw-surface-alt);
+  --white:        var(--sw-surface);
+  --off-white:    var(--sw-bg);
+  --light:        var(--sw-surface-alt);
+  --border:       var(--sw-border);
+  --border-dark:  var(--sw-border);
+  --muted:        var(--sw-text-muted);
+  --text:         var(--sw-text);
+  --success:     var(--sw-success); --success-bg: var(--sw-success-bg);
+  --danger:      var(--sw-danger);  --danger-bg:  var(--sw-danger-bg);
+  --warning:     var(--sw-warning); --warning-bg: var(--sw-warning-bg);
+  --info:        var(--sw-info);    --info-bg:    var(--sw-info-bg);
+  --danger-bg-hover:  var(--sw-danger-bg-hover);
+  --success-bg-hover: var(--sw-success-bg-hover);
+  --warning-bg-hover: var(--sw-warning-bg-hover);
+  --info-bg-hover:    var(--sw-info-bg-hover);
   --font-body:    'DM Sans', system-ui, sans-serif;
   --sidebar-w: 260px;
   --navbar-h:  64px;
@@ -57,20 +64,20 @@ body { font-family:var(--font-body); background:var(--off-white); color:var(--te
 /* ── Buttons ── */
 .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 22px; border:1.5px solid transparent; border-radius:var(--r-md); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s var(--ease); white-space:nowrap; text-decoration:none; }
 .btn:active { transform:scale(0.97); }
-.btn-primary { background:var(--primary); color:var(--black); border-color:var(--primary); box-shadow:0 2px 8px rgba(245,230,66,0.3); }
+.btn-primary { background:var(--primary); color:var(--sw-secondary); border-color:var(--primary); box-shadow:0 2px 8px rgba(245,230,66,0.3); }
 .btn-primary:hover { background:var(--primary-dark); border-color:var(--primary-dark); transform:translateY(-1px); box-shadow:0 6px 20px rgba(245,230,66,0.4); }
 .btn-outline { background:transparent; color:var(--text); border-color:var(--border-dark); }
 .btn-outline:hover { border-color:var(--dark); background:var(--light); }
-.btn-dark { background:var(--primary); color:var(--black); border-color:var(--primary-dark); }
+.btn-dark { background:var(--primary); color:var(--sw-secondary); border-color:var(--primary-dark); }
 .btn-dark:hover { background:var(--primary-dark); transform:translateY(-1px); }
 .btn-danger  { background:var(--danger-bg);  color:var(--danger);  border-color:#ffd0cd; }
 .btn-success { background:var(--success-bg); color:var(--success); border-color:#b8eec4; }
 .btn-warning { background:var(--warning-bg); color:var(--warning); border-color:#fde9a0; }
 .btn-info    { background:var(--info-bg);    color:var(--info);    border-color:#b8d8f8; }
-.btn-danger:hover  { background:#ffe4e2; }
-.btn-success:hover { background:#d4f5dc; }
-.btn-warning:hover { background:#fff3c4; }
-.btn-info:hover    { background:#d4e8fc; }
+.btn-danger:hover  { background:var(--danger-bg-hover); }
+.btn-success:hover { background:var(--success-bg-hover); }
+.btn-warning:hover { background:var(--warning-bg-hover); }
+.btn-info:hover    { background:var(--info-bg-hover); }
 .btn-sm { padding:6px 14px; font-size:12px; border-radius:var(--r); }
 
 /* ── Cards ── */

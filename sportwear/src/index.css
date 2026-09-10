@@ -6,17 +6,19 @@
    ════════════════════════════════════════════════════════ */
 
 :root {
-  /* Paleta DVNA */
-  --dvna-circle:   #b49780;
-  --dvna-mid:      #c8ab96;
-  --dvna-light:    #e8e0d8;
-  --dvna-pale:     #f4f4f4;
-  --dvna-cream:    #f9f9f9;
-  --dvna-white:    #ffffff;
-  --dvna-dark:     #111111;
-  --dvna-charcoal: #1a1a1a;
-  --dvna-muted:    #888888;
-  --dvna-border:   #e5e5e5;
+  /* Paleta DVNA — re-apuntada a los tokens centrales de theme.css
+     (src/shared/styles/theme.css) para que el panel admin y las
+     páginas de auth respondan al modo claro/oscuro. */
+  --dvna-circle:   var(--sw-primary);
+  --dvna-mid:      var(--sw-tertiary);
+  --dvna-light:    var(--sw-tertiary);
+  --dvna-pale:     var(--sw-surface-alt);
+  --dvna-cream:    var(--sw-bg);
+  --dvna-white:    var(--sw-surface);
+  --dvna-dark:     var(--sw-text);
+  --dvna-charcoal: var(--sw-text);
+  --dvna-muted:    var(--sw-text-muted);
+  --dvna-border:   var(--sw-border);
 
   /* Semánticos */
   --cream:       var(--dvna-pale);
@@ -24,16 +26,16 @@
   --sand:        var(--dvna-light);
   --taupe:       var(--dvna-mid);
   --brown:       var(--dvna-circle);
-  --dark-brown:  #b49780;
+  --dark-brown:  var(--sw-primary-strong);
   --charcoal:    var(--dvna-charcoal);
   --muted:       var(--dvna-muted);
   --border:      var(--dvna-border);
-  --accent:      #9a7d66;
+  --accent:      var(--sw-primary-strong);
 
-  --danger:      #b83232;
-  --danger-bg:   #fdf2f0;
-  --success:     #3a6648;
-  --warning:     #7a5500;
+  --danger:      var(--sw-danger);
+  --danger-bg:   var(--sw-danger-bg);
+  --success:     var(--sw-success);
+  --warning:     var(--sw-warning);
 
   /* Tipografía */
   --font-display: 'DM Sans', system-ui, sans-serif;
@@ -90,7 +92,7 @@ a {
   transition: color 0.2s ease;
   text-transform: none;
 }
-a:hover { color: #000000; }
+a:hover { color: var(--dvna-charcoal); }
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
@@ -135,7 +137,7 @@ svg {
 
 .nav-item { color: rgba(255, 255, 255, 0.938); }
 .nav-item:hover { color: #ffffff; }
-.nav-item.active { color: #ffffff; }
+.nav-item.active { color: var(--sw-secondary); }
 
 .nav-icon svg,
 .logout-btn svg {
@@ -148,7 +150,7 @@ svg {
    ════════════════════════════════════════════════════════ */
 
 [class*="-action-btn"] {
-  color: #888888 !important;
+  color: var(--dvna-muted) !important;
 }
 [class*="-action-btn"] svg,
 [class*="-action-cell"] svg {
@@ -188,7 +190,7 @@ table.tbl th.tbl-th:last-child {
 [class*="-delete-btn"]:hover,
 [class*="-trash-btn"]:hover,
 [class*="-cancel-btn"]:hover {
-  color: #96292a !important;
+  color: var(--danger) !important;
   border-color: rgba(184,50,50,0.6) !important;
   background: rgba(184,50,50,0.14) !important;
 }
@@ -196,7 +198,7 @@ table.tbl th.tbl-th:last-child {
 [class*="-receive-btn"]:hover,
 [class*="-pay-btn"]:hover,
 [class*="-register-btn"]:hover {
-  color: #2d4f37 !important;
+  color: var(--success) !important;
   border-color: rgba(58,102,72,0.6) !important;
   background: rgba(58,102,72,0.14) !important;
 }
@@ -266,7 +268,7 @@ table.tbl {
 }
 
 table.tbl thead.tbl-header {
-  background: #f7f5f2;
+  background: var(--dvna-pale);
 }
 
 table.tbl th.tbl-th {
@@ -276,7 +278,7 @@ table.tbl th.tbl-th {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.01em;
-  color: #5c5c5c;
+  color: var(--dvna-muted);
   text-transform: none;
   border-bottom: 1px solid rgba(17, 17, 17, 0.12);
   white-space: nowrap;
@@ -358,12 +360,12 @@ table.tbl td.tbl-td:last-child  { padding-right: 22px; }
 }
 .paginador-btn:hover:not(:disabled) {
   background: var(--brown);
-  color: #fff;
+  color: var(--sw-secondary);
   border-color: var(--brown);
 }
 .paginador-btn-active {
   background: var(--brown) !important;
-  color: #fff !important;
+  color: var(--sw-secondary) !important;
   border-color: var(--brown) !important;
   font-weight: 600;
 }

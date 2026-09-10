@@ -239,7 +239,7 @@
   height: 14px;
   padding: 0 3px;
   background: var(--dvna-circle);
-  color: #fff;
+  color: var(--sw-secondary);
   font-family: var(--font-body);
   font-size: 8px;
   font-weight: 700;
@@ -286,7 +286,7 @@
   height: 30px;
   border-radius: 50%;
   background: var(--dvna-circle);
-  color: #fff;
+  color: var(--sw-secondary);
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;

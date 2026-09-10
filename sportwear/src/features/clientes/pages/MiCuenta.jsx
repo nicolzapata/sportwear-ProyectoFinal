@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useToast } from "../../../shared/contexts/ToastContext";
+import { useThemeScope } from "../../../shared/contexts/ThemeContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../../shared/services/api";
 import PaymentModal from "../../ventas/components/PaymentModal";
@@ -20,6 +21,11 @@ import EditarPerfilModal from "../components/mi-cuenta/EditarPerfilModal";
 import { dividirNombre, errorEmailPerfil } from "../utils/miCuentaHelpers";
 
 export default function MiCuenta() {
+  // Cuando el cliente no tiene módulos de admin, /mi-cuenta se renderiza
+  // dentro de PublicLayout (sin esto no tendría scope de modo oscuro); si sí
+  // los tiene, se renderiza dentro de Layout admin, que ya trae el suyo —
+  // llamarlo aquí también no genera conflicto, solo es redundante en ese caso.
+  useThemeScope("sw-scope-cuenta");
   const { usuario, actualizarUsuario } = useAuth();
   const navigate = useNavigate();
   const showToast = useToast();

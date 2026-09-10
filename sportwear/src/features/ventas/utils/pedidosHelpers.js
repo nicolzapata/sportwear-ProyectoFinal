@@ -26,18 +26,28 @@ export const TRANSICIONES = {
   'Cancelado':      [],
 };
 
-// ── NUEVO: si el pago de la venta asociada ya fue realizado o no — dato que
-// el backend ya trae (v.estado AS estado_venta en pedidos.service.js), solo
-// faltaba mostrarlo aquí. ──
-export const getPagoBadge = (estadoVenta) => {
-  switch (estadoVenta) {
-    case "Pagado":     return "pedidos-badge-active";
-    case "Anulado":    return "pedidos-badge-inactive";
-    case "Confirmado": return "pedidos-badge-info";
-    default:            return "pedidos-badge-pending"; // Pendiente
+// ── CORREGIDO: esto mostraba "estado_venta" (Ventas.estado) tal cual, sin
+// traducirlo — pero "Confirmado" en Ventas.estado significa "el PEDIDO quedó
+// registrado", NO que el pago se haya confirmado (todo pedido de cliente
+// nace en "Confirmado" así no se haya pagado nada todavía). Eso hacía que el
+// badge de "Pago" dijera "Confirmado" para pedidos sin ningún abono, justo
+// al lado del botón "Confirmar pago" — una contradicción visual directa. El
+// estado real del PAGO se calcula con la misma plata confirmada contra el
+// total, igual que ya hace useVentasListado.js para la tabla de Ventas. ──
+export const getEstadoPago = (p) => {
+  if (p.estado_venta === "Anulado") return "Anulado";
+  const total = Number(p.total || 0);
+  const pagado = Number(p.total_pagado || 0);
+  return total > 0 && pagado >= total ? "Pagado" : "Pendiente";
+};
+export const getPagoBadge = (estadoPago) => {
+  switch (estadoPago) {
+    case "Pagado":  return "pedidos-badge-active";
+    case "Anulado": return "pedidos-badge-inactive";
+    default:         return "pedidos-badge-pending"; // Pendiente
   }
 };
-export const getPagoTexto = (estadoVenta) => estadoVenta || "—";
+export const getPagoTexto = (estadoPago) => estadoPago || "—";
 
 export const getEstadoBadge = (estado) => {
   switch (estado) {

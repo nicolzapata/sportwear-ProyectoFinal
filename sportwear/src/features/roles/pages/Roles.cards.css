@@ -11,8 +11,8 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.estado-activo   { color: #3a6648; }
-.estado-inactivo { color: #b83232; }
+.estado-activo   { color: var(--success); }
+.estado-inactivo { color: var(--danger); }
 
 /* ════════════════════════════════
    LISTA + PANEL DE DETALLE
@@ -39,17 +39,17 @@
   text-align: left;
   padding: 16px 18px;
   background: var(--dvna-white, #fff);
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   border-radius: 14px;
   cursor: pointer;
   font-family: var(--font-body);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 .role-item:hover {
-  border-color: #c8ab96;
+  border-color: var(--dvna-mid);
 }
 .role-item.seleccionado {
-  border-color: var(--dvna-circle, #b49780);
+  border-color: var(--dvna-circle);
   border-width: 1.5px;
   box-shadow: 0 2px 10px rgba(180, 151, 128, 0.15);
 }
@@ -84,13 +84,13 @@
 .role-item-nombre {
   font-size: 15px;
   font-weight: 600;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
 }
 .role-item-badge {
   font-size: 10px;
   font-weight: 500;
   color: var(--dvna-muted, #999);
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   border-radius: 20px;
   padding: 1px 8px;
   white-space: nowrap;
@@ -115,7 +115,7 @@
   white-space: nowrap;
 }
 .role-item-ver svg { width: 12px; height: 12px; }
-.role-item.seleccionado .role-item-ver { color: var(--dvna-circle, #b49780); }
+.role-item.seleccionado .role-item-ver { color: var(--dvna-circle); }
 
 .role-item-bottom {
   display: flex;
@@ -123,7 +123,7 @@
   flex-wrap: wrap;
   gap: 10px;
   padding-top: 10px;
-  border-top: 1px solid var(--dvna-border, #e8e0d8);
+  border-top: 1px solid var(--dvna-border);
 }
 .role-item-estado {
   display: inline-flex;
@@ -140,7 +140,7 @@
   margin-left: auto;
   font-size: 11px;
   font-weight: 500;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
 }
 
 /* ── Panel de detalle (columna derecha) ── */
@@ -151,7 +151,7 @@
   flex-direction: column;
   gap: 16px;
   background: var(--dvna-white, #fff);
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   border-radius: 14px;
   padding: 18px;
   font-family: var(--font-body);
@@ -183,14 +183,14 @@
 .role-detalle-nombre {
   font-size: 17px;
   font-weight: 600;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
 }
 .role-detalle-tipo {
   font-size: 10px;
   font-weight: 500;
-  color: var(--dvna-circle, #b49780);
+  color: var(--dvna-circle);
   background: var(--dvna-pale, #f7f4f1);
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   border-radius: 20px;
   padding: 2px 8px;
   white-space: nowrap;
@@ -206,7 +206,7 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
 }
 
 .role-detalle-stats {
@@ -220,7 +220,7 @@
   gap: 2px;
   padding: 10px 12px;
   background: var(--dvna-pale, #f7f4f1);
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   border-radius: 10px;
 }
 .role-detalle-stat-label {
@@ -233,7 +233,7 @@
 .role-detalle-stat-valor {
   font-size: 18px;
   font-weight: 600;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
 }
 .role-detalle-stat-hint {
   font-size: 10px;
@@ -253,7 +253,7 @@
 .role-detalle-matriz-header > span:first-child {
   font-size: 13px;
   font-weight: 600;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
 }
 .role-detalle-matriz-modo {
   font-size: 10px;
@@ -268,15 +268,15 @@
   overflow-y: auto;
   padding-right: 2px;
   scrollbar-width: thin;
-  scrollbar-color: var(--dvna-border, #e8e0d8) transparent;
+  scrollbar-color: var(--dvna-border) transparent;
 }
 .role-detalle-modulos::-webkit-scrollbar { width: 4px; }
 .role-detalle-modulos::-webkit-scrollbar-thumb {
-  background: var(--dvna-border, #e8e0d8);
+  background: var(--dvna-border);
   border-radius: 4px;
 }
 .role-detalle-modulo {
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   border-radius: 10px;
   padding: 10px 12px;
 }
@@ -286,7 +286,7 @@
   justify-content: space-between;
   font-size: 12px;
   font-weight: 600;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
   margin-bottom: 8px;
 }
 .role-detalle-modulo-count {
@@ -306,7 +306,7 @@
   font-size: 12px;
 }
 .role-detalle-accion svg { width: 13px; height: 13px; flex-shrink: 0; }
-.role-detalle-accion.otorgado { color: #3a6648; }
+.role-detalle-accion.otorgado { color: var(--success); }
 .role-detalle-accion.denegado { color: var(--dvna-muted, #999); }
 
 .role-detalle-actions {
@@ -314,7 +314,7 @@
   flex-direction: column;
   gap: 8px;
   padding-top: 14px;
-  border-top: 1px solid var(--dvna-border, #e8e0d8);
+  border-top: 1px solid var(--dvna-border);
 }
 .role-detalle-btn-primary {
   display: flex;
@@ -324,8 +324,8 @@
   padding: 10px 14px;
   border-radius: 20px;
   border: none;
-  background: var(--dvna-circle, #b49780);
-  color: #fff;
+  background: var(--dvna-circle);
+  color: var(--sw-secondary);
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
@@ -337,9 +337,9 @@
 .role-detalle-btn-secondary {
   padding: 10px 14px;
   border-radius: 20px;
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   background: transparent;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
@@ -349,7 +349,7 @@
 .role-detalle-btn-secondary:hover {
   background: rgba(184,50,50,0.06);
   border-color: rgba(184,50,50,0.3);
-  color: #b83232;
+  color: var(--danger);
 }
 .role-detalle-protegido { margin-top: 0; }
 
@@ -367,8 +367,8 @@
 .role-back-spinner {
   width: 14px;
   height: 14px;
-  border: 1.5px solid var(--dvna-border, #e8e0d8);
-  border-top-color: var(--dvna-circle, #b49780);
+  border: 1.5px solid var(--dvna-border);
+  border-top-color: var(--dvna-circle);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   flex-shrink: 0;
@@ -388,7 +388,7 @@
   padding: 8px 11px;
   border-radius: 8px;
   background: var(--dvna-pale, #f7f4f1);
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   font-family: var(--font-body);
   font-size: 11px;
   color: var(--dvna-muted, #999);

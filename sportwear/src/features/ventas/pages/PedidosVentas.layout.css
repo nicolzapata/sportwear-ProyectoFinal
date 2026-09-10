@@ -75,7 +75,7 @@
   border-radius: 40px;
   font-size: 0.9rem;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--dvna-white);
 }
 
 .pedidosventas-search-input:focus {
@@ -120,11 +120,11 @@
 /* Buttons */
 .pedidosventas-btn-primary {
   background: var(--brown);
-  color: white;
+  color: var(--sw-secondary);
   border: none;
-  padding: 0.8rem 2rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 40px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -141,12 +141,12 @@
 }
 
 .pedidosventas-btn-secondary {
-  background: white;
+  background: var(--dvna-white);
   color: var(--dvna-charcoal);
   border: 1px solid var(--dvna-border);
-  padding: 0.8rem 2rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 40px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -154,7 +154,7 @@
 
 .pedidosventas-btn-secondary:hover {
   border-color: var(--dvna-charcoal);
-  background: #fafafa;
+  background: var(--dvna-pale);
 }
 
 /* Results */
@@ -190,7 +190,7 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: 1px solid var(--dvna-border, #e5e5e5);
+  border: 1px solid var(--dvna-border);
   background: var(--dvna-white, #fff);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -202,8 +202,8 @@
 }
 
 .pedidosventas-action-btn:hover {
-  border-color: var(--dvna-mid, #c8ab96);
-  background: var(--dvna-pale, #f4f4f4);
+  border-color: var(--dvna-mid);
+  background: var(--dvna-pale);
 }
 
 .pedidosventas-pay-btn:hover { border-color: rgba(58,102,72,0.3); background: rgba(58,102,72,0.06); }
@@ -211,7 +211,7 @@
 
 .pedidosventas-pay-full-btn {
   background: rgba(58,102,72,0.1);
-  color: var(--success, #3a6648);
+  color: var(--success);
 }
 .pedidosventas-pay-full-btn:hover { border-color: rgba(58,102,72,0.3); background: rgba(58,102,72,0.16); }
 
@@ -232,24 +232,40 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
   margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 12px;
+  padding: 1.1rem 1rem;
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: 14px;
 }
-.pedidosventas-abonos-summary-item { display: flex; flex-direction: column; align-items: center; text-align: center; }
-.pedidosventas-abonos-summary-label { font-size: 0.75rem; color: var(--dvna-muted); margin-bottom: 0.25rem; }
-.pedidosventas-abonos-summary-value { font-size: 1.1rem; font-weight: 600; color: var(--dvna-charcoal); }
-.pedidosventas-abonos-summary-saldo { color: #f57c00; }
+.pedidosventas-abonos-summary-item {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 0 0.5rem; border-left: 1px solid var(--dvna-border);
+}
+.pedidosventas-abonos-summary-item:first-child { border-left: none; }
+.pedidosventas-abonos-summary-label { font-size: 0.72rem; color: var(--dvna-muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.03em; }
+.pedidosventas-abonos-summary-value { font-size: 1.15rem; font-weight: 600; color: var(--dvna-charcoal); }
+/* ── El saldo es el número que de verdad importa acá (cuánto falta por
+   cobrar) — se destaca más que Total/Pagado para que sea lo primero que se
+   lea, en vez de que los tres pesen exactamente igual. ── */
+.pedidosventas-abonos-summary-saldo { color: #f57c00; font-size: 1.3rem; }
 
 .pedidosventas-abonos-list { margin-bottom: 1.5rem; }
 .pedidosventas-abonos-list-title { font-size: 0.9rem; font-weight: 500; color: var(--dvna-charcoal); margin-bottom: 0.75rem; }
 .pedidosventas-abono-item {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 0.75rem; border: 1px solid var(--dvna-border); border-radius: 8px; margin-bottom: 0.5rem; background: white;
+  padding: 0.75rem 0.9rem; border: 1px solid var(--dvna-border); border-left: 3px solid var(--dvna-border);
+  border-radius: 8px; margin-bottom: 0.5rem; background: var(--dvna-white);
 }
-.pedidosventas-abono-item-info { display: flex; gap: 1rem; }
-.pedidosventas-abono-item-monto { font-weight: 600; color: var(--success); }
+/* ── CORREGIDO: cada fila ahora refleja su propio estado real (antes
+   siempre se pintaba en verde, sin importar si estaba Pendiente/Anulado) — un
+   acento de color a la izquierda + fondo apenas teñido, mismo lenguaje que
+   ya usan los badges de estado en el resto de la pantalla. ── */
+.pedidosventas-abono-item--confirmado { border-left-color: var(--success); background: var(--success-bg); }
+.pedidosventas-abono-item--pendiente  { border-left-color: #f57c00;        background: var(--warning-bg); }
+.pedidosventas-abono-item--anulado    { border-left-color: var(--danger);  background: var(--danger-bg); opacity: 0.85; }
+.pedidosventas-abono-item-info { display: flex; align-items: baseline; gap: 0.9rem; }
+.pedidosventas-abono-item-monto { font-weight: 600; color: var(--dvna-charcoal); }
 .pedidosventas-abono-item-fecha { color: var(--dvna-muted); font-size: 0.85rem; }
 
-.pedidosventas-form-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--dvna-border); }
-.pedidosventas-form-section-title { font-size: 0.9rem; font-weight: 500; color: var(--dvna-charcoal); margin-bottom: 1rem; }
+.pedidosventas-form-section { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--dvna-border); }
+.pedidosventas-form-section-title { font-size: 0.9rem; font-weight: 600; color: var(--dvna-charcoal); margin-bottom: 1rem; }

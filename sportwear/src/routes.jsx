@@ -4,6 +4,7 @@ import { AuthProvider }  from "./shared/contexts/AuthContext";
 import { CartProvider }  from "./shared/contexts/CartContext";
 import { ToastProvider }   from "./shared/contexts/ToastContext";
 import { ConfirmProvider } from "./shared/contexts/ConfirmContext";
+import { ThemeProvider }   from "./shared/contexts/ThemeContext";
 import Layout            from "./shared/components/Layout";
 import PublicLayout      from "./shared/components/PublicLayout";
 import ProtectedRoute    from "./shared/components/ProtectedRoute";
@@ -30,7 +31,6 @@ import Proveedores   from "./features/proveedores/pages/Proveedores";
 import Compras       from "./features/compras/pages/Compras";
 import Pedidos       from "./features/ventas/pages/Pedidos";
 import PedidosVentas from "./features/ventas/pages/PedidosVentas";
-import PagosAbonos   from "./features/pagos/pages/PagosAbonos";
 import NotFound      from "./shared/pages/NotFound";
 
 const MODULOS_CLIENTE = ['dashboard', 'catalogo', 'categorias'];
@@ -58,6 +58,7 @@ const P = ({ k, children }) => (
 
 export default function AppRouter() {
   return (
+    <ThemeProvider>
     <ToastProvider>
     <ConfirmProvider>
     <AuthProvider>
@@ -98,7 +99,6 @@ export default function AppRouter() {
               <Route path="/compras"         element={<P k="compras">        <Compras />       </P>} />
               <Route path="/pedidos"         element={<P k="pedidos">        <Pedidos />       </P>} />
               <Route path="/ventas"          element={<P k="ventas">         <PedidosVentas /> </P>} />
-              <Route path="/pagos"           element={<P k="pagos">          <PagosAbonos />   </P>} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
@@ -109,5 +109,6 @@ export default function AppRouter() {
     </AuthProvider>
     </ConfirmProvider>
     </ToastProvider>
+    </ThemeProvider>
   );
 }

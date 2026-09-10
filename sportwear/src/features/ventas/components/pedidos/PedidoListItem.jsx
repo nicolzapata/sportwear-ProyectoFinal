@@ -1,6 +1,6 @@
 import { getInitials, getAvatarColor } from "../../../../shared/utils/texto";
 import { fmt } from "../../../../shared/utils/publicNavbarHelpers";
-import { getPagoBadge, getPagoTexto, getEstadoBadge, tiempoRelativo } from "../../utils/pedidosHelpers";
+import { getPagoBadge, getPagoTexto, getEstadoPago, getEstadoBadge, tiempoRelativo } from "../../utils/pedidosHelpers";
 import { IconChevronRight } from "../../../../shared/components/Icons";
 
 export default function PedidoListItem({ pedido, seleccionado, onSeleccionar }) {
@@ -31,7 +31,7 @@ export default function PedidoListItem({ pedido, seleccionado, onSeleccionar }) 
         </div>
       </div>
       <div className="ped-item-bottom">
-        <span className={`pedidos-badge ${getPagoBadge(pedido.estado_venta)}`}>{getPagoTexto(pedido.estado_venta)}</span>
+        <span className={`pedidos-badge ${getPagoBadge(getEstadoPago(pedido))}`}>{getPagoTexto(getEstadoPago(pedido))}</span>
         <span className="ped-item-direccion" title={pedido.direccion_entrega}>{pedido.direccion_entrega || '—'}</span>
         <span className="ped-item-tiempo">{tiempoRelativo(pedido.fecha_actualizacion)}</span>
       </div>

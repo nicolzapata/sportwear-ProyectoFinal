@@ -11,7 +11,6 @@ export const MENU_ITEMS = [
   { key: "compras",         path: "/compras",         icon: "📦", label: "Compras", module: "Compras" },
   { key: "pedidos",         path: "/pedidos",         icon: "🚚", label: "Pedidos", divider: true, module: "Pedidos" },
   { key: "ventas",          path: "/ventas",          icon: "💰", label: "Ventas", module: "Ventas" },
-  { key: "pagos",           path: "/pagos",           icon: "💳", label: "Pagos", module: "Pagos" },
 ];
 
 // PERMISOS está deprecado: ahora se utilizan los módulos asignados por el backend.

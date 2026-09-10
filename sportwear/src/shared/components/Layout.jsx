@@ -3,12 +3,14 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { ToastProvider } from "../contexts/ToastContext";
+import { useThemeScope } from "../contexts/ThemeContext";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 import "./Layout.css";
 
 export default function Layout() {
   useAuth();
+  useThemeScope("sw-scope-admin");
   // En móvil representa el drawer del sidebar (cerrado por defecto).
   // En escritorio el sidebar siempre es visible (se expande con hover), así
   // que este estado no le afecta.

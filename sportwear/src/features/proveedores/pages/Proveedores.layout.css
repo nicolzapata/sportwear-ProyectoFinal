@@ -60,7 +60,7 @@
 }
 
 .proveedores-stat-card {
-  background: white;
+  background: var(--dvna-white);
   border-radius: 20px;
   padding: 1.5rem;
   display: flex;
@@ -72,7 +72,7 @@
 }
 
 .proveedores-stat-card:hover {
-  border-color: #ddd;
+  border-color: var(--dvna-border);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
   transform: translateY(-2px);
 }
@@ -80,7 +80,7 @@
 .proveedores-stat-icon {
   width: 56px;
   height: 56px;
-  background: #f8f8f8;
+  background: var(--dvna-icon-primary-bg);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -168,7 +168,7 @@
   border-radius: 40px;
   font-size: 0.9rem;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--dvna-white);
 }
 
 .proveedores-search-input:focus {
@@ -204,11 +204,11 @@
 /* Buttons */
 .proveedores-btn-primary {
   background: var(--brown);
-  color: white;
+  color: var(--sw-secondary);
   border: none;
-  padding: 0.8rem 2rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 40px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -231,12 +231,12 @@
 }
 
 .proveedores-btn-secondary {
-  background: white;
+  background: var(--dvna-white);
   color: var(--dvna-charcoal);
   border: 1px solid var(--dvna-border);
-  padding: 0.8rem 2rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 40px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -244,7 +244,7 @@
 
 .proveedores-btn-secondary:hover {
   border-color: var(--dvna-charcoal);
-  background: #fafafa;
+  background: var(--dvna-pale);
 }
 
 .proveedores-btn-secondary:disabled {
@@ -294,7 +294,7 @@
 .proveedores-contacto-cell,
 .proveedores-telefono-cell {
   font-size: 0.8rem;
-  color: #444;
+  color: var(--dvna-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -304,7 +304,7 @@
 .tabla-ciudad {
   font-family: var(--font-body);
   font-size: 0.8rem;
-  color: #444;
+  color: var(--dvna-muted);
   white-space: nowrap;
 }
 
@@ -318,7 +318,7 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: 1px solid var(--dvna-border, #e5e5e5);
+  border: 1px solid var(--dvna-border);
   background: var(--dvna-white, #fff);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -330,8 +330,8 @@
 }
 
 .proveedores-action-btn:hover {
-  border-color: var(--dvna-mid, #c8ab96);
-  background: var(--dvna-pale, #f4f4f4);
+  border-color: var(--dvna-mid);
+  background: var(--dvna-pale);
 }
 
 /* Ancho controlado de columnas para que no se desborden y obliguen a scroll */

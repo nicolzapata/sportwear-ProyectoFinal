@@ -87,7 +87,7 @@
 
 .usuarios-filter-btn.active {
    background: var(--brown);
-   color: #fff;
+   color: var(--sw-secondary);
 }
 
 .usuarios-filter-btn:not(.active):hover {
@@ -144,9 +144,9 @@
 
 .usuarios-btn-primary {
   background: var(--brown);
-  color: #fff;
+  color: var(--sw-secondary);
   border: none;
-  padding: 0.75rem 1.75rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 40px;
   font-size: 12px;
   font-family: var(--font-body);
@@ -163,7 +163,7 @@
   background: transparent;
   color: var(--dvna-charcoal);
   border: 1px solid var(--dvna-border);
-  padding: 0.75rem 1.75rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 40px;
   font-size: 12px;
   font-family: var(--font-body);
@@ -328,13 +328,13 @@
 }
 .usuarios-form-input.input-error,
 .usuarios-form-select.input-error {
-  border-color: var(--danger, #b83232);
+  border-color: var(--danger);
   box-shadow: 0 0 0 3px rgba(184,50,50,0.08);
 }
 .usuarios-form-error {
   font-family: var(--font-body);
   font-size: 10px;
-  color: var(--danger, #b83232);
+  color: var(--danger);
   margin-top: 2px;
 }
 
@@ -353,7 +353,7 @@
 .usuarios-factura-seccion:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 .usuarios-factura-titulo {
   font-family: var(--font-body); font-size: 0.95rem; font-weight: 600;
-  color: var(--brown, #b49780); margin: 0 0 1rem 0;
+  color: var(--brown); margin: 0 0 1rem 0;
   text-transform: uppercase; letter-spacing: 0.06em;
 }
 
@@ -435,7 +435,7 @@
 }
 .btn-print {
   background: var(--brown);
-  color: #fff;
+  color: var(--sw-secondary);
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;

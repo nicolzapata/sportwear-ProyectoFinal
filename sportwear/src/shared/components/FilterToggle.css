@@ -6,7 +6,7 @@
   display: flex;
   gap: 0;
   background: var(--dvna-white, #fff);
-  border: 1px solid var(--dvna-border, #e5e5e5);
+  border: 1px solid var(--dvna-border);
   border-radius: 40px;
   padding: 4px;
   max-width: 100%;
@@ -20,7 +20,7 @@
   bottom: 4px;
   left: 0;
   border-radius: 40px;
-  background: var(--brown, #b49780);
+  background: var(--brown);
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 0;
 }
@@ -54,4 +54,4 @@
   outline: none;
   box-shadow: none;
 }
-.filter-toggle-btn.active { color: #fff; }
+.filter-toggle-btn.active { color: var(--sw-secondary); }

@@ -115,4 +115,48 @@ const getCreditoCliente = async (req, res) => {
   }
 };
 
-module.exports = { getVentas, getVentaById, crearVenta, cambiarEstado, crearMiPedido, crearCarritoAbandonado, getMisPedidos, getComprobantePDF, getCreditoCliente };
+// ── Pagos/abonos — antes vivían en pagos.controller.js, ahora cuelgan de Ventas. ──
+const getPagosPorVenta = async (req, res) => {
+  try {
+    const data = await ventasService.getPagosPorVenta(req.params.id);
+    res.json(data);
+  } catch (err) {
+    console.error('ERROR getPagosPorVenta:', err);
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+const crearPago = async (req, res) => {
+  try {
+    const data = await ventasService.crearPago(req.body);
+    res.status(201).json(data);
+  } catch (err) {
+    console.error('ERROR crearPago:', err);
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+const pagarCuota = async (req, res) => {
+  try {
+    const data = await ventasService.pagarCuota(req.params.id, req.body);
+    res.json(data);
+  } catch (err) {
+    console.error('ERROR pagarCuota:', err);
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+const pagarTotal = async (req, res) => {
+  try {
+    const data = await ventasService.pagarTotal(req.params.id, req.body);
+    res.json(data);
+  } catch (err) {
+    console.error('ERROR pagarTotal:', err);
+    res.status(err.status || 500).json({ message: err.message });
+  }
+};
+
+module.exports = {
+  getVentas, getVentaById, crearVenta, cambiarEstado, crearMiPedido, crearCarritoAbandonado, getMisPedidos, getComprobantePDF, getCreditoCliente,
+  getPagosPorVenta, crearPago, pagarCuota, pagarTotal,
+};

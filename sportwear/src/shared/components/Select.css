@@ -18,7 +18,7 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0.8rem 1.2rem;
-  border: 1px solid var(--dvna-border, var(--border, #e5e5e5));
+  border: 1px solid var(--dvna-border, var(--border));
   border-radius: 40px;
   background: var(--dvna-white, #fff);
   font-family: var(--font-body, inherit);
@@ -74,7 +74,7 @@
   max-height: 260px;
   overflow-y: auto;
   background: var(--dvna-white, #fff);
-  border: 1px solid var(--dvna-border, var(--border, #e5e5e5));
+  border: 1px solid var(--dvna-border, var(--border));
   border-radius: 22px;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
 }
@@ -93,12 +93,12 @@
 }
 
 .ui-select-option:hover {
-  background: var(--dvna-pale, var(--border, #f4f4f4));
+  background: var(--dvna-pale, var(--border));
 }
 
 .ui-select-option.is-selected {
   background: var(--brown, var(--primary-dark, #8b5e3c));
-  color: #fff;
+  color: var(--sw-secondary);
   font-weight: 500;
 }
 

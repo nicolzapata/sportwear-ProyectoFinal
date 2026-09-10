@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useToast } from "../../../shared/contexts/ToastContext";
+import { useThemeScope } from "../../../shared/contexts/ThemeContext";
 import api from "../../../shared/services/api";
 // Catalogo.css se dividió por sección para facilitar el mantenimiento; el
 // orden de los imports preserva la cascada del archivo original.
@@ -18,6 +19,12 @@ import CatalogoFooter from "../components/catalogo/CatalogoFooter";
 
 // ── Página principal ──────────────────────────────────────────
 export default function Catalogo() {
+  // Modo oscuro del catálogo público — aislado en su propio scope
+  // ("sw-scope-catalogo") para poder quitarlo fácilmente más adelante sin
+  // afectar admin/checkout/carrito/auth: basta con eliminar esta línea, la
+  // condición del botón en PublicNavbar.jsx y el bloque correspondiente en
+  // src/shared/styles/theme.css.
+  useThemeScope("sw-scope-catalogo");
   const { usuario } = useAuth();
   const esAdmin     = usuario?.rol === "Administrador" || usuario?.rol === "Admin";
   const { busqueda, setBusqueda, filtroCategoria, setFiltroCategoria, setCategorias } = useOutletContext();

@@ -6,7 +6,7 @@ import { IconX, IconEdit } from "./Icons";
 import "./DetallePanel.css";
 
 export default function DetallePanel({
-  iniciales, avatarColor = "var(--dvna-circle, #b49780)",
+  iniciales, avatarColor = "var(--dvna-circle)",
   nombre, subtitulo, secciones, children, onClose, onEditar, editarLabel = "Editar", footer,
 }) {
   return (

@@ -9,7 +9,7 @@
 .pedidos-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--dvna-muted); }
 .pedidos-search-input {
   width: 100%; padding: 0.8rem 1rem 0.8rem 2.5rem;
-  border: 1px solid var(--dvna-border); border-radius: 40px; font-size: 0.9rem; background: white;
+  border: 1px solid var(--dvna-border); border-radius: 40px; font-size: 0.9rem; background: var(--dvna-white);
 }
 .pedidos-search-clear {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
@@ -43,13 +43,13 @@
 
 .pedidos-action-cell { display: flex; gap: 6px; align-items: center; }
 .pedidos-action-btn {
-  width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--dvna-border, #e5e5e5); background: var(--dvna-white, #fff);
+  width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--dvna-border); background: var(--dvna-white, #fff);
   cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--dvna-muted);
   transition: all 0.2s ease; flex-shrink: 0;
 }
-.pedidos-action-btn:hover { border-color: var(--dvna-mid, #c8ab96); background: var(--dvna-pale, #f4f4f4); }
+.pedidos-action-btn:hover { border-color: var(--dvna-mid); background: var(--dvna-pale); }
 .pedidos-action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.pedidos-action-btn:disabled:hover { border-color: var(--dvna-border, #e5e5e5); background: var(--dvna-white, #fff); }
+.pedidos-action-btn:disabled:hover { border-color: var(--dvna-border); background: var(--dvna-white, #fff); }
 
 /* ── Ancho fijo de la columna "Envío" (7ª columna) para que no empuje
      el resto de la tabla cuando el texto del estado cambia de largo ── */
@@ -63,25 +63,25 @@
 
 .pedidos-estado-trigger {
   display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;
-  border: 1px solid var(--dvna-border); background: white; border-radius: 20px;
+  border: 1px solid var(--dvna-border); background: var(--dvna-white); border-radius: 20px;
   padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 500; cursor: pointer;
   transition: all 0.15s ease;
   min-width: 150px;      /* ancho fijo: evita que la tabla "salte" al cambiar de estado */
   white-space: nowrap;
 }
 .pedidos-estado-trigger:disabled { cursor: default; opacity: 0.85; }
-.pedidos-estado-trigger:not(:disabled):hover { border-color: var(--dvna-charcoal); background: #fafafa; }
+.pedidos-estado-trigger:not(:disabled):hover { border-color: var(--dvna-charcoal); background: var(--dvna-pale); }
 
-.pedidos-estado-trigger.pedidos-badge-active   { border-color: #bfe0c4; color: var(--success); background: #f0f9f1; }
-.pedidos-estado-trigger.pedidos-badge-pending  { border-color: #ffd7b5; color: #b96422; background: #fff6ee; }
-.pedidos-estado-trigger.pedidos-badge-info     { border-color: #bcd8f2; color: #1976d2; background: #eff6fd; }
-.pedidos-estado-trigger.pedidos-badge-inactive { border-color: #ddd; color: #757575; background: #f7f7f7; }
+.pedidos-estado-trigger.pedidos-badge-active   { border-color: #bfe0c4; color: var(--success); background: var(--success-bg); }
+.pedidos-estado-trigger.pedidos-badge-pending  { border-color: #ffd7b5; color: #b96422; background: var(--warning-bg); }
+.pedidos-estado-trigger.pedidos-badge-info     { border-color: #bcd8f2; color: #1976d2; background: var(--info-bg); }
+.pedidos-estado-trigger.pedidos-badge-inactive { border-color: var(--dvna-border); color: var(--dvna-muted); background: var(--dvna-pale); }
 
 /* El panel se posiciona con `style` inline (position: fixed, top/left) desde JS,
    así que aquí solo van estilos visuales, no de posición. */
 .pedidos-estado-panel {
   z-index: 999;
-  background: white; border: 1px solid var(--dvna-border); border-radius: 14px;
+  background: var(--dvna-white); border: 1px solid var(--dvna-border); border-radius: 14px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.14);
   padding: 0.4rem;
   display: flex; flex-direction: column; gap: 2px;
@@ -106,18 +106,18 @@
 .pedidos-estado-dot {
   width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  border: 1.5px solid #ddd; color: white;
+  border: 1.5px solid var(--dvna-border); color: var(--dvna-white);
 }
 .pedidos-estado-item.done .pedidos-estado-dot    { background: var(--success); border-color: var(--success); }
 .pedidos-estado-item.current .pedidos-estado-dot { background: var(--dvna-charcoal); border-color: var(--dvna-charcoal); }
 
-.pedidos-estado-divider { height: 1px; background: #eee; margin: 4px 2px; }
+.pedidos-estado-divider { height: 1px; background: var(--dvna-border); margin: 4px 2px; }
 
 .pedidos-estado-item-cancelar { color: var(--danger); }
-.pedidos-estado-item-cancelar.clickable:hover { background: #fbeaea; }
+.pedidos-estado-item-cancelar.clickable:hover { background: var(--danger-bg); }
 .pedidos-estado-item-cancelar .pedidos-estado-dot { border-color: #e0b3b3; }
 
-.pedidos-estado-cancelado-msg { padding: 0.6rem; font-size: 0.8rem; color: #757575; text-align: center; }
+.pedidos-estado-cancelado-msg { padding: 0.6rem; font-size: 0.8rem; color: var(--dvna-muted); text-align: center; }
 
 /* ── Modal "ver detalle" tipo factura (panel único, sin stepper) ── */
 .pedidos-modal-overlay {
@@ -126,7 +126,7 @@
   display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1.5rem;
 }
 .pedidos-modal {
-  background: white; border-radius: 24px; width: 90%; max-width: 600px;
+  background: var(--dvna-white); border-radius: 24px; width: 90%; max-width: 600px;
   max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;
   box-shadow: 0 25px 50px rgba(0,0,0,0.2);
   border: 1px solid var(--dvna-pale);
@@ -134,7 +134,7 @@
 .pedidos-modal-factura { max-width: 650px; }
 .pedidos-modal-header {
   padding: 1.5rem; border-bottom: 1px solid var(--dvna-pale); display: flex;
-  justify-content: space-between; align-items: center; background: #fafafa;
+  justify-content: space-between; align-items: center; background: var(--dvna-pale);
   flex-shrink: 0;
 }
 .pedidos-modal-title { font-size: 1.2rem; font-weight: 500; color: var(--dvna-charcoal); margin: 0; }
@@ -146,10 +146,10 @@
 .pedidos-modal-close:hover { background: var(--dvna-pale); border-color: var(--dvna-muted); }
 .pedidos-modal-body { padding: 1.5rem; overflow-y: auto; flex: 1; min-height: 0; }
 .pedidos-factura-body {}
-.pedidos-factura-seccion { padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px dashed #e5e5e5; }
+.pedidos-factura-seccion { padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px dashed var(--dvna-border); }
 .pedidos-factura-seccion:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 .pedidos-factura-titulo {
-  font-size: 0.95rem; font-weight: 600; color: var(--brown, #b49780); margin: 0 0 1rem 0;
+  font-size: 0.95rem; font-weight: 600; color: var(--brown); margin: 0 0 1rem 0;
   text-transform: uppercase; letter-spacing: 0.06em;
 }
 .pedidos-detalle-item-linea {
@@ -194,22 +194,22 @@
   border-radius: 20px;
   padding: 2px 8px;
 }
-.pedidos-detalle-tag-ref { color: var(--brown, #b49780); font-weight: 600; border-color: rgba(180,151,128,0.35); }
+.pedidos-detalle-tag-ref { color: var(--brown); font-weight: 600; border-color: rgba(180,151,128,0.35); }
 .pedidos-detalle-producto-cant { font-size: 0.82rem; font-weight: 500; color: var(--dvna-charcoal); white-space: nowrap; flex-shrink: 0; }
 .pedidos-modal-footer {
   padding: 1.5rem; border-top: 1px solid var(--dvna-pale); display: flex; justify-content: flex-end;
-  background: #fafafa; flex-shrink: 0;
+  background: var(--dvna-pale); flex-shrink: 0;
 }
 .pedidos-btn-secondary {
-  background: white; color: var(--dvna-charcoal); border: 1px solid var(--dvna-border); padding: 0.7rem 1.6rem;
+  background: var(--dvna-white); color: var(--dvna-charcoal); border: 1px solid var(--dvna-border); padding: 0.7rem 1.6rem;
   border-radius: 40px; font-size: 0.9rem; font-weight: 500; cursor: pointer;
 }
-.pedidos-btn-secondary:hover { border-color: var(--dvna-charcoal); background: #fafafa; }
+.pedidos-btn-secondary:hover { border-color: var(--dvna-charcoal); background: var(--dvna-pale); }
 
 /* ── Skeleton de carga (mientras cargan los pedidos) ── */
 .pedidos-skeleton-cell {
   height: 14px; border-radius: 6px; width: 80%;
-  background: linear-gradient(90deg, var(--dvna-pale) 25%, #f7f7f7 37%, var(--dvna-pale) 63%);
+  background: linear-gradient(90deg, var(--dvna-pale) 25%, var(--dvna-border) 37%, var(--dvna-pale) 63%);
   background-size: 400% 100%;
   animation: pedidos-shimmer 1.4s ease infinite;
 }
@@ -221,7 +221,7 @@
 /* ── Banner de error ── */
 .pedidos-error-banner {
   display: flex; align-items: center; gap: 0.5rem;
-  background: #fdecea; border: 1px solid #f0b8b3; color: var(--danger);
+  background: var(--danger-bg); border: 1px solid #f0b8b3; color: var(--danger);
   padding: 1rem 1.2rem; border-radius: 12px; font-size: 0.85rem; margin-top: 1rem;
 }
 

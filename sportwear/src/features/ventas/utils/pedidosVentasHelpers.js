@@ -61,3 +61,17 @@ export const getEstadoBadge = (estado) => {
     default:         return "pedidosventas-badge-info";
   }
 };
+
+// ── CORREGIDO: el badge de cada fila del historial de pagos (AbonosModal)
+// estaba hardcodeado en verde ("active") sin importar el estado real de esa
+// fila — un abono "Pendiente" se veía igual de verde que uno "Confirmado".
+// Esto es para "PagosAbonos.estado" (Pendiente/Confirmado/Anulado), distinto
+// de "Ventas.estado" (donde "Confirmado" significa otra cosa — ver
+// getEstadoBadge arriba), por eso es una función aparte. ──
+export const getEstadoAbonoBadge = (estado) => {
+  switch (estado) {
+    case "Confirmado": return "pedidosventas-badge-active";
+    case "Anulado":     return "pedidosventas-badge-inactive";
+    default:             return "pedidosventas-badge-pending"; // Pendiente
+  }
+};

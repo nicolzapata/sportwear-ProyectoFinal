@@ -14,7 +14,7 @@
 }
 
 .colores-modal {
-  background: white;
+  background: var(--dvna-white);
   border-radius: 32px;
   width: 90%;
   max-width: 500px;
@@ -30,7 +30,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fafafa;
+  background: var(--dvna-pale);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -74,7 +74,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  background: #fafafa;
+  background: var(--dvna-pale);
   position: sticky;
   bottom: 0;
   z-index: 10;
@@ -109,7 +109,7 @@
   border-radius: 12px;
   font-size: 0.9rem;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--dvna-white);
 }
 
 .colores-form-input:focus,
@@ -145,7 +145,7 @@
 .colores-preview {
   margin-top: 1.5rem;
   padding: 1rem;
-  background: #fafafa;
+  background: var(--dvna-pale);
   border-radius: 16px;
   border: 1px solid var(--dvna-pale);
 }

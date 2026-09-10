@@ -268,7 +268,7 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   
-  color: var(--dvna-white);
+  color: var(--sw-secondary);
   background: var(--dvna-circle);
   border: none;
   border-radius: var(--r);

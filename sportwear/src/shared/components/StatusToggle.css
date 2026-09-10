@@ -27,7 +27,7 @@
   position: absolute;
   inset: 1px;
   border-radius: 999px;
-  background: var(--dvna-light, #e8e0d8);
+  background: var(--dvna-light);
   transition: background-color 0.2s ease;
 }
 
@@ -39,7 +39,7 @@
 }
 
 .status-toggle-btn.inactivo .status-toggle-track {
-  background: var(--dvna-light, #e8e0d8);
+  background: var(--dvna-light);
 }
 
 .status-toggle-thumb {

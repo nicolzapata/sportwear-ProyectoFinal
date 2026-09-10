@@ -13,7 +13,7 @@ import "./Login.css";
 const IconMail = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
     <path d="M2 4l6 5 6-5M2 4h12v9H2V4z"
-      stroke="#b49780" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      stroke="var(--dvna-circle)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 

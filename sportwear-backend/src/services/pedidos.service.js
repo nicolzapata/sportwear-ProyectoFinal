@@ -44,6 +44,7 @@ const getPedidos = async ({ page, limit, q, estado } = {}) => {
   const result = await pool.query(`
     SELECT p.id_pedido, p.id_venta, p.estado_pedido, p.fecha_actualizacion,
            v.total, v.fecha AS fecha_venta, v.direccion_entrega, v.estado AS estado_venta, v.metodo_pago, v.origen,
+           (SELECT COALESCE(SUM(pa.monto), 0) FROM "PagosAbonos" pa WHERE pa.id_venta = v.id_venta AND pa.estado = 'Confirmado') AS total_pagado,
            c.nombre AS cliente, c.documento AS cliente_documento, c.email AS cliente_email
            ${paginar ? ', COUNT(*) OVER() AS total_count' : ''}
     FROM "Pedidos" p
@@ -81,6 +82,7 @@ const getPedidoById = async (id_pedido) => {
            v.total, v.subtotal, v.descuento, v.impuesto, v.tipo_pago, v.num_cuotas,
            v.fecha AS fecha_venta, v.direccion_entrega, v.observaciones,
            v.estado AS estado_venta, v.metodo_pago, v.origen,
+           (SELECT COALESCE(SUM(pa.monto), 0) FROM "PagosAbonos" pa WHERE pa.id_venta = v.id_venta AND pa.estado = 'Confirmado') AS total_pagado,
            c.nombre AS cliente, c.documento AS cliente_documento, c.email AS cliente_email
     FROM "Pedidos" p
     JOIN "Ventas" v    ON p.id_venta = v.id_venta
@@ -237,13 +239,13 @@ const cambiarEstadoPedido = async (id_pedido, nuevoEstado, id_usuario) => {
         if (!primeraConfirmada) {
           throw {
             status: 400,
-            message: `Este pedido es a cuotas y la primera cuota todavía no está confirmada. Confírmala desde Pagos antes de avanzar el pedido.`,
+            message: `Este pedido es a cuotas y la primera cuota todavía no está confirmada. Usa "Confirmar pago" en el detalle del pedido antes de avanzarlo.`,
           };
         }
       } else {
         throw {
           status: 400,
-          message: `Este pedido se paga por ${metodo_pago || 'un método distinto a contraentrega'} y el pago aún no está confirmado. Confírmalo desde Pagos antes de avanzar el pedido.`,
+          message: `Este pedido se paga por ${metodo_pago || 'un método distinto a contraentrega'} y el pago aún no está confirmado. Usa "Confirmar pago" en el detalle del pedido antes de avanzarlo.`,
         };
       }
     }
@@ -263,7 +265,7 @@ const cambiarEstadoPedido = async (id_pedido, nuevoEstado, id_usuario) => {
       if (!primeraConfirmada) {
         throw {
           status: 400,
-          message: `Este pedido es a cuotas y la primera cuota todavía no está confirmada. Confírmala desde Pagos antes de marcarlo como Entregado.`,
+          message: `Este pedido es a cuotas y la primera cuota todavía no está confirmada. Usa "Confirmar pago" en el detalle del pedido antes de marcarlo como Entregado.`,
         };
       }
     }

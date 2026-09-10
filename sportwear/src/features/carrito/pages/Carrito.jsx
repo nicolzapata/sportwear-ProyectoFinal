@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../../shared/contexts/CartContext";
 import { useAuth } from "../../../shared/contexts/AuthContext";
+import { useThemeScope } from "../../../shared/contexts/ThemeContext";
 import api from "../../../shared/services/api";
 import { opcionesCuotasDisponibles, calcularFechasVencimiento } from "../../../shared/utils/cuotas";
 import CuotasCalendario from "../../checkout/components/checkout/CuotasCalendario";
@@ -16,6 +17,7 @@ const fmt = (n) =>
   });
 
 export default function Carrito() {
+  useThemeScope("sw-scope-carrito");
   const { items, total, totalItems, actualizarCantidad, eliminarItem, vaciarCarrito } = useCart();
   const { usuario } = useAuth();
   const navigate    = useNavigate();

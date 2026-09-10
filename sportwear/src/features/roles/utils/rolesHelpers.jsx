@@ -43,7 +43,7 @@ const DEFAULT_ICON = (
 export const PALETAS = ['#f5ede6', '#f0ebe4', '#e8f0e8', '#ede8f5', '#f5f0e0', '#e8f0f5'];
 
 export const MODULOS_FALLBACK = [
-  "Dashboard", "Usuarios", "Clientes", "Roles", "Productos", "Categorias", "Colores", "Proveedores", "Compras", "Pedidos", "Ventas", "Pagos",
+  "Dashboard", "Usuarios", "Clientes", "Roles", "Productos", "Categorias", "Colores", "Proveedores", "Compras", "Pedidos", "Ventas",
 ];
 
 export const esRolProtegido = (nombre = "") => {

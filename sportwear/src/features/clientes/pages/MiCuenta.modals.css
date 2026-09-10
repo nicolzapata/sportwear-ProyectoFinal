@@ -25,11 +25,11 @@
   font-size: 9px; font-weight: 600; letter-spacing: 0.04em;
   text-transform: none; padding: 3px 8px; border-radius: 99px;
 }
-.badge.exito      { color: #3a6648; background: #e6f0ea; }
-.badge.pendiente  { color: #7a5500; background: #f5ecd6; }
-.badge.error      { color: #b83232; background: #f5e0e0; }
-.badge.info       { color: #1a4f7a; background: #ddeaf5; }
-.badge-info       { color: #1a4f7a; background: #ddeaf5; border-radius: 99px; padding: 3px 8px; font-size: 9px; }
+.badge.exito      { color: var(--success); background: var(--success-bg); }
+.badge.pendiente  { color: var(--warning); background: var(--warning-bg); }
+.badge.error      { color: var(--danger); background: var(--danger-bg); }
+.badge.info       { color: var(--info); background: var(--info-bg); }
+.badge-info       { color: var(--info); background: var(--info-bg); border-radius: 99px; padding: 3px 8px; font-size: 9px; }
 .badge-secondary  { color: var(--dvna-muted); background: var(--dvna-pale); border-radius: 99px; padding: 3px 8px; font-size: 9px; }
 
 /* ── Botones de acción ── */
@@ -39,10 +39,10 @@
   font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 600;
   cursor: pointer; white-space: nowrap; border: 1.5px solid transparent;
 }
-.tbl-action-btn--pay    { background: var(--brown); color: #fff; border-color: #1a1a1a; }
-.tbl-action-btn--detail { background: #fff; color: #1a1a1a; border-color: #e5e5e5; }
-.tbl-action-btn--view   { background: #fff; color: #1a1a1a; border-color: #e5e5e5; }
-.tbl-disabled           { font-size: 11px; color: #aaa; font-style: italic; }
+.tbl-action-btn--pay    { background: var(--brown); color: var(--sw-secondary); border-color: var(--dvna-charcoal); }
+.tbl-action-btn--detail { background: var(--dvna-white); color: var(--dvna-charcoal); border-color: var(--dvna-border); }
+.tbl-action-btn--view   { background: var(--dvna-white); color: var(--dvna-charcoal); border-color: var(--dvna-border); }
+.tbl-disabled           { font-size: 11px; color: var(--dvna-muted); font-style: italic; }
 
 /* ── Empty state ── */
 .empty-state { text-align: center; padding: 60px 24px; }
@@ -59,7 +59,7 @@
 .btn-primary {
   font-family: 'DM Sans', system-ui, sans-serif !important;
   font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: none;
-  color: #fff !important; background: var(--brown) !important;
+  color: var(--sw-secondary) !important; background: var(--brown) !important;
   border: none !important; border-radius: 4px; padding: 10px 24px;
   cursor: pointer; text-decoration: none; display: inline-block;
   box-shadow: none !important; transition: background 0.2s;
@@ -70,7 +70,7 @@
 /* ── Toast ── */
 .dvna-toast {
   position: fixed; top: 20px; right: 20px; z-index: 99999;
-  background: var(--brown); color: #fff; padding: 12px 20px;
+  background: var(--brown); color: var(--sw-secondary); padding: 12px 20px;
   border-radius: 10px; font-family: 'Jost', sans-serif;
   font-size: 13px; font-weight: 500;
   box-shadow: 0 8px 30px rgba(0,0,0,0.2);

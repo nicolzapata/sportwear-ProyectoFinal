@@ -107,9 +107,9 @@
 .gi-chip-upload.active {
   background: var(--brown);
   border-color: var(--brown);
-  color: #fff;
+  color: var(--sw-secondary);
 }
-.gi-chip-upload.active .gi-chip-count { color: rgba(255,255,255,0.85); }
+.gi-chip-upload.active .gi-chip-count { color: var(--sw-secondary); opacity: 0.75; }
 .gi-chip-count {
   color: var(--dvna-muted);
   font-size: 10px;
@@ -273,7 +273,7 @@
   font-family: var(--font-body);
   font-size: 9px;
   font-weight: 700;
-  color: #fff;
+  color: var(--sw-secondary);
   background: var(--dvna-circle);
   border-radius: 10px;
   padding: 2px 6px;

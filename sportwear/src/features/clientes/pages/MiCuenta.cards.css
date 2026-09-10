@@ -42,7 +42,7 @@
 
 /* ── Card base ── */
 .mc-card {
-  background: white;
+  background: var(--dvna-white);
   border-radius: 12px;
   padding: 22px;
   border: 0.5px solid var(--dvna-border);
@@ -111,7 +111,7 @@
   gap: 12px;
   padding: 14px 16px;
   border-radius: 12px;
-  background: var(--dvna-bg2, #faf9f7);
+  background: var(--dvna-bg2, var(--dvna-pale));
   border: 0.5px solid var(--dvna-border);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -131,8 +131,8 @@
   flex-shrink: 0;
 }
 .mc-estado-icon svg { width: 17px; height: 17px; stroke: currentColor; }
-.mc-estado-icon-pagado    { background: rgba(58,102,72,0.1);  color: #3a6648; }
-.mc-estado-icon-pendiente { background: rgba(184,50,50,0.1);  color: #b83232; }
+.mc-estado-icon-pagado    { background: var(--success-bg);  color: var(--success); }
+.mc-estado-icon-pendiente { background: var(--danger-bg);  color: var(--danger); }
 
 .mc-estado-item > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .mc-estado-label {
@@ -150,8 +150,8 @@
   line-height: 1.2;
   white-space: nowrap;
 }
-.mc-estado-pagado    { color: #3a6648; }
-.mc-estado-pendiente { color: #b83232; }
+.mc-estado-pagado    { color: var(--success); }
+.mc-estado-pendiente { color: var(--danger); }
 
 /* ── Perfil ── */
 .profile-top-row {
@@ -343,7 +343,7 @@
 .mc-pedido-card-pagado {
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 11px;
-  color: #3a6648;
+  color: var(--success);
 }
 .mc-pedido-card-acciones {
   display: flex;

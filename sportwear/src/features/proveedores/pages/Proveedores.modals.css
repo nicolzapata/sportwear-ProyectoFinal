@@ -17,7 +17,7 @@
 }
 
 .proveedores-modal {
-  background: white;
+  background: var(--dvna-white);
   border-radius: 32px;
   width: 90%;
   max-width: 600px;
@@ -44,7 +44,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fafafa;
+  background: var(--dvna-pale);
   flex-shrink: 0;
 }
 
@@ -89,7 +89,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  background: #fafafa;
+  background: var(--dvna-pale);
   flex-shrink: 0;
 }
 
@@ -183,7 +183,7 @@
 .proveedores-factura-seccion {
   padding-bottom: 1.5rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px dashed #e5e5e5;
+  border-bottom: 1px dashed var(--dvna-border);
 }
 .proveedores-factura-seccion:last-child {
   border-bottom: none;
@@ -202,7 +202,7 @@
 .proveedores-factura-titulo {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--brown, #b49780);
+  color: var(--brown);
   margin: 0 0 1rem 0;
   text-transform: uppercase;
   letter-spacing: 0.06em;

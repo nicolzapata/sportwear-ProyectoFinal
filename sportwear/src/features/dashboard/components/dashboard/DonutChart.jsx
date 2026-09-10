@@ -1,9 +1,12 @@
 import { useEffect, useRef } from "react";
-import { loadChartJs, CHARCOAL, BROWN, LIGHT } from "../../utils/dashboardHelpers";
+import { loadChartJs, getChartPalette } from "../../utils/dashboardHelpers";
+import { useTheme } from "../../../../shared/contexts/ThemeContext";
 
 export default function DonutChart({ pagado, pendiente, cancelado }) {
   const canvasRef = useRef(null);
   const chartRef  = useRef(null);
+  const { theme } = useTheme();
+  const paleta = getChartPalette(theme);
   const total = pagado + pendiente + cancelado || 1;
   const pct   = Math.round((pagado / total) * 100);
 
@@ -17,7 +20,7 @@ export default function DonutChart({ pagado, pendiente, cancelado }) {
         data: {
           datasets: [{
             data: [pagado, pendiente, cancelado],
-            backgroundColor: [CHARCOAL, BROWN, LIGHT],
+            backgroundColor: paleta.donut,
             borderWidth: 0,
             hoverOffset: 4,
           }],
@@ -31,7 +34,7 @@ export default function DonutChart({ pagado, pendiente, cancelado }) {
       });
     });
     return () => { destroyed = true; chartRef.current?.destroy(); };
-  }, [pagado, pendiente, cancelado]);
+  }, [pagado, pendiente, cancelado, theme]);
 
   return (
     <div className="donut-wrap">
@@ -43,9 +46,9 @@ export default function DonutChart({ pagado, pendiente, cancelado }) {
         </div>
       </div>
       <div className="donut-legend">
-        <span><span className="donut-legend-dot" style={{ background: CHARCOAL }} />Pagado</span>
-        <span><span className="donut-legend-dot" style={{ background: BROWN }} />Pendiente</span>
-        <span><span className="donut-legend-dot" style={{ background: LIGHT }} />Cancelado</span>
+        <span><span className="donut-legend-dot" style={{ background: paleta.donut[0] }} />Pagado</span>
+        <span><span className="donut-legend-dot" style={{ background: paleta.donut[1] }} />Pendiente</span>
+        <span><span className="donut-legend-dot" style={{ background: paleta.donut[2] }} />Cancelado</span>
       </div>
     </div>
   );

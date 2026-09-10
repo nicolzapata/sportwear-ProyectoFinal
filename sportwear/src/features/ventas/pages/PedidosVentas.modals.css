@@ -10,7 +10,7 @@
 }
 
 .pedidosventas-modal {
-  background: white;
+  background: var(--dvna-white);
   border-radius: 32px;
   width: 90%;
   max-width: 600px;
@@ -36,7 +36,7 @@
   padding: 2px 0; min-width: 130px; font-family: inherit;
 }
 .pedidosventas-pago-bar-track {
-  width: 100%; height: 4px; border-radius: 2px; background: #f0ede8; overflow: hidden;
+  width: 100%; height: 4px; border-radius: 2px; background: var(--dvna-pale); overflow: hidden;
 }
 .pedidosventas-pago-bar-fill {
   height: 100%; background: var(--success); border-radius: 2px;
@@ -78,22 +78,22 @@
 
 .pedidosventas-estado-trigger {
   display: inline-flex; align-items: center; justify-content: space-between; gap: 6px;
-  border: 1px solid var(--dvna-border); background: white; border-radius: 20px;
+  border: 1px solid var(--dvna-border); background: var(--dvna-white); border-radius: 20px;
   padding: 0.4rem 0.9rem; font-size: 0.8rem; font-weight: 500; cursor: pointer;
   transition: all 0.15s ease;
   min-width: 140px;
   white-space: nowrap;
 }
 .pedidosventas-estado-trigger:disabled { cursor: default; opacity: 0.85; }
-.pedidosventas-estado-trigger:not(:disabled):hover { border-color: var(--dvna-charcoal); background: #fafafa; }
+.pedidosventas-estado-trigger:not(:disabled):hover { border-color: var(--dvna-charcoal); background: var(--dvna-pale); }
 
-.pedidosventas-estado-trigger.pedidosventas-badge-active   { border-color: #bfe0c4; color: var(--success); background: #f0f9f1; }
-.pedidosventas-estado-trigger.pedidosventas-badge-pending  { border-color: #ffd7b5; color: #b96422; background: #fff6ee; }
-.pedidosventas-estado-trigger.pedidosventas-badge-inactive { border-color: #ddd; color: #757575; background: #f7f7f7; }
+.pedidosventas-estado-trigger.pedidosventas-badge-active   { border-color: #bfe0c4; color: var(--success); background: var(--success-bg); }
+.pedidosventas-estado-trigger.pedidosventas-badge-pending  { border-color: #ffd7b5; color: #b96422; background: var(--warning-bg); }
+.pedidosventas-estado-trigger.pedidosventas-badge-inactive { border-color: var(--dvna-border); color: var(--dvna-muted); background: var(--dvna-pale); }
 
 .pedidosventas-estado-panel {
   z-index: 999;
-  background: white; border: 1px solid var(--dvna-border); border-radius: 14px;
+  background: var(--dvna-white); border: 1px solid var(--dvna-border); border-radius: 14px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.14);
   padding: 0.4rem;
   display: flex; flex-direction: column; gap: 2px;
@@ -118,23 +118,23 @@
 .pedidosventas-estado-dot {
   width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  border: 1.5px solid #ddd; color: white;
+  border: 1.5px solid var(--dvna-border); color: var(--dvna-white);
 }
 .pedidosventas-estado-item.done .pedidosventas-estado-dot    { background: var(--success); border-color: var(--success); }
 .pedidosventas-estado-item.current .pedidosventas-estado-dot { background: var(--dvna-charcoal); border-color: var(--dvna-charcoal); }
 
-.pedidosventas-estado-divider { height: 1px; background: #eee; margin: 4px 2px; }
+.pedidosventas-estado-divider { height: 1px; background: var(--dvna-border); margin: 4px 2px; }
 
 .pedidosventas-estado-item-cancelar { color: var(--danger); }
-.pedidosventas-estado-item-cancelar.clickable:hover { background: #fbeaea; }
+.pedidosventas-estado-item-cancelar.clickable:hover { background: var(--danger-bg); }
 .pedidosventas-estado-item-cancelar .pedidosventas-estado-dot { border-color: #e0b3b3; }
 
-.pedidosventas-estado-anulado-msg { padding: 0.6rem; font-size: 0.8rem; color: #757575; text-align: center; }
+.pedidosventas-estado-anulado-msg { padding: 0.6rem; font-size: 0.8rem; color: var(--dvna-muted); text-align: center; }
 
 .pedidosventas-credito-banner {
   grid-column: 1 / -1;
   display: flex; flex-wrap: wrap; gap: 1rem;
-  background: #f7f5f2; border: 1px solid #eee; border-radius: 12px;
+  background: var(--dvna-pale); border: 1px solid var(--dvna-border); border-radius: 12px;
   padding: 0.7rem 1rem; margin-bottom: 1rem; font-size: 0.8rem; color: var(--dvna-muted);
 }
 .pedidosventas-credito-ok { color: var(--success); }
@@ -142,7 +142,7 @@
 
 .pedidosventas-monto-fijo {
   padding: 0.8rem 1rem; border: 1px solid var(--dvna-border); border-radius: 12px;
-  font-size: 0.9rem; background: #f7f5f2; color: var(--dvna-charcoal); font-weight: 600;
+  font-size: 0.9rem; background: var(--dvna-pale); color: var(--dvna-charcoal); font-weight: 600;
 }
 
 /* Modal ampliado tipo factura, un solo panel sin pasos (igual a Proveedores/Pagos) */
@@ -151,13 +151,13 @@
 .pedidosventas-factura-seccion {
   padding-bottom: 1.5rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px dashed #e5e5e5;
+  border-bottom: 1px dashed var(--dvna-border);
 }
 .pedidosventas-factura-seccion:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 .pedidosventas-factura-titulo {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--brown, #b49780);
+  color: var(--brown);
   margin: 0 0 1rem 0;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -175,7 +175,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #fafafa;
+  background: var(--dvna-pale);
   flex-shrink: 0;
 }
 
@@ -208,6 +208,6 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 1rem;
-  background: #fafafa;
+  background: var(--dvna-pale);
   flex-shrink: 0;
 }

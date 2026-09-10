@@ -48,7 +48,7 @@
   padding: 12px 16px;
   background: rgba(184,50,50,0.06);
   border: 1px solid rgba(184,50,50,0.2);
-  border-radius: 10px; color: #b83232;
+  border-radius: 10px; color: var(--danger);
   font-family: var(--font-body); font-size: 13px; line-height: 1.5;
 }
 .roles-confirm-warning svg { flex-shrink: 0; margin-top: 1px; }
@@ -58,7 +58,7 @@
   padding: 12px 16px;
   background: rgba(58,102,72,0.06);
   border: 1px solid rgba(58,102,72,0.2);
-  border-radius: 10px; color: #3a6648;
+  border-radius: 10px; color: var(--success);
   font-family: var(--font-body); font-size: 13px;
 }
 
@@ -115,7 +115,7 @@
   display: inline-flex; align-items: center;
   padding: 0.5rem 1rem;
   border-radius: 40px;
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   background: var(--dvna-white, #fff);
   font-family: var(--font-body); font-size: 0.8rem; font-weight: 500;
   color: var(--dvna-muted, #999);
@@ -124,13 +124,13 @@
   transition: all 0.15s ease;
 }
 .roles-filter-btn:hover {
-  border-color: var(--dvna-circle, #b49780);
-  color: var(--dvna-charcoal, #1a1a1a);
+  border-color: var(--dvna-circle);
+  color: var(--dvna-charcoal);
 }
 .roles-filter-btn.active {
-  background: var(--dvna-circle, #b49780);
-  border-color: var(--dvna-circle, #b49780);
-  color: #fff;
+  background: var(--dvna-circle);
+  border-color: var(--dvna-circle);
+  color: var(--sw-secondary);
 }
 
 /* ── Vista de tabla ── */
@@ -154,13 +154,13 @@
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 500;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
 }
 .roles-tabla-protegido {
   font-family: var(--font-body);
   font-size: 10px;
   color: var(--dvna-muted, #999);
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   border-radius: 20px;
   padding: 1px 8px;
 }
@@ -181,28 +181,28 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 .roles-tabla-btn svg { width: 13px; height: 13px; }
-.roles-tabla-btn:hover { background: var(--dvna-pale, #f7f4f1); border-color: #c8ab96; }
-.roles-tabla-btn-danger:hover { color: #b83232; border-color: rgba(184,50,50,0.3); background: rgba(184,50,50,0.06); }
-.roles-tabla-btn-success:hover { color: #3a6648; border-color: rgba(58,102,72,0.3); background: rgba(58,102,72,0.06); }
+.roles-tabla-btn:hover { background: var(--dvna-pale, #f7f4f1); border-color: var(--dvna-mid); }
+.roles-tabla-btn-danger:hover { color: var(--danger); border-color: rgba(184,50,50,0.3); background: rgba(184,50,50,0.06); }
+.roles-tabla-btn-success:hover { color: var(--success); border-color: rgba(58,102,72,0.3); background: rgba(58,102,72,0.06); }
 .roles-tabla-btn-disabled {
   color: var(--dvna-muted, #999);
-  border-color: var(--dvna-border, #e8e0d8);
+  border-color: var(--dvna-border);
   cursor: not-allowed;
   opacity: 0.55;
 }
 .roles-tabla-btn-disabled:hover {
   background: transparent;
-  border-color: var(--dvna-border, #e8e0d8);
+  border-color: var(--dvna-border);
   color: var(--dvna-muted, #999);
 }
 .roles-tabla-sin-acciones {
@@ -225,7 +225,7 @@
   font-family: var(--font-body); font-size: 12px; font-weight: 500;
   color: var(--dvna-charcoal); letter-spacing: 0.03em;
 }
-.ms-req { color: var(--dvna-circle, #b49780); margin-left: 2px; }
+.ms-req { color: var(--dvna-circle); margin-left: 2px; }
 .ms-form-input {
   font-family: var(--font-body); font-size: 13px; font-weight: 300;
   color: var(--dvna-charcoal);
@@ -240,8 +240,8 @@
   border-color: var(--dvna-circle);
   box-shadow: 0 0 0 3px rgba(180,151,128,0.1);
 }
-.ms-form-input.error { border-color: #b83232; }
-.ms-form-error { font-family: var(--font-body); font-size: 11px; color: #b83232; }
+.ms-form-input.error { border-color: var(--danger); }
+.ms-form-error { font-family: var(--font-body); font-size: 11px; color: var(--danger); }
 .ms-form-hint { font-family: var(--font-body); font-size: 11px; color: var(--dvna-muted); margin: 0; }
 
 /* ── Responsive ── */
@@ -321,9 +321,9 @@
 /* ── Botón Nuevo rol ── */
 .roles-btn-nuevo {
   background: var(--brown);
-  color: #fff;
+  color: var(--sw-secondary);
   border: none;
-  padding: 0.75rem 1.75rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 40px;
   font-size: 12px;
   font-family: var(--font-body);

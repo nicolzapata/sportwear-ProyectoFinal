@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { IconCart, IconUser, IconLogOut } from "../Icons";
+import ThemeToggle from "../ThemeToggle";
 
 // ── Derecha: Acciones ──
-export default function AccionesNavbar({ usuario, esAdmin, handleLogout, totalItems, oculto }) {
+export default function AccionesNavbar({ usuario, esAdmin, handleLogout, totalItems, oculto, mostrarThemeToggle }) {
   return (
     <div className="navbar-right">
       {usuario ? (
@@ -16,14 +17,18 @@ export default function AccionesNavbar({ usuario, esAdmin, handleLogout, totalIt
           <Link to={usuario?.rol === "Cliente" ? "/mi-cuenta" : "/dashboard"} className="navbar-btn" title="Mi cuenta">
             <IconUser />
           </Link>
+          {mostrarThemeToggle && <ThemeToggle />}
           <button className="navbar-btn" onClick={handleLogout} title="Cerrar sesión" style={{ cursor: "pointer" }}>
             <IconLogOut />
           </button>
         </>
       ) : (
-        <Link to="/login" className="navbar-btn" title="Iniciar sesión">
-          <IconUser />
-        </Link>
+        <>
+          <Link to="/login" className="navbar-btn" title="Iniciar sesión">
+            <IconUser />
+          </Link>
+          {mostrarThemeToggle && <ThemeToggle />}
+        </>
       )}
 
       {/* ── El carrito se ve sin sesión; solo se oculta para admins. ── */}

@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useCart } from "../../../shared/contexts/CartContext";
+import { useThemeScope } from "../../../shared/contexts/ThemeContext";
 import api from "../../../shared/services/api";
 import PaymentModal from "../../ventas/components/PaymentModal";
 // Checkout.css se dividió por sección para facilitar el mantenimiento; el
@@ -14,6 +15,7 @@ import CheckoutPanel from "../components/checkout/CheckoutPanel";
 import { opcionesCuotasDisponibles, calcularFechasVencimiento } from "../utils/checkoutHelpers";
 
 export default function Checkout() {
+  useThemeScope("sw-scope-checkout");
   const { usuario }                                    = useAuth();
   const { items, total, vaciarCarrito, eliminarItem, cambiarVariante } = useCart();
   const navigate                                       = useNavigate();
@@ -140,7 +142,13 @@ export default function Checkout() {
   };
 
   // ── Carrito vacío ────────────────────────────────────────────────────────
-  if (items.length === 0 && !exito) {
+  // ── CORREGIDO: el carrito ahora se vacía apenas el pedido queda creado
+  // (antes de mostrar el modal de pago, no solo al cerrarlo — ver
+  // handleConfirmar), así que en ese instante "items" ya está vacío aunque
+  // el flujo no haya terminado. Sin "!pedidoConfirmado" acá, esta pantalla
+  // de "carrito vacío" se colaba delante del modal de pago y nunca dejaba
+  // verlo. ──
+  if (items.length === 0 && !exito && !pedidoConfirmado) {
     return (
       <div className="checkout-vacio">
         <p>No tienes productos en el carrito.</p>
@@ -193,6 +201,16 @@ export default function Checkout() {
         })),
       });
 
+      // ── CORREGIDO: antes el carrito solo se vaciaba al cerrar el modal de
+      // pago con "Entendido" — pero el pedido ya queda registrado en el
+      // servidor desde ESTE punto, antes de que el modal siquiera aparezca.
+      // Si el cliente cerraba el modal de otra forma, recargaba la página, o
+      // se iba a WhatsApp a enviar el comprobante (que el propio modal le
+      // pide) sin volver a tocar "Entendido", el carrito seguía mostrando el
+      // mismo producto — listo para reenviarse sin querer, pensando que el
+      // pedido no se había procesado. Se vacía ni bien el pedido queda
+      // creado, no cuando el cliente termina de leer el aviso. ──
+      vaciarCarrito();
       setPedidoConfirmado(pedido);
     } catch (err) {
       console.error(err);

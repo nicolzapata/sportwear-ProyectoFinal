@@ -55,7 +55,7 @@
 }
 
 .colores-stat-card {
-  background: white;
+  background: var(--dvna-white);
   border-radius: 20px;
   padding: 1.5rem;
   display: flex;
@@ -67,7 +67,7 @@
 }
 
 .colores-stat-card:hover {
-  border-color: #ddd;
+  border-color: var(--dvna-border);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
   transform: translateY(-2px);
 }
@@ -75,7 +75,7 @@
 .colores-stat-icon {
   width: 56px;
   height: 56px;
-  background: #f8f8f8;
+  background: var(--dvna-icon-primary-bg);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -130,7 +130,7 @@
 .colores-action-btn {
   width: 36px; height: 36px;
   border-radius: 10px;
-  border: 1px solid var(--dvna-border, #e5e5e5);
+  border: 1px solid var(--dvna-border);
   background: var(--dvna-white, #fff);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -138,8 +138,8 @@
   color: var(--dvna-muted);
   flex-shrink: 0;
 }
-.colores-action-btn:hover { border-color: var(--dvna-mid, #c8ab96); background: var(--dvna-pale, #f4f4f4); }
-.colores-edit-btn:hover { color: var(--dvna-circle, #b49780); }
+.colores-action-btn:hover { border-color: var(--dvna-mid); background: var(--dvna-pale); }
+.colores-edit-btn:hover { color: var(--dvna-circle); }
 .colores-deactivate-btn:hover { border-color: rgba(184,50,50,0.3); background: rgba(184,50,50,0.06); }
 
 .colores-search-wrapper {
@@ -163,7 +163,7 @@
   border-radius: 40px;
   font-size: 0.9rem;
   transition: all 0.2s ease;
-  background: white;
+  background: var(--dvna-white);
 }
 
 .colores-search-input:focus {
@@ -199,11 +199,11 @@
 /* Buttons */
 .colores-btn-primary {
   background: var(--brown);
-  color: white;
+  color: var(--sw-secondary);
   border: none;
-  padding: 0.8rem 2rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 40px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -220,12 +220,12 @@
 }
 
 .colores-btn-secondary {
-  background: white;
+  background: var(--dvna-white);
   color: var(--dvna-charcoal);
   border: 1px solid var(--dvna-border);
-  padding: 0.8rem 2rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 40px;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -234,7 +234,7 @@
 
 .colores-btn-secondary:hover {
   border-color: var(--dvna-charcoal);
-  background: #fafafa;
+  background: var(--dvna-pale);
 }
 
 /* Results */
@@ -249,7 +249,7 @@
 .colores-tabs-bar {
   display: flex;
   gap: 0;
-  background: white;
+  background: var(--dvna-white);
   border: 1px solid var(--dvna-border);
   border-radius: 40px;
   padding: 4px;
@@ -278,7 +278,7 @@
 
 .colores-tab-btn.active {
   background: var(--brown);
-  color: white;
+  color: var(--sw-secondary);
 }
 
 .colores-tab-btn:not(.active):hover {
@@ -295,7 +295,7 @@
 }
 
 .colores-grid-item {
-  background: white;
+  background: var(--dvna-white);
   border-radius: 16px;
   border: 1px solid var(--dvna-pale);
   overflow: hidden;
@@ -306,7 +306,7 @@
 .colores-grid-item:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  border-color: #ddd;
+  border-color: var(--dvna-border);
 }
 
 .colores-grid-sample {

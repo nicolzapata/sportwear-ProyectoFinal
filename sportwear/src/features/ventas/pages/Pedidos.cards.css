@@ -4,8 +4,8 @@
    vista de tabla sigue usando PedidosTable + Pedidos.css, pero comparte el
    panel de detalle acoplado con esta vista. ── */
 
-.estado-activo   { color: #3a6648; }
-.estado-inactivo { color: #b83232; }
+.estado-activo   { color: var(--success); }
+.estado-inactivo { color: var(--danger); }
 
 /* ── Filtro por estado (chips con conteo real) ── */
 .ped-filter-toggle {
@@ -19,7 +19,7 @@
   align-items: center;
   padding: 0.5rem 1rem;
   border-radius: 40px;
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   background: var(--dvna-white, #fff);
   font-family: var(--font-body);
   font-size: 0.8rem;
@@ -29,8 +29,8 @@
   white-space: nowrap;
   transition: all 0.15s ease;
 }
-.ped-filter-btn:hover { border-color: var(--dvna-circle, #b49780); color: var(--dvna-charcoal, #1a1a1a); }
-.ped-filter-btn.active { background: var(--dvna-circle, #b49780); border-color: var(--dvna-circle, #b49780); color: #fff; }
+.ped-filter-btn:hover { border-color: var(--dvna-circle); color: var(--dvna-charcoal); }
+.ped-filter-btn.active { background: var(--dvna-circle); border-color: var(--dvna-circle); color: var(--sw-secondary); }
 
 /* ── Tabla + panel acoplado (vista "tabla") ── */
 .pedidos-contenido { width: 100%; }
@@ -80,15 +80,15 @@
   text-align: left;
   padding: 16px 18px;
   background: var(--dvna-white, #fff);
-  border: 1px solid var(--dvna-border, #e8e0d8);
+  border: 1px solid var(--dvna-border);
   border-radius: 14px;
   cursor: pointer;
   font-family: var(--font-body);
   transition: border-color 0.15s, box-shadow 0.15s;
 }
-.ped-item:hover { border-color: #c8ab96; }
+.ped-item:hover { border-color: var(--dvna-mid); }
 .ped-item.seleccionado {
-  border-color: var(--dvna-circle, #b49780);
+  border-color: var(--dvna-circle);
   border-width: 1.5px;
   box-shadow: 0 2px 10px rgba(180, 151, 128, 0.15);
 }
@@ -120,7 +120,7 @@
 .ped-item-nombre {
   font-size: 15px;
   font-weight: 600;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
 }
 .ped-item-desc {
   margin: 4px 0 0;
@@ -140,7 +140,7 @@
 .ped-item-total {
   font-size: 15px;
   font-weight: 700;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
 }
 .ped-item-ver {
   display: inline-flex;
@@ -152,7 +152,7 @@
   white-space: nowrap;
 }
 .ped-item-ver svg { width: 12px; height: 12px; }
-.ped-item.seleccionado .ped-item-ver { color: var(--dvna-circle, #b49780); }
+.ped-item.seleccionado .ped-item-ver { color: var(--dvna-circle); }
 
 .ped-item-bottom {
   display: flex;
@@ -160,7 +160,7 @@
   flex-wrap: wrap;
   gap: 10px;
   padding-top: 10px;
-  border-top: 1px solid var(--dvna-border, #e8e0d8);
+  border-top: 1px solid var(--dvna-border);
 }
 .ped-item-direccion {
   font-size: 11px;
@@ -198,7 +198,7 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  border: 1.5px solid var(--dvna-border, #e8e0d8);
+  border: 1.5px solid var(--dvna-border);
   background: var(--dvna-white, #fff);
   display: flex;
   align-items: center;
@@ -207,8 +207,9 @@
 }
 .ped-stepper-item.done .ped-stepper-dot,
 .ped-stepper-item.current .ped-stepper-dot {
-  background: var(--dvna-circle, #b49780);
-  border-color: var(--dvna-circle, #b49780);
+  background: var(--dvna-circle);
+  border-color: var(--dvna-circle);
+  color: var(--sw-secondary);
 }
 .ped-stepper-dot svg { width: 10px; height: 10px; }
 .ped-stepper-label {
@@ -216,7 +217,7 @@
   color: var(--dvna-muted, #999);
 }
 .ped-stepper-item.current .ped-stepper-label {
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
   font-weight: 600;
 }
 
@@ -255,7 +256,7 @@
   color: rgba(26, 26, 26, 0.7);
 }
 .ped-comprador-info { display: flex; flex-direction: column; min-width: 0; }
-.ped-comprador-nombre { font-size: 13px; font-weight: 600; color: var(--dvna-charcoal, #1a1a1a); }
+.ped-comprador-nombre { font-size: 13px; font-weight: 600; color: var(--dvna-charcoal); }
 .ped-comprador-doc { font-size: 11px; color: var(--dvna-muted, #999); }
 .ped-pago-row {
   display: flex;
@@ -263,14 +264,14 @@
   justify-content: space-between;
   gap: 8px;
   font-size: 12px;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
 }
 .ped-pago-total { font-weight: 700; }
 
 .ped-destino-direccion {
   margin: 0;
   font-size: 12.5px;
-  color: var(--dvna-charcoal, #1a1a1a);
+  color: var(--dvna-charcoal);
   line-height: 1.5;
 }
 

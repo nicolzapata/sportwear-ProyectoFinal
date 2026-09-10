@@ -1,8 +1,11 @@
 import SalesBarChart from "./SalesBarChart";
 import RangoTexto from "./RangoTexto";
-import { CHARCOAL, MUTED } from "../../utils/dashboardHelpers";
+import { getChartPalette } from "../../utils/dashboardHelpers";
+import { useTheme } from "../../../../shared/contexts/ThemeContext";
 
 export default function VentasMensualesCard({ reporte, periodoVentas, setPeriodoVentas, ventasData }) {
+  const { theme } = useTheme();
+  const paleta = getChartPalette(theme);
   return (
     <div className="chart-card">
       <div className="chart-header">
@@ -25,9 +28,9 @@ export default function VentasMensualesCard({ reporte, periodoVentas, setPeriodo
           </button>
         )}
       </div>
-      <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 10, color: MUTED, fontFamily: "'Jost', sans-serif" }}>
+      <div style={{ display: "flex", gap: 16, marginBottom: 12, fontSize: 10, color: paleta.ticks, fontFamily: "'Jost', sans-serif" }}>
         <span>
-          <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: CHARCOAL, marginRight: 5, verticalAlign: "middle" }} />
+          <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: 2, background: paleta.line, marginRight: 5, verticalAlign: "middle" }} />
           {reporte ? "En el rango" : (periodoVentas === "actual" ? "Este año" : "Año anterior")}
         </span>
       </div>

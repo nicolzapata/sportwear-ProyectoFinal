@@ -1,15 +1,29 @@
+import { useEffect } from "react";
 import { IconDollar, IconX } from "../../../../shared/components/Icons";
 import Select from "../../../../shared/components/Select";
-import { fmt, HOY_ISO } from "../../utils/pedidosVentasHelpers";
+import { fmt, HOY_ISO, getEstadoAbonoBadge } from "../../utils/pedidosVentasHelpers";
 
 export default function AbonosModal({
   abonosModal, setAbonosModal, tienePerm,
   formAbono, setFormAbono, erroresAbono, setErroresAbono,
   metodosPago, guardandoAbono, agregarAbono,
 }) {
+  // ── CORREGIDO: el método siempre arrancaba en "Efectivo" a secas, sin
+  // importar con qué método se registró la venta — así que confirmar un
+  // pago de una venta por Transferencia mostraba "Efectivo" preseleccionado,
+  // como si el dinero hubiera llegado por otro medio. Ahora arranca en el
+  // método real de la venta; sigue siendo editable por si el pago de verdad
+  // llegó por un canal distinto al planeado. ──
+  useEffect(() => {
+    if (abonosModal) {
+      setFormAbono({ monto: "", metodo: abonosModal.metodo_pago || "Efectivo", fecha: "" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abonosModal?.id_venta]);
+
   if (!abonosModal) return null;
 
-  const puedeRegistrar = tienePerm('Pagos.crear') && abonosModal.estado !== "Pagado" && abonosModal.estado !== "Anulado";
+  const puedeRegistrar = tienePerm('Ventas.crear') && abonosModal.estado !== "Pagado" && abonosModal.estado !== "Anulado";
 
   return (
     <div className="pedidosventas-modal-overlay">
@@ -42,12 +56,12 @@ export default function AbonosModal({
                 {abonosModal.tipo_pago === "cuotas" ? "Historial de Abonos" : "Historial de Pagos"}
               </h4>
               {abonosModal.abonos.map((a, idx) => (
-                <div key={idx} className="pedidosventas-abono-item">
+                <div key={idx} className={`pedidosventas-abono-item pedidosventas-abono-item--${a.estado === "Confirmado" ? "confirmado" : a.estado === "Anulado" ? "anulado" : "pendiente"}`}>
                   <div className="pedidosventas-abono-item-info">
                     <span className="pedidosventas-abono-item-monto">{fmt(a.monto)}</span>
                     <span className="pedidosventas-abono-item-fecha">{a.fecha?.toString().split("T")[0]}</span>
                   </div>
-                  <span className="pedidosventas-badge pedidosventas-badge-active">{a.estado}</span>
+                  <span className={`pedidosventas-badge ${getEstadoAbonoBadge(a.estado)}`}>{a.estado}</span>
                 </div>
               ))}
             </div>

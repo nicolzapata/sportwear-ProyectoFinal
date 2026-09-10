@@ -127,9 +127,9 @@
 
  .gestproductos-btn-primary {
    background: var(--brown);
-   color: #fff;
+   color: var(--sw-secondary);
    border: none;
-   padding: 0.75rem 1.75rem;
+   padding: 0.5rem 1.5rem;
    border-radius: 40px;
    font-size: 12px;
    font-family: var(--font-body);
@@ -147,7 +147,7 @@
   background: transparent;
   color: var(--dvna-charcoal);
   border: 1px solid var(--dvna-border);
-  padding: 0.75rem 1.75rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 40px;
   font-size: 12px;
   font-family: var(--font-body);
@@ -273,7 +273,7 @@
   font-family: var(--font-body);
   font-size: 1.05rem;
   font-weight: 700;
-  color: var(--brown, #b49780);
+  color: var(--brown);
 }
 
 .gestproductos-card-variantes {

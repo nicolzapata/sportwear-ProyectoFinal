@@ -311,7 +311,7 @@
   font-weight: 600;
   letter-spacing: 0.16em;
 
-  color: var(--dvna-white);
+  color: var(--sw-secondary);
   background: var(--brown);
   border: none;
   border-radius: var(--r);

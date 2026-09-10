@@ -1,0 +1,163 @@
+/* ════════════════════════════════════════════════════════
+   theme.css — paleta central SportWear (dorado/charcoal/crema)
+   El :root de abajo es el valor claro, global — aplica a toda
+   la app (catálogo público incluido). El oscuro solo se activa
+   dentro de las zonas con alternador (admin/checkout/carrito/
+   auth/catálogo/mi cuenta), vía la clase que ThemeContext agrega
+   a <body>.
+
+   IMPORTANTE — por qué el bloque de abajo repite cada variable
+   en vez de solo cambiar un "primitivo" del que dependan: una
+   custom property heredada se resuelve UNA SOLA VEZ, en el
+   elemento donde se declara. Si `--dvna-cream` solo se declara en
+   :root (<html>) como `var(--sw-bg)`, su valor queda fijado usando
+   el --sw-bg de ESE elemento; cambiar --sw-bg más abajo, en
+   <body>, no "reabre" ese cálculo — los descendientes igual
+   heredan el valor ya congelado en :root. La solución es reasignar
+   la variable que el código realmente consume (--dvna-*,
+   --primary, --black, --white, etc.) en el mismo selector que
+   activa el modo oscuro (body.sw-scope-*).
+
+   IMPORTANTE #2 — por qué TODAS las zonas comparten un solo bloque
+   con las DOS familias de variables (--dvna-* de src/index.css Y
+   --primary/--black/--white/--text/etc. de shared/styles/global.css):
+   aunque cada feature "vive" conceptualmente en una familia, varias
+   páginas admin (Dashboard, Usuarios, ...) reusan clases genéricas
+   de global.css (.stat-card, .card, .btn, .modal, .badge,
+   .form-control) que solo leen la familia --primary/--black/--white.
+   Si esa familia no se re-mapea también para sw-scope-admin, esos
+   elementos quedan "atascados" en claro aunque el resto de la
+   página sí cambie — exactamente el bug que se vio en las tarjetas
+   KPI del Dashboard. Por eso el mismo bloque cubre las 6 zonas.
+   ════════════════════════════════════════════════════════ */
+
+:root {
+  /* Le dice al navegador que la app es "clara" por defecto, así los
+     controles nativos que el propio navegador dibuja (el ícono del
+     calendario de <input type="date">, checkboxes/radios sin estilo,
+     scrollbars en algunos navegadores) usan su variante clara. En el
+     bloque oscuro de más abajo se cambia a "dark" para que esos MISMOS
+     controles nativos —que ningún CSS nuestro puede recolorear
+     directamente— se dibujen en su variante clara-sobre-oscuro. */
+  color-scheme: light;
+
+  --sw-primary:        #C8A46A;
+  --sw-primary-strong: #B08A4E;
+  --sw-secondary:      #202126;
+  --sw-tertiary:       #E2C799;
+  --sw-neutral:        #FAF8F5;
+
+  --sw-bg:          var(--sw-neutral);
+  --sw-surface:     #ffffff;
+  --sw-surface-alt: #f5efe3;
+  --sw-text:        var(--sw-secondary);
+  --sw-text-muted:  #756f66;
+  --sw-border:      #e6dcc8;
+
+  --sw-danger:      #b83232; --sw-danger-bg:  #fdf0ee;
+  --sw-success:     #3a6648; --sw-success-bg: #eaf4ee;
+  --sw-warning:     #8a5a00; --sw-warning-bg: #fdf3dc;
+  --sw-info:        #1a6fc4; --sw-info-bg:    #eaf2fb;
+
+  /* Variantes "hover" de los -bg semánticos (más saturadas que el -bg
+     base) — antes hex fijos en global.css (.btn-danger:hover, etc.), así
+     que en modo oscuro el botón "encendía" en un pastel claro al pasar el
+     mouse. Mismo patrón que --dvna-icon-*-bg: valor claro acá, oscuro en
+     el bloque combinado de abajo. */
+  --sw-danger-bg-hover:  #ffe4e2;
+  --sw-success-bg-hover: #d4f5dc;
+  --sw-warning-bg-hover: #fff3c4;
+  --sw-info-bg-hover:    #d4e8fc;
+
+  /* Fondos de las insignias de ícono del Dashboard (StatsGrid) — antes
+     hex fijos (#e8ddd6/#ccddd4/#f0cccc/#e8d9b8) sin variable, así que no
+     respondían a ningún tema; ahora son tokens con valor claro/oscuro. */
+  --dvna-icon-primary-bg: #e8ddd6;
+  --dvna-icon-success-bg: #ccddd4;
+  --dvna-icon-danger-bg:  #f0cccc;
+  --dvna-icon-warning-bg: #e8d9b8;
+
+  /* Constantes del modo oscuro — no cambian según scope, así que
+     referenciarlas desde cualquier selector es seguro (no dependen
+     de dónde se las use, a diferencia de --sw-bg/--sw-text de arriba). */
+  --sw-dark-bg:          #0A0B0D;
+  --sw-dark-surface:     #0E0F12;
+  --sw-dark-surface-alt: #16171B;
+  --sw-dark-text:        #FAF8F5;
+  --sw-dark-text-muted:  #8f8a82;
+  --sw-dark-border:      #26272c;
+  --sw-dark-danger:      #e2665a; --sw-dark-danger-bg:  #3a2422;
+  --sw-dark-success:     #5aa877; --sw-dark-success-bg: #1f3327;
+  --sw-dark-warning:     #d9a441; --sw-dark-warning-bg: #3a2f16;
+  --sw-dark-info:        #5b9bdb; --sw-dark-info-bg:    #1e2c3a;
+}
+
+/* Las 6 zonas con alternador — admin, páginas de acceso, catálogo público,
+   mi cuenta, checkout y carrito. "sw-scope-catalogo" es el más fácil de
+   quitar solo, si el modo oscuro del catálogo no convence: basta con
+   borrarlo de aquí y de los useThemeScope() en Catalogo.jsx /
+   DetalleProducto.jsx (ver comentario ahí) — no toca nada del resto. */
+body.sw-scope-admin[data-theme="dark"],
+body.sw-scope-auth[data-theme="dark"],
+body.sw-scope-catalogo[data-theme="dark"],
+body.sw-scope-cuenta[data-theme="dark"],
+body.sw-scope-checkout[data-theme="dark"],
+body.sw-scope-carrito[data-theme="dark"] {
+  /* Ver el comentario de "color-scheme: light" arriba en :root — esto es
+     lo que realmente aclara el ícono del calendario de los <input
+     type="date"> (y cualquier otro control nativo del navegador) en modo
+     oscuro, sin poder tocarlo directamente con CSS normal. */
+  color-scheme: dark;
+
+  /* Familia --dvna-* y sus alias (src/index.css) */
+  --dvna-circle:   var(--sw-tertiary);
+  --dvna-mid:      var(--sw-tertiary);
+  --dvna-light:    var(--sw-dark-surface-alt);
+  --dvna-pale:     var(--sw-dark-surface-alt);
+  --dvna-cream:    var(--sw-dark-bg);
+  --dvna-white:    var(--sw-dark-surface);
+  --dvna-dark:     var(--sw-dark-text);
+  --dvna-charcoal: var(--sw-dark-text);
+  --dvna-muted:    var(--sw-dark-text-muted);
+  --dvna-border:   var(--sw-dark-border);
+
+  --cream:       var(--dvna-pale);
+  --warm-white:  var(--dvna-white);
+  --sand:        var(--dvna-light);
+  --taupe:       var(--dvna-mid);
+  --brown:       var(--dvna-circle);
+  --charcoal:    var(--dvna-charcoal);
+  --muted:       var(--dvna-muted);
+  --border:      var(--dvna-border);
+  --accent:      var(--sw-tertiary);
+
+  --danger:    var(--sw-dark-danger);  --danger-bg:  var(--sw-dark-danger-bg);
+  --success:   var(--sw-dark-success); --success-bg: var(--sw-dark-success-bg);
+  --warning:   var(--sw-dark-warning); --warning-bg: var(--sw-dark-warning-bg);
+  --info:      var(--sw-dark-info);    --info-bg:    var(--sw-dark-info-bg);
+
+  --danger-bg-hover:  #4a2b28;
+  --success-bg-hover: #24402f;
+  --warning-bg-hover: #46381b;
+  --info-bg-hover:    #24354a;
+
+  /* Insignias de ícono del Dashboard */
+  --dvna-icon-primary-bg: rgba(226,199,153,0.16);
+  --dvna-icon-success-bg: var(--sw-dark-success-bg);
+  --dvna-icon-danger-bg:  var(--sw-dark-danger-bg);
+  --dvna-icon-warning-bg: var(--sw-dark-warning-bg);
+
+  /* Familia --primary/--black/--white/--text (shared/styles/global.css) —
+     la usan tanto Checkout/Carrito como clases genéricas reutilizadas en
+     admin (.stat-card, .card, .btn, .modal, .badge, .form-control). */
+  --primary:      var(--sw-tertiary);
+  --primary-dark: var(--sw-primary);
+  --primary-bg:   rgba(226,199,153,0.16);
+  --black:        var(--sw-dark-text);
+  --dark:         var(--sw-dark-text);
+  --white:        var(--sw-dark-surface);
+  --off-white:    var(--sw-dark-bg);
+  --light:        var(--sw-dark-surface-alt);
+  --border-dark:  var(--sw-dark-border);
+  --text:         var(--sw-dark-text);
+}

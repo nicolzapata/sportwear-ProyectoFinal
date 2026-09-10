@@ -8,7 +8,7 @@ export default function ConfirmEstadoModal({ confirm, setConfirm, datos, confirm
   return createPortal(
     <div className="roles-modal-overlay" onClick={() => setConfirm(null)}>
       <div className="roles-modal roles-confirm-modal" onClick={e => e.stopPropagation()}>
-        <div className="roles-modal-accent" style={{ background: '#b83232' }} />
+        <div className="roles-modal-accent" style={{ background: 'var(--danger)' }} />
         <div className="roles-modal-header">
           <div>
             <h2 className="roles-modal-title">¿Deseas inactivar "{confirm.rol.nombre}"?</h2>

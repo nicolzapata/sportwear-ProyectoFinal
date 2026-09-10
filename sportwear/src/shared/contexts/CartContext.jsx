@@ -213,6 +213,23 @@ export const CartProvider = ({ children }) => {
     guardarEnStorage(state.items, idUsuario);
   }, [state.items, idUsuario]);
 
+  // ── NUEVO: si el cliente tiene el sitio abierto en dos pestañas (ej.
+  // Checkout en una, Catálogo en otra) y confirma un pedido en una de ellas,
+  // la otra pestaña nunca se enteraba — cada una solo lee localStorage UNA
+  // vez al montar, así que quedaba con el carrito viejo en memoria aunque
+  // localStorage ya estuviera vacío, dejando la puerta abierta a repetir el
+  // mismo pedido desde esa pestaña. El evento "storage" solo llega a OTRAS
+  // pestañas (nunca a la que hizo el cambio), así que no hace falta filtrar
+  // la propia. ──
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key !== getStorageKey(idUsuario)) return;
+      dispatch({ type: "LOAD_ITEMS", payload: cargarDesdeStorage(idUsuario) });
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [idUsuario]);
+
   // ── El carrito ya se guarda automáticamente en localStorage ───────────────
   // Cuando el usuario cierra sesión, el useEffect arriba guarda en localStorage.
   // No se guarda en la base de datos (tabla Ventas) hasta que el pedido esté confirmado.

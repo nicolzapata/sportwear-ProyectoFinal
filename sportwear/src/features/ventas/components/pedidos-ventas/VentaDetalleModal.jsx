@@ -5,7 +5,7 @@ import { fmt, getEstadoBadge } from "../../utils/pedidosVentasHelpers";
 
 // Panel acoplado (mismo criterio que Usuarios/Proveedores/Compras/Pedidos):
 // "Ver detalle" de una venta ya no es un modal centrado — es este panel,
-// con el cronograma real de cuotas (GET /pagos/venta/:id/todas, ver
+// con el cronograma real de cuotas (GET /ventas/:id/pagos, ver
 // useVentasListado.abrirDetalle) en vez del historial vacío que tenía antes.
 export default function VentaDetalleModal({ verDetalle, setVerDetalle, cargandoDetalle, tienePerm, setAbonosModal }) {
   if (!verDetalle) return null;
@@ -14,7 +14,7 @@ export default function VentaDetalleModal({ verDetalle, setVerDetalle, cargandoD
   const esCuotas = verDetalle.tipo_pago === 'cuotas';
   const cuotas = (verDetalle.abonos || []).filter((a) => a.num_cuota != null);
   const idxProximaPendiente = cuotas.findIndex((c) => c.estado === 'Pendiente');
-  const puedeGestionarPago = tienePerm('Pagos.crear') && verDetalle.estado !== 'Pagado' && verDetalle.estado !== 'Anulado';
+  const puedeGestionarPago = tienePerm('Ventas.crear') && verDetalle.estado !== 'Pagado' && verDetalle.estado !== 'Anulado';
 
   return (
     <DetallePanel

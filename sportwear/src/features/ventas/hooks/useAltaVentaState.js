@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../../../shared/services/api";
 import { useToast } from "../../../shared/contexts/ToastContext";
 import { MAX_MONTO } from "../../../shared/utils/numerico";
@@ -24,15 +24,42 @@ export function useAltaVentaState({ cargar }) {
   const [busquedaCliente, setBusquedaCliente] = useState("");
   const [clienteDropdownAbierto, setClienteDropdownAbierto] = useState(false);
   const clienteInputRef = useRef(null);
-  // ── NUEVO: métodos de pago reales, traídos de Pagos — antes estaban fijos
-  // en el código ("Efectivo"/"Tarjeta"/"Transferencia"), sin relación con lo
-  // que el admin gestiona en Pagos → "Métodos de pago". También los usa
-  // AbonosModal (se reutiliza el mismo listado, ver orquestador). ──
+  // ── NUEVO: métodos de pago reales, ya no fijos en el código
+  // ("Efectivo"/"Tarjeta"/"Transferencia") sino gestionables por el admin
+  // desde acá mismo (botón de engranaje en la barra de Ventas — antes vivían
+  // en el módulo Pagos, ahora eliminado). "metodosPago" (solo activos) es el
+  // que usan los desplegables de NuevaVentaModal/AbonosModal, sin tocar; el
+  // modal de gestión necesita ver también los inactivos para poder
+  // reactivarlos, por eso "metodosPagoTodos" es una lista aparte. ──
   const [metodosPago, setMetodosPago] = useState([]);
+  const [metodosPagoTodos, setMetodosPagoTodos] = useState([]);
+  const [modalMetodos, setModalMetodos] = useState(false);
+  const [nuevoMetodo, setNuevoMetodo] = useState("");
 
-  useEffect(() => {
+  const cargarMetodosPago = useCallback(() => {
     api.get("/metodos-pago?activos=1").then(({ data }) => setMetodosPago(data || [])).catch(() => setMetodosPago([]));
+    api.get("/metodos-pago").then(({ data }) => setMetodosPagoTodos(data || [])).catch(() => setMetodosPagoTodos([]));
   }, []);
+
+  useEffect(() => { cargarMetodosPago(); }, [cargarMetodosPago]);
+
+  const crearMetodo = async () => {
+    if (!nuevoMetodo.trim()) { showToast("error", "Escribe un nombre para el método de pago."); return; }
+    try {
+      await api.post("/metodos-pago", { nombre: nuevoMetodo.trim() });
+      setNuevoMetodo("");
+      cargarMetodosPago();
+      showToast("exito", "Método de pago creado correctamente.");
+    } catch (err) { showToast("error", err.response?.data?.message ?? "Error al crear el método de pago."); }
+  };
+
+  const toggleMetodoEstado = async (id) => {
+    try {
+      await api.patch(`/metodos-pago/${id}/estado`);
+      cargarMetodosPago();
+      showToast("exito", "Estado del método de pago actualizado.");
+    } catch (err) { showToast("error", err.response?.data?.message ?? "Error al cambiar el estado del método."); }
+  };
   const [modalVenta, setModalVenta] = useState(false);
   const [guardandoVenta, setGuardandoVenta] = useState(false);
   const [formVenta,  setFormVenta]  = useState(formVentaInicial());
@@ -237,7 +264,9 @@ export function useAltaVentaState({ cargar }) {
   return {
     clientes, productos,
     busquedaCliente, setBusquedaCliente, clienteDropdownAbierto, setClienteDropdownAbierto, clienteInputRef,
-    metodosPago, modalVenta, setModalVenta, guardandoVenta,
+    metodosPago, metodosPagoTodos, modalMetodos, setModalMetodos, nuevoMetodo, setNuevoMetodo,
+    crearMetodo, toggleMetodoEstado,
+    modalVenta, setModalVenta, guardandoVenta,
     formVenta, setFormVenta, erroresVenta, setErroresVenta,
     creditoInfo, cargandoCredito, cargandoDatosVenta, errorDatosVenta,
     abrirNuevaVenta, errorItemStock, actualizarItemVenta, agregarItemVenta, quitarItemVenta,

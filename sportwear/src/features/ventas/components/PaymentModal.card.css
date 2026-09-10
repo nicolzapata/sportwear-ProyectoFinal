@@ -130,7 +130,7 @@
 
 .pm-card-cvv-value {
   font-family: 'Courier New', monospace;
-  color: #1a1a1a;
+  color: var(--dvna-charcoal);
   font-size: 13px;
   letter-spacing: 0.15em;
 }
@@ -223,13 +223,13 @@
 }
 
 .pm-field input.error {
-  border-color: #b83232;
+  border-color: var(--danger);
 }
 
 .pm-field-error {
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 10px;
-  color: #b83232;
+  color: var(--danger);
 }
 
 .pm-error {
@@ -238,7 +238,7 @@
   gap: 6px;
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 11px;
-  color: #b83232;
+  color: var(--danger);
   margin-top: 6px;
 }
 
@@ -247,7 +247,7 @@
   align-items: center;
   gap: 10px;
   padding: 16px 20px 20px;
-  color: #3a6648;
+  color: var(--success);
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 13px;
   font-weight: 500;
@@ -312,7 +312,7 @@
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.02em;
-  color: #fff;
+  color: var(--sw-secondary);
   cursor: pointer;
   transition: all 0.15s;
   display: flex;

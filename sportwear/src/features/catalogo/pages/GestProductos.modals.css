@@ -16,7 +16,7 @@
   font-family: var(--font-body);
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--brown, #b49780);
+  color: var(--brown);
   margin: 0 0 1rem 0;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -237,7 +237,7 @@
 /* Input con error */
 .gestproductos-form-input.input-error,
 .gestproductos-form-select.input-error {
-  border-color: #b83232;
+  border-color: var(--danger);
   box-shadow: 0 0 0 3px rgba(184, 50, 50, 0.08);
 }
 

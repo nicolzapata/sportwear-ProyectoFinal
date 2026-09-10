@@ -2,13 +2,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=DM+Sans:wght@300;400;500&display=swap');
 
 :root {
-  --sn-black:   #0e0e0e;
-  --sn-white:   #fafaf8;
-  --sn-cream:   #f3ede5;
-  --sn-accent:  #c8a882;
-  --sn-dark:    #1c1c1c;
-  --sn-muted:   #888;
-  --sn-border:  #e8e0d6;
+  /* Re-apuntado a la paleta central (src/shared/styles/theme.css) — antes
+     eran hex propios de esta página, aislados del resto del tema, por eso
+     "Sobre nosotros" se quedaba con los colores viejos aunque se cambiara
+     la paleta en todos lados. Sigue siendo un scope solo-claro (sin botón
+     de modo oscuro), como el resto del catálogo público. */
+  --sn-black:   var(--sw-secondary);
+  --sn-white:   #ffffff;
+  --sn-cream:   var(--sw-neutral);
+  --sn-accent:  var(--sw-primary);
+  --sn-dark:    var(--sw-secondary);
+  --sn-muted:   #756f66;
+  --sn-border:  #e6dcc8;
 }
 
 /* ── Page wrapper: rompe cualquier contenedor padre ── */

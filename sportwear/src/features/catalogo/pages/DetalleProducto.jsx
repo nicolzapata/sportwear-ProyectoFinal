@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCart } from "../../../shared/contexts/CartContext";
+import { useThemeScope } from "../../../shared/contexts/ThemeContext";
 import api from "../../../shared/services/api";
 // DetalleProducto.css se dividió por sección para facilitar el
 // mantenimiento; el orden de los imports preserva la cascada del archivo
@@ -16,6 +17,9 @@ import PreviewOverlay from "../components/detalle-producto/PreviewOverlay";
 import { extraerColores, tallasDeColor, filtrarImagenes } from "../utils/detalleProductoHelpers";
 
 export default function DetalleProducto() {
+  // Mismo scope que Catalogo.jsx — ver el comentario ahí para revertir esto
+  // de forma aislada si hace falta.
+  useThemeScope("sw-scope-catalogo");
   const { id }      = useParams();
   const navigate    = useNavigate();
   const { agregarItem } = useCart();

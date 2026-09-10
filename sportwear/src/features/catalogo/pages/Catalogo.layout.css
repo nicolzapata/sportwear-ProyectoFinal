@@ -183,7 +183,7 @@ html, body {
 .filter-chip.active {
   background: var(--dark-brown);
   border-color: var(--dark-brown);
-  color: var(--warm-white);
+  color: var(--sw-secondary);
 }
 
 /* ── Product grid ── */
@@ -262,6 +262,6 @@ html, body {
   color: var(--muted);
 }
 .catalog-view-toggle button.active {
-  background: var(--charcoal, #1a1a1a);
+  background: var(--charcoal);
   color: #fff;
 }

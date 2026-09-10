@@ -35,7 +35,7 @@ export default function ClienteAutocomplete({
         {clienteDropdownAbierto && (
           <div style={{
             position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 50,
-            background: "var(--dvna-white, #fff)", border: "1px solid var(--dvna-border, #e5e5e5)",
+            background: "var(--dvna-white, #fff)", border: "1px solid var(--dvna-border)",
             borderRadius: 10, boxShadow: "0 10px 30px rgba(0,0,0,0.14)",
             maxHeight: 220, overflowY: "auto", padding: 4,
           }}>
@@ -61,9 +61,9 @@ export default function ClienteAutocomplete({
                   style={{
                     display: "block", width: "100%", textAlign: "left", padding: "8px 10px",
                     border: "none", background: "transparent", borderRadius: 6, cursor: "pointer",
-                    fontSize: 13, color: "var(--dvna-charcoal, #1a1a1a)",
+                    fontSize: 13, color: "var(--dvna-charcoal)",
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--dvna-pale, #f4f4f4)"; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "var(--dvna-pale)"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                 >
                   {c.nombre}

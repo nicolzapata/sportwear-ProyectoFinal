@@ -6,7 +6,7 @@ import { IconEdit } from "../../../../shared/components/Icons";
 const MODULO_EMOJI = {
   Dashboard: "📊", Usuarios: "👤", Clientes: "🧑‍🤝‍🧑", Roles: "🔑", Productos: "👕",
   Categorias: "🗂️", Colores: "🎨", Proveedores: "🏭", Compras: "📦", Pedidos: "🚚",
-  Ventas: "💰", Pagos: "💳",
+  Ventas: "💰",
 };
 
 export default function RoleDetailPanel({

@@ -15,25 +15,25 @@ import "./Login.css";
 const IconMail = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
     <path d="M2 4l6 5 6-5M2 4h12v9H2V4z"
-      stroke="#b49780" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      stroke="var(--dvna-circle)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 const IconLock = () => (
   <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-    <rect x="3" y="7" width="10" height="8" rx="1.5" stroke="#b49780" strokeWidth="1.4"/>
-    <path d="M5 7V5a3 3 0 016 0v2" stroke="#b49780" strokeWidth="1.4" strokeLinecap="round"/>
+    <rect x="3" y="7" width="10" height="8" rx="1.5" stroke="var(--dvna-circle)" strokeWidth="1.4"/>
+    <path d="M5 7V5a3 3 0 016 0v2" stroke="var(--dvna-circle)" strokeWidth="1.4" strokeLinecap="round"/>
   </svg>
 );
 const IconEyeOpen = () => (
   <svg width="16" height="16" viewBox="0 0 16 16">
-    <ellipse cx="8" cy="8" rx="6" ry="4" stroke="#b49780" strokeWidth="1.4" fill="none"/>
-    <circle cx="8" cy="8" r="2" fill="#b49780"/>
+    <ellipse cx="8" cy="8" rx="6" ry="4" stroke="var(--dvna-circle)" strokeWidth="1.4" fill="none"/>
+    <circle cx="8" cy="8" r="2" fill="var(--dvna-circle)"/>
   </svg>
 );
 const IconEyeClosed = () => (
   <svg width="16" height="16" viewBox="0 0 16 16">
-    <ellipse cx="8" cy="8" rx="6" ry="4" stroke="#b49780" strokeWidth="1.4" fill="none"/>
-    <line x1="5" y1="8" x2="11" y2="8" stroke="#b49780" strokeWidth="1.4"/>
+    <ellipse cx="8" cy="8" rx="6" ry="4" stroke="var(--dvna-circle)" strokeWidth="1.4" fill="none"/>
+    <line x1="5" y1="8" x2="11" y2="8" stroke="var(--dvna-circle)" strokeWidth="1.4"/>
   </svg>
 );
 

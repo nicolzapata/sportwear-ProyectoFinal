@@ -5,9 +5,10 @@ import { useAuth } from "../contexts/AuthContext";
 import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,
   IconShoppingBag, IconPalette, IconBox, IconTruck,
-  IconDollar, IconHeart, IconCreditCard, IconSettings,
+  IconDollar, IconHeart, IconSettings,
   IconBolt, IconBell, IconLogOut, IconX, IconMenu
 } from "./Icons";
+import ThemeToggle from "./ThemeToggle";
 const IconStore = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 9l1.5-5h15L21 9" />
@@ -37,7 +38,6 @@ const titulos = {
   "/compras":       { label: "Compras",          icon: <IconShoppingBag /> },
   "/pedidos":       { label: "Pedidos",           icon: <IconTag /> },
   "/ventas":        { label: "Ventas",            icon: <IconDollar /> },
-  "/pagos":         { label: "Pagos y Abonos",    icon: <IconCreditCard /> },
 };
 
 const fecha = new Date().toLocaleDateString("es-CO", {
@@ -84,6 +84,8 @@ export default function Navbar({ onMenuClick }) {
       {/* Derecha — acciones + usuario */}
       <div className="navbar-right">
 
+        <ThemeToggle />
+
         <Link to="/catalogo" className="navbar-btn" title="Ver tienda">
           <IconStore />
         </Link>
@@ -104,7 +106,7 @@ export default function Navbar({ onMenuClick }) {
       {showLogoutConfirm && createPortal(
         <div className="navbar-modal-overlay" onClick={() => setShowLogoutConfirm(false)}>
           <div className="navbar-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="navbar-modal-accent" style={{ background: '#b83232' }} />
+            <div className="navbar-modal-accent" style={{ background: 'var(--danger)' }} />
             <div className="navbar-modal-header">
               <h2 className="navbar-modal-title">Cerrar sesión</h2>
             </div>

@@ -5,9 +5,12 @@
    ====================================== */
 import { Link } from "react-router-dom";
 import logo from "../../../shared/assets/LOGO.png";
+import { useThemeScope } from "../../../shared/contexts/ThemeContext";
+import ThemeToggle from "../../../shared/components/ThemeToggle";
 import "./AuthLayout.css";
 
 export default function AuthLayout({ badge, title, description, stats, note, children }) {
+  useThemeScope("sw-scope-auth");
   return (
     <div className="auth-split-page">
       <header className="auth-topbar">
@@ -18,6 +21,7 @@ export default function AuthLayout({ badge, title, description, stats, note, chi
           <span className="auth-topbar-name">SPORT<span>WEAR</span></span>
         </div>
         <nav className="auth-topbar-nav">
+          <ThemeToggle />
           <span>MEDELLÍN /</span>
           <Link to="/catalogo">← Explorar Catálogo</Link>
         </nav>

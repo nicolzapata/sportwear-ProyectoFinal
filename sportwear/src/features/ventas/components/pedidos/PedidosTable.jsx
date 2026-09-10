@@ -1,5 +1,5 @@
 import { IconEye, IconBox, IconEdit } from "../../../../shared/components/Icons";
-import { getPagoBadge, getPagoTexto, ESTADOS_EDITABLES } from "../../utils/pedidosHelpers";
+import { getPagoBadge, getPagoTexto, getEstadoPago, ESTADOS_EDITABLES } from "../../utils/pedidosHelpers";
 import EstadoDropdown from "./EstadoDropdown";
 
 export default function PedidosTable({
@@ -33,7 +33,7 @@ export default function PedidosTable({
               <td className="tbl-td pedidos-direccion-cell" title={p.direccion_entrega}>{p.direccion_entrega || "—"}</td>
               <td className="tbl-td">{p.fecha_actualizacion?.toString().split("T")[0]}</td>
               <td className="tbl-td">
-                <span className={`pedidos-badge ${getPagoBadge(p.estado_venta)}`}>{getPagoTexto(p.estado_venta)}</span>
+                <span className={`pedidos-badge ${getPagoBadge(getEstadoPago(p))}`}>{getPagoTexto(getEstadoPago(p))}</span>
               </td>
               <td className="tbl-td">
                 <EstadoDropdown

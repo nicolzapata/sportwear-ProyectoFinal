@@ -204,10 +204,10 @@
 }
 .nav-item.active {
   background: var(--dvna-circle);
-  color: #fff;
+  color: var(--sw-secondary);
 }
 .nav-item.active:hover {
-  color: #fff;
+  color: var(--sw-secondary);
 }
 
 /* ── Nav icon ── */
@@ -302,7 +302,7 @@
   height: 34px;
   border-radius: 50%;
   background: var(--dvna-circle);
-  color: #fff;
+  color: var(--sw-secondary);
   font-family: var(--font-body);
   font-size: 13px;
   font-weight: 700;
@@ -365,7 +365,7 @@
   transition: background 0.2s, color 0.2s;
   flex-shrink: 0;
 }
-.logout-btn:hover { background: #fdeaea; color: #b83232 !important; }
+.logout-btn:hover { background: var(--danger-bg); color: var(--danger) !important; }
 .logout-btn svg {
   stroke: currentColor;
   fill: none;

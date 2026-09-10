@@ -47,7 +47,7 @@
   border-radius: 12px 12px 0 0;
   background: var(--brown);
 }
-.pm-accent--success { background: #3a6648; }
+.pm-accent--success { background: var(--success); }
 .pm-accent--partial { background: var(--dvna-circle); }
 
 .pm-header {
@@ -119,7 +119,7 @@
   color: var(--dvna-charcoal);
 }
 
-.pm-paid { color: #3a6648; }
+.pm-paid { color: var(--success); }
 .pm-debt { color: var(--dvna-circle); font-size: 15px !important; font-weight: 600 !important; }
 
 .pm-section {
@@ -204,7 +204,7 @@
   font-family: 'DM Sans', system-ui, sans-serif;
   font-size: 10px;
   font-weight: 500;
-  color: #3a6648;
+  color: var(--success);
   background: rgba(58,102,72,0.08);
   border: 0.5px solid rgba(58,102,72,0.25);
   border-radius: 20px;
@@ -222,7 +222,7 @@
   height: 18px;
   border-radius: 50%;
   background: var(--brown);
-  color: #fff;
+  color: var(--sw-secondary);
   display: flex;
   align-items: center;
   justify-content: center;

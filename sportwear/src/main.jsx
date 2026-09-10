@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import './shared/styles/theme.css'
 import './index.css'
 // Se importa aquí (y no solo desde Select.jsx) para garantizar que sus
 // reglas base queden antes que el CSS de cada página en el bundle: así,

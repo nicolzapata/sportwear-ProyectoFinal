@@ -50,7 +50,7 @@ export default function BajoStockTable({ bajoStockAgrupado, expandidosStock, tog
                     <td className="tbl-td">{multiplesVariantes ? "—" : (unica.talla || "—")}</td>
                     <td className="tbl-td">{multiplesVariantes ? "—" : (unica.color || "—")}</td>
                     <td className="tbl-td">
-                      <span className="tabla-badge" style={{ color: stockMinimo === 0 ? "#b83232" : "#7a5500" }}>
+                      <span className="tabla-badge" style={{ color: stockMinimo === 0 ? "var(--danger)" : "var(--warning)" }}>
                         <IconAlertTriangle />
                         {multiplesVariantes
                           ? ` Mínimo: ${stockMinimo}${stockMinimo === 0 ? " (agotado)" : ""}`
@@ -64,7 +64,7 @@ export default function BajoStockTable({ bajoStockAgrupado, expandidosStock, tog
                       <td className="tbl-td">{v.talla || "—"}</td>
                       <td className="tbl-td">{v.color || "—"}</td>
                       <td className="tbl-td">
-                        <span className="tabla-badge" style={{ color: v.stock === 0 ? "#b83232" : "#7a5500" }}>
+                        <span className="tabla-badge" style={{ color: v.stock === 0 ? "var(--danger)" : "var(--warning)" }}>
                           <IconAlertTriangle /> {v.stock} {v.stock === 0 ? "(agotado)" : ""}
                         </span>
                       </td>

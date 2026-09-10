@@ -14,8 +14,11 @@ import { CAMPOS_NUMERICOS, calcularErrores } from "../utils/registroHelpers";
 import DatosPersonalesFields from "../components/registro/DatosPersonalesFields";
 import ContactoFields from "../components/registro/ContactoFields";
 import SeguridadFields from "../components/registro/SeguridadFields";
+import { useThemeScope } from "../../../shared/contexts/ThemeContext";
+import ThemeToggle from "../../../shared/components/ThemeToggle";
 
 export default function Registro() {
+  useThemeScope("sw-scope-auth");
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -187,6 +190,7 @@ export default function Registro() {
         <div className="registro-form-panel">
           <div className="registro-form-top">
             <h2>Registrar tu cuenta</h2>
+            <ThemeToggle />
             <div className="registro-steps">
               <span className="registro-step-dot activo">1</span>
               <span className="registro-step-line" />

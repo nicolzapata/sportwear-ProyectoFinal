@@ -123,7 +123,7 @@
 }
 
 .od-progress-fill.complete {
-  background: linear-gradient(90deg, #3a6648, #2d5a38);
+  background: linear-gradient(90deg, var(--success), #2d5a38);
 }
 
 .od-progress-amounts {
@@ -208,5 +208,5 @@
 }
 
 .od-value-main  { color: var(--dvna-charcoal); }
-.od-value-paid  { color: #3a6648; }
+.od-value-paid  { color: var(--success); }
 .od-value-debt  { color: var(--dvna-circle); }

@@ -1,33 +1,31 @@
 import { IconX, IconBox } from "../../../../shared/components/Icons";
 import Select from "../../../../shared/components/Select";
+import DetallePanel from "../../../../shared/components/DetallePanel";
+import { getAvatarColor } from "../../../../shared/utils/texto";
 import { fmt } from "../../utils/pedidosVentasHelpers";
 
 // ── NUEVO: editar un pedido — conectado a Ventas (edita la misma venta).
 // Solo pedidos "Pendiente" o "En preparación" pueden editarse. Los
 // productos ya existentes quedan intocables (ni cantidad ni precio ni se
 // pueden quitar) — la edición solo puede AGREGAR productos nuevos, nunca
-// reducir lo ya vendido, así el costo total nunca puede bajar. ──
+// reducir lo ya vendido, así el costo total nunca puede bajar.
+//
+// variante="panel" (por defecto): igual que ProveedorFormModal/
+// UsuarioFormModal — se acopla al lado de la tabla/lista en vez de tapar
+// toda la pantalla con un modal centrado. variante="modal" queda disponible
+// por si algún llamador todavía necesita el overlay clásico. ──
 export default function EditarPedidoModal({
   pedido, onClose,
   form, setForm, errores, setErrores,
   productos, metodosPago, cargandoDatos,
   nuevasLineas, agregarLinea, quitarLinea, actualizarLinea,
   totalActual, totalNuevo, guardando, onGuardar,
+  variante = "panel",
 }) {
   if (!pedido) return null;
 
-  return (
-    <div className="pedidos-modal-overlay" onClick={() => !guardando && onClose()}>
-      <div className="pedidos-modal pedidos-modal-factura" style={{ maxWidth: 900, width: "95%" }} onClick={(e) => e.stopPropagation()}>
-        <div className="pedidos-modal-header">
-          <div>
-            <h2 className="pedidos-modal-title">Editar pedido P-{String(pedido.id_pedido).padStart(3, "0")}</h2>
-            <p className="pedidos-modal-subtitulo">Los productos ya registrados no se pueden modificar ni quitar — solo agregar nuevos.</p>
-          </div>
-          <button className="pedidos-modal-close" onClick={onClose} disabled={guardando}><IconX /></button>
-        </div>
-
-        <div className="pedidos-modal-body pedidos-factura-body">
+  const cuerpo = (
+    <>
           {cargandoDatos ? (
             <p style={{ color: "var(--dvna-muted)" }}>Cargando datos del pedido...</p>
           ) : (
@@ -181,6 +179,46 @@ export default function EditarPedidoModal({
               </div>
             </>
           )}
+    </>
+  );
+
+  const footer = (
+    <>
+      <button className="detalle-panel-btn-secundario" onClick={onClose} disabled={guardando}>Cancelar</button>
+      <button className="detalle-panel-btn-primario" onClick={onGuardar} disabled={guardando || cargandoDatos}>
+        {guardando ? "Guardando..." : "Guardar cambios"}
+      </button>
+    </>
+  );
+
+  if (variante === "panel") {
+    return (
+      <DetallePanel
+        iniciales={`P${String(pedido.id_pedido).padStart(2, "0")}`}
+        avatarColor={getAvatarColor(pedido.id_pedido)}
+        nombre={`Editar pedido P-${String(pedido.id_pedido).padStart(3, "0")}`}
+        subtitulo="Solo se pueden agregar productos nuevos"
+        onClose={() => !guardando && onClose()}
+        footer={footer}
+      >
+        {cuerpo}
+      </DetallePanel>
+    );
+  }
+
+  return (
+    <div className="pedidos-modal-overlay" onClick={() => !guardando && onClose()}>
+      <div className="pedidos-modal pedidos-modal-factura" style={{ maxWidth: 900, width: "95%" }} onClick={(e) => e.stopPropagation()}>
+        <div className="pedidos-modal-header">
+          <div>
+            <h2 className="pedidos-modal-title">Editar pedido P-{String(pedido.id_pedido).padStart(3, "0")}</h2>
+            <p className="pedidos-modal-subtitulo">Los productos ya registrados no se pueden modificar ni quitar — solo agregar nuevos.</p>
+          </div>
+          <button className="pedidos-modal-close" onClick={onClose} disabled={guardando}><IconX /></button>
+        </div>
+
+        <div className="pedidos-modal-body pedidos-factura-body">
+          {cuerpo}
         </div>
         <div className="pedidos-modal-footer">
           <button className="pedidos-btn-secondary" onClick={onClose} disabled={guardando}>Cancelar</button>

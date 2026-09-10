@@ -164,7 +164,7 @@
 .registro-step-dot.activo {
   background: var(--dvna-circle);
   border-color: var(--dvna-circle);
-  color: var(--dvna-white);
+  color: var(--sw-secondary);
 }
 .registro-step-line { width: 14px; height: 1px; background: var(--dvna-border); }
 

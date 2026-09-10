@@ -14,7 +14,7 @@
 }
 .receipt-status-badge.success {
   background: rgba(58,102,72,0.1);
-  color: #3a6648;
+  color: var(--success);
 }
 .receipt-status-badge.partial {
   background: var(--dvna-pale);
@@ -98,7 +98,7 @@
 }
 
 .receipt-row--total strong {
-  color: #3a6648;
+  color: var(--success);
 }
 
 .receipt-row--debt strong {
@@ -106,7 +106,7 @@
 }
 
 .receipt-amount-paid {
-  color: #3a6648 !important;
+  color: var(--success) !important;
   font-size: 15px !important;
 }
 

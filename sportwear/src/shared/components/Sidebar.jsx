@@ -7,7 +7,7 @@ import logo from "../assets/LOGO.png";
 import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,
   IconShoppingBag, IconBox, IconTruck, IconCart,
-  IconDollar, IconHeart, IconCreditCard, IconLogOut, IconX,
+  IconDollar, IconHeart, IconLogOut, IconX,
   IconChevronLeft, IconChevronRight,
 } from "./Icons";
 import "./Sidebar.css";
@@ -23,7 +23,6 @@ const NAV_ICONS = {
   "/compras":        <IconCart />,
   "/ventas":         <IconHeart />,
   "/pedidos":        <IconDollar />,
-  "/pagos":          <IconCreditCard />,
   "/mi-cuenta":      <IconUser />,
 };
 
@@ -40,7 +39,6 @@ const LABEL_EXTENDIDA = {
   compras: "Compras & Insumos",
   pedidos: "Pedidos Online",
   ventas: "Ventas & Facturación",
-  pagos: "Pagos & Pasarelas",
 };
 
 // Agrupación visual del menú en secciones — mismos items de MENU_ITEMS,
@@ -49,7 +47,7 @@ const LABEL_EXTENDIDA = {
 const SECCIONES = [
   { titulo: "Panel & Control",       claves: ["dashboard", "roles", "usuarios"] },
   { titulo: "Inventario & Catálogo", claves: ["productos", "catalogo-admin", "proveedores", "compras"] },
-  { titulo: "Operaciones",           claves: ["pedidos", "ventas", "pagos"] },
+  { titulo: "Operaciones",           claves: ["pedidos", "ventas"] },
 ];
 
 const MODULOS_CLIENTE = ['dashboard', 'catalogo', 'categorias'];

@@ -48,12 +48,12 @@ export default function PaymentFormView({ pedido, cliente, onClose, onPagoConfir
     try {
       let response;
       if (tipoPago === "cuota" && proximaCuota) {
-        response = await api.post(`/pagos/cuota/${proximaCuota.id_pago}`, {
+        response = await api.post(`/ventas/cuota/${proximaCuota.id_pago}`, {
           metodo: "Tarjeta",
           referencia_pago: "PAY-" + Date.now().toString(36).toUpperCase()
         });
       } else {
-        response = await api.post(`/pagos/venta/${pedido.id_venta}/total`, {
+        response = await api.post(`/ventas/${pedido.id_venta}/pagar-total`, {
           metodo: "Tarjeta",
           referencia_pago: "PAY-" + Date.now().toString(36).toUpperCase()
         });

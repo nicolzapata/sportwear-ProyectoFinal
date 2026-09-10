@@ -9,7 +9,7 @@ import './PedidosVentas.cards.css';
 import Loader from "../../../shared/components/Loader";
 import Select from "../../../shared/components/Select";
 import FilterToggle from "../../../shared/components/FilterToggle";
-import { IconSearch, IconX } from "../../../shared/components/Icons";
+import { IconSearch, IconX, IconSettings } from "../../../shared/components/Icons";
 import OrigenFilterToggle from "../components/pedidos-ventas/OrigenFilterToggle";
 import VentasTable from "../components/pedidos-ventas/VentasTable";
 import VentaListItem from "../components/pedidos-ventas/VentaListItem";
@@ -17,6 +17,7 @@ import VentaDetalleModal from "../components/pedidos-ventas/VentaDetalleModal";
 import AbonosModal from "../components/pedidos-ventas/AbonosModal";
 import NuevaVentaModal from "../components/pedidos-ventas/NuevaVentaModal";
 import AnularVentaModal from "../components/pedidos-ventas/AnularVentaModal";
+import MetodosPagoModal from "../components/pedidos-ventas/MetodosPagoModal";
 import { usePedidosVentas } from "../hooks/usePedidosVentas";
 
 // ── NUEVO: ícono propio de "reporte" (documento con líneas + gráfica
@@ -108,6 +109,9 @@ export default function PedidosVentas() {
             <button className="pedidosventas-btn-primary" onClick={v.abrirNuevaVenta}>
               <span>+</span> Nueva venta
             </button>
+          )}
+          {v.tienePerm('Ventas.crear') && (
+            <button className="btn-print" onClick={() => v.setModalMetodos(true)} title="Métodos de pago"><IconSettings /></button>
           )}
           <FilterToggle opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
           <button className="btn-print" onClick={() => window.print()} title="Imprimir reporte"><IconReporte /></button>
@@ -202,6 +206,13 @@ export default function PedidosVentas() {
         motivo={v.motivoAnulacion} setMotivo={v.setMotivoAnulacion}
         guardando={v.cambiandoEstado} onConfirmar={v.confirmarAnularVenta}
       />
+
+      {v.modalMetodos && (
+        <MetodosPagoModal
+          setModalMetodos={v.setModalMetodos} nuevoMetodo={v.nuevoMetodo} setNuevoMetodo={v.setNuevoMetodo}
+          crearMetodo={v.crearMetodo} metodosPagoTodos={v.metodosPagoTodos} toggleMetodoEstado={v.toggleMetodoEstado}
+        />
+      )}
     </div>
   );
 }

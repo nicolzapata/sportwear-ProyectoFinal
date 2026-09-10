@@ -58,7 +58,7 @@
 }
 .catalog-color-dot:hover { transform: scale(1.15); }
 .catalog-color-dot.selected {
-  outline: 2px solid var(--dvna-accent, #b49780);
+  outline: 2px solid var(--dvna-circle);
   outline-offset: 2px;
 }
 
@@ -82,13 +82,13 @@
   line-height: 1.6;
 }
 .catalog-talla-chip:hover {
-  border-color: var(--dvna-accent, #b49780);
-  color: var(--dvna-accent, #b49780);
+  border-color: var(--dvna-circle);
+  color: var(--dvna-circle);
 }
 .catalog-talla-chip.selected {
-  background: var(--dvna-accent, #b49780);
-  border-color: var(--dvna-accent, #b49780);
-  color: #fff;
+  background: var(--dvna-circle);
+  border-color: var(--dvna-circle);
+  color: var(--sw-secondary);
 }
 
 /* ── NUEVO: talla sin stock — línea diagonal, no clickeable, mismo

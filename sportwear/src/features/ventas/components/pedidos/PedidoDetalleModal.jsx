@@ -1,11 +1,11 @@
 import DetallePanel from "../../../../shared/components/DetallePanel";
 import { getInitials, getAvatarColor } from "../../../../shared/utils/texto";
 import { fmt } from "../../../../shared/utils/publicNavbarHelpers";
-import { IconEdit, IconBox, IconHome, IconClock } from "../../../../shared/components/Icons";
+import { IconEdit, IconBox, IconHome, IconClock, IconDollar } from "../../../../shared/components/Icons";
 import { IconCheckSm } from "./icons";
 import EstadoDropdown from "./EstadoDropdown";
 import {
-  ESTADOS_ORDEN, getPagoBadge, getPagoTexto, tiempoRelativo, origenTexto, ESTADOS_EDITABLES,
+  ESTADOS_ORDEN, getPagoBadge, getPagoTexto, getEstadoPago, tiempoRelativo, origenTexto, ESTADOS_EDITABLES,
 } from "../../utils/pedidosHelpers";
 
 // Panel acoplado (mismo criterio que Usuarios/Proveedores/Compras): "Ver
@@ -16,13 +16,24 @@ export default function PedidoDetalleModal({
   verDetalle, setVerDetalle, cargandoDetalle,
   cambiarEstado, cambiando, tienePerm,
   filaAbierta, setFilaAbierta,
-  abrirEditar,
+  abrirEditar, abrirConfirmarPago,
 }) {
   if (!verDetalle) return null;
 
   const esCancelado = verDetalle.estado_pedido === 'Cancelado';
   const idxActual = ESTADOS_ORDEN.indexOf(verDetalle.estado_pedido);
   const puedeEditarPedido = tienePerm('Pedidos.editar') && ESTADOS_EDITABLES.includes(verDetalle.estado_pedido);
+  // ── NUEVO: "Confirmar pago" — solo tiene sentido para métodos distintos a
+  // contraentrega (Efectivo confirma solo al marcar "Entregado") y mientras
+  // el pago no esté ya Pagado/Anulado de verdad (no el estado crudo de la
+  // venta, que puede decir "Confirmado" sin que haya entrado ni un peso —
+  // ver getEstadoPago). Un pedido de cliente sin pago confirmado no aparece
+  // en Ventas, así que sin este botón no había forma de confirmarlo desde
+  // ningún lado. ──
+  const estadoPago = getEstadoPago(verDetalle);
+  const puedeConfirmarPago = tienePerm('Ventas.crear')
+    && verDetalle.metodo_pago && verDetalle.metodo_pago !== 'Efectivo'
+    && estadoPago !== 'Pagado' && estadoPago !== 'Anulado';
 
   return (
     <DetallePanel
@@ -84,9 +95,14 @@ export default function PedidoDetalleModal({
             </div>
             <div className="ped-pago-row">
               <span>{verDetalle.metodo_pago || 'Método de pago no registrado'}</span>
-              <span className={`pedidos-badge ${getPagoBadge(verDetalle.estado_venta)}`}>{getPagoTexto(verDetalle.estado_venta)}</span>
+              <span className={`pedidos-badge ${getPagoBadge(estadoPago)}`}>{getPagoTexto(estadoPago)}</span>
               <span className="ped-pago-total">{fmt(verDetalle.total)}</span>
             </div>
+            {puedeConfirmarPago && (
+              <button className="detalle-panel-btn-primario" style={{ marginTop: 10 }} onClick={() => abrirConfirmarPago(verDetalle)}>
+                <IconDollar /> Confirmar pago
+              </button>
+            )}
           </div>
 
           <div className="pedidos-factura-seccion">

@@ -61,7 +61,7 @@
 .dp-talla-chip.selected {
   background: var(--brown);
   border-color: var(--brown);
-  color: var(--dvna-white);
+  color: var(--sw-secondary);
 }
 
 /* Talla agotada: línea diagonal */
@@ -160,5 +160,5 @@
 .catalog-talla-chip.selected {
   background: var(--brown);
   border-color: var(--brown);
-  color: #fff;
+  color: var(--sw-secondary);
 }

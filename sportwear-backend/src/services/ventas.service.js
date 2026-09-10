@@ -10,6 +10,7 @@ const { enviarCorreo, formatearFecha, filasDatos } = require('./mailer.service')
 const {
   evaluarYMarcarPagada, restaurarStockSiHaceFalta,
   MONTO_MINIMO_ABONO, ajustarNumCuotas, calcularFechasVencimiento,
+  getSaldoPendiente, mensajeMontoMinimo,
 } = require('./pagoLogica.service');
 
 const getVentas = async ({ page, limit, q, origen, estado_pago } = {}) => {
@@ -32,14 +33,24 @@ const getVentas = async ({ page, limit, q, origen, estado_pago } = {}) => {
   // o no el total), así nunca puede verse una venta bajo un filtro que
   // contradiga su propio badge. Va en HAVING porque depende del agregado
   // de abonos confirmados, calculado en el mismo SELECT. ──
-  let havingSql = '';
+  // ── NUEVO: un pedido registrado por el cliente (origen='Landing') no debe
+  // aparecer acá hasta que haya dinero real de por medio — al menos un abono
+  // o el pago completo ya CONFIRMADO. Antes de eso, solo existe como Pedido
+  // (visible en /pedidos, para que el admin lo prepare), no como Venta. Una
+  // venta registrada por el Admin directamente siempre se ve, como ya
+  // pasaba. Se resuelve con el mismo agregado de abonos confirmados que ya
+  // calcula esta consulta, sin tocar el esquema. ──
+  const condicionesHaving = [
+    `(v.origen != 'Landing' OR COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) > 0)`,
+  ];
   if (estado_pago === 'Pagado') {
-    havingSql = `HAVING v.estado != 'Anulado' AND COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) >= v.total`;
+    condicionesHaving.push(`v.estado != 'Anulado'`, `COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) >= v.total`);
   } else if (estado_pago === 'Pendiente') {
-    havingSql = `HAVING v.estado != 'Anulado' AND COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) < v.total`;
+    condicionesHaving.push(`v.estado != 'Anulado'`, `COALESCE(SUM(pa.monto) FILTER (WHERE pa.estado='Confirmado'), 0) < v.total`);
   } else if (estado_pago === 'Anulado') {
-    havingSql = `HAVING v.estado = 'Anulado'`;
+    condicionesHaving.push(`v.estado = 'Anulado'`);
   }
+  const havingSql = `HAVING ${condicionesHaving.join(' AND ')}`;
 
   const paginar = page !== undefined;
   let limitOffsetSql = '';
@@ -515,9 +526,9 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
 
   // ── NUEVO (Inventario): el stock solo se descuenta de inmediato cuando el
   // pago es contraentrega (Efectivo). Con Transferencia, el pedido se registra
-  // pero el stock queda sin descontar hasta que el administrador confirme el
-  // pago desde el módulo de Pagos — ahí es donde
-  // `evaluarYMarcarPagada` (pagos.service.js) hace el descuento diferido. ──
+  // pero el stock queda sin descontar hasta que se confirme el pago (desde
+  // Ventas, o el propio cliente pagando desde Mi Cuenta) — ahí es donde
+  // `evaluarYMarcarPagada` (pagoLogica.service.js) hace el descuento diferido. ──
   const esContraentrega = metodo_pago === 'Efectivo';
 
   const client = await pool.connect();
@@ -598,7 +609,7 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
 
       // ── NUEVO (Inventario): solo se descuenta ahora si es contraentrega.
       // Si es transferencia/tarjeta, el stock se queda igual hasta que el
-      // pago se confirme (ver evaluarYMarcarPagada en pagos.service.js). ──
+      // pago se confirme (ver evaluarYMarcarPagada, más abajo en este archivo). ──
       if (esContraentrega) {
         await client.query(
           `UPDATE "ProductoVariantes" SET stock=stock-$1 WHERE id_variante=$2`,
@@ -634,10 +645,10 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
 
     // ── CORREGIDO: "Confirmado" aquí solo significa "el pedido quedó registrado",
     // NO que ya se pagó — el pago real ocurre después, en el modal de "Realizar pago"
-    // (PaymentModal), que llama a los endpoints de /pagos. Esos ya se encargan de
-    // enviar el comprobante cuando el pago se confirma de verdad (ver pagos.service.js).
-    // Aquí solo se avisa que el pedido quedó registrado, con instrucciones según el
-    // método de pago elegido — nunca el comprobante de pago. ──
+    // (PaymentModal), que llama a pagarCuota/pagarTotal (más abajo en este archivo).
+    // Esos ya se encargan de enviar el comprobante cuando el pago se confirma de
+    // verdad. Aquí solo se avisa que el pedido quedó registrado, con instrucciones
+    // según el método de pago elegido — nunca el comprobante de pago. ──
     notificarPedidoRecibido(id_venta, metodo_pago);
 
     const abonosRes = await client.query(
@@ -749,8 +760,157 @@ const getMisPedidos = async (id_cliente) => {
   }));
 };
 
+// ── Pagos/Abonos — antes vivían como módulo aparte (pagos.service.js); se
+// fusionan aquí porque conceptualmente son parte de una venta, no una
+// pantalla propia (una venta ya trae su calendario de cuotas en
+// "PagosAbonos"). Solo se conservan las piezas que de verdad se siguen
+// usando tras quitar la pantalla admin de Pagos: el cronograma de una venta
+// puntual, el registro manual de un abono desde Ventas, y el pago del
+// cliente (cuota puntual o total) desde Mi Cuenta/Checkout. ──
+
+// Todas las cuotas de una venta puntual, pasadas y futuras — para el
+// cronograma de "ver detalle" en Ventas.
+const getPagosPorVenta = async (id_venta) => {
+  const result = await pool.query(`
+    SELECT pa.* FROM "PagosAbonos" pa
+    WHERE pa.id_venta = $1
+    ORDER BY pa.num_cuota ASC NULLS LAST, pa.id_pago ASC
+  `, [id_venta]);
+  return result.rows;
+};
+
+const notificarAbonoParcial = async (id_venta, monto) => {
+  try {
+    const info = await pool.query(`
+      SELECT c.nombre, c.email, c.documento
+      FROM "Ventas" v JOIN "Clientes" c ON v.id_cliente = c.id_cliente
+      WHERE v.id_venta = $1
+    `, [id_venta]);
+    if (!info.rows.length || !info.rows[0].email) return;
+    const { nombre, email, documento } = info.rows[0];
+    const { saldo } = await getSaldoPendiente(pool, id_venta);
+
+    enviarCorreo({
+      to: email,
+      subject: `Pago registrado — Pedido V-${String(id_venta).padStart(3, '0')}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:auto">
+          <h2 style="color:#b49780">DVNA SportWear</h2>
+          <p>Hola ${nombre},</p>
+          <p>Registramos un pago de <strong>$${Number(monto).toLocaleString('es-CO')}</strong> para tu pedido <strong>V-${String(id_venta).padStart(3, '0')}</strong>.</p>
+          ${filasDatos([
+            ['Fecha', formatearFecha(new Date())],
+            ['Nombre del cliente', nombre],
+            ['Documento', documento],
+          ])}
+          <p>Saldo pendiente actual: <strong>$${saldo.toLocaleString('es-CO')}</strong>.</p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error('Error notificando abono:', err.message);
+  }
+};
+
+const notificarSegunResultadoPago = (tipo, id_venta, monto) => {
+  if (tipo === 'completo') notificarComprobantePago(id_venta);
+  else if (tipo === 'parcial') notificarAbonoParcial(id_venta, monto);
+};
+
+// Registrar un abono/pago manual desde Ventas (ej. el cliente pagó en
+// efectivo en tienda) — siempre queda Confirmado. Distinto de pagarCuota/
+// pagarTotal (el propio cliente paga desde Mi Cuenta/Checkout), que
+// actualizan la fila ya agendada en vez de crear una nueva.
+const crearPago = async (datos) => {
+  const { id_venta, monto, tipo, metodo, referencia_pago, fecha } = datos;
+  if (!id_venta || !monto) throw { status: 400, message: 'id_venta y monto son requeridos' };
+  if (Number(monto) <= 0) throw { status: 400, message: 'El monto debe ser mayor a cero' };
+
+  const { saldo } = await getSaldoPendiente(pool, id_venta);
+  if (Number(monto) > saldo)
+    throw { status: 400, message: `El monto ($${Number(monto).toLocaleString('es-CO')}) supera el saldo pendiente ($${saldo.toLocaleString('es-CO')}).` };
+
+  const liquidaSaldoCompleto = Math.abs(Number(monto) - saldo) < 0.01;
+  if (Number(monto) < MONTO_MINIMO_ABONO && !liquidaSaldoCompleto) {
+    throw { status: 400, message: mensajeMontoMinimo(saldo) };
+  }
+
+  const client = await pool.connect();
+  let tipoNotificacion = null;
+  try {
+    await client.query('BEGIN');
+
+    const result = await client.query(`
+      INSERT INTO "PagosAbonos" (id_venta, monto, tipo, metodo, referencia_pago, estado, fecha)
+      VALUES ($1,$2,$3,$4,$5,'Confirmado',$6) RETURNING *
+    `, [id_venta, monto, tipo || 'Pago completo', metodo || 'Efectivo', referencia_pago || null, fecha || new Date()]);
+
+    const pago = result.rows[0];
+    tipoNotificacion = await evaluarYMarcarPagada(client, id_venta);
+
+    await client.query('COMMIT');
+    if (tipoNotificacion) notificarSegunResultadoPago(tipoNotificacion, id_venta, monto);
+
+    return pago;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally { client.release(); }
+};
+
+const pagarCuota = async (id_pago, { metodo, referencia_pago }) => {
+  const numId = parseInt(id_pago);
+  const client = await pool.connect();
+  let tipoNotificacion = null, idVentaNotif = null, montoNotif = null;
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      `UPDATE "PagosAbonos" SET estado='Confirmado', metodo=$1, referencia_pago=$2, fecha=NOW() WHERE id_pago=$3 AND estado='Pendiente' RETURNING *`,
+      [metodo || 'Efectivo', referencia_pago || null, numId]
+    );
+    if (!result.rows.length) throw { status: 404, message: 'Cuota no encontrada o ya pagada' };
+
+    idVentaNotif = result.rows[0].id_venta;
+    montoNotif = result.rows[0].monto;
+    tipoNotificacion = await evaluarYMarcarPagada(client, idVentaNotif);
+
+    await client.query('COMMIT');
+    if (tipoNotificacion) notificarSegunResultadoPago(tipoNotificacion, idVentaNotif, montoNotif);
+
+    return result.rows[0];
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally { client.release(); }
+};
+
+const pagarTotal = async (id_venta, { metodo, referencia_pago }) => {
+  const client = await pool.connect();
+  let tipoNotificacion = null, montoNotif = null;
+  try {
+    await client.query('BEGIN');
+    const result = await client.query(
+      `UPDATE "PagosAbonos" SET estado='Confirmado', metodo=$1, referencia_pago=$2, fecha=NOW() WHERE id_venta=$3 AND estado='Pendiente' RETURNING *`,
+      [metodo || 'Efectivo', referencia_pago || null, id_venta]
+    );
+    if (result.rows.length) {
+      montoNotif = result.rows.reduce((acc, r) => acc + Number(r.monto), 0);
+      tipoNotificacion = await evaluarYMarcarPagada(client, id_venta);
+    }
+
+    await client.query('COMMIT');
+    if (tipoNotificacion) notificarSegunResultadoPago(tipoNotificacion, id_venta, montoNotif);
+
+    return result.rows;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally { client.release(); }
+};
+
 module.exports = {
   getVentas, getVentaById, crearVenta, cambiarEstado,
   crearMiPedido, crearCarritoAbandonado, getMisPedidos,
   getCreditoCliente, notificarComprobantePago,
+  getPagosPorVenta, crearPago, pagarCuota, pagarTotal,
 };

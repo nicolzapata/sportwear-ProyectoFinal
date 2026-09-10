@@ -54,7 +54,7 @@ export default function ModalDetalle({
         {/* ── Hero ── */}
         <div className="md-hero">
           {avatar && (
-            <div className="md-avatar" style={{ background: avatarColor || 'var(--dvna-charcoal, #1a1a1a)' }}>
+            <div className="md-avatar" style={{ background: avatarColor || 'var(--dvna-charcoal)' }}>
               {avatar}
             </div>
           )}
