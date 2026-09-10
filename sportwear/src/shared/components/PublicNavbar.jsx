@@ -82,10 +82,9 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
 
   const listaCategorias = (categorias || []).filter((cat) => cat !== "Todos");
 
-  // El botón de modo oscuro aparece en Checkout, Carrito, Mi cuenta y el
-  // catálogo público (inicio, listado y detalle de producto) — "Sobre
-  // nosotros" queda siempre en claro, sin alternador.
-  const mostrarThemeToggle = ["/checkout", "/carrito", "/mi-cuenta", "/", "/catalogo"].includes(location.pathname)
+  // El botón de modo oscuro aparece en Checkout, Carrito, Mi cuenta, Sobre
+  // nosotros y el catálogo público (inicio, listado y detalle de producto).
+  const mostrarThemeToggle = ["/checkout", "/carrito", "/mi-cuenta", "/", "/catalogo", "/sobre-nosotros"].includes(location.pathname)
     || location.pathname.startsWith("/catalogo/");
 
   const irACategoria = (cat) => {

@@ -5,8 +5,15 @@
   /* Re-apuntado a la paleta central (src/shared/styles/theme.css) — antes
      eran hex propios de esta página, aislados del resto del tema, por eso
      "Sobre nosotros" se quedaba con los colores viejos aunque se cambiara
-     la paleta en todos lados. Sigue siendo un scope solo-claro (sin botón
-     de modo oscuro), como el resto del catálogo público. */
+     la paleta en todos lados. */
+  /* --sn-black/--sn-dark NO cambian entre claro/oscuro a propósito: este
+     diseño los usa para dos cosas distintas — texto sobre áreas claras
+     (donde sí debería aclararse en oscuro) Y como fondo de secciones que
+     son SIEMPRE oscuras por diseño (Hero, la franja "Trayectoria", el CTA
+     final, todas con texto blanco fijo encima). Si se aclaran en modo
+     oscuro, esas secciones "siempre oscuras" se vuelven claras con texto
+     blanco fijo encima = ilegible. Por eso el texto que sí debe aclararse
+     usa la variable nueva --sn-text (ver más abajo), separada de estas. */
   --sn-black:   var(--sw-secondary);
   --sn-white:   #ffffff;
   --sn-cream:   var(--sw-neutral);
@@ -14,13 +21,14 @@
   --sn-dark:    var(--sw-secondary);
   --sn-muted:   #756f66;
   --sn-border:  #e6dcc8;
+  --sn-text:    var(--sn-black);
 }
 
 /* ── Page wrapper: rompe cualquier contenedor padre ── */
 .sn-page {
   font-family: 'DM Sans', sans-serif;
   background: var(--sn-white);
-  color: var(--sn-black);
+  color: var(--sn-text);
   overflow-x: hidden;
   /* Salir del padding/max-width del PublicLayout */
   margin-left:  calc(-1 * var(--layout-padding, 0px));
@@ -180,7 +188,7 @@
   font-size: clamp(20px, 3vw, 28px);
   font-style: italic;
   line-height: 1.5;
-  color: var(--sn-dark);
+  color: var(--sn-text);
   text-align: center;
   margin: 0;
   flex-shrink: 0;
@@ -206,7 +214,7 @@
   font-size: clamp(32px, 5vw, 52px);
   font-weight: 700;
   margin: 0;
-  color: var(--sn-black);
+  color: var(--sn-text);
 }
 .sn-section-title.light { color: #fff; }
 
@@ -236,7 +244,7 @@
   font-size: 20px;
   font-weight: 700;
   margin: 0 0 12px;
-  color: var(--sn-black);
+  color: var(--sn-text);
 }
 .sn-valor-texto {
   font-size: 14px;
@@ -328,7 +336,7 @@
   font-family: 'Playfair Display', serif;
   font-size: 17px;
   font-weight: 700;
-  color: var(--sn-black);
+  color: var(--sn-text);
 }
 .sn-equipo-rol {
   font-size: 12px;

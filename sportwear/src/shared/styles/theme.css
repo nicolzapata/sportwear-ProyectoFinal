@@ -160,4 +160,17 @@ body.sw-scope-carrito[data-theme="dark"] {
   --light:        var(--sw-dark-surface-alt);
   --border-dark:  var(--sw-dark-border);
   --text:         var(--sw-dark-text);
+
+  /* Sobre nosotros (src/shared/pages/SobreNosotros.css) — OJO: --sn-black/
+     --sn-dark NO se tocan acá a propósito (deben quedar fijos siempre-
+     oscuros, ver el comentario en ese archivo: los usa tanto el Hero/CTA/
+     franja "Trayectoria", que son secciones siempre-oscuras con texto
+     blanco fijo, como el texto del botón dorado del CTA). Solo --sn-text
+     (el color de texto de las áreas CLARAS de esa página) se aclara aquí. */
+  --sn-white:  var(--sw-dark-surface);
+  --sn-cream:  var(--sw-dark-surface-alt);
+  --sn-accent: var(--sw-tertiary);
+  --sn-muted:  var(--sw-dark-text-muted);
+  --sn-border: var(--sw-dark-border);
+  --sn-text:   var(--sw-dark-text);
 }

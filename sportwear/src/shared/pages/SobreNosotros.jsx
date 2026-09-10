@@ -1,6 +1,7 @@
 // src/pages/sobre-nosotros/SobreNosotros.jsx
 import "./SobreNosotros.css";
 import { IconBolt, IconShield, IconStar, IconHeart, IconCheck } from "../components/Icons";
+import { useThemeScope } from "../contexts/ThemeContext";
 
 const VALORES = [
   {
@@ -31,6 +32,9 @@ const EQUIPO = [
 ];
 
 export default function SobreNosotros() {
+  // Mismo scope que el catálogo público — comparten PublicNavbar, así que
+  // el botón de modo oscuro y el gating quedan consistentes entre ambos.
+  useThemeScope("sw-scope-catalogo");
   return (
     <div className="sn-page">
 
