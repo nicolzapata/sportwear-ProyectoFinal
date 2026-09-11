@@ -15,7 +15,6 @@ import DatosPersonalesFields from "../components/registro/DatosPersonalesFields"
 import ContactoFields from "../components/registro/ContactoFields";
 import SeguridadFields from "../components/registro/SeguridadFields";
 import { useThemeScope } from "../../../shared/contexts/ThemeContext";
-import ThemeToggle from "../../../shared/components/ThemeToggle";
 
 // Qué campos pertenecen a cada sección — se usa para saber cuándo esa
 // sección está completa y se puede desbloquear la siguiente.
@@ -202,7 +201,6 @@ export default function Registro() {
           <div className="login-card--registro-scroll">
             <div className="registro-form-top">
               <h2>Registrar tu cuenta</h2>
-              <ThemeToggle />
               <div className="registro-steps">
                 <span className={`registro-step-dot${seccion1Completa ? " completo" : " activo"}`}>1</span>
                 <span className="registro-step-line" />

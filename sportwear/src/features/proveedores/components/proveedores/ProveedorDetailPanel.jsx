@@ -1,6 +1,6 @@
 import { PALETAS, inicialesProveedor } from "../../utils/proveedoresHelpers";
 import { fmt } from "../../../../shared/utils/publicNavbarHelpers";
-import { IconEdit, IconPhone, IconClock } from "../../../../shared/components/Icons";
+import { IconEdit, IconClock } from "../../../../shared/components/Icons";
 
 const COLOR_ESTADO_ORDEN = {
   Pendiente: 'var(--warning)', 'En Tránsito': '#1976d2', Confirmado: '#1976d2',
@@ -56,11 +56,11 @@ export default function ProveedorDetailPanel({
             <span className="prov-detalle-campo-label">Teléfono</span>
             <span className="prov-detalle-campo-valor">{proveedor.telefono_celular || '—'}</span>
           </div>
-          <div className="prov-detalle-campo full">
+          <div className="prov-detalle-campo">
             <span className="prov-detalle-campo-label">Correo</span>
             <span className="prov-detalle-campo-valor">{proveedor.email_contacto || '—'}</span>
           </div>
-          <div className="prov-detalle-campo full">
+          <div className="prov-detalle-campo">
             <span className="prov-detalle-campo-label">Dirección</span>
             <span className="prov-detalle-campo-valor">
               {[proveedor.direccion, proveedor.ciudad, proveedor.departamento].filter(Boolean).join(', ') || '—'}
@@ -124,11 +124,6 @@ export default function ProveedorDetailPanel({
           <button className="prov-detalle-btn-primary" onClick={() => onEditar(proveedor)}>
             <IconEdit /> Editar proveedor
           </button>
-        )}
-        {proveedor.telefono_celular && (
-          <a className="prov-detalle-btn-secondary" href={`tel:${proveedor.telefono_celular}`}>
-            <IconPhone /> Llamar
-          </a>
         )}
         {puedeEstado && (
           <button className="prov-detalle-btn-secondary" onClick={() => onCambiarEstado(proveedor)}>

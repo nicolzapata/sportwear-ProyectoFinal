@@ -129,6 +129,115 @@
   font-weight: 600;
 }
 
+/* ── Galería del detalle: carrusel de a una foto (igual criterio que la
+   ficha pública del catálogo) + swatches de color clicleables que filtran
+   esas fotos + tallas que dependen del color elegido. ── */
+.gestproductos-detalle-carrusel-wrap {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: var(--dvna-pale);
+  border-radius: var(--r-md, 16px);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.gestproductos-detalle-carrusel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.gestproductos-detalle-carrusel-vacio {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--dvna-muted);
+  font-size: 12px;
+}
+.gestproductos-detalle-carrusel-vacio svg { width: 28px; height: 28px; opacity: 0.5; }
+.gestproductos-detalle-carrusel-flecha {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 1px solid var(--dvna-border);
+  background: rgba(255,255,255,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--dvna-charcoal);
+}
+.gestproductos-detalle-carrusel-flecha:hover { background: #fff; }
+.gestproductos-detalle-carrusel-flecha.izq { left: 10px; }
+.gestproductos-detalle-carrusel-flecha.der { right: 10px; }
+.gestproductos-detalle-carrusel-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+}
+.gestproductos-detalle-carrusel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.6);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s;
+}
+.gestproductos-detalle-carrusel-dot.active {
+  background: #fff;
+  width: 16px;
+  border-radius: 3px;
+}
+
+.gestproductos-detalle-color-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.gestproductos-detalle-color-chip-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0;
+  border: 1px solid rgba(0,0,0,0.1);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.gestproductos-detalle-color-chip-btn:hover { transform: scale(1.08); }
+.gestproductos-detalle-color-chip-btn.selected {
+  box-shadow: 0 0 0 2px var(--dvna-white), 0 0 0 4px var(--brown);
+}
+
+.gestproductos-detalle-tallas-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gestproductos-detalle-talla-chip {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--dvna-border);
+  background: var(--dvna-pale);
+  font-size: 11px;
+  color: var(--dvna-charcoal);
+}
+.gestproductos-detalle-talla-chip.agotada {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
 @media (max-width: 900px) {
   .gestproductos-modal-factura { max-width: 95%; }
 }

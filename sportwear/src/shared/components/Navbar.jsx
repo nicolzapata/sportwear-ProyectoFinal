@@ -6,9 +6,10 @@ import {
   IconDashboard, IconShield, IconUsers, IconUser, IconTag,
   IconShoppingBag, IconPalette, IconBox, IconTruck,
   IconDollar, IconHeart, IconSettings,
-  IconBolt, IconBell, IconLogOut, IconX, IconMenu
+  IconBolt, IconLogOut, IconX, IconMenu
 } from "./Icons";
 import ThemeToggle from "./ThemeToggle";
+import NotificacionesDropdown from "./NotificacionesDropdown";
 const IconStore = () => (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 9l1.5-5h15L21 9" />
@@ -90,9 +91,7 @@ export default function Navbar({ onMenuClick }) {
           <IconStore />
         </Link>
 
-        <Link to="/Notificacion" className="navbar-btn" title="Notificaciones">
-          <IconBell />
-        </Link>
+        <NotificacionesDropdown />
 
 
         <div className="navbar-divider" />

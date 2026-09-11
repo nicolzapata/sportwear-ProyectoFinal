@@ -231,6 +231,38 @@
 }
 .navbar-btn svg { width: 17px; height: 17px; }
 
+/* ── Avatar de usuario (carrito/mi cuenta del navbar público) ── */
+.navbar-user-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.navbar-avatar {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--dvna-circle);
+  color: var(--sw-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.navbar-avatar svg { width: 15px; height: 15px; }
+
+.navbar-user-name {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+}
+
 .navbar-badge {
   position: absolute;
   top: 2px;

@@ -6,24 +6,16 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap');
 
 .auth-split-page {
-  /* Paleta cálida, limitada a las páginas de acceso — no toca las
-     variables globales de --root ni el resto de la app. */
-  --dvna-cream:    #f8f5ef;
-  --dvna-white:    #fffdf9;
-  --dvna-charcoal: #171614;
-  --dvna-muted:    #948a7c;
-  --dvna-border:   #ece2d3;
-  --dvna-circle:   #ad8f76;
-  --dvna-mid:      #c2a58c;
-  --dvna-light:    #e4d9c8;
-  --dvna-pale:     #f3ede1;
-
+  /* Sin overrides de --dvna-* acá: se usan los tokens globales de
+     src/shared/styles/theme.css (los mismos --sw-primary/--sw-bg/etc.
+     que el resto del sitio), así esta página respeta la paleta general
+     y el modo claro/oscuro real en vez de quedar fija en un tono propio. */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   font-family: var(--font-body);
   background-color: var(--dvna-cream);
-  background-image: linear-gradient(135deg, rgba(233,196,171,0.55) 0%, rgba(248,245,239,0.2) 38%, transparent 65%);
+  background-image: linear-gradient(135deg, color-mix(in srgb, var(--dvna-circle) 45%, transparent) 0%, color-mix(in srgb, var(--dvna-cream) 20%, transparent) 38%, transparent 65%);
 }
 
 /* ── Topbar: franja real, ancho completo, sin la cuadrícula del contenido ── */
@@ -36,7 +28,7 @@
   gap: 24px;
   padding: 0 44px;
   background: var(--dvna-white);
-  border-bottom: 1px solid rgba(170,145,120,0.12);
+  border-bottom: 1px solid color-mix(in srgb, var(--dvna-circle) 15%, transparent);
   flex-shrink: 0;
 }
 .auth-topbar-brand {
@@ -50,7 +42,7 @@
   border-radius: 50%;
   border: 1px solid var(--dvna-border);
   background: var(--dvna-white);
-  box-shadow: 0 1px 4px rgba(100,75,50,0.06);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--dvna-circle) 12%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -69,7 +61,7 @@
 .auth-topbar-divider {
   width: 1px;
   height: 16px;
-  background: rgba(170,145,120,0.25);
+  background: color-mix(in srgb, var(--dvna-circle) 25%, transparent);
 }
 
 .auth-topbar-nav {
@@ -91,8 +83,8 @@
 /* La cuadrícula editorial vive en el cuerpo, nunca detrás del header */
 .auth-split-body {
   background-image:
-    linear-gradient(rgba(173,143,118,0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(173,143,118,0.045) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--dvna-circle) 4.5%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--dvna-circle) 4.5%, transparent) 1px, transparent 1px);
   background-size: 42px 42px;
 }
 
@@ -156,7 +148,7 @@
 .recuperar-page .auth-headline {
   font-weight: 700;
 }
-.recuperar-page .auth-topbar-nav {
+.recuperar-page .auth-topbar-nav a {
   visibility: hidden;
 }
 

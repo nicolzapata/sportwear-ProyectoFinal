@@ -8,7 +8,6 @@ import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import api from "../../../shared/services/api";
 import logo from "../../../shared/assets/LOGO.png";
 import { useThemeScope } from "../../../shared/contexts/ThemeContext";
-import ThemeToggle from "../../../shared/components/ThemeToggle";
 import "./Login.css";
 
 const IconLock = () => (
@@ -100,7 +99,6 @@ export default function RestablecerContrasena() {
             <span className="logo-fallback" style={{ display: "none" }}>SportWear</span>
           </div>
           <p className="card-brand-name">SPORT<span>WEAR</span></p>
-          <ThemeToggle />
         </div>
 
         <div className="card-divider" />

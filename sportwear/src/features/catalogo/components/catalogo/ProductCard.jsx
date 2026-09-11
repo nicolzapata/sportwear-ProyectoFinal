@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../../../shared/contexts/CartContext";
 import { useToast } from "../../../../shared/contexts/ToastContext";
@@ -62,6 +62,13 @@ export default function ProductCard({ p, onTogglePublicado, esAdmin }) {
     }
   };
 
+  // ── NUEVO: antes color/talla/precio de la variante solo se cargaban al
+  // pasar el mouse (onMouseEnter cargarDatos), así que la tarjeta se veía
+  // incompleta hasta hacer hover. Ahora se cargan también al montar, para
+  // que toda la info esté visible desde el principio. ──
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { cargarDatos(); }, [p.id_producto]);
+
   const rawImgs = imgsData ?? (p.imagen_principal ? [{ url: p.imagen_principal, id_color: null }] : []);
   const imgs    = filtrarImagenes(rawImgs, colorSel?.id_color ?? null);
   const total   = imgs.length;
@@ -99,7 +106,7 @@ export default function ProductCard({ p, onTogglePublicado, esAdmin }) {
   const precioVarianteSel = varianteSel ? Number(varianteSel.precio ?? p.precio ?? 0) : null;
 
   return (
-    <div className="catalog-card" onMouseEnter={cargarDatos}>
+    <div className="catalog-card">
       <div
         className="catalog-card-img"
         onClick={() => navigate(`/catalogo/${p.id_producto}`)}

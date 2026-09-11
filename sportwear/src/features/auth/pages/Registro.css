@@ -155,9 +155,9 @@
   overflow: hidden;
 }
 .registro-fuerza-fill { display: block; height: 100%; border-radius: 999px; transition: width 0.25s; }
-.registro-fuerza-fill.nivel-1 { width: 33%; background: #c9573a; }
-.registro-fuerza-fill.nivel-2 { width: 66%; background: #d3a23a; }
-.registro-fuerza-fill.nivel-3 { width: 100%; background: #4f9d63; }
+.registro-fuerza-fill.nivel-1 { width: 33%; background: var(--danger); }
+.registro-fuerza-fill.nivel-2 { width: 66%; background: var(--warning); }
+.registro-fuerza-fill.nivel-3 { width: 100%; background: var(--success); }
 
 /* ── Términos y condiciones ── */
 .registro-terminos {
@@ -215,14 +215,14 @@
   width: 72px;
   height: 72px;
   border-radius: 50%;
-  background: rgba(180,151,128,0.08);
+  background: color-mix(in srgb, var(--dvna-circle) 8%, transparent);
   color: var(--dvna-circle);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 26px;
   font-weight: 600;
-  border: 1.5px solid rgba(180,151,128,0.25);
+  border: 1.5px solid color-mix(in srgb, var(--dvna-circle) 25%, transparent);
 }
 .registro-success-title {
   font-size: 20px;

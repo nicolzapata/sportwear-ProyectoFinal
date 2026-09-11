@@ -83,23 +83,17 @@
   );
 }
 
-/* Línea de variantes: colores a la izquierda, tallas a la derecha */
-.dp-variant-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 24px;
-  margin-bottom: 20px;
-}
 .dp-colores {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 20px;
 }
 .dp-tallas {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 8px;
 }
 
 

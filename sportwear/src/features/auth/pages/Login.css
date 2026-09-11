@@ -36,12 +36,12 @@
   position: relative;
   z-index: 1;
   background: var(--dvna-white);
-  border: 1px solid rgba(170,145,120,0.12);
+  border: 1px solid color-mix(in srgb, var(--dvna-circle) 18%, transparent);
   border-radius: 16px;
   padding: 26px 40px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 12px 35px rgba(100,75,50,0.08), 0 2px 10px rgba(100,75,50,0.05);
+  box-shadow: 0 12px 35px color-mix(in srgb, var(--dvna-circle) 16%, transparent), 0 2px 10px color-mix(in srgb, var(--dvna-circle) 10%, transparent);
 }
 
 /* ── Logo dentro de la card ── */
@@ -168,9 +168,9 @@
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: #6f8f74;
-  background: rgba(111,143,116,0.09);
-  border: 1px solid rgba(111,143,116,0.20);
+  color: var(--success);
+  background: var(--success-bg);
+  border: 1px solid color-mix(in srgb, var(--success) 25%, transparent);
   border-radius: 999px;
   padding: 3px 9px;
   text-transform: uppercase;
@@ -199,7 +199,7 @@
 /* ── Recuperar Contraseña: tarjeta con esquina brillante ── */
 .login-card--recuperar {
   border-radius: 28px;
-  border-color: rgba(170,145,120,0.08);
+  border-color: color-mix(in srgb, var(--dvna-circle) 15%, transparent);
 }
 .login-card--recuperar::before {
   content: '';
@@ -210,7 +210,7 @@
   width: 220px;
   height: 220px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(233,196,171,0.55) 0%, rgba(233,196,171,0) 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--dvna-circle) 45%, transparent) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -326,32 +326,32 @@
 .input-wrapper:has(.input-icon-toggle) input {
   padding-right: 42px;
 }
-.form-group input::placeholder { color: #a89c8c; font-weight: 300; -webkit-text-fill-color: #a89c8c; }
+.form-group input::placeholder { color: var(--dvna-muted); font-weight: 300; -webkit-text-fill-color: var(--dvna-muted); }
 
 .form-group input:focus,
 .form-group .ui-select-trigger:focus {
   border-color: var(--dvna-circle);
   background: var(--dvna-white);
-  box-shadow: 0 0 0 3px rgba(180,151,128,0.1);
-  -webkit-box-shadow: 0 0 0 3px rgba(180,151,128,0.1), 0 0 0 1000px var(--dvna-white) inset;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dvna-circle) 20%, transparent);
+  -webkit-box-shadow: 0 0 0 3px color-mix(in srgb, var(--dvna-circle) 20%, transparent), 0 0 0 1000px var(--dvna-white) inset;
 }
 
 /* Casilla con error: borde rojo a juego con la burbuja de alerta
    correspondiente (Login, Recuperar Contraseña y Registro). */
 .input-wrapper.has-error input {
-  border-color: #b94a3a;
-  background: rgba(185,74,58,0.04);
-  box-shadow: 0 0 0 1000px rgba(185,74,58,0.04) inset;
+  border-color: var(--danger);
+  background: var(--danger-bg);
+  box-shadow: 0 0 0 1000px var(--danger-bg) inset;
 }
 .input-wrapper.has-error input:focus {
-  border-color: #b94a3a;
-  box-shadow: 0 0 0 3px rgba(185,74,58,0.12);
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-bg);
 }
 .registro-terminos.has-error span {
-  color: #b94a3a;
+  color: var(--danger);
 }
 .registro-terminos.has-error input {
-  outline: 1.5px solid #b94a3a;
+  outline: 1.5px solid var(--danger);
   outline-offset: 2px;
 }
 
@@ -409,7 +409,7 @@
 .submit-btn:hover:not(:disabled) {
   background: var(--dvna-mid);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(173,143,118,0.3);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--dvna-circle) 30%, transparent);
 }
 .submit-btn:active:not(:disabled) { transform: translateY(0); }
 .submit-btn:disabled {
@@ -425,6 +425,7 @@
   justify-content: space-between;
   gap: 12px;
   background: #1f1712;
+  color: #fff;
   font-size: 14px;
 }
 .submit-btn--dark:hover:not(:disabled) {
@@ -447,9 +448,9 @@
 .field-error {
    font-size: 11px;
    font-weight: 400;
-   color: #b94a3a;
-   background: rgba(185,74,58,0.05);
-   border: 1px solid rgba(185,74,58,0.15);
+   color: var(--danger);
+   background: var(--danger-bg);
+   border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
    border-radius: var(--r);
    padding: 6px 10px;
    margin-top: 4px;
@@ -460,9 +461,9 @@
 .error-message {
   font-size: 12px;
   font-weight: 400;
-  color: #b94a3a;
-  background: rgba(185,74,58,0.05);
-  border: 1px solid rgba(185,74,58,0.15);
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent);
   border-radius: var(--r);
   padding: 10px 14px;
   margin-top: 4px;
@@ -490,13 +491,13 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 1.45;
-  color: #7a2f24;
-  background: #fdf3f1;
-  border: 1px solid rgba(185,74,58,0.35);
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
   border-radius: 14px;
   padding: 12px 14px;
   font-family: var(--font-body);
-  box-shadow: 0 12px 28px rgba(100,40,30,0.12);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--danger) 20%, transparent);
 }
 /* Piquito con el mismo borde que la burbuja: un triángulo del color del
    borde detrás, y uno un poco más chico del color de relleno encima,
@@ -512,12 +513,12 @@
 }
 .login-alert-bubble::before {
   border-width: 8px;
-  border-left-color: rgba(185,74,58,0.35);
+  border-left-color: color-mix(in srgb, var(--danger) 35%, transparent);
 }
 .login-alert-bubble::after {
   border-width: 7px;
   margin-left: -1px;
-  border-left-color: #fdf3f1;
+  border-left-color: var(--danger-bg);
 }
 
 /* Recuperar Contraseña: el bloque izquierdo (con stats y nota) es más

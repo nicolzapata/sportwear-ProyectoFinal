@@ -27,7 +27,7 @@ export default function ProveedorDetalleModal({ verDetalle, setVerDetalle, tiene
         { label: "Cargo", value: verDetalle.cargo_contacto },
         { label: "Celular", value: verDetalle.telefono_celular },
         { label: "Correo", value: verDetalle.email_contacto },
-        { label: "Dirección", value: verDetalle.direccion, full: true },
+        { label: "Dirección", value: verDetalle.direccion },
       ],
     },
   ];

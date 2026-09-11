@@ -7,12 +7,16 @@ import { useToast } from "../../../shared/contexts/ToastContext";
 import Loader from "../../../shared/components/Loader";
 import { IconBox, IconAlertTriangle } from "../../../shared/components/Icons";
 import "./CatalogoAdmin.css";
+// El modal "ver detalle" reutiliza el panel tipo factura de Gestión de
+// Productos (mismo look que el resto de módulos), así que hace falta su CSS.
+import "./GestProductos.modals.css";
+import "./GestProductos.layout.css";
 import { PRODUCTOS_POR_PAGINA } from "../utils/catalogoAdminHelpers";
 import KpiGrid from "../components/catalogo-admin/KpiGrid";
 import ChipsCategoria from "../components/catalogo-admin/ChipsCategoria";
 import FiltrosBar from "../components/catalogo-admin/FiltrosBar";
 import ProductoCard from "../components/catalogo-admin/ProductoCard";
-import VistaRapidaModal from "../components/catalogo-admin/VistaRapidaModal";
+import ProductoDetalleModal from "../components/gest-productos/ProductoDetalleModal";
 
 export default function CatalogoAdmin() {
   const { usuario } = useAuth();
@@ -30,7 +34,17 @@ export default function CatalogoAdmin() {
   const [filtroEstado, setFiltroEstado]   = useState("todos"); // todos | publicados | ocultos | bajo_stock
   const [orden, setOrden]                 = useState("nombre"); // nombre | precio_asc | precio_desc | stock | recientes
   const [pagina, setPagina]               = useState(1);
-  const [verRapido, setVerRapido]         = useState(null);
+  const [verDetalle, setVerDetalle]       = useState(null);
+
+  // Igual que en Gestión de Productos: el detalle base se muestra al toque,
+  // el historial de precios llega después (no bloquea la apertura del modal).
+  const abrirDetalle = async (p) => {
+    setVerDetalle({ ...p, historialPrecios: [] });
+    try {
+      const { data } = await api.get(`/productos/${p.id_producto}/historial-precios`);
+      setVerDetalle(prev => prev && prev.id_producto === p.id_producto ? { ...prev, historialPrecios: data } : prev);
+    } catch { /* el detalle base ya se muestra sin el historial */ }
+  };
 
   const cargar = async () => {
     setLoading(true);
@@ -61,7 +75,7 @@ export default function CatalogoAdmin() {
     try {
       await api.patch(`/productos/${p.id_producto}/publicar`);
       setProductos(prev => prev.map(x => x.id_producto === p.id_producto ? { ...x, publicado: !x.publicado } : x));
-      if (verRapido?.id_producto === p.id_producto) setVerRapido(prev => ({ ...prev, publicado: !prev.publicado }));
+      if (verDetalle?.id_producto === p.id_producto) setVerDetalle(prev => ({ ...prev, publicado: !prev.publicado }));
       showToast("exito", p.publicado ? "Producto despublicado." : "Producto publicado en el catálogo.");
     } catch (err) {
       showToast("error", err.response?.data?.message || "No se pudo cambiar la publicación.");
@@ -171,42 +185,47 @@ export default function CatalogoAdmin() {
           <p>No hay productos que coincidan con estos filtros.</p>
         </div>
       ) : (
-        <>
-          <div className="catadmin-grid">
-            {paginados.map((p) => (
-              <ProductoCard
-                key={p.id_producto}
-                p={p}
-                tienePerm={tienePerm}
-                setVerRapido={setVerRapido}
-                navigate={navigate}
-                togglePublicado={togglePublicado}
-                toggleEstado={toggleEstado}
-              />
-            ))}
+        // "Ver detalle" se ve como panel acoplado a la vitrina (mismo criterio
+        // que Usuarios/Proveedores/Colores), no como modal centrado.
+        <div className={verDetalle ? "catadmin-contenido-split" : "catadmin-contenido"}>
+          <div>
+            <div className="catadmin-grid">
+              {paginados.map((p) => (
+                <ProductoCard
+                  key={p.id_producto}
+                  p={p}
+                  tienePerm={tienePerm}
+                  abrirDetalle={abrirDetalle}
+                  navigate={navigate}
+                  togglePublicado={togglePublicado}
+                  toggleEstado={toggleEstado}
+                />
+              ))}
+            </div>
+
+            {totalPaginas > 1 && (
+              <div className="paginador">
+                <button className="paginador-btn" onClick={() => setPagina(p => Math.max(p - 1, 1))} disabled={pagina === 1}>‹</button>
+                {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((n) => (
+                  <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
+                ))}
+                <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
+                <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} productos</span>
+              </div>
+            )}
           </div>
 
-          {totalPaginas > 1 && (
-            <div className="paginador">
-              <button className="paginador-btn" onClick={() => setPagina(p => Math.max(p - 1, 1))} disabled={pagina === 1}>‹</button>
-              {Array.from({ length: totalPaginas }, (_, i) => i + 1).map((n) => (
-                <button key={n} className={`paginador-btn ${n === pagina ? "paginador-btn-active" : ""}`} onClick={() => setPagina(n)}>{n}</button>
-              ))}
-              <button className="paginador-btn" onClick={() => setPagina(p => Math.min(p + 1, totalPaginas))} disabled={pagina === totalPaginas}>›</button>
-              <span className="paginador-info">Página {pagina} de {totalPaginas} · {filtrados.length} productos</span>
+          {verDetalle && (
+            <div className="catadmin-panel-columna">
+              <ProductoDetalleModal
+                verDetalle={verDetalle}
+                setVerDetalle={setVerDetalle}
+                tienePerm={tienePerm}
+                abrirEditar={(p) => navigate(`/productos?edit=${p.id_producto}`)}
+              />
             </div>
           )}
-        </>
-      )}
-
-      {/* ── Modal de vista rápida ── */}
-      {verRapido && (
-        <VistaRapidaModal
-          verRapido={verRapido}
-          setVerRapido={setVerRapido}
-          tienePerm={tienePerm}
-          navigate={navigate}
-        />
+        </div>
       )}
     </div>
   );

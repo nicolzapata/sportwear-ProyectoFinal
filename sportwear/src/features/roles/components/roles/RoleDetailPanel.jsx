@@ -1,12 +1,14 @@
 import { PALETAS, esRolProtegido, getRoleIcon, labelAccion } from "../../utils/rolesHelpers";
-import { IconEdit } from "../../../../shared/components/Icons";
+import {
+  IconEdit, IconDashboard, IconUser, IconUsers, IconShield, IconShoppingBag,
+  IconTag, IconPalette, IconFactory, IconBox, IconTruck, IconDollar,
+} from "../../../../shared/components/Icons";
 
-// Emoji por módulo — mismo lenguaje visual que el menú lateral (MENU_ITEMS),
-// solo para dar contexto rápido a cada bloque de la matriz.
-const MODULO_EMOJI = {
-  Dashboard: "📊", Usuarios: "👤", Clientes: "🧑‍🤝‍🧑", Roles: "🔑", Productos: "👕",
-  Categorias: "🗂️", Colores: "🎨", Proveedores: "🏭", Compras: "📦", Pedidos: "🚚",
-  Ventas: "💰",
+// Icono por módulo — da contexto rápido a cada bloque de la matriz de permisos.
+const MODULO_ICON = {
+  Dashboard: IconDashboard, Usuarios: IconUser, Clientes: IconUsers, Roles: IconShield,
+  Productos: IconShoppingBag, Categorias: IconTag, Colores: IconPalette,
+  Proveedores: IconFactory, Compras: IconBox, Pedidos: IconTruck, Ventas: IconDollar,
 };
 
 export default function RoleDetailPanel({
@@ -63,10 +65,13 @@ export default function RoleDetailPanel({
           <div className="role-detalle-modulos">
             {modulos.map(([modulo, acciones]) => {
               const otorgadosModulo = acciones.filter(a => otorgadosIds.has(a.id_permiso)).length;
+              const ModuloIcon = MODULO_ICON[modulo];
               return (
                 <div key={modulo} className="role-detalle-modulo">
                   <div className="role-detalle-modulo-header">
-                    <span>{MODULO_EMOJI[modulo] || '•'} {modulo}</span>
+                    <span className="role-detalle-modulo-nombre">
+                      {ModuloIcon ? <ModuloIcon /> : null} {modulo}
+                    </span>
                     <span className="role-detalle-modulo-count">{otorgadosModulo} de {acciones.length}</span>
                   </div>
                   <div className="role-detalle-modulo-acciones">

@@ -10,6 +10,7 @@ import api from "../../../shared/services/api";
 import "./DetalleProducto.layout.css";
 import "./DetalleProducto.preview.css";
 import "./DetalleProducto.variantes.css";
+import "./DetalleProducto.ficha.css";
 import { IconArrowLeft } from "../components/detalle-producto/detalleProductoIcons";
 import Galeria from "../components/detalle-producto/Galeria";
 import InfoPanel from "../components/detalle-producto/InfoPanel";
@@ -149,6 +150,28 @@ export default function DetalleProducto() {
     setTimeout(() => setAgregado(false), 2000);
   };
 
+  // ── "Comprar ahora": agrega el ítem al carrito y va directo a Checkout,
+  // sin quedarse en el catálogo — mismo flujo de validación que "Agregar". ──
+  const handleComprarAhora = () => {
+    if (!colorSel || !tallaSel) {
+      setError("Por favor selecciona color y talla");
+      return;
+    }
+    agregarItem({
+      id:          producto.id_producto,
+      id_variante: varianteSel?.id_variante ?? null,
+      nombre:      producto.nombre,
+      precio:      precioMostrado,
+      imagen:      imgUrls[0] ?? producto.imagen_principal,
+      categoria:   producto.categoria,
+      talla:       tallaSel,
+      color:       colorSel?.nombre,
+      stock:       stockMostrado,
+      cantidad:    cantidad,
+    });
+    navigate("/checkout");
+  };
+
   if (loading) return (
     <div className="dp-loading">
       <div className="dp-spinner" />
@@ -184,7 +207,7 @@ export default function DetalleProducto() {
           handleColorClick={handleColorClick} handleTallaClick={handleTallaClick}
           precioMostrado={precioMostrado} sinSeleccion={sinSeleccion} agotado={agotado} stockMostrado={stockMostrado}
           cantidad={cantidad} decrementar={decrementar} incrementar={incrementar}
-          agregado={agregado} handleAgregar={handleAgregar}
+          agregado={agregado} handleAgregar={handleAgregar} handleComprarAhora={handleComprarAhora}
         />
       </div>
 

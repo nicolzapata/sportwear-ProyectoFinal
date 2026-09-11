@@ -1,10 +1,112 @@
-import GaleriaImagenes from "../../../../shared/components/GaleriaImagenes";
+import { useEffect, useState } from "react";
+import api from "../../../../shared/services/api";
 import { DetalleItem, DetalleGrid } from "../../../../shared/components/ModalDetalle";
-import { IconEdit, IconX } from "../../../../shared/components/Icons";
+import DetallePanel from "../../../../shared/components/DetallePanel";
+import { IconChevronLeft, IconChevronRight, IconImage } from "../../../../shared/components/Icons";
+import { getInitials, getAvatarColor } from "../../../../shared/utils/texto";
+import { filtrarImagenes } from "../../utils/detalleProductoHelpers";
 import { fmt, precioMostrado, agruparVariantesPorColor, esColorClaro } from "../../utils/gestProductosHelpers.jsx";
 
+// Panel acoplado a la tabla (mismo criterio que Usuarios/Proveedores/Colores):
+// "Ver detalle" ya no abre un modal centrado, se ve como panel al lado de la
+// tabla. La galería va primero (igual que el detalle de Colores) y se
+// comporta como en la ficha pública del catálogo: carrusel de a una foto,
+// colores clicleables arriba que filtran esas fotos, y tallas que dependen
+// del color elegido.
 export default function ProductoDetalleModal({ verDetalle, setVerDetalle, tienePerm, abrirEditar }) {
+  const [imagenes, setImagenes] = useState([]);
+  const [colorSel, setColorSel] = useState(null);
+  const [imgActiva, setImgActiva] = useState(0);
+
+  const grupos = verDetalle?.variantes?.length > 0 ? agruparVariantesPorColor(verDetalle.variantes) : [];
+
+  useEffect(() => {
+    if (!verDetalle) return;
+    setColorSel(grupos[0] || null);
+    setImgActiva(0);
+    setImagenes([]);
+    api.get(`/imagenes?tipo=Producto&id=${verDetalle.id_producto}`)
+      .then(({ data }) => setImagenes(data || []))
+      .catch(() => setImagenes([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verDetalle?.id_producto]);
+
   if (!verDetalle) return null;
+
+  const imgUrls = filtrarImagenes(imagenes, colorSel?.id_color ?? null);
+  const total = imgUrls.length;
+  const prev = () => setImgActiva(i => (i - 1 + total) % total);
+  const next = () => setImgActiva(i => (i + 1) % total);
+
+  const stockPorColor = new Map();
+  verDetalle.variantes?.forEach(v => {
+    if (!stockPorColor.has(v.id_color)) stockPorColor.set(v.id_color, new Map());
+    stockPorColor.get(v.id_color).set(v.talla, v.stock);
+  });
+  const mapaStock = stockPorColor.get(colorSel?.id_color) || new Map();
+
+  const seleccionarColor = (g) => {
+    setColorSel(g);
+    setImgActiva(0);
+  };
+
+  const DetalleGaleria = (
+    <div className="gestproductos-factura-seccion">
+      <div className="gestproductos-detalle-carrusel-wrap">
+        {total > 0 ? (
+          <>
+            <img className="gestproductos-detalle-carrusel-img" src={imgUrls[imgActiva]} alt={verDetalle.nombre} />
+            {total > 1 && (
+              <>
+                <button className="gestproductos-detalle-carrusel-flecha izq" onClick={prev} type="button"><IconChevronLeft /></button>
+                <button className="gestproductos-detalle-carrusel-flecha der" onClick={next} type="button"><IconChevronRight /></button>
+                <div className="gestproductos-detalle-carrusel-dots">
+                  {imgUrls.map((_, i) => (
+                    <button key={i} className={`gestproductos-detalle-carrusel-dot${i === imgActiva ? " active" : ""}`} onClick={() => setImgActiva(i)} type="button" />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <div className="gestproductos-detalle-carrusel-vacio"><IconImage /><span>Sin fotos para este color</span></div>
+        )}
+      </div>
+
+      {grupos.length > 0 && (
+        <div className="gestproductos-detalle-color-chips-row">
+          {grupos.map(g => {
+            const swatchStyle = esColorClaro(g.codigo_hex)
+              ? { background: g.codigo_hex || "#ccc", border: "2px solid #ccc" }
+              : { background: g.codigo_hex || "#ccc" };
+            return (
+              <button
+                key={g.id_color}
+                type="button"
+                title={g.nombre}
+                className={`gestproductos-detalle-color-chip-btn${colorSel?.id_color === g.id_color ? " selected" : ""}`}
+                style={swatchStyle}
+                onClick={() => seleccionarColor(g)}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {colorSel?.tallas?.length > 0 && (
+        <div className="gestproductos-detalle-tallas-row">
+          {colorSel.tallas.map(t => {
+            const stock = Number(mapaStock.get(t) ?? 0);
+            return (
+              <span key={t} className={`gestproductos-detalle-talla-chip${stock === 0 ? " agotada" : ""}`} title={stock === 0 ? "Agotada" : `${stock} uds`}>
+                {t}
+              </span>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 
   const DetalleInfoGeneral = (
     <>
@@ -38,100 +140,18 @@ export default function ProductoDetalleModal({ verDetalle, setVerDetalle, tieneP
     </>
   );
 
-  const DetalleVariantesImagenes = (
-    <>
-      {verDetalle.variantes?.length > 0 && (() => {
-        // ── CORREGIDO: antes esto agrupaba por color y solo separaba en dos
-        // baldes ("con stock" / "sin stock"), sin decir el número exacto de
-        // unidades de cada talla — el admin no tenía forma de saber, por
-        // ejemplo, si la talla M tiene 2 unidades o 20. Ahora cada color
-        // muestra una fila por talla con su stock exacto y su precio real
-        // (el de la variante si tiene uno propio, si no el precio base). ──
-        const grupos = agruparVariantesPorColor(verDetalle.variantes);
-        const preciosPorColor = new Map();
-        const stockPorColor = new Map();
-        verDetalle.variantes.forEach(v => {
-          if (!preciosPorColor.has(v.id_color)) preciosPorColor.set(v.id_color, new Map());
-          preciosPorColor.get(v.id_color).set(v.talla, v.precio);
-          if (!stockPorColor.has(v.id_color)) stockPorColor.set(v.id_color, new Map());
-          stockPorColor.get(v.id_color).set(v.talla, v.stock);
-        });
-        return (
-          <div className="gestproductos-factura-seccion">
-            <h3 className="gestproductos-factura-titulo">Variantes — stock y precio por talla/color</h3>
-            <p style={{ fontSize: 11, color: "var(--dvna-muted)", margin: "0 0 10px" }}>
-              Si una talla no tiene precio propio, se usa el precio base del producto (mostrado arriba).
-            </p>
-            <div className="gestproductos-detalle-variantes-grupos">
-              {grupos.map(g => {
-                const swatchStyle = esColorClaro(g.codigo_hex)
-                  ? { background: g.codigo_hex || "#ccc", border: "2px solid #ccc" }
-                  : { background: g.codigo_hex || "#ccc" };
-                const mapaPrecios = preciosPorColor.get(g.id_color) || new Map();
-                const mapaStock = stockPorColor.get(g.id_color) || new Map();
-                return (
-                  <div key={g.id_color} className="gestproductos-detalle-color-grupo">
-                    <div className="gestproductos-detalle-color-header">
-                      <span className="gestproductos-detalle-variante-dot" style={swatchStyle} />
-                      <span>{g.nombre}</span>
-                    </div>
-                    <table className="gestproductos-detalle-variantes-tabla">
-                      <thead>
-                        <tr><th>Talla</th><th>Stock</th><th>Precio</th></tr>
-                      </thead>
-                      <tbody>
-                        {g.tallas.map(t => {
-                          const stock = mapaStock.get(t) ?? 0;
-                          const precio = mapaPrecios.get(t) ?? verDetalle.precio;
-                          return (
-                            <tr key={t} className={stock === 0 ? "agotada" : ""}>
-                              <td>{t}</td>
-                              <td>{stock === 0 ? <span className="gestproductos-detalle-agotado-tag">Agotado</span> : `${stock} uds`}</td>
-                              <td>{fmt(precio)}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
-      <div className="gestproductos-factura-seccion">
-        <h3 className="gestproductos-factura-titulo">Imágenes</h3>
-        <GaleriaImagenes tipoReferencia="Producto" idReferencia={verDetalle.id_producto} soloLectura />
-      </div>
-    </>
-  );
-
   return (
-    <div className="gestproductos-modal-overlay" onClick={() => setVerDetalle(null)}>
-      <div className="gestproductos-modal gestproductos-modal-factura" onClick={(e) => e.stopPropagation()}>
-        <div className="gestproductos-modal-header">
-          <div>
-            <h2 className="gestproductos-modal-title">{verDetalle.nombre}</h2>
-            <p className="gestproductos-modal-subtitulo">Detalle del producto</p>
-          </div>
-          <button className="gestproductos-modal-close" onClick={() => setVerDetalle(null)}><IconX /></button>
-        </div>
-
-        <div className="gestproductos-modal-body gestproductos-factura-body">
-          {DetalleInfoGeneral}
-          {DetalleVariantesImagenes}
-        </div>
-
-        <div className="gestproductos-modal-footer">
-          <button className="gestproductos-btn-secondary" onClick={() => setVerDetalle(null)}>Cerrar</button>
-          {tienePerm('Productos.editar') && (
-            <button className="gestproductos-btn-primary" onClick={() => { setVerDetalle(null); abrirEditar(verDetalle); }}>
-              <IconEdit /> Editar
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
+    <DetallePanel
+      iniciales={getInitials(verDetalle.nombre)}
+      avatarColor={getAvatarColor(verDetalle.id_producto)}
+      nombre={verDetalle.nombre}
+      subtitulo="Detalle del producto"
+      onClose={() => setVerDetalle(null)}
+      onEditar={tienePerm('Productos.editar') ? () => { setVerDetalle(null); abrirEditar(verDetalle); } : undefined}
+      editarLabel="Editar producto"
+    >
+      {DetalleGaleria}
+      {DetalleInfoGeneral}
+    </DetallePanel>
   );
 }

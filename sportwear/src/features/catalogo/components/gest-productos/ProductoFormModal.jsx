@@ -2,8 +2,14 @@ import { MAX_MONTO, MAX_LONGITUD_NOMBRE } from "../../../../shared/utils/numeric
 import GaleriaImagenes from "../../../../shared/components/GaleriaImagenes";
 import GestVariantes from "../GestVariantes";
 import Select from "../../../../shared/components/Select";
+import DetallePanel from "../../../../shared/components/DetallePanel";
+import { getInitials, getAvatarColor } from "../../../../shared/utils/texto";
 import { IconAlertTriangle, IconX } from "../../../../shared/components/Icons";
 
+// variante="modal" (por defecto): overlay centrado, usado al crear un producto.
+// variante="panel": se acopla al lado de la tabla, usado al editar un
+// producto existente — mismos campos y validaciones, solo cambia el
+// cascarón visual (igual que ProveedorFormModal/UsuarioFormModal).
 export default function ProductoFormModal({
   editar, productoId, cerrarModal,
   errores, setErrores, form, setForm, validarNombreProducto,
@@ -14,20 +20,13 @@ export default function ProductoFormModal({
   coloresAPurgarFotos, onFotosDeColorPurgadas,
   eliminarFotosDeColor, variantesVersion, setVariantesVersion,
   coloresPendientes,
-  guardar, guardando,
+  guardar, guardando, variante = 'modal',
 }) {
-  return (
-    <div className="gestproductos-modal-overlay" onClick={cerrarModal}>
-      <div className="gestproductos-modal gestproductos-modal-factura" onClick={(e) => e.stopPropagation()}>
-        <div className="gestproductos-modal-header">
-          <h2 className="gestproductos-modal-title">{editar ? "Editar producto" : "Nuevo producto"}</h2>
-          <button className="gestproductos-modal-close" onClick={cerrarModal}><IconX /></button>
-        </div>
+  const cuerpo = (
+    <>
+      {errores.general && <div className="gestproductos-error-banner"><IconAlertTriangle /> {errores.general}</div>}
 
-        <div className="gestproductos-modal-body gestproductos-factura-body">
-          {errores.general && <div className="gestproductos-error-banner"><IconAlertTriangle /> {errores.general}</div>}
-
-          <div className="gestproductos-factura-seccion">
+      <div className="gestproductos-factura-seccion">
             <h3 className="gestproductos-factura-titulo">Datos del producto</h3>
 
             <div className="gestproductos-form-group">
@@ -136,14 +135,49 @@ export default function ProductoFormModal({
             />
           </div>
 
-          <div className="gestproductos-factura-seccion">
-            <h3 className="gestproductos-factura-titulo">Imágenes</h3>
-            <GaleriaImagenes
-              tipoReferencia="Producto" idReferencia={productoId} onPendingChange={setPendingImagenes} coloresPendientes={coloresPendientes}
-              coloresAPurgar={coloresAPurgarFotos} onColoresPurgados={onFotosDeColorPurgadas}
-              refrescarColores={variantesVersion}
-            />
-          </div>
+      <div className="gestproductos-factura-seccion">
+        <h3 className="gestproductos-factura-titulo">Imágenes</h3>
+        <GaleriaImagenes
+          tipoReferencia="Producto" idReferencia={productoId} onPendingChange={setPendingImagenes} coloresPendientes={coloresPendientes}
+          coloresAPurgar={coloresAPurgarFotos} onColoresPurgados={onFotosDeColorPurgadas}
+          refrescarColores={variantesVersion}
+        />
+      </div>
+    </>
+  );
+
+  if (variante === 'panel') {
+    return (
+      <DetallePanel
+        iniciales={getInitials(form.nombre) || '?'}
+        avatarColor={getAvatarColor(editar)}
+        nombre={editar ? "Editar producto" : "Nuevo producto"}
+        subtitulo={form.nombre || undefined}
+        onClose={() => !guardando && cerrarModal()}
+        footer={
+          <>
+            <button className="detalle-panel-btn-secundario" onClick={cerrarModal} disabled={guardando}>Cancelar</button>
+            <button className="detalle-panel-btn-primario" onClick={guardar} disabled={guardando}>
+              {guardando ? "Guardando..." : (editar ? "Actualizar" : "Registrar")}
+            </button>
+          </>
+        }
+      >
+        {cuerpo}
+      </DetallePanel>
+    );
+  }
+
+  return (
+    <div className="gestproductos-modal-overlay" onClick={cerrarModal}>
+      <div className="gestproductos-modal gestproductos-modal-factura" onClick={(e) => e.stopPropagation()}>
+        <div className="gestproductos-modal-header">
+          <h2 className="gestproductos-modal-title">{editar ? "Editar producto" : "Nuevo producto"}</h2>
+          <button className="gestproductos-modal-close" onClick={cerrarModal}><IconX /></button>
+        </div>
+
+        <div className="gestproductos-modal-body gestproductos-factura-body">
+          {cuerpo}
         </div>
 
         <div className="gestproductos-modal-footer">

@@ -30,18 +30,47 @@ export default function GestProductos() {
 
   if (g.loading) return <Loader text="Cargando productos..." />;
 
+  // Editar un producto existente se resuelve en el panel acoplado a la tabla
+  // (no en el modal centrado, igual que Usuarios/Proveedores); crear uno
+  // nuevo sigue usando el modal.
+  const editandoExistente = g.modal && g.tab === 'productos' && !!g.editar;
+  const panelAbierto = g.tab === 'productos' && (g.verDetalle || editandoExistente);
+
   return (
     <div className="gestproductos-container">
       <GestProductosToolbar g={g} />
 
       {g.tab === 'productos' ? (
-        <ProductosTable
-          datos={g.datos} tienePerm={g.tienePerm}
-          variantesDropdownAbierto={g.variantesDropdownAbierto} setVariantesDropdownAbierto={g.setVariantesDropdownAbierto}
-          togglePublicado={g.togglePublicado} toggleEstadoProducto={g.toggleEstadoProducto}
-          abrirDetalle={g.abrirDetalle} abrirEditar={g.abrirEditar} setEliminarId={g.setEliminarId}
-          totalPaginasProductos={g.totalPaginasProductos} paginaProductos={g.paginaProductos} setPaginaProductos={g.setPaginaProductos} totalProductos={g.totalProductos}
-        />
+        <div className={panelAbierto ? "gestproductos-contenido-split" : "gestproductos-contenido"}>
+          <ProductosTable
+            datos={g.datos} tienePerm={g.tienePerm}
+            variantesDropdownAbierto={g.variantesDropdownAbierto} setVariantesDropdownAbierto={g.setVariantesDropdownAbierto}
+            togglePublicado={g.togglePublicado} toggleEstadoProducto={g.toggleEstadoProducto}
+            abrirDetalle={g.abrirDetalle} abrirEditar={g.abrirEditar} setEliminarId={g.setEliminarId}
+            totalPaginasProductos={g.totalPaginasProductos} paginaProductos={g.paginaProductos} setPaginaProductos={g.setPaginaProductos} totalProductos={g.totalProductos}
+          />
+          {panelAbierto && (
+            <div className="gestproductos-panel-columna">
+              {editandoExistente ? (
+                <ProductoFormModal
+                  variante="panel"
+                  editar={g.editar} productoId={g.productoId} cerrarModal={g.cerrarModal}
+                  errores={g.errores} setErrores={g.setErrores} form={g.form} setForm={g.setForm} validarNombreProducto={g.validarNombreProducto}
+                  categorias={g.categorias} tienePerm={g.tienePerm}
+                  setPendingVariantes={g.setPendingVariantes}
+                  pendingImagenes={g.pendingImagenes} setPendingImagenes={g.setPendingImagenes}
+                  coloresAPurgar={g.coloresAPurgar} onColoresPurgados={g.onColoresPurgados}
+                  coloresAPurgarFotos={g.coloresAPurgarFotos} onFotosDeColorPurgadas={g.onFotosDeColorPurgadas}
+                  eliminarFotosDeColor={g.eliminarFotosDeColor} variantesVersion={g.variantesVersion} setVariantesVersion={g.setVariantesVersion}
+                  coloresPendientes={g.coloresPendientes}
+                  guardar={g.guardar} guardando={g.guardando}
+                />
+              ) : (
+                <ProductoDetalleModal verDetalle={g.verDetalle} setVerDetalle={g.setVerDetalle} tienePerm={g.tienePerm} abrirEditar={g.abrirEditar} />
+              )}
+            </div>
+          )}
+        </div>
       ) : g.tab === 'categorias' ? (
         <CategoriasTable
           categoriasPagina={g.categoriasPagina} tienePerm={g.tienePerm}
@@ -56,8 +85,9 @@ export default function GestProductos() {
         />
       )}
 
-      {/* ── Modal crear/editar producto: panel único tipo factura ── */}
-      {g.modal && g.tab === 'productos' && (
+      {/* ── Modal centrado: solo para crear un producto nuevo — editar uno
+          existente siempre se resuelve en el panel acoplado (ver arriba). ── */}
+      {g.modal && g.tab === 'productos' && !g.editar && (
         <ProductoFormModal
           editar={g.editar} productoId={g.productoId} cerrarModal={g.cerrarModal}
           errores={g.errores} setErrores={g.setErrores} form={g.form} setForm={g.setForm} validarNombreProducto={g.validarNombreProducto}
@@ -103,9 +133,6 @@ export default function GestProductos() {
           confirmLabel="Sí, eliminar"
         />
       )}
-
-      {/* ── Modal ver detalle: panel único tipo factura, igual al resto de módulos ── */}
-      <ProductoDetalleModal verDetalle={g.verDetalle} setVerDetalle={g.setVerDetalle} tienePerm={g.tienePerm} abrirEditar={g.abrirEditar} />
 
       {/* ── Modal ver detalle de categoría: mismo panel tipo factura ── */}
       <CategoriaDetalleModal verDetalleCategoria={g.verDetalleCategoria} setVerDetalleCategoria={g.setVerDetalleCategoria} tienePerm={g.tienePerm} abrirEditarCategoria={g.abrirEditarCategoria} />

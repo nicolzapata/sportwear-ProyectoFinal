@@ -1,0 +1,260 @@
+/* ── DetalleProducto.ficha.css ── ficha de producto estilo "ecommerce
+   compacto": breadcrumb, caja de precio + stock, encabezados de variante
+   con conteo, fila de acción (cantidad + agregar), botón de compra
+   express, descripción y acordeones de composición/envíos. ── */
+
+/* ── Breadcrumb ── */
+.dp-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--dvna-muted);
+  margin: 0 0 18px;
+}
+.dp-breadcrumb-link {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.dp-breadcrumb-link:hover { color: var(--brown); }
+.dp-breadcrumb-sep { opacity: 0.6; }
+
+/* ── Meta: marca/categoría + referencia ── */
+.dp-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.dp-meta-tag {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--dvna-circle);
+}
+.dp-meta-ref {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--dvna-muted);
+  white-space: nowrap;
+  background: var(--dvna-pale);
+  border-radius: 20px;
+  padding: 4px 12px;
+}
+
+/* ── Caja de precio + stock ── */
+.dp-price-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r-md);
+  padding: 16px 20px;
+  margin: 20px 0;
+}
+.dp-price-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--dvna-muted);
+  margin-bottom: 4px;
+}
+.dp-precio-moneda {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dvna-muted);
+}
+
+.dp-stock-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--success);
+  background: rgba(58,102,72,0.1);
+  border-radius: 20px;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+.dp-stock-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.dp-stock-pill.baja { color: var(--warning); background: rgba(138,95,0,0.1); }
+.dp-stock-pill.agotada { color: var(--dvna-muted); background: var(--dvna-border); }
+
+/* ── Encabezado de atributo con conteo (colores) ── */
+.dp-attr-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.dp-attr-count {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dvna-circle);
+  white-space: nowrap;
+}
+
+/* ── Fila de acción: cantidad + agregar al carrito ── */
+.dp-action-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.dp-action-row .dp-cantidad-controls { flex-shrink: 0; }
+.dp-action-row .dp-btn-agregar { flex: 1; }
+
+/* ── Botón "Comprar ahora" (compra express) ── */
+.dp-btn-comprar-ya {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dvna-circle);
+  background: transparent;
+  border: 1.5px solid var(--dvna-circle);
+  border-radius: var(--r);
+  padding: 13px 20px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  margin-bottom: 28px;
+}
+.dp-btn-comprar-ya:hover:not(:disabled) {
+  background: var(--dvna-circle);
+  color: var(--sw-secondary);
+}
+.dp-btn-comprar-ya:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Descripción ── */
+.dp-desc-section { margin-bottom: 24px; }
+.dp-desc-title {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dvna-charcoal);
+  margin: 0 0 8px;
+}
+.dp-desc-text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--dvna-muted);
+  margin: 0;
+}
+
+/* ── Grid de especificaciones (categoría / referencia) ── */
+.dp-specs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--dvna-border);
+  border-bottom: 1px solid var(--dvna-border);
+  margin-bottom: 8px;
+}
+.dp-spec-item { display: flex; flex-direction: column; gap: 4px; }
+.dp-spec-label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--dvna-muted);
+}
+.dp-spec-val {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+}
+
+/* ── Acordeones: composición/cuidados, envíos/cambios ── */
+.dp-accordion {
+  border-bottom: 1px solid var(--dvna-border);
+}
+.dp-accordion-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: none;
+  border: none;
+  padding: 16px 0;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+  text-align: left;
+}
+.dp-accordion-head-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.dp-accordion-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--dvna-circle);
+  flex-shrink: 0;
+}
+.dp-accordion-head svg:last-child {
+  color: var(--dvna-muted);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.dp-accordion.abierto .dp-accordion-head svg:last-child {
+  transform: rotate(180deg);
+}
+.dp-accordion-body {
+  padding: 0 0 18px;
+  animation: dp-accordion-in 0.2s ease;
+}
+.dp-accordion-body p {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--dvna-muted);
+  margin: 0;
+}
+@keyframes dp-accordion-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .dp-breadcrumb { margin-top: 0; }
+  .dp-specs-grid { grid-template-columns: 1fr; }
+}

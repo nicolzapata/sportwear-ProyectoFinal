@@ -289,6 +289,17 @@
   color: var(--dvna-charcoal);
   margin-bottom: 8px;
 }
+.role-detalle-modulo-nombre {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.role-detalle-modulo-nombre svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
 .role-detalle-modulo-count {
   font-size: 10px;
   font-weight: 500;

@@ -189,7 +189,8 @@
 .detalle-panel-body .proveedores-factura-seccion,
 .detalle-panel-body .compras-factura-seccion,
 .detalle-panel-body .pedidos-factura-seccion,
-.detalle-panel-body .pedidosventas-factura-seccion { padding: 0; border: none; background: none; }
+.detalle-panel-body .pedidosventas-factura-seccion,
+.detalle-panel-body .gestproductos-factura-seccion { padding: 0; border: none; background: none; }
 
 @media (max-width: 900px) {
   .detalle-panel { position: static; }

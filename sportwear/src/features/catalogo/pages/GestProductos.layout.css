@@ -8,6 +8,20 @@
   font-family: var(--font-body);
 }
 
+/* ── Ver detalle de producto: panel acoplado a la tabla (mismo criterio que
+   Usuarios/Proveedores/Colores), no modal centrado. ── */
+.gestproductos-contenido-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.gestproductos-panel-columna { min-width: 0; margin-top: 18px; }
+
+@media (max-width: 900px) {
+  .gestproductos-contenido-split { grid-template-columns: 1fr; }
+}
+
 /* Red de seguridad: si la suma de columnas no cabe en el ancho disponible,
    aparece scroll horizontal en vez de que una celda quede tapada por la
    celda vecina (ver .gestproductos-th-variantes). Antes usaba un margen

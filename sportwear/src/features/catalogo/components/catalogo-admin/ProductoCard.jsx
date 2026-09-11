@@ -2,10 +2,10 @@ import { IconBox, IconEdit, IconEye } from "../../../../shared/components/Icons"
 import { IconSparkle, IconTagPromo } from "./icons";
 import { precioMostrado, stockPct, stockClase } from "../../utils/catalogoAdminHelpers";
 
-export default function ProductoCard({ p, tienePerm, setVerRapido, navigate, togglePublicado, toggleEstado }) {
+export default function ProductoCard({ p, tienePerm, abrirDetalle, navigate, togglePublicado, toggleEstado }) {
   return (
     <div className="catadmin-card">
-      <div className="catadmin-card-img-wrap" onClick={() => setVerRapido(p)}>
+      <div className="catadmin-card-img-wrap" onClick={() => abrirDetalle(p)}>
         {p.imagenPrincipal ? (
           <img src={p.imagenPrincipal} alt={p.nombre} className="catadmin-card-img" />
         ) : (
@@ -25,8 +25,8 @@ export default function ProductoCard({ p, tienePerm, setVerRapido, navigate, tog
         <div className="catadmin-card-overlay">
           <button
             className="catadmin-overlay-btn"
-            title="Vista rápida"
-            onClick={(e) => { e.stopPropagation(); setVerRapido(p); }}
+            title="Ver detalle"
+            onClick={(e) => { e.stopPropagation(); abrirDetalle(p); }}
           >
             <IconEye />
           </button>
