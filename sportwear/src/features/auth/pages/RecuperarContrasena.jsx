@@ -6,7 +6,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../../../shared/services/api";
-import logo from "../../../shared/assets/LOGO.png";
 import AuthLayout from "./AuthLayout";
 import "./Login.css";
 
@@ -18,33 +17,48 @@ const IconMail = () => (
 );
 
 export default function RecuperarContrasena() {
-  const [email, setEmail]           = useState("");
-  const [error, setError]           = useState("");
-  const [emailError, setEmailError] = useState("");
-  const [loading, setLoading]       = useState(false);
-  const [enviado, setEnviado]       = useState(false);
+  const [email, setEmail]             = useState("");
+  const [error, setError]             = useState("");
+  const [emailErrors, setEmailErrors] = useState([]);
+  const [loading, setLoading]         = useState(false);
+  const [enviado, setEnviado]         = useState(false);
+  const [tocado, setTocado]           = useState(false);
 
-  // Validación de formato de correo
+  // Validación de formato de correo: devuelve TODOS los errores que
+  // apliquen a la vez (ej: si no tiene @ ni ".", se muestran las dos
+  // notificaciones juntas, no solo la primera).
   const validateEmail = (email) => {
-    if (!email) return "El correo electrónico es requerido";
-    if (!email.includes("@")) return "El correo debe contener @";
-    if (!email.includes(".")) return "El correo debe contener un punto (.)";
+    if (!email) return ["El correo electrónico es requerido"];
+
+    const errores = [];
+    if (!email.includes("@")) errores.push("El correo debe contener @");
+    if (!email.includes(".")) errores.push("El correo debe contener un punto (.)");
+    if (errores.length > 0) return errores;
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-    if (!emailRegex.test(email)) return "Formato de correo inválido";
+    if (!emailRegex.test(email)) return ["Formato de correo inválido"];
 
-    return "";
+    return [];
+  };
+
+  const handleChange = (e) => {
+    const value = e.target.value;
+    setEmail(value);
+    setError("");
+    // Validación en tiempo real: solo una vez que el campo ya fue visitado.
+    if (tocado) setEmailErrors(validateEmail(value));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const emailErrorMsg = validateEmail(email);
-    setEmailError(emailErrorMsg);
+    const emailErrorMsgs = validateEmail(email);
+    setEmailErrors(emailErrorMsgs);
     setError("");
+    setTocado(true);
 
     // Si hay error de formato, NO se llama a la API
-    if (emailErrorMsg) return;
+    if (emailErrorMsgs.length > 0) return;
 
     setLoading(true);
     try {
@@ -69,6 +83,8 @@ export default function RecuperarContrasena() {
   const onBlur = (e) => {
     const bar = e.target.parentElement.querySelector(".input-bar");
     if (bar) bar.style.transform = "scaleX(0)";
+    setTocado(true);
+    setEmailErrors(validateEmail(email));
   };
 
   return (
@@ -76,86 +92,71 @@ export default function RecuperarContrasena() {
       badge="RESTABLECIMIENTO DE CREDENCIALES"
       title={<>Protección continua para tu <i>experiencia</i> activa.</>}
       description="Ingresa la dirección asociada a tu cuenta Sportwear. Enviaremos un token criptográfico de un solo uso para que redefinas tu clave sin fricciones."
-      stats={[
-        { value: "01", unit: "min", label: "Envío exprés" },
-        { value: "256", unit: "bit", label: "Cifrado SHA" },
-        { value: "15", unit: "min", label: "Caducidad token" },
-      ]}
-      note="Nuestros protocolos biométricos y de tokenización garantizan la custodia de tus pedidos, medidas personalizadas y membresía DVNA Club."
+      pageClassName="recuperar-page"
     >
-      <div className="login-card">
-
-        {/* Logo */}
-        <div className="card-logo">
-          <div className="brand-logo-ring">
-            <img src={logo} alt="SportWear" onError={(e) => {
-              e.target.style.display = "none";
-              e.target.nextSibling.style.display = "block";
-            }}/>
-            <span className="logo-fallback" style={{ display: "none" }}>SportWear</span>
-          </div>
-          <p className="card-brand-name">SPORT<span>WEAR</span></p>
-        </div>
-
-        <div className="card-divider" />
+      <div className="login-card login-card--recuperar">
 
         {!enviado ? (
           <>
             <div className="form-header">
-              <div className="greeting">Acceso exclusivo</div>
               <h2>Recuperar contraseña</h2>
               <p>Recibirás un enlace intransferible verificado por nuestro sistema seguro.</p>
             </div>
 
+            {/* Alertas: burbujas de chat apiladas junto a la tarjeta, igual
+                que en Inicio de sesión, y en tiempo real desde que el
+                campo fue tocado por primera vez. */}
+            {(emailErrors.length > 0 || error) && (
+              <div className="login-alerts" id="email-error">
+                {emailErrors.map((msg) => (
+                  <div key={msg} className="login-alert-bubble">{msg}</div>
+                ))}
+                {error && <div className="login-alert-bubble">{error}</div>}
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} noValidate>
               <div className="form-group">
-                <label><IconMail /> Correo electrónico</label>
-                <div className="input-wrapper">
-                  <span className="input-icon"><IconMail /></span>
+                <div className="label-row">
+                  <label>Correo electrónico</label>
+                  <span className="registrado-tag">Registrado</span>
+                </div>
+                <div className={`input-wrapper${emailErrors.length > 0 || error ? " has-error" : ""}`}>
+                  <span className="input-icon-left"><IconMail /></span>
                   <input
                     type="email"
                     placeholder="correo@gmail.com"
                     value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      setEmailError("");
-                      setError("");
-                    }}
+                    onChange={handleChange}
                     onFocus={onFocus} onBlur={onBlur}
                     aria-describedby="email-error"
                   />
                   <div className="input-bar" />
                 </div>
-                {emailError && <div id="email-error" className="field-error">{emailError}</div>}
               </div>
-
-              {error && <div className="error-message">{error}</div>}
 
               <div className="form-links">
-                <Link to="/login">← Volver al inicio de sesión</Link>
+                <Link to="/login">← Volver al login</Link>
               </div>
 
-              <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? "Enviando..." : "Enviar Clave de Recuperación →"}
+              <button type="submit" className="submit-btn submit-btn--dark" disabled={loading}>
+                <span>{loading ? "Enviando..." : "Enviar Clave de Recuperación"}</span>
+                <span className="btn-arrow" aria-hidden="true">→</span>
               </button>
             </form>
           </>
         ) : (
           <>
             <div className="form-header">
-              <div className="greeting">Correo enviado</div>
+              <span className="acceso-badge">Correo enviado</span>
               <h2>Revisa tu bandeja</h2>
               <p>Enviamos instrucciones a <strong>{email}</strong></p>
             </div>
             <div className="form-links">
-              <Link to="/login">← Volver al inicio de sesión</Link>
+              <Link to="/login">← Volver al login</Link>
             </div>
           </>
         )}
-
-        <div className="form-footer-mark">
-          <span>DVNA · SportWear</span>
-        </div>
       </div>
     </AuthLayout>
   );

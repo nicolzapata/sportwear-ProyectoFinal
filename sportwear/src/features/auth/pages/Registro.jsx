@@ -6,8 +6,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../../../shared/services/api";
-import logo from "../../../shared/assets/LOGO.png";
 import { soloDigitos, validarNumeroDocumento, validarEmail, LONGITUD_TELEFONO } from "../../../shared/utils/numerico";
+import AuthLayout from "./AuthLayout";
 import "./Login.css";
 import "./Registro.css";
 import { CAMPOS_NUMERICOS, calcularErrores } from "../utils/registroHelpers";
@@ -16,6 +16,14 @@ import ContactoFields from "../components/registro/ContactoFields";
 import SeguridadFields from "../components/registro/SeguridadFields";
 import { useThemeScope } from "../../../shared/contexts/ThemeContext";
 import ThemeToggle from "../../../shared/components/ThemeToggle";
+
+// Qué campos pertenecen a cada sección — se usa para saber cuándo esa
+// sección está completa y se puede desbloquear la siguiente.
+const CAMPOS_SECCION = {
+  1: ["nombres", "apellidos", "documento"],
+  2: ["email", "telefono", "direccion"],
+  3: ["contrasena", "confirmar"],
+};
 
 export default function Registro() {
   useThemeScope("sw-scope-auth");
@@ -152,102 +160,105 @@ export default function Registro() {
     }
   };
 
+  // Todas las alertas activas juntas (una burbuja por mensaje, apiladas),
+  // igual que en Inicio de sesión y Recuperar Contraseña: cada campo
+  // inválido aporta su mensaje, más el de términos y el error general.
+  const alertas = [
+    ...Object.values(errores).filter(Boolean),
+    ...(terminosError ? [terminosError] : []),
+    ...(error ? [error] : []),
+  ];
+
+  // Las 3 secciones se muestran siempre (no se ocultan) — pero la 2 y la 3
+  // quedan bloqueadas (grises, sin poder escribir en ellas) hasta que la
+  // anterior no tenga ningún error, usando el formulario completo (no solo
+  // lo "tocado") para no dejar avanzar con datos inválidos sin llenar.
+  const erroresCompletos = calcularErrores(form);
+  const seccion1Completa = CAMPOS_SECCION[1].every((campo) => !erroresCompletos[campo]);
+  const seccion2Completa = seccion1Completa && CAMPOS_SECCION[2].every((campo) => !erroresCompletos[campo]);
+  const seccion3Completa = seccion2Completa && CAMPOS_SECCION[3].every((campo) => !erroresCompletos[campo]);
+
   return (
-    <div className="registro-page">
-      <div className="registro-shell">
-
-        {/* Panel izquierdo: branding */}
-        <aside className="registro-brand-panel">
-          <div className="registro-brand-top">
-            <span className="registro-brand-dot" />
-            <span>SPORTWEAR</span>
+    <AuthLayout
+      badge="ESTÉTICA // RENDIMIENTO"
+      title={<>La nueva era de la <i>indumentaria deportiva.</i></>}
+      description="Acceso prioritario a lanzamientos cápsula limitados, tecnología textil biométrica y beneficios personalizados en nuestro Atelier global."
+      note="Trazabilidad en cada costura y certificación deportiva."
+      pageClassName="registro-page-variant"
+    >
+      <div className="login-card-wrap login-card-wrap--registro">
+        {/* Alertas: burbujas de chat apiladas junto a la tarjeta, igual que
+            en Inicio de sesión y Recuperar Contraseña. Viven fuera de la
+            tarjeta para no quedar recortadas por su scroll interno. */}
+        {alertas.length > 0 && (
+          <div className="login-alerts">
+            {alertas.map((msg, i) => (
+              <div key={`${i}-${msg}`} className="login-alert-bubble">{msg}</div>
+            ))}
           </div>
+        )}
 
-          <div className="registro-brand-mid">
-            <span className="registro-brand-eyebrow">Estética &amp; rendimiento</span>
-            <h1>La nueva era de la indumentaria deportiva.</h1>
-            <p>Acceso prioritario a lanzamientos cápsula limitados, tecnología textil biométrica y beneficios personalizados en nuestro Atelier global.</p>
-          </div>
-
-          <div className="registro-brand-guarantee">
-            <span className="registro-brand-guarantee-icon">🏅</span>
-            <div>
-              <strong>Garantía Atelier</strong>
-              <p>Trazabilidad en cada costura y certificación deportiva.</p>
+        <div className="login-card login-card--registro">
+          <div className="login-card--registro-scroll">
+            <div className="registro-form-top">
+              <h2>Registrar tu cuenta</h2>
+              <ThemeToggle />
+              <div className="registro-steps">
+                <span className={`registro-step-dot${seccion1Completa ? " completo" : " activo"}`}>1</span>
+                <span className="registro-step-line" />
+                <span className={`registro-step-dot${seccion2Completa ? " completo" : seccion1Completa ? " activo" : ""}`}>2</span>
+                <span className="registro-step-line" />
+                <span className={`registro-step-dot${seccion2Completa ? " activo" : ""}`}>3</span>
+              </div>
             </div>
-          </div>
+            <p className="registro-form-sub">Completa cada sección para desbloquear la siguiente.</p>
 
-          <div className="registro-brand-footer">
-            <img src={logo} alt="SportWear" onError={(e) => { e.target.style.display = "none"; }} />
-            <div>
-              <strong>DVNA · Sportwear</strong>
-              <span>Medellín</span>
-            </div>
-          </div>
-        </aside>
+            {success ? (
+              <div className="registro-success">
+                <div className="registro-success-icon">✓</div>
+                <p className="registro-success-title">¡Cuenta creada exitosamente!</p>
+                <p className="registro-success-sub">Redirigiendo al inicio de sesión...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <DatosPersonalesFields form={form} errores={errores} handleChange={handleChange} onFocus={onFocus} onBlur={onBlur} />
 
-        {/* Panel derecho: formulario */}
-        <div className="registro-form-panel">
-          <div className="registro-form-top">
-            <h2>Registrar tu cuenta</h2>
-            <ThemeToggle />
-            <div className="registro-steps">
-              <span className="registro-step-dot activo">1</span>
-              <span className="registro-step-line" />
-              <span className="registro-step-dot">2</span>
-              <span className="registro-step-line" />
-              <span className="registro-step-dot">3</span>
-            </div>
-          </div>
-          <p className="registro-form-sub">Completa los 3 pasos para configurar tu perfil de compras premium.</p>
-
-          {success ? (
-            <div className="registro-success">
-              <div className="registro-success-icon">✓</div>
-              <p className="registro-success-title">¡Cuenta creada exitosamente!</p>
-              <p className="registro-success-sub">Redirigiendo al inicio de sesión...</p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              <DatosPersonalesFields form={form} errores={errores} handleChange={handleChange} onFocus={onFocus} onBlur={onBlur} />
-
-              <ContactoFields form={form} errores={errores} handleChange={handleChange} onFocus={onFocus} onBlur={onBlur} />
-
-              <SeguridadFields
-                form={form} errores={errores} handleChange={handleChange} onFocus={onFocus} onBlur={onBlur}
-                showPassword={showPassword} setShowPassword={setShowPassword}
-                showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword}
-              />
-
-              {error && <div className="error-message">{error}</div>}
-
-              <label className="registro-terminos">
-                <input
-                  type="checkbox"
-                  checked={aceptaTerminos}
-                  onChange={(e) => { setAceptaTerminos(e.target.checked); setTerminosError(""); }}
+                <ContactoFields
+                  form={form} errores={errores} handleChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+                  bloqueada={!seccion1Completa}
                 />
-                <span>
-                  Confirmo que deseo unirme al Atelier Sportwear, aceptando los <Link to="/terminos">Términos y condiciones</Link> y la <Link to="/privacidad">Política de tratamiento de datos personales</Link>.
-                </span>
-              </label>
-              {terminosError && <span className="field-error">{terminosError}</span>}
 
-              <button type="submit" className="submit-btn" disabled={loading}>
-                {loading ? "Creando cuenta..." : "Registrarme →"}
-              </button>
+                <SeguridadFields
+                  form={form} errores={errores} handleChange={handleChange} onFocus={onFocus} onBlur={onBlur}
+                  showPassword={showPassword} setShowPassword={setShowPassword}
+                  showConfirmPassword={showConfirmPassword} setShowConfirmPassword={setShowConfirmPassword}
+                  bloqueada={!seccion2Completa}
+                />
 
-              <p className="registro-login-link">
-                ¿Ya tienes cuenta activa? <Link to="/login">Inicia sesión</Link>
-              </p>
-            </form>
-          )}
+                <label className={`registro-terminos${terminosError ? " has-error" : ""}${!seccion3Completa ? " registro-terminos--bloqueado" : ""}`}>
+                  <input
+                    type="checkbox"
+                    checked={aceptaTerminos}
+                    disabled={!seccion3Completa}
+                    onChange={(e) => { setAceptaTerminos(e.target.checked); setTerminosError(""); }}
+                  />
+                  <span>
+                    Confirmo que deseo unirme a Sportwear, aceptando los <Link to="/terminos">Términos y condiciones</Link> y la <Link to="/privacidad">Política de tratamiento de datos personales</Link>.
+                  </span>
+                </label>
+
+                <button type="submit" className="submit-btn" disabled={loading}>
+                  {loading ? "Creando cuenta..." : "Registrarme →"}
+                </button>
+
+                <p className="registro-login-link">
+                  ¿Ya tienes cuenta activa? <Link to="/login">Inicia sesión</Link>
+                </p>
+              </form>
+            )}
+          </div>
         </div>
       </div>
-
-      <div className="registro-footer-mark">
-        <span>DVNA · SPORTWEAR ATELIER © 2026 · TODOS LOS DERECHOS RESERVADOS</span>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

@@ -24,7 +24,7 @@ export default function DatosPersonalesFields({ form, errores, handleChange, onF
           </div>
           <div className="form-group">
             <label>N° documento <span className="req">*</span></label>
-            <div className="input-wrapper">
+            <div className={`input-wrapper${errores.documento ? " has-error" : ""}`}>
               <input type="text" name="documento" placeholder="1001234567" inputMode={form.tipo_doc === "PP" ? "text" : "numeric"}
                 maxLength={maxLongitudDocumento(form.tipo_doc)}
                 value={form.documento} onChange={handleChange}
@@ -32,7 +32,6 @@ export default function DatosPersonalesFields({ form, errores, handleChange, onF
                 style={{ paddingLeft: "14px" }}/>
               <div className="input-bar" />
             </div>
-            {errores.documento && <span className="field-error">{errores.documento}</span>}
           </div>
         </div>
 

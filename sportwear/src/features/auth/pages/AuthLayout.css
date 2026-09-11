@@ -2,37 +2,55 @@
    AuthLayout.css — DVNA SportWear
    Split-screen compartido: Login · RecuperarContrasena
    ═══════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;1,400;1,500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&display=swap');
 
 .auth-split-page {
+  /* Paleta cálida, limitada a las páginas de acceso — no toca las
+     variables globales de --root ni el resto de la app. */
+  --dvna-cream:    #f8f5ef;
+  --dvna-white:    #fffdf9;
+  --dvna-charcoal: #171614;
+  --dvna-muted:    #948a7c;
+  --dvna-border:   #ece2d3;
+  --dvna-circle:   #ad8f76;
+  --dvna-mid:      #c2a58c;
+  --dvna-light:    #e4d9c8;
+  --dvna-pale:     #f3ede1;
+
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   font-family: var(--font-body);
   background-color: var(--dvna-cream);
-  background-image:
-    linear-gradient(rgba(180,151,128,0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(180,151,128,0.07) 1px, transparent 1px);
-  background-size: 42px 42px;
+  background-image: linear-gradient(135deg, rgba(233,196,171,0.55) 0%, rgba(248,245,239,0.2) 38%, transparent 65%);
 }
 
-/* ── Topbar ── */
+/* ── Topbar: franja real, ancho completo, sin la cuadrícula del contenido ── */
 .auth-topbar {
+  width: 100%;
+  min-height: 52px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 24px 56px;
+  gap: 24px;
+  padding: 0 44px;
+  background: var(--dvna-white);
+  border-bottom: 1px solid rgba(170,145,120,0.12);
+  flex-shrink: 0;
 }
 .auth-topbar-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 .auth-logo-ring {
-  width: 32px;
-  height: 32px;
+  width: 33px;
+  height: 33px;
   border-radius: 50%;
   border: 1px solid var(--dvna-border);
   background: var(--dvna-white);
+  box-shadow: 0 1px 4px rgba(100,75,50,0.06);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,11 +59,18 @@
 .auth-logo-ring img { width: 34px; height: 34px; object-fit: contain; }
 .auth-topbar-name {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   letter-spacing: 0.2em;
   color: var(--dvna-charcoal);
+  line-height: 1;
 }
 .auth-topbar-name span { color: var(--dvna-circle); font-weight: 700; }
+
+.auth-topbar-divider {
+  width: 1px;
+  height: 16px;
+  background: rgba(170,145,120,0.25);
+}
 
 .auth-topbar-nav {
   display: flex;
@@ -55,19 +80,30 @@
   color: var(--dvna-muted);
 }
 .auth-topbar-nav a {
-  color: var(--dvna-muted);
+  color: var(--dvna-circle);
+  font-weight: 400;
+  letter-spacing: 0.01em;
   text-decoration: none;
   transition: color 0.2s;
 }
-.auth-topbar-nav a:hover { color: var(--dvna-circle); }
+.auth-topbar-nav a:hover { color: var(--dvna-mid); }
+
+/* La cuadrícula editorial vive en el cuerpo, nunca detrás del header */
+.auth-split-body {
+  background-image:
+    linear-gradient(rgba(173,143,118,0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(173,143,118,0.045) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
 
 /* ── Cuerpo dividido en dos columnas ── */
 .auth-split-body {
   flex: 1;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 64px;
-  padding: 24px 56px 48px;
+  padding: 10px 4% 12px 56px;
   flex-wrap: wrap;
 }
 
@@ -81,7 +117,7 @@
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.16em;
   color: var(--dvna-muted);
   margin-bottom: 22px;
@@ -96,17 +132,32 @@
 }
 
 .auth-headline {
+  font-family: 'DM Sans', var(--font-body);
   font-size: 42px;
-  line-height: 1.18;
-  font-weight: 700;
+  line-height: 1.2;
+  font-weight: 400;
   letter-spacing: -0.01em;
   color: var(--dvna-charcoal);
   margin: 0 0 18px;
 }
 .auth-headline i, .auth-headline em {
+  font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   font-weight: 500;
   color: var(--dvna-circle);
+}
+
+/* ── Variante Recuperar Contraseña: guion en vez de punto, título más grueso ── */
+.recuperar-page .auth-badge::before {
+  width: 18px;
+  height: 1px;
+  border-radius: 0;
+}
+.recuperar-page .auth-headline {
+  font-weight: 700;
+}
+.recuperar-page .auth-topbar-nav {
+  visibility: hidden;
 }
 
 .auth-description {
@@ -126,20 +177,21 @@
   flex-wrap: wrap;
 }
 .auth-stat strong {
+  font-family: 'DM Sans', var(--font-body);
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--dvna-charcoal);
   display: block;
 }
 .auth-stat strong small {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--dvna-circle);
   margin-left: 2px;
 }
 .auth-stat span {
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--dvna-muted);
@@ -169,11 +221,30 @@
 }
 
 .auth-card-panel {
-  flex: 0 0 auto;
-  width: 100%;
+  flex: 0 0 460px;
   max-width: 460px;
   display: flex;
   justify-content: center;
+  margin-left: auto;
+}
+
+/* Registro: la tarjeta tiene filas de 2 columnas y necesita más ancho.
+   El bloque izquierdo se angosta un poco y el gap se reduce para que
+   ambos quepan en una sola fila en pantallas de escritorio normales
+   (1280px) sin que el panel de la tarjeta se baje a una segunda línea. */
+.registro-page-variant .auth-card-panel {
+  flex-basis: 700px;
+  max-width: 700px;
+}
+.registro-page-variant .auth-info-panel {
+  /* flex-grow: 0 a propósito — si crece para llenar el espacio libre,
+     el texto se acerca demasiado a la tarjeta y choca con las burbujas
+     de alerta, que están pegadas al borde de la tarjeta. */
+  flex: 0 1 320px;
+  max-width: 340px;
+}
+.registro-page-variant .auth-split-body {
+  gap: 32px;
 }
 
 /* ── Footer ── */
@@ -181,7 +252,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 56px;
+  padding: 12px 56px;
   border-top: 1px solid var(--dvna-border);
   font-size: 11px;
   color: var(--dvna-muted);
@@ -205,7 +276,6 @@
 }
 
 @media (max-width: 480px) {
-  .auth-topbar-nav span:first-child { display: none; }
   .auth-headline { font-size: 28px; }
   .auth-footer { flex-direction: column; gap: 8px; text-align: center; }
 }

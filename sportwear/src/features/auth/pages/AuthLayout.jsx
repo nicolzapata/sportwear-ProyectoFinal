@@ -9,20 +9,20 @@ import { useThemeScope } from "../../../shared/contexts/ThemeContext";
 import ThemeToggle from "../../../shared/components/ThemeToggle";
 import "./AuthLayout.css";
 
-export default function AuthLayout({ badge, title, description, stats, note, children }) {
+export default function AuthLayout({ badge, title, description, stats, note, children, pageClassName }) {
   useThemeScope("sw-scope-auth");
   return (
-    <div className="auth-split-page">
+    <div className={`auth-split-page${pageClassName ? ` ${pageClassName}` : ""}`}>
       <header className="auth-topbar">
         <div className="auth-topbar-brand">
           <span className="auth-logo-ring">
             <img src={logo} alt="SportWear" onError={(e) => { e.target.style.display = "none"; }} />
           </span>
           <span className="auth-topbar-name">SPORT<span>WEAR</span></span>
+          <span className="auth-topbar-divider" aria-hidden="true" />
         </div>
         <nav className="auth-topbar-nav">
           <ThemeToggle />
-          <span>MEDELLÍN /</span>
           <Link to="/catalogo">← Explorar Catálogo</Link>
         </nav>
       </header>
@@ -58,12 +58,7 @@ export default function AuthLayout({ badge, title, description, stats, note, chi
       </div>
 
       <footer className="auth-footer">
-        <span>SPORTWEAR © 2026</span>
-        <nav>
-          <span>Privacidad</span>
-          <span>Términos de Servicio</span>
-          <span>Centro de Asistencia</span>
-        </nav>
+        <span>SPORTWEAR © 2026 |</span>
       </footer>
     </div>
   );

@@ -8,7 +8,6 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { MENU_ITEMS } from "../../../shared/utils/permisos";
 import api from "../../../shared/services/api";
-import logo from "../../../shared/assets/LOGO.png";
 import AuthLayout from "./AuthLayout";
 import "./Login.css";
 
@@ -44,7 +43,7 @@ export default function Login() {
   const [form, setForm]       = useState({ email: "", contrasena: "" });
   const [error, setError]     = useState("");
   const [loading, setLoading] = useState(false);
-  const [emailError, setEmailError] = useState("");
+  const [emailErrors, setEmailErrors] = useState([]);
   const [passwordError, setPasswordError] = useState("");
   const [tocado, setTocado] = useState({ email: false, contrasena: false });
   const [showPassword, setShowPassword] = useState(false);
@@ -57,26 +56,31 @@ const handleChange = (e) => {
 
   // Validación en tiempo real: solo una vez que el campo ya fue visitado (tocado).
   if (name === "email" && tocado.email) {
-    setEmailError(validateEmail(nuevoForm.email));
+    setEmailErrors(validateEmail(nuevoForm.email));
   } else if (name === "contrasena" && tocado.contrasena) {
     setPasswordError(validatePassword(nuevoForm.contrasena));
   }
 };
 
+// Devuelve TODOS los errores que apliquen a la vez (ej: si no tiene @ ni
+// ".", se muestran las dos notificaciones juntas, no solo la primera).
 const validateEmail = (email) => {
-  if (!email) return "El correo electrónico es requerido";
-  if (!email.includes("@")) return "El correo debe contener @";
-  if (!email.includes(".")) return "El correo debe contener un punto (.)";
-  
+  if (!email) return ["El correo electrónico es requerido"];
+
+  const errores = [];
+  if (!email.includes("@")) errores.push("El correo debe contener @");
+  if (!email.includes(".")) errores.push("El correo debe contener un punto (.)");
+  if (errores.length > 0) return errores;
+
   // Validación más robusta del formato de email
   const [local, domain] = email.split("@");
-  if (!local || !domain) return "Formato de correo inválido";
-  if (!domain.includes(".")) return "El dominio debe contener un punto";
+  if (!local || !domain) return ["Formato de correo inválido"];
+  if (!domain.includes(".")) return ["El dominio debe contener un punto"];
   const [domainName, tld] = domain.split(".");
-  if (!domainName || !tld) return "Formato de dominio inválido";
-  if (tld.length < 2) return "El dominio debe tener al menos 2 caracteres";
-  
-  return "";
+  if (!domainName || !tld) return ["Formato de dominio inválido"];
+  if (tld.length < 2) return ["El dominio debe tener al menos 2 caracteres"];
+
+  return [];
 };
 
 const validatePassword = (password) => {
@@ -90,14 +94,14 @@ const handleSubmit = async (e) => {
   e.preventDefault();
   
   // Validate fields
-  const emailErrorMsg = validateEmail(form.email);
+  const emailErrorMsgs = validateEmail(form.email);
   const passwordErrorMsg = validatePassword(form.contrasena);
-  
-  setEmailError(emailErrorMsg);
+
+  setEmailErrors(emailErrorMsgs);
   setPasswordError(passwordErrorMsg);
   setTocado({ email: true, contrasena: true });
 
-  if (emailErrorMsg || passwordErrorMsg) {
+  if (emailErrorMsgs.length > 0 || passwordErrorMsg) {
     return;
   }
   
@@ -142,7 +146,7 @@ if (esCliente) {
     const { name } = e.target;
     if (name === "email") {
       setTocado(prev => ({ ...prev, email: true }));
-      setEmailError(validateEmail(form.email));
+      setEmailErrors(validateEmail(form.email));
     } else if (name === "contrasena") {
       setTocado(prev => ({ ...prev, contrasena: true }));
       setPasswordError(validatePassword(form.contrasena));
@@ -152,43 +156,40 @@ if (esCliente) {
   return (
     <AuthLayout
       badge="ACCESO PRIVADO // SPORTWEAR"
-      title={<>Rendimiento y elegancia para tu <i>disciplina diaria.</i></>}
+      title={<>Rendimiento y<br />elegancia para tu<br /><i>disciplina diaria.</i></>}
       description="Entorno de autenticación federada para atletas de alto calibre, directores creativos y administración VIP. Gestiona colecciones privadas, pedidos a medida y reservas de temporada."
-      stats={[
-        { value: "0.8", unit: "s", label: "Autenticación express" },
-        { value: "256", unit: "bit", label: "Cifrado SHA-Vault" },
-        { value: "99.9", unit: "%", label: "Disponibilidad red" },
-      ]}
     >
-      <div className="login-card">
-
-        {/* Logo */}
-        <div className="card-logo">
-          <div className="brand-logo-ring">
-            <img src={logo} alt="SportWear" onError={(e) => {
-              e.target.style.display = "none";
-              e.target.nextSibling.style.display = "block";
-            }}/>
-            <span className="logo-fallback" style={{ display: "none" }}>SportWear</span>
-          </div>
-          <p className="card-brand-name">SPORT<span>WEAR</span></p>
-        </div>
-
-        <div className="card-divider" />
+      <div className="login-card login-card--login">
 
         {/* Header */}
         <div className="form-header">
           <h2>Iniciar sesión</h2>
-          <p>Ingresa tus credenciales verificadas para gestionar tu cuenta atelier.</p>
+          <p>Ingresa tus credenciales verificadas para gestionar tu cuenta.</p>
+          <div className="form-progress"><span /></div>
         </div>
+
+        {/* Alertas: se apilan una debajo de otra, nunca en el mismo lugar.
+            Si el correo falla por varias razones a la vez (sin @ y sin "."),
+            se muestran todas esas notificaciones juntas. */}
+        {(emailErrors.length > 0 || passwordError || error) && (
+          <div className="login-alerts" id="email-error">
+            {emailErrors.map((msg) => (
+              <div key={msg} className="login-alert-bubble">{msg}</div>
+            ))}
+            {passwordError && <div id="password-error" className="login-alert-bubble">{passwordError}</div>}
+            {error && <div className="login-alert-bubble">{error}</div>}
+          </div>
+        )}
 
          {/* Formulario */}
          <form onSubmit={handleSubmit} noValidate>
 
             <div className="form-group">
-              <label><IconMail /> Correo electrónico</label>
-              <div className="input-wrapper">
-                <span className="input-icon"><IconMail /></span>
+              <div className="label-row">
+                <label>Correo electrónico</label>
+              </div>
+              <div className={`input-wrapper${emailErrors.length > 0 || error ? " has-error" : ""}`}>
+                <span className="input-icon-left"><IconMail /></span>
                     <input
                       type="email" name="email"
                       placeholder="correo@gmail.com"
@@ -199,13 +200,14 @@ if (esCliente) {
                     />
                 <div className="input-bar" />
               </div>
-              {emailError && <div id="email-error" className="field-error">{emailError}</div>}
             </div>
 
             <div className="form-group">
-              <label><IconLock /> Contraseña</label>
-              <div className="input-wrapper">
-                <span className="input-icon"><IconLock /></span>
+              <div className="label-row">
+                <label>Contraseña</label>
+              </div>
+              <div className={`input-wrapper${passwordError || error ? " has-error" : ""}`}>
+                <span className="input-icon-left"><IconLock /></span>
                     <input
                       type={showPassword ? "text" : "password"}
                       name="contrasena"
@@ -216,30 +218,23 @@ if (esCliente) {
                       aria-describedby="password-error"
                     />
                 <div className="input-bar" />
-                <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>
+                <span className="input-icon-toggle" onClick={() => setShowPassword(!showPassword)}>
                   {showPassword ? <IconEyeOpen /> : <IconEyeClosed />}
                 </span>
               </div>
-              {passwordError && <div id="password-error" className="field-error">{passwordError}</div>}
             </div>
-
-          {error && <div className="error-message">{error}</div>}
 
           <div className="form-links">
             <Link to="/recuperar">¿Olvidaste tu contraseña?</Link>
-            <Link to="/registro">¿No tienes cuenta? Regístrate</Link>
-          </div>
-          <div className="catalog-link">
-            <Link to="/catalogo">← Ver catálogo</Link>
           </div>
 
           <button type="submit" className="submit-btn" disabled={loading}>
-            {loading ? "Verificando..." : "Ingresar →"}
+            {loading ? "Verificando..." : "Entrar a Sportwear →"}
           </button>
         </form>
 
         <div className="form-footer-mark">
-          <span>Dvna · Sportwear</span>
+          <span className="footer-registro">¿No tienes una cuenta aún? <Link to="/registro">Registrarse</Link></span>
         </div>
       </div>
     </AuthLayout>

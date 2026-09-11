@@ -3,6 +3,7 @@ import { IconLock, IconEyeOpen, IconEyeClosed } from "./icons";
 export default function SeguridadFields({
   form, errores, handleChange, onFocus, onBlur,
   showPassword, setShowPassword, showConfirmPassword, setShowConfirmPassword,
+  bloqueada,
 }) {
   const fuerza = !form.contrasena ? 0
     : form.contrasena.length < 6 ? 1
@@ -11,19 +12,19 @@ export default function SeguridadFields({
   const fuerzaLabel = ["", "Débil", "Intermedia", "Fuerte"][fuerza];
 
   return (
-    <section className="registro-section">
+    <section className={`registro-section${bloqueada ? " registro-section--bloqueada" : ""}`}>
       <header className="registro-section-head">
         <span className="registro-section-num">03</span>
         <span className="registro-section-label">Seguridad de la cuenta</span>
-        <span className="registro-section-step">Paso 3 de 3</span>
+        <span className="registro-section-step">{bloqueada ? "Completa el paso anterior" : "Paso 3 de 3"}</span>
       </header>
 
       <div className="registro-section-body">
         <div className="registro-row">
           <div className="form-group">
             <label><IconLock /> Contraseña <span className="req">*</span></label>
-            <div className="input-wrapper">
-              <span className="input-icon"><IconLock /></span>
+            <div className={`input-wrapper${errores.contrasena ? " has-error" : ""}`}>
+              <span className="input-icon-left"><IconLock /></span>
               <input
                 type={showPassword ? "text" : "password"}
                 name="contrasena"
@@ -31,18 +32,18 @@ export default function SeguridadFields({
                 value={form.contrasena}
                 onChange={handleChange}
                 onFocus={onFocus} onBlur={onBlur}
+                disabled={bloqueada}
               />
               <div className="input-bar" />
-              <span className="input-icon" onClick={() => setShowPassword(!showPassword)}>
+              <span className="input-icon-toggle" onClick={() => !bloqueada && setShowPassword(!showPassword)}>
                 {showPassword ? <IconEyeOpen /> : <IconEyeClosed />}
               </span>
             </div>
-            {errores.contrasena && <span className="field-error">{errores.contrasena}</span>}
           </div>
           <div className="form-group">
             <label><IconLock /> Confirmar <span className="req">*</span></label>
-            <div className="input-wrapper">
-              <span className="input-icon"><IconLock /></span>
+            <div className={`input-wrapper${errores.confirmar ? " has-error" : ""}`}>
+              <span className="input-icon-left"><IconLock /></span>
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 name="confirmar"
@@ -50,13 +51,13 @@ export default function SeguridadFields({
                 value={form.confirmar}
                 onChange={handleChange}
                 onFocus={onFocus} onBlur={onBlur}
+                disabled={bloqueada}
               />
               <div className="input-bar" />
-              <span className="input-icon" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+              <span className="input-icon-toggle" onClick={() => !bloqueada && setShowConfirmPassword(!showConfirmPassword)}>
                 {showConfirmPassword ? <IconEyeOpen /> : <IconEyeClosed />}
               </span>
             </div>
-            {errores.confirmar && <span className="field-error">{errores.confirmar}</span>}
           </div>
         </div>
 

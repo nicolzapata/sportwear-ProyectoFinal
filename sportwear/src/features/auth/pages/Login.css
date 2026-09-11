@@ -36,12 +36,12 @@
   position: relative;
   z-index: 1;
   background: var(--dvna-white);
-  border: 1px solid var(--dvna-border);
+  border: 1px solid rgba(170,145,120,0.12);
   border-radius: 16px;
-  padding: 48px 44px;
+  padding: 26px 40px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 8px 40px rgba(180,151,128,0.12), 0 1px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 12px 35px rgba(100,75,50,0.08), 0 2px 10px rgba(100,75,50,0.05);
 }
 
 /* ── Logo dentro de la card ── */
@@ -88,7 +88,7 @@
   font-size: 18px;
   font-weight: 300;
   letter-spacing: 0.18em;
-  
+
   color: var(--dvna-charcoal);
   line-height: 1;
 }
@@ -106,7 +106,7 @@
 
 /* ── Header del formulario ── */
 .form-header {
-   text-align: center;
+   text-align: left;
 }
 
 .greeting::after {
@@ -117,10 +117,11 @@
 }
 
 .form-header h2 {
-  font-size: 22px;
+  font-size: 28px;
+  font-weight: 700;
   color: var(--dvna-charcoal);
   letter-spacing: -0.02em;
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   line-height: 1.2;
   text-transform: none;
   font-family: var(--font-body);
@@ -135,25 +136,122 @@
 .form-header p {
   font-size: 12px;
   font-weight: 300;
+  line-height: 1.5;
   color: var(--dvna-muted);
-  margin: 0 0 24px;
+  margin: 0 0 16px;
   font-family: var(--font-body);
+}
+
+/* Línea divisoria bajo el header — barra plana, no una barra de progreso */
+.form-progress {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--dvna-light);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+.form-progress span {
+  display: none;
+}
+
+/* Fila de la etiqueta con badge/hash a la derecha */
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.badge-verificado {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: #6f8f74;
+  background: rgba(111,143,116,0.09);
+  border: 1px solid rgba(111,143,116,0.20);
+  border-radius: 999px;
+  padding: 3px 9px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.hash-tag {
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: var(--dvna-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+.registrado-tag {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--dvna-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ── Recuperar Contraseña: tarjeta con esquina brillante ── */
+.login-card--recuperar {
+  border-radius: 28px;
+  border-color: rgba(170,145,120,0.08);
+}
+.login-card--recuperar::before {
+  content: '';
+  z-index: 0;
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(233,196,171,0.55) 0%, rgba(233,196,171,0) 70%);
+  pointer-events: none;
+}
+
+.acceso-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dvna-circle);
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  margin-bottom: 12px;
+}
+.acceso-badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--dvna-circle);
+  display: inline-block;
 }
 
 /* ── Grupos de formulario ── */
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  margin-bottom: 14px;
+  gap: 6px;
+  margin-bottom: 10px;
 }
 
 .form-group label {
   font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  
-  color: var(--dvna-muted);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dvna-charcoal);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -166,13 +264,20 @@
 /* Input wrapper con icono */
 .input-wrapper { position: relative; }
 
-/* Iconos de campo (mail, lock, phone, etc.) ocultos */
-.input-wrapper .input-icon:not(:last-child) {
-  display: none;
+/* Icono a la izquierda dentro del input (mail, lock) */
+.input-wrapper .input-icon-left {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0.55;
+  display: flex;
+  align-items: center;
 }
 
-/* Icono de ver contraseña (último .input-icon) permanece visible */
-.input-wrapper .input-icon:last-child {
+/* Icono de ver/ocultar contraseña, a la derecha */
+.input-wrapper .input-icon-toggle {
   position: absolute;
   right: 14px;
   top: 50%;
@@ -185,11 +290,11 @@
   transition: opacity 0.25s;
 }
 
-.input-wrapper .input-icon:last-child:hover {
+.input-wrapper .input-icon-toggle:hover {
   opacity: 0.7;
 }
 
-.input-wrapper .input-icon:last-child svg {
+.input-wrapper .input-icon-toggle svg {
   width: 18px;
   height: 18px;
 }
@@ -202,8 +307,8 @@
   color: var(--dvna-charcoal);
   background: var(--dvna-pale);
   border: 1px solid var(--dvna-border);
-  border-radius: var(--r);
-  padding: 12px 14px;
+  border-radius: 14px;
+  padding: 14px 16px;
   outline: none;
   width: 100%;
   transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
@@ -214,10 +319,14 @@
   -webkit-text-fill-color: var(--dvna-charcoal);
 }
 .input-wrapper input {
-  padding-left: 14px;
+  padding-left: 40px;
+  padding-right: 14px;
   box-shadow: 0 0 0 1000px var(--dvna-pale) inset;
 }
-.form-group input::placeholder { color: #999; font-weight: 300; -webkit-text-fill-color: #999; }
+.input-wrapper:has(.input-icon-toggle) input {
+  padding-right: 42px;
+}
+.form-group input::placeholder { color: #a89c8c; font-weight: 300; -webkit-text-fill-color: #a89c8c; }
 
 .form-group input:focus,
 .form-group .ui-select-trigger:focus {
@@ -225,6 +334,25 @@
   background: var(--dvna-white);
   box-shadow: 0 0 0 3px rgba(180,151,128,0.1);
   -webkit-box-shadow: 0 0 0 3px rgba(180,151,128,0.1), 0 0 0 1000px var(--dvna-white) inset;
+}
+
+/* Casilla con error: borde rojo a juego con la burbuja de alerta
+   correspondiente (Login, Recuperar Contraseña y Registro). */
+.input-wrapper.has-error input {
+  border-color: #b94a3a;
+  background: rgba(185,74,58,0.04);
+  box-shadow: 0 0 0 1000px rgba(185,74,58,0.04) inset;
+}
+.input-wrapper.has-error input:focus {
+  border-color: #b94a3a;
+  box-shadow: 0 0 0 3px rgba(185,74,58,0.12);
+}
+.registro-terminos.has-error span {
+  color: #b94a3a;
+}
+.registro-terminos.has-error input {
+  outline: 1.5px solid #b94a3a;
+  outline-offset: 2px;
 }
 
 /* Línea animada al foco */
@@ -244,43 +372,44 @@
 /* ── Links ── */
 .form-links {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 14px 0 2px;
+  justify-content: flex-start;
+  margin: 10px 0 4px;
 }
-.form-links a,
-.catalog-link a {
+.form-links a {
   font-size: 12px;
-  font-weight: 400;
-  color: var(--dvna-muted);
-  text-decoration: none;
+  font-weight: 500;
+  color: var(--dvna-circle);
+  text-decoration: underline;
   transition: color 0.2s;
 }
-.form-links a:hover,
-.catalog-link a:hover { color: var(--dvna-circle); }
-.catalog-link { margin-top: 2px; }
+.form-links a:hover { color: var(--dvna-mid); }
+
+/* "← Volver al login" (Recuperar Contraseña): sin subrayado */
+.login-card--recuperar .form-links a {
+  text-decoration: none;
+}
 
 /* ── Botón submit ── */
 .submit-btn {
   width: 100%;
-  font-family: var(--font-body);
-  font-size: 11px;
+  font-family: 'DM Sans', var(--font-body);
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.18em;
-  
+  letter-spacing: 0.01em;
+
   color: var(--sw-secondary);
   background: var(--dvna-circle);
   border: none;
-  border-radius: var(--r);
-  padding: 14px;
+  border-radius: 999px;
+  padding: 13px;
   cursor: pointer;
-  margin-top: 18px;
+  margin-top: 10px;
   transition: background 0.25s, transform 0.15s, box-shadow 0.2s;
 }
 .submit-btn:hover:not(:disabled) {
   background: var(--dvna-mid);
   transform: translateY(-1px);
-  box-shadow: 0 8px 24px rgba(180,151,128,0.3);
+  box-shadow: 0 8px 24px rgba(173,143,118,0.3);
 }
 .submit-btn:active:not(:disabled) { transform: translateY(0); }
 .submit-btn:disabled {
@@ -289,7 +418,32 @@
   cursor: not-allowed;
 }
 
-/* ── Error de campo ── */
+/* ── Botón oscuro (Recuperar Contraseña): texto + flecha en círculo ── */
+.submit-btn--dark {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #1f1712;
+  font-size: 14px;
+}
+.submit-btn--dark:hover:not(:disabled) {
+  background: #322419;
+  box-shadow: 0 8px 24px rgba(31,23,18,0.3);
+}
+.submit-btn--dark:disabled { background: var(--dvna-light); }
+.btn-arrow {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.16);
+  font-size: 13px;
+}
+
+/* ── Error de campo (estilo base, compartido con Registro/RecuperarContrasena/RestablecerContrasena) ── */
 .field-error {
    font-size: 11px;
    font-weight: 400;
@@ -302,7 +456,7 @@
    font-family: var(--font-body);
 }
 
-/* ── Error ── */
+/* ── Error general (estilo base, compartido) ── */
 .error-message {
   font-size: 12px;
   font-weight: 400;
@@ -315,19 +469,116 @@
   font-family: var(--font-body);
 }
 
+/* ── Alertas de Inicio de sesión: burbujas de chat apiladas junto al
+   borde de la tarjeta (una debajo de otra, nunca superpuestas), en vez
+   de recuadros dentro del formulario. Solo la página de Login usa esto
+   (.login-alerts) — Registro, RecuperarContrasena y RestablecerContrasena
+   siguen usando .error-message/.field-error inline de arriba. ── */
+.login-alerts {
+  position: absolute;
+  top: 108px;
+  right: 100%;
+  margin-right: 18px;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 5;
+}
+.login-alert-bubble {
+  position: relative;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #7a2f24;
+  background: #fdf3f1;
+  border: 1px solid rgba(185,74,58,0.35);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  box-shadow: 0 12px 28px rgba(100,40,30,0.12);
+}
+/* Piquito con el mismo borde que la burbuja: un triángulo del color del
+   borde detrás, y uno un poco más chico del color de relleno encima,
+   desplazado 1px para dejar visible solo el filo del borde. */
+.login-alert-bubble::before,
+.login-alert-bubble::after {
+  content: '';
+  position: absolute;
+  top: 18px;
+  left: 100%;
+  border-style: solid;
+  border-color: transparent;
+}
+.login-alert-bubble::before {
+  border-width: 8px;
+  border-left-color: rgba(185,74,58,0.35);
+}
+.login-alert-bubble::after {
+  border-width: 7px;
+  margin-left: -1px;
+  border-left-color: #fdf3f1;
+}
+
+/* Recuperar Contraseña: el bloque izquierdo (con stats y nota) es más
+   ancho/alto que el de Login, así que las burbujas se angostan y se
+   pegan más a la tarjeta para no chocar con el título ni la descripción,
+   sin depender de a qué altura caigan. */
+.login-card--recuperar .login-alerts {
+  top: 92px;
+  width: 150px;
+  margin-right: 14px;
+}
+
+/* Registro: las alertas viven en .login-card-wrap--registro (fuera de la
+   tarjeta, que tiene su propio scroll interno) — así no quedan recortadas.
+   Se apilan desde el top de la tarjeta, angostas y pegadas como en
+   Recuperar Contraseña, siempre completas (sin scroll propio). */
+.login-card-wrap--registro {
+  position: relative;
+}
+.login-card-wrap--registro .login-alerts {
+  top: 100px;
+  width: 150px;
+  margin-right: 14px;
+}
+
 /* ── Pie de card ── */
 .form-footer-mark {
-  margin-top: 24px;
+  margin-top: 14px;
   text-align: center;
 }
-.form-footer-mark span {
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  
-  color: var(--dvna-light);
+
+.footer-secure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--dvna-muted);
   font-family: var(--font-body);
 }
+.footer-secure svg { opacity: 0.6; flex-shrink: 0; }
+
+.footer-divider {
+  display: none;
+}
+
+.footer-registro {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--dvna-muted);
+  font-family: var(--font-body);
+  margin-top: 14px;
+}
+.footer-registro a {
+  font-weight: 600;
+  color: var(--dvna-charcoal);
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+.footer-registro a:hover { color: var(--dvna-circle); }
 
 /* ════════════════════════════════
    RESPONSIVE

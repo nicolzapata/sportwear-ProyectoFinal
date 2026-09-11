@@ -3,129 +3,32 @@
    Panel de dos columnas (branding + formulario por pasos)
    ═══════════════════════════════════════════════════ */
 
-.registro-page {
-  min-height: 100vh;
-  font-family: var(--font-body);
-  background: var(--dvna-cream);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  padding: 32px 16px;
-  gap: 16px;
-}
+/* La página, el header y el fondo cálido ahora los da AuthLayout
+   (.auth-split-page) — Registro solo aporta su tarjeta y sus secciones. */
 
-.registro-shell {
+/* ── Tarjeta de Registro: más ancha que Login/Recuperar porque tiene
+   filas de 2 columnas. La propia tarjeta no scrollea: es un wrapper
+   (.login-card-wrap--registro) el que la centra y aloja las alertas
+   fuera de ella, y un div interno (.login-card--registro-scroll) el que
+   scrollea el contenido cuando no cabe en pantalla — así la página se ve
+   siempre completa, sin scroll de la ventana. ── */
+.login-card-wrap--registro {
   width: 100%;
-  max-width: 1180px;
+  max-width: 700px;
   display: flex;
-  background: var(--dvna-white);
-  border: 1px solid var(--dvna-border);
-  border-radius: 20px;
+  justify-content: center;
+}
+.login-card--registro {
+  width: 100%;
+  max-width: none;
+  max-height: 86vh;
+  padding: 0;
   overflow: hidden;
-  box-shadow: 0 8px 40px rgba(180,151,128,0.14), 0 1px 8px rgba(0,0,0,0.04);
 }
-
-/* ── Panel de branding (oscuro) ── */
-.registro-brand-panel {
-  flex: 0 0 340px;
-  background: linear-gradient(160deg, #171412 0%, var(--dvna-charcoal) 55%, #241d17 100%);
-  color: var(--dvna-white);
-  padding: 32px 28px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-}
-
-.registro-brand-top {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  align-self: flex-start;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  padding: 6px 12px;
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 999px;
-  color: rgba(255,255,255,0.85);
-}
-.registro-brand-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dvna-circle); }
-
-.registro-brand-mid { margin: 28px 0; }
-.registro-brand-eyebrow {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--dvna-circle);
-  margin-bottom: 12px;
-}
-.registro-brand-mid h1 {
-  font-size: 26px;
-  line-height: 1.25;
-  font-weight: 700;
-  margin: 0 0 14px;
-  color: var(--dvna-white);
-}
-.registro-brand-mid p {
-  font-size: 13px;
-  line-height: 1.6;
-  font-weight: 300;
-  color: rgba(255,255,255,0.65);
-}
-
-.registro-brand-guarantee {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: var(--r-md);
-  padding: 14px 16px;
-}
-.registro-brand-guarantee-icon { font-size: 18px; }
-.registro-brand-guarantee strong {
-  display: block;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--dvna-white);
-  margin-bottom: 3px;
-}
-.registro-brand-guarantee p {
-  font-size: 11.5px;
-  line-height: 1.5;
-  color: rgba(255,255,255,0.6);
-  font-weight: 300;
-}
-
-.registro-brand-footer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 28px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(255,255,255,0.12);
-}
-.registro-brand-footer img {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.9);
-  padding: 2px;
-}
-.registro-brand-footer strong { display: block; font-size: 12px; color: var(--dvna-white); }
-.registro-brand-footer span { font-size: 10.5px; color: rgba(255,255,255,0.55); }
-
-/* ── Panel del formulario ── */
-.registro-form-panel {
-  flex: 1;
-  padding: 32px 40px;
-  max-height: 92vh;
+.login-card--registro-scroll {
+  max-height: 86vh;
   overflow-y: auto;
+  padding: 30px 40px;
 }
 
 .registro-form-top {
@@ -166,6 +69,11 @@
   border-color: var(--dvna-circle);
   color: var(--sw-secondary);
 }
+.registro-step-dot.completo {
+  background: var(--dvna-white);
+  border-color: var(--dvna-circle);
+  color: var(--dvna-circle);
+}
 .registro-step-line { width: 14px; height: 1px; background: var(--dvna-border); }
 
 /* ── Secciones numeradas en caja ── */
@@ -174,6 +82,24 @@
   border-radius: var(--r-md);
   margin-bottom: 16px;
   overflow: hidden;
+  transition: opacity 0.2s;
+}
+
+/* Secciones 2 y 3: siempre visibles, pero grises y sin poder interactuar
+   hasta que la sección anterior no tenga ningún error. */
+.registro-section--bloqueada {
+  opacity: 0.5;
+}
+.registro-section--bloqueada .registro-section-body {
+  pointer-events: none;
+}
+.registro-section--bloqueada .form-group input,
+.registro-section--bloqueada .form-control {
+  cursor: not-allowed;
+}
+.registro-terminos--bloqueado {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .registro-section-head {
   display: flex;
@@ -310,18 +236,8 @@
   color: var(--dvna-muted);
 }
 
-/* ── Pie de página ── */
-.registro-footer-mark {
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--dvna-muted);
-  text-align: center;
-}
-
 @media (max-width: 900px) {
-  .registro-shell { flex-direction: column; max-width: 560px; }
-  .registro-brand-panel { flex: 0 0 auto; padding: 28px 24px; }
-  .registro-form-panel { max-height: none; padding: 28px 24px; }
+  .login-card--registro-scroll { padding: 24px; }
 }
 
 @media (max-width: 600px) {
