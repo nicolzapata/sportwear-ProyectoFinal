@@ -45,11 +45,13 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  min-width: 0;
 }
 .pedidosventas-actions-right {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .print-button-container { display: none; }
@@ -57,6 +59,7 @@
 .pedidosventas-search-wrapper {
   position: relative;
   width: 320px;
+  flex-shrink: 0;
 }
 
 .pedidosventas-search-icon {
@@ -90,7 +93,8 @@
    que aquí solo se ajusta el ancho del disparador dentro de esta barra. ── */
 .pedidosventas-filtro-estado-select {
   width: auto;
-  flex-shrink: 0;
+  min-width: 110px;
+  flex-shrink: 1;
 }
 
 .pedidosventas-search-clear {
@@ -132,6 +136,8 @@
   align-items: center;
   gap: 0.5rem;
   border: 1px solid var(--brown);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .pedidosventas-btn-primary:hover {

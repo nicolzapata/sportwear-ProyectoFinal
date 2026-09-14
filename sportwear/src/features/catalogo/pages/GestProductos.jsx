@@ -3,6 +3,7 @@ import ConfirmModal from "../../../shared/components/ConfirmModal";
 import Loader from "../../../shared/components/Loader";
 import GestProductosToolbar from "../components/gest-productos/GestProductosToolbar";
 import ProductosTable from "../components/gest-productos/ProductosTable";
+import ProductosGrid from "../components/gest-productos/ProductosGrid";
 import CategoriasTable from "../components/gest-productos/CategoriasTable";
 import ColoresGrid from "../components/gest-productos/ColoresGrid";
 import ProductoFormModal from "../components/gest-productos/ProductoFormModal";
@@ -17,6 +18,7 @@ import "./GestProductos.layout.css";
 import "./GestProductos.modals.css";
 import "./GestProductos.tabla.css";
 import "./GestProductos.colores.css";
+import "./GestProductos.grid.css";
 // Reutiliza los estilos del selector de color / vista previa (picker, preview) tal
 // cual como en la antigua página de Colores — evita duplicar esas reglas acá.
 // Colores.css también se dividió por sección; se importan los 3 archivos en el
@@ -42,13 +44,21 @@ export default function GestProductos() {
 
       {g.tab === 'productos' ? (
         <div className={panelAbierto ? "gestproductos-contenido-split" : "gestproductos-contenido"}>
-          <ProductosTable
-            datos={g.datos} tienePerm={g.tienePerm}
-            variantesDropdownAbierto={g.variantesDropdownAbierto} setVariantesDropdownAbierto={g.setVariantesDropdownAbierto}
-            togglePublicado={g.togglePublicado} toggleEstadoProducto={g.toggleEstadoProducto}
-            abrirDetalle={g.abrirDetalle} abrirEditar={g.abrirEditar} setEliminarId={g.setEliminarId}
-            totalPaginasProductos={g.totalPaginasProductos} paginaProductos={g.paginaProductos} setPaginaProductos={g.setPaginaProductos} totalProductos={g.totalProductos}
-          />
+          {g.vistaGrid ? (
+            <ProductosGrid
+              datos={g.datos} tienePerm={g.tienePerm}
+              abrirDetalle={g.abrirDetalle} abrirEditar={g.abrirEditar} setEliminarId={g.setEliminarId}
+              totalPaginasProductos={g.totalPaginasProductos} paginaProductos={g.paginaProductos} setPaginaProductos={g.setPaginaProductos} totalProductos={g.totalProductos}
+            />
+          ) : (
+            <ProductosTable
+              datos={g.datos} tienePerm={g.tienePerm}
+              variantesDropdownAbierto={g.variantesDropdownAbierto} setVariantesDropdownAbierto={g.setVariantesDropdownAbierto}
+              togglePublicado={g.togglePublicado} toggleEstadoProducto={g.toggleEstadoProducto}
+              abrirDetalle={g.abrirDetalle} abrirEditar={g.abrirEditar} setEliminarId={g.setEliminarId}
+              totalPaginasProductos={g.totalPaginasProductos} paginaProductos={g.paginaProductos} setPaginaProductos={g.setPaginaProductos} totalProductos={g.totalProductos}
+            />
+          )}
           {panelAbierto && (
             <div className="gestproductos-panel-columna">
               {editandoExistente ? (

@@ -103,6 +103,20 @@ export function useProductoFormulario({ cargarCategoriasCompletas, setModal, mos
     return coloresUnicos.filter(c => !idsConFoto.has(String(c.id_color)));
   };
 
+  // Al revés de obtenerColoresSinFotos: ninguna foto (ya subida o pendiente)
+  // puede quedar sin color asignado — si el producto tiene 2+ colores, una
+  // foto sin color no se sabe a qué variante pertenece, así que no se deja
+  // guardar hasta que se le asigne uno (a mano o por detección automática).
+  const hayFotosSinColor = async () => {
+    if (editar) {
+      try {
+        const { data: imgsData } = await api.get(`/imagenes?tipo=Producto&id=${editar}`);
+        if (imgsData.some(i => !i.id_color)) return true;
+      } catch { return false; /* si falla la verificación, no bloqueamos el guardado */ }
+    }
+    return pendingImagenes.some(i => !i.id_color);
+  };
+
   // Sube las variantes y las imágenes pendientes de staging a un producto ya
   // creado — mismo procedimiento tanto si el producto se acaba de crear como
   // si ya existía y se está editando.
@@ -165,6 +179,10 @@ export function useProductoFormulario({ cargarCategoriasCompletas, setModal, mos
     }
     const sinFotos = await obtenerColoresSinFotos();
     if (sinFotos.length > 0) { console.log("[guardar] bloqueado por colores sin fotos:", sinFotos); setColoresSinFotos(sinFotos); return; }
+    if (await hayFotosSinColor()) {
+      setErrores(p => ({ ...p, general: "Hay fotos sin color asignado. Asígnales un color antes de guardar." }));
+      return;
+    }
     console.log("[guardar] validación OK, llamando a guardarProducto()");
     await guardarProducto();
   };

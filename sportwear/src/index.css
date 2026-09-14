@@ -111,7 +111,9 @@ button {
   cursor: pointer;
   transition: all 0.2s ease;
 }
-button:focus,
+button:focus {
+  outline: none;
+}
 button:focus-visible {
   outline: 2px solid var(--dvna-charcoal);
   outline-offset: 2px;

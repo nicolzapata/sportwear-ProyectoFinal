@@ -3,7 +3,7 @@ import ImagenCard from "./ImagenCard";
 
 export default function GruposImagenes({
   imagenes, imagenesLocales, todosColores, soloLectura, tieneColores,
-  eliminarLocal, setPrincipal, eliminar, cambiarColor,
+  eliminarLocal, setPrincipal, eliminar, cambiarColor, cambiarColorLocal,
   editandoColor, setEditandoColor, dropdownPos, setDropdownPos, paletteBtnRefs,
 }) {
   const grupos = construirGrupos(imagenes, imagenesLocales, todosColores);
@@ -29,6 +29,7 @@ export default function GruposImagenes({
                 setPrincipal={setPrincipal}
                 eliminar={eliminar}
                 cambiarColor={cambiarColor}
+                cambiarColorLocal={cambiarColorLocal}
                 editandoColor={editandoColor}
                 setEditandoColor={setEditandoColor}
                 dropdownPos={dropdownPos}

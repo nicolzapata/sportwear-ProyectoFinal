@@ -12,6 +12,26 @@
   padding-bottom: 0;
 }
 
+/* ── Más aire en el panel de "editar producto" (acoplado a la tabla, no el
+   modal centrado) — DetallePanel.css le quita el padding/borde a las
+   secciones para Usuarios/Proveedores/Compras, que tienen menos contenido
+   por sección; acá con 3 secciones (Datos, Variantes, Imágenes) eso hacía
+   que todo se sintiera apretado, una pegada a la otra. Se le devuelve
+   separación propia, un poco más compacta que la del modal centrado. ── */
+.gestproductos-panel-columna .detalle-panel-body {
+  padding: 22px;
+  gap: 22px;
+}
+.gestproductos-panel-columna .detalle-panel-body .gestproductos-factura-seccion {
+  padding-bottom: 1.5rem;
+  margin-bottom: 0;
+  border-bottom: 1px dashed var(--dvna-border);
+}
+.gestproductos-panel-columna .detalle-panel-body .gestproductos-factura-seccion:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
 .gestproductos-factura-titulo {
   font-family: var(--font-body);
   font-size: 0.95rem;
@@ -306,6 +326,182 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
+}
+
+/* ── Grilla compacta de "Datos del producto": a diferencia de .gestproductos-form-row
+   (fija en pares), esta empaqueta automáticamente los campos que aplican según el
+   modo (crear/editar, permisos) en 2 columnas, sin dejar huecos ni filas sueltas —
+   así el formulario ocupa menos alto y hay menos scroll. ── */
+.gestproductos-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 1rem;
+}
+.gestproductos-form-grid .gestproductos-form-group {
+  margin-bottom: 0.8rem;
+}
+
+/* ── Encabezado de sección numerado ("01. Datos del producto") con la nota
+   de campos requeridos alineada a la derecha. ── */
+.gestproductos-seccion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.gestproductos-seccion-header .gestproductos-factura-titulo {
+  margin: 0;
+  font-size: 11px;
+  color: var(--dvna-muted);
+  letter-spacing: 0.12em;
+}
+.gestproductos-seccion-header .gestproductos-required-note {
+  margin: 0;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* ── Nombre + tarjeta "Publicar en catálogo" lado a lado ── */
+.gestproductos-nombre-publicar-row {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 560px) {
+  .gestproductos-nombre-publicar-row { grid-template-columns: 1fr; }
+}
+
+.gestproductos-form-hint {
+  margin: 0.35rem 0 0 0;
+  font-size: 0.75rem;
+  color: var(--brown);
+}
+
+.gestproductos-publicar-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r-md);
+  background: var(--dvna-white);
+  padding: 0.9rem 1rem;
+}
+.gestproductos-publicar-titulo {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dvna-muted);
+}
+
+/* Switch de "Publicar en catálogo" — mismo mecanismo que .catadmin-switch,
+   con el color de marca (café) en vez de verde. */
+.gestproductos-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.gestproductos-switch.disabled { cursor: not-allowed; opacity: 0.6; }
+.gestproductos-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.gestproductos-switch-track {
+  width: 34px; height: 19px;
+  border-radius: 20px;
+  background: var(--dvna-border);
+  position: relative;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.gestproductos-switch-thumb {
+  position: absolute; top: 2px; left: 2px;
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  background: var(--dvna-white);
+  transition: transform 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.gestproductos-switch input:checked + .gestproductos-switch-track { background: var(--brown); }
+.gestproductos-switch input:checked + .gestproductos-switch-track .gestproductos-switch-thumb { transform: translateX(15px); }
+.gestproductos-switch-label {
+  font-size: 0.78rem;
+  color: var(--dvna-charcoal);
+}
+
+/* ── "Destacar como": grupo de botones segmentado en vez de select ── */
+.gestproductos-segmented {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.gestproductos-segmented-btn {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-white);
+  border: 1.5px solid var(--dvna-border);
+  border-radius: var(--r);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.gestproductos-segmented-btn:hover { border-color: var(--dvna-mid); }
+.gestproductos-segmented-btn.active {
+  border-color: var(--brown);
+  background: var(--brown);
+  color: var(--sw-secondary);
+}
+
+/* ── "Asistente inteligente cromático": tarjeta informativa de la galería
+   de imágenes en el formulario de nuevo producto. ── */
+.gestproductos-asistente-ia {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(180,151,128,0.12), rgba(180,151,128,0.04));
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+.gestproductos-asistente-icono {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brown);
+  color: var(--sw-secondary);
+}
+.gestproductos-asistente-texto p {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  color: var(--dvna-charcoal);
+  line-height: 1.5;
+}
+.gestproductos-asistente-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 4px !important;
+}
+.gestproductos-badge-ia {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: #1a1a1a;
+  border-radius: 10px;
+  padding: 2px 8px;
+  text-transform: uppercase;
 }
 
 .gestproductos-form-label {

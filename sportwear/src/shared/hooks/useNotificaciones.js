@@ -1,9 +1,11 @@
 // src/shared/hooks/useNotificaciones.js
 // Deriva notificaciones "en vivo" a partir de datos que ya expone el backend
-// (no existe una tabla/endpoint de notificaciones): stock bajo y ventas
-// pendientes desde /dashboard, pedidos por preparar desde /pedidos, y
-// compras pendientes desde /compras. Cada fuente solo se consulta si el
-// usuario tiene acceso al módulo correspondiente (o es Admin).
+// (no existe una tabla/endpoint de notificaciones): stock bajo desde
+// /dashboard, ventas pendientes desde /ventas, pedidos por preparar desde
+// /pedidos, y compras pendientes desde /compras. Cada fuente solo se
+// consulta si el usuario tiene acceso al módulo correspondiente (o es
+// Admin). Todas las notificaciones llevan "fecha" para mostrar hace cuánto
+// ocurrieron (ver tiempoRelativo en NotificacionesDropdown).
 import { useState, useEffect, useCallback, useRef } from "react";
 import api from "../services/api";
 import { useAuth } from "../contexts/AuthContext";
@@ -41,50 +43,57 @@ function tieneModulo(usuario, nombreModulo) {
 const formatoMoneda = (valor) =>
   Number(valor || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
-async function cargarNotificacionesInventarioYVentas(usuario) {
+async function cargarNotificacionesInventario(usuario) {
+  if (!tieneModulo(usuario, "Productos")) return [];
   const { data } = await api.get("/dashboard");
-  const stats = data?.stats || {};
   const resultado = [];
 
-  if (tieneModulo(usuario, "Productos")) {
-    const porProducto = new Map();
-    (data?.productosBajoStock || []).forEach((variante) => {
-      if (!porProducto.has(variante.id_producto)) {
-        porProducto.set(variante.id_producto, { nombre: variante.nombre, variantes: [] });
-      }
-      porProducto.get(variante.id_producto).variantes.push(variante);
-    });
+  // El stock bajo es un estado actual (no un evento con fecha propia), así
+  // que la "fecha" que se muestra es la del momento en que se detectó —
+  // igual a como un dashboard reporta "actualizado justo ahora".
+  const ahora = new Date().toISOString();
+  const porProducto = new Map();
+  (data?.productosBajoStock || []).forEach((variante) => {
+    if (!porProducto.has(variante.id_producto)) {
+      porProducto.set(variante.id_producto, { nombre: variante.nombre, variantes: [] });
+    }
+    porProducto.get(variante.id_producto).variantes.push(variante);
+  });
 
-    porProducto.forEach((producto, idProducto) => {
-      const peor = producto.variantes.reduce(
-        (min, v) => (Number(v.stock) < Number(min.stock) ? v : min),
-        producto.variantes[0]
-      );
-      resultado.push({
-        id: `stock-${idProducto}`,
-        categoria: "inventario",
-        titulo: `Stock bajo · ${producto.nombre}`,
-        detalle: producto.variantes.length > 1
-          ? `${producto.variantes.length} variantes con poco stock (mínimo ${peor.stock} en talla ${peor.talla || "-"})`
-          : `Talla ${peor.talla || "-"} · ${peor.color || "-"} · quedan ${peor.stock}`,
-        enlace: "/productos",
-        urgente: Number(peor.stock) <= 2,
-      });
-    });
-  }
-
-  if (tieneModulo(usuario, "Ventas") && Number(stats.pedidos_pendientes) > 0) {
+  porProducto.forEach((producto, idProducto) => {
+    const peor = producto.variantes.reduce(
+      (min, v) => (Number(v.stock) < Number(min.stock) ? v : min),
+      producto.variantes[0]
+    );
     resultado.push({
-      id: "ventas-pendientes",
-      categoria: "ventas",
-      titulo: "Ventas pendientes de pago",
-      detalle: `${stats.pedidos_pendientes} venta(s) esperando confirmación de pago`,
-      enlace: "/ventas",
-      urgente: false,
+      id: `stock-${idProducto}`,
+      categoria: "inventario",
+      titulo: `Stock bajo · ${producto.nombre}`,
+      detalle: producto.variantes.length > 1
+        ? `${producto.variantes.length} variantes con poco stock (mínimo ${peor.stock} en talla ${peor.talla || "-"})`
+        : `Talla ${peor.talla || "-"} · ${peor.color || "-"} · quedan ${peor.stock}`,
+      enlace: "/productos",
+      urgente: Number(peor.stock) <= 2,
+      fecha: ahora,
     });
-  }
+  });
 
   return resultado;
+}
+
+async function cargarNotificacionesVentasPendientes(usuario) {
+  if (!tieneModulo(usuario, "Ventas")) return [];
+  const { data } = await api.get("/ventas", { params: { estado_pago: "Pendiente", limit: 5 } });
+  const ventas = Array.isArray(data) ? data : (data?.data || []);
+  return ventas.slice(0, 5).map((venta) => ({
+    id: `venta-${venta.id_venta}`,
+    categoria: "ventas",
+    titulo: `Venta #${venta.id_venta} pendiente de pago`,
+    detalle: `${venta.cliente || "Cliente"} · ${formatoMoneda(venta.total)}`,
+    enlace: "/ventas",
+    urgente: false,
+    fecha: venta.fecha || null,
+  }));
 }
 
 async function cargarNotificacionesPedidos() {
@@ -97,6 +106,7 @@ async function cargarNotificacionesPedidos() {
     detalle: `${pedido.cliente || "Cliente"} · ${formatoMoneda(pedido.total)}`,
     enlace: "/pedidos",
     urgente: true,
+    fecha: pedido.fecha_actualizacion || null,
   }));
 }
 
@@ -113,6 +123,7 @@ async function cargarNotificacionesCompras() {
       detalle: `${compra.proveedor || compra.nombre_comercial || "Proveedor"} · ${formatoMoneda(compra.total)}`,
       enlace: "/compras",
       urgente: false,
+      fecha: compra.fecha || null,
     }));
 }
 
@@ -134,7 +145,10 @@ export default function useNotificaciones() {
     const tareas = [];
 
     if (tieneModulo(usuario, "Dashboard")) {
-      tareas.push(cargarNotificacionesInventarioYVentas(usuario).catch(() => []));
+      tareas.push(cargarNotificacionesInventario(usuario).catch(() => []));
+    }
+    if (tieneModulo(usuario, "Ventas")) {
+      tareas.push(cargarNotificacionesVentasPendientes(usuario).catch(() => []));
     }
     if (tieneModulo(usuario, "Pedidos")) {
       tareas.push(cargarNotificacionesPedidos().catch(() => []));

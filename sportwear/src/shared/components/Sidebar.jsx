@@ -33,12 +33,12 @@ const NAV_ICONS = {
 const LABEL_EXTENDIDA = {
   dashboard: "Mi panel",
   roles: "Roles & Permisos",
-  productos: "Productos & Stock",
+  productos: "Gestión de Productos",
   "catalogo-admin": "Catálogo de Colección",
-  proveedores: "Proveedores & Telas",
-  compras: "Compras & Insumos",
-  pedidos: "Pedidos Online",
-  ventas: "Ventas & Facturación",
+  proveedores: "Proveedores",
+  compras: "Compras",
+  pedidos: "Pedidos",
+  ventas: "Ventas",
 };
 
 // Agrupación visual del menú en secciones — mismos items de MENU_ITEMS,

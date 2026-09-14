@@ -1,5 +1,6 @@
 import CuotasCalendario from "../../../checkout/components/checkout/CuotasCalendario";
 import Select from "../../../../shared/components/Select";
+import { MAX_LONGITUD_DIRECCION } from "../../../../shared/utils/numerico";
 import { fmt, HOY_ISO } from "../../utils/pedidosVentasHelpers";
 
 // ── Bloque "tipo de pago" del formulario de Nueva venta: tipo de pago, cupo
@@ -92,6 +93,21 @@ export default function VentaPagoFields({
             </Select>
           </div>
         )}
+        <div className="pedidosventas-form-group">
+          <label className="pedidosventas-form-label">Dirección de entrega</label>
+          <input
+            type="text"
+            maxLength={MAX_LONGITUD_DIRECCION}
+            placeholder="Ej: Cra 43A # 18-20 Apto 302"
+            className={`pedidosventas-form-input${erroresVenta.direccion_entrega ? " input-error" : ""}`}
+            value={formVenta.direccion_entrega}
+            onChange={(e) => {
+              setFormVenta({ ...formVenta, direccion_entrega: e.target.value });
+              if (erroresVenta.direccion_entrega) setErroresVenta((prev) => ({ ...prev, direccion_entrega: e.target.value.trim() ? "" : prev.direccion_entrega }));
+            }}
+          />
+          {erroresVenta.direccion_entrega && <span className="pedidosventas-field-error">{erroresVenta.direccion_entrega}</span>}
+        </div>
         {formVenta.tipo_pago === "cuotas" && (
           <div className="pedidosventas-form-group">
             <label className="pedidosventas-form-label">Estado inicial</label>

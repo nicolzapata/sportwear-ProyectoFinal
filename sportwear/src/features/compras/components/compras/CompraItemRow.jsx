@@ -92,42 +92,48 @@ export default function CompraItemRow({
       </div>
       <div className="compras-item-field">
         <label className="compras-item-label-movil">Precio de costo</label>
-        <input
-          type="number"
-          min="0"
-          max={MAX_MONTO}
-          placeholder="Precio de costo"
-          className={`compras-form-input${errores[`item_${i}_precio`] ? " input-error" : ""}`}
-          value={item.precio_unitario}
-          onChange={(e) => {
-            const valor = e.target.value;
-            actualizarItem(i, "precio_unitario", valor);
-            if (errores[`item_${i}_precio`]) {
-              setErrores((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(valor) }));
-            }
-          }}
-          onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(item.precio_unitario) }))}
-        />
+        <div className="compras-input-affix-wrap">
+          <span className="compras-input-affix">$</span>
+          <input
+            type="number"
+            min="0"
+            max={MAX_MONTO}
+            placeholder="Precio de costo"
+            className={`compras-form-input${errores[`item_${i}_precio`] ? " input-error" : ""}`}
+            value={item.precio_unitario}
+            onChange={(e) => {
+              const valor = e.target.value;
+              actualizarItem(i, "precio_unitario", valor);
+              if (errores[`item_${i}_precio`]) {
+                setErrores((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(valor) }));
+              }
+            }}
+            onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(item.precio_unitario) }))}
+          />
+        </div>
         {errores[`item_${i}_precio`] && <span className="compras-field-error">{errores[`item_${i}_precio`]}</span>}
       </div>
       <div className="compras-item-field">
         <label className="compras-item-label-movil">Valor de venta</label>
-        <input
-          type="number"
-          min="0"
-          max={MAX_MONTO}
-          placeholder="Valor de venta"
-          className={`compras-form-input${errores[`item_${i}_precio_venta`] ? " input-error" : ""}${alertaMenor || alertaIgual ? " compras-input-warning" : ""}`}
-          value={item.precio_venta}
-          onChange={(e) => {
-            const valor = e.target.value;
-            actualizarItem(i, "precio_venta", valor);
-            if (errores[`item_${i}_precio_venta`]) {
-              setErrores((prev) => ({ ...prev, [`item_${i}_precio_venta`]: errorItemPrecioVenta(valor) }));
-            }
-          }}
-          onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_precio_venta`]: errorItemPrecioVenta(item.precio_venta) }))}
-        />
+        <div className="compras-input-affix-wrap">
+          <span className="compras-input-affix">$</span>
+          <input
+            type="number"
+            min="0"
+            max={MAX_MONTO}
+            placeholder="Valor de venta"
+            className={`compras-form-input${errores[`item_${i}_precio_venta`] ? " input-error" : ""}${alertaMenor || alertaIgual ? " compras-input-warning" : ""}`}
+            value={item.precio_venta}
+            onChange={(e) => {
+              const valor = e.target.value;
+              actualizarItem(i, "precio_venta", valor);
+              if (errores[`item_${i}_precio_venta`]) {
+                setErrores((prev) => ({ ...prev, [`item_${i}_precio_venta`]: errorItemPrecioVenta(valor) }));
+              }
+            }}
+            onBlur={() => setErrores((prev) => ({ ...prev, [`item_${i}_precio_venta`]: errorItemPrecioVenta(item.precio_venta) }))}
+          />
+        </div>
         {errores[`item_${i}_precio_venta`] && <span className="compras-field-error">{errores[`item_${i}_precio_venta`]}</span>}
         {alertaMenor && (
           <span className="compras-field-warning"><IconAlertTriangle /> Estás vendiendo más barato de lo que te costó.</span>

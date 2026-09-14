@@ -82,6 +82,7 @@ export default function Compras() {
               </button>
             )}
           </div>
+          <FilterToggle opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
         </div>
         <div className="compras-actions-right">
           {c.tienePerm('Compras.crear') && (
@@ -108,7 +109,6 @@ export default function Compras() {
             nombreArchivo="compras"
             titulo="Compras"
           />
-          <FilterToggle opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
         </div>
       </div>
 

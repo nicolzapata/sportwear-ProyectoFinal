@@ -4,17 +4,62 @@ import { IconStar, IconTrash, IconPalette } from "./icons";
 // ── Tarjeta de una imagen (server o local) ─────────────────────────────────
 export default function ImagenCard({
   entry, soloLectura, todosColores, tieneColores,
-  eliminarLocal, setPrincipal, eliminar, cambiarColor,
+  eliminarLocal, setPrincipal, eliminar, cambiarColor, cambiarColorLocal,
   editandoColor, setEditandoColor, dropdownPos, setDropdownPos, paletteBtnRefs,
 }) {
   if (entry.tipo === "local") {
     const { img, idx } = entry;
+    const claveDropdown = `local-${idx}`;
+    const color = colorInfo(img.id_color, todosColores);
     return (
-      <div key={`local-${idx}`} className="gi-card local">
+      <div key={claveDropdown} className="gi-card local">
         <div className="gi-img-wrap">
           <img src={img.preview} alt={`imagen local ${idx}`} className="gi-img" />
           {!soloLectura && (
             <div className="gi-overlay">
+              {tieneColores && cambiarColorLocal && (
+                <div className="gi-color-picker-wrap">
+                  <button
+                    className="gi-btn gi-btn-palette"
+                    ref={(el) => (paletteBtnRefs.current[claveDropdown] = el)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const btn = paletteBtnRefs.current[claveDropdown];
+                      if (btn) {
+                        const rect = btn.getBoundingClientRect();
+                        const dropdownWidth = 130;
+                        const left = Math.min(rect.left, window.innerWidth - dropdownWidth - 8);
+                        setDropdownPos({ top: rect.bottom + 8, left: Math.max(8, left) });
+                      }
+                      setEditandoColor(editandoColor === claveDropdown ? null : claveDropdown);
+                    }}
+                    title={color ? `Color: ${color.nombre} — cambiar` : "Asignar color"}
+                  >
+                    {color
+                      ? <span className="gi-btn-color-dot" style={{ background: color.codigo_hex }} />
+                      : <IconPalette />}
+                  </button>
+                  {editandoColor === claveDropdown && (
+                    <div
+                      className="gi-color-picker-dropdown"
+                      onMouseEnter={() => setEditandoColor(claveDropdown)}
+                      onMouseLeave={() => setEditandoColor(null)}
+                      style={{ position: "fixed", top: dropdownPos.top, left: dropdownPos.left }}
+                    >
+                      {todosColores.map(c => (
+                        <button
+                          key={c.id_color}
+                          className={`gi-cp-opt${String(img.id_color) === String(c.id_color) ? " active" : ""}`}
+                          onClick={() => cambiarColorLocal(idx, c.id_color)}
+                        >
+                          <span className="gi-cp-dot" style={{ background: c.codigo_hex }} />
+                          {c.nombre}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               <button className="gi-btn gi-btn-trash" onClick={() => eliminarLocal(idx)} title="Eliminar">
                 <IconTrash />
               </button>

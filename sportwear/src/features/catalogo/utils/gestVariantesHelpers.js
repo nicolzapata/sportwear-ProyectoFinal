@@ -1,5 +1,9 @@
 export const TALLAS = ["XS","S","M","L","XL","XXL","Única","28","30","32","34","36","38","40","42","44"];
 
+// Atajo "Seleccionar estándar" del formulario de nuevo producto: las 3 tallas
+// más comunes en prendas, para no tener que marcarlas una por una.
+export const TALLAS_ESTANDAR = ["S", "M", "L"];
+
 // Agrupa una lista de variantes por color — mismo criterio que el chip de
 // Tallas/Colores de la tabla y el modal de detalle de GestProductos: un
 // chip por color con sus tallas adentro, no un chip por combinación.

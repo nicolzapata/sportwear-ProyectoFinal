@@ -4,7 +4,7 @@ import { IconUpload, IconPalette } from "./icons";
 export default function ZonaSubida({
   mostrarDropzoneCompleto, setDropzoneAbierto, onDropCollapsado,
   tieneColores, todosColores, colorSubida, seleccionarColorSubida, contarFotos,
-  errorSubida, necesitaColor, subiendo,
+  errorSubida, subiendo,
   inputRef, onInputChange, onDrop, onDropzoneClick,
 }) {
   return (
@@ -23,7 +23,7 @@ export default function ZonaSubida({
           {tieneColores && todosColores.length > 1 && (
             <div className="gi-upload-color-row">
               <span className="gi-upload-color-label">
-                <IconPalette /> Color de las fotos a subir
+                <IconPalette /> Color de las fotos a subir <span className="gi-upload-color-opcional">(opcional — si no lo eliges, se detecta o lo asignas después)</span>
               </span>
               <div className="gi-color-chips-upload">
                 {todosColores.map(c => {
@@ -49,7 +49,7 @@ export default function ZonaSubida({
           {errorSubida && <p className="gi-error gi-error-inline">{errorSubida}</p>}
 
           <div
-            className={`gi-dropzone${subiendo ? " uploading" : ""}${necesitaColor ? " disabled" : ""}`}
+            className={`gi-dropzone${subiendo ? " uploading" : ""}`}
             onDrop={onDrop}
             onDragOver={e => e.preventDefault()}
             onClick={onDropzoneClick}
@@ -66,11 +66,6 @@ export default function ZonaSubida({
               <div className="gi-upload-uploading">
                 <div className="gi-spinner" />
                 <span>Subiendo imágenes...</span>
-              </div>
-            ) : necesitaColor ? (
-              <div className="gi-upload-hint gi-upload-hint-disabled">
-                <IconUpload />
-                <span>Selecciona un color arriba para habilitar la subida</span>
               </div>
             ) : (
               <div className="gi-upload-hint">

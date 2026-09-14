@@ -60,7 +60,7 @@
   font-family: 'DM Sans', system-ui, sans-serif !important;
   font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: none;
   color: var(--sw-secondary) !important; background: var(--brown) !important;
-  border: none !important; border-radius: 4px; padding: 10px 24px;
+  border: none !important; border-radius: 40px; padding: 10px 24px;
   cursor: pointer; text-decoration: none; display: inline-block;
   box-shadow: none !important; transition: background 0.2s;
 }
@@ -97,7 +97,7 @@
   padding: 20px;
 }
 .mc-modal-box {
-  background: var(--dvna-white); border-radius: 12px;
+  background: var(--dvna-white); border-radius: 32px;
   max-width: 520px; width: 92%; max-height: 88vh;
   overflow-y: auto; display: flex; flex-direction: column;
   box-shadow: 0 24px 60px rgba(0,0,0,0.18);
@@ -113,12 +113,13 @@
   font-weight: 400; color: var(--dvna-charcoal); margin: 0; text-transform: none;
 }
 .mc-modal-close {
-  border: none; background: none;
+  border: 1px solid var(--dvna-border); background: var(--dvna-white);
+  width: 36px; height: 36px;
   color: var(--dvna-muted); cursor: pointer; line-height: 1;
-  padding: 6px; border-radius: 50%; transition: background 0.15s, color 0.15s;
+  border-radius: 40px; transition: all 0.2s ease;
   display: flex; align-items: center; justify-content: center;
 }
-.mc-modal-close:hover { color: var(--dvna-charcoal); background: var(--dvna-pale); }
+.mc-modal-close:hover { color: var(--dvna-charcoal); background: var(--dvna-pale); border-color: var(--dvna-mid); }
 .mc-modal-body { padding: 20px 24px 24px; }
 .mc-modal-section-title {
   font-family: 'DM Sans', system-ui, sans-serif; font-size: 12px;
@@ -155,7 +156,7 @@
   color: var(--dvna-charcoal);
   background: var(--dvna-white);
   border: 1px solid var(--dvna-border);
-  border-radius: 4px;
+  border-radius: 40px;
   padding: 10px 20px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;

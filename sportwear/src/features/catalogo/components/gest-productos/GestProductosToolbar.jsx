@@ -1,6 +1,26 @@
 import api from "../../../../shared/services/api";
 import ExportButtons from "../../../../shared/components/ExportButtons";
+import FilterToggle from "../../../../shared/components/FilterToggle";
 import { IconSearch, IconX, IconBox, IconTag, IconPalette } from "../../../../shared/components/Icons";
+
+// ── Iconos del selector de vista (tarjetas/tabla) — mismos que
+// Usuarios/Pedidos/Proveedores/Compras/Ventas, para que se vea igual en
+// todos los módulos. ──
+const IconVistaTarjetas = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
+    <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
+  </svg>
+);
+const IconVistaTabla = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
+const OPCIONES_VISTA = [
+  { valor: "tarjetas", etiqueta: <span title="Vista de tarjetas"><IconVistaTarjetas /></span> },
+  { valor: "tabla",    etiqueta: <span title="Vista de tabla"><IconVistaTabla /></span> },
+];
 
 export default function GestProductosToolbar({ g }) {
   return (
@@ -17,6 +37,9 @@ export default function GestProductosToolbar({ g }) {
           <button className={`gestproductos-tab-btn${g.tab === 'categorias' ? ' active' : ''}`} onClick={() => g.setTab('categorias')}><IconTag /> Categorías</button>
           <button className={`gestproductos-tab-btn${g.tab === 'colores' ? ' active' : ''}`} onClick={() => g.setTab('colores')}><IconPalette /> Colores</button>
         </div>
+        {g.tab === 'productos' && (
+          <FilterToggle opciones={OPCIONES_VISTA} valor={g.vistaGrid ? "tarjetas" : "tabla"} onChange={(v) => g.setVistaGrid(v === "tarjetas")} />
+        )}
       </div>
       <div className="gestproductos-actions-right">
         {g.tab === 'productos' && g.tienePerm('Productos.crear') && (

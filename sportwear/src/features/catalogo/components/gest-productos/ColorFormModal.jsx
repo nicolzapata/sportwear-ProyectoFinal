@@ -16,7 +16,7 @@ export default function ColorFormModal({
         </div>
         <div className="gestproductos-modal-body gestproductos-factura-body">
           <div className="gestproductos-factura-seccion">
-            <h3 className="gestproductos-factura-titulo">Color y nombre</h3>
+            <h3 className="gestproductos-factura-titulo colores-modal-titulo">Color y nombre</h3>
             <div>
               <div className="gestproductos-form-group">
                 <label className="gestproductos-form-label">Color HEX <span className="gestproductos-required">*</span></label>

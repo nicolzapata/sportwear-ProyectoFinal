@@ -27,6 +27,14 @@
 }
 .pedidosventas-field-error { display: block; margin-top: 6px; font-size: 0.75rem; color: var(--danger); text-transform: none; }
 
+/* ── Prefijo dentro del input ($) — mismo patrón que Compras. ── */
+.pedidosventas-input-affix-wrap { position: relative; }
+.pedidosventas-input-affix {
+  position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+  color: var(--dvna-muted); font-size: 0.85rem; pointer-events: none;
+}
+.pedidosventas-input-affix-wrap .pedidosventas-form-input { padding-left: 1.9rem; }
+
 /* Líneas de productos en Nueva venta (mismo patrón que Compras) */
 .pedidosventas-items-section { margin-bottom: 1rem; }
 .pedidosventas-items-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; }
@@ -35,28 +43,79 @@
   border-radius: 20px; padding: 0.4rem 0.9rem; font-size: 0.8rem; cursor: pointer;
 }
 .pedidosventas-btn-add-item:hover { background: var(--dvna-pale); }
+
+/* ── Tarjeta que envuelve encabezados + filas — mismo patrón que Compras. ── */
+.pedidosventas-items-tabla-card {
+  background: var(--dvna-pale); border: 1px solid var(--dvna-border);
+  border-radius: 16px; padding: 0.85rem;
+}
+.pedidosventas-items-tabla-card .pedidosventas-item-row:last-child { margin-bottom: 0; }
+
 .pedidosventas-item-titulos {
-  display: grid; grid-template-columns: 2fr 1.4fr 0.8fr 1fr 1fr 1fr 32px;
+  display: grid; grid-template-columns: 1.6fr 1.3fr minmax(60px, 0.7fr) minmax(95px, 1fr) minmax(95px, 1fr) minmax(90px, 120px) 32px;
   gap: 0.5rem; font-size: 0.7rem; color: var(--dvna-muted); text-transform: uppercase;
   letter-spacing: 0.03em; padding: 0 0.2rem; margin-bottom: 0.4rem;
 }
 .pedidosventas-item-row {
-  display: grid; grid-template-columns: 2fr 1.4fr 0.8fr 1fr 1fr 1fr 32px;
-  gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;
+  display: grid; grid-template-columns: 1.6fr 1.3fr minmax(60px, 0.7fr) minmax(95px, 1fr) minmax(95px, 1fr) minmax(90px, 120px) 32px;
+  gap: 0.5rem; align-items: start; margin-bottom: 0.6rem;
+  padding: 0.6rem; background: var(--dvna-white); border-radius: 12px; border: 1px solid var(--dvna-border);
 }
-.pedidosventas-item-subtotal { font-size: 0.85rem; font-weight: 500; text-align: right; }
+/* min-content ignora la elipsis y empujaría el ancho mínimo igual —
+   con min-width:0 cada celda respeta el ancho fijado por el grid. */
+.pedidosventas-item-row > * { min-width: 0; }
+
+.pedidosventas-item-subtotal {
+  font-size: 0.85rem; font-weight: 600; text-align: right; color: var(--dvna-charcoal);
+  white-space: normal; word-break: break-word; padding-top: 0.7rem;
+}
 .pedidosventas-item-remove {
   border: none; background: var(--danger-bg); color: var(--danger); border-radius: 8px;
   width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  margin-top: 0.3rem;
 }
 .pedidosventas-item-remove:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* No cortar el desplegable ya abierto de Producto / Talla-Color. */
+.pedidosventas-item-row .ui-select-panel {
+  top: calc(100% + 10px); width: max-content; min-width: 100%; max-width: 340px; right: auto;
+}
+.pedidosventas-item-row .ui-select-option {
+  white-space: normal; overflow: visible; text-overflow: clip;
+}
+
+/* Quitar flechas del navegador en los inputs numéricos — le tapaban el
+   último dígito al valor. */
+.pedidosventas-item-row input[type="number"] { -moz-appearance: textfield; }
+.pedidosventas-item-row input[type="number"]::-webkit-outer-spin-button,
+.pedidosventas-item-row input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ── Usado por EditarPedidoModal (resumen simple, sin tarjeta) — Nueva
+   venta usa .pedidosventas-resumen-card en su lugar. ── */
 .pedidosventas-total-resumen {
   display: flex; justify-content: flex-end; gap: 1.5rem;
   padding-top: 1rem; margin-top: 0.5rem; border-top: 1px solid var(--dvna-border);
   font-size: 0.85rem; color: var(--dvna-muted);
 }
 .pedidosventas-total-final { font-weight: 700; color: var(--dvna-charcoal); font-size: 1rem; }
+
+/* ── Fila final: descuento/dirección/observaciones a la izquierda,
+   tarjeta de resumen a la derecha — mismo patrón que Compras. ── */
+.pedidosventas-form-resumen-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start; }
+@media (max-width: 720px) { .pedidosventas-form-resumen-row { grid-template-columns: 1fr; } }
+
+.pedidosventas-resumen-card {
+  background: var(--dvna-pale); border: 1px solid var(--dvna-border); border-radius: 16px;
+  padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: 0.6rem;
+}
+.pedidosventas-resumen-linea { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--dvna-muted); }
+.pedidosventas-resumen-linea-descuento { color: var(--danger); }
+.pedidosventas-resumen-divisor { border: none; border-top: 1px solid var(--dvna-border); margin: 0.2rem 0; }
+.pedidosventas-resumen-total {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 0.7rem; font-weight: 700; color: var(--dvna-charcoal); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.pedidosventas-resumen-total-valor { font-size: 1.3rem; color: var(--brown); letter-spacing: normal; text-transform: none; }
 
 /* Loading */
 .pedidosventas-loading-container {
@@ -123,6 +182,7 @@
   .pedidosventas-search-wrapper { order: 1; flex: 1 1 140px; min-width: 120px; width: auto; }
   .pedidosventas-btn-primary { order: 2; width: auto; flex: 0 0 auto; white-space: nowrap; justify-content: center; }
   .pedidosventas-actions-right .btn-print { order: 3; }
+  .pedidosventas-actions-right .export-buttons { order: 4; }
 }
 
 @media (max-width: 480px) {

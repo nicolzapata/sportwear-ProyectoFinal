@@ -90,34 +90,40 @@ export default function VentaItemRow({
         {erroresVenta[`item_${i}_cantidad`] && <span className="pedidosventas-field-error">{erroresVenta[`item_${i}_cantidad`]}</span>}
       </div>
       <div>
-        <input
-          type="number"
-          min="0"
-          max={MAX_MONTO}
-          placeholder="Precio"
-          className={`pedidosventas-form-input${erroresVenta[`item_${i}_precio`] ? " input-error" : ""}`}
-          value={item.precio_unitario}
-          onChange={(e) => {
-            actualizarItemVenta(i, "precio_unitario", e.target.value);
-            if (erroresVenta[`item_${i}_precio`]) setErroresVenta((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(e.target.value) }));
-          }}
-          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(item.precio_unitario) }))}
-        />
+        <div className="pedidosventas-input-affix-wrap">
+          <span className="pedidosventas-input-affix">$</span>
+          <input
+            type="number"
+            min="0"
+            max={MAX_MONTO}
+            placeholder="Precio"
+            className={`pedidosventas-form-input${erroresVenta[`item_${i}_precio`] ? " input-error" : ""}`}
+            value={item.precio_unitario}
+            onChange={(e) => {
+              actualizarItemVenta(i, "precio_unitario", e.target.value);
+              if (erroresVenta[`item_${i}_precio`]) setErroresVenta((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(e.target.value) }));
+            }}
+            onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_precio`]: errorItemPrecio(item.precio_unitario) }))}
+          />
+        </div>
       </div>
       <div>
-        <input
-          type="number"
-          min="0"
-          max={MAX_MONTO}
-          placeholder="Desc."
-          className={`pedidosventas-form-input${erroresVenta[`item_${i}_descuento`] ? " input-error" : ""}`}
-          value={item.descuento_linea}
-          onChange={(e) => {
-            actualizarItemVenta(i, "descuento_linea", e.target.value);
-            if (erroresVenta[`item_${i}_descuento`]) setErroresVenta((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(e.target.value, item.cantidad, item.precio_unitario) }));
-          }}
-          onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(item.descuento_linea, item.cantidad, item.precio_unitario) }))}
-        />
+        <div className="pedidosventas-input-affix-wrap">
+          <span className="pedidosventas-input-affix">$</span>
+          <input
+            type="number"
+            min="0"
+            max={MAX_MONTO}
+            placeholder="Desc."
+            className={`pedidosventas-form-input${erroresVenta[`item_${i}_descuento`] ? " input-error" : ""}`}
+            value={item.descuento_linea}
+            onChange={(e) => {
+              actualizarItemVenta(i, "descuento_linea", e.target.value);
+              if (erroresVenta[`item_${i}_descuento`]) setErroresVenta((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(e.target.value, item.cantidad, item.precio_unitario) }));
+            }}
+            onBlur={() => setErroresVenta((prev) => ({ ...prev, [`item_${i}_descuento`]: errorItemDescuento(item.descuento_linea, item.cantidad, item.precio_unitario) }))}
+          />
+        </div>
       </div>
       <div className="pedidosventas-item-subtotal">{fmt(lineaTotal)}</div>
       <button

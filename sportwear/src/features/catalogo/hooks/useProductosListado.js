@@ -10,13 +10,16 @@ const FILAS_POR_PAGINA = 10;
  * activar/inactivar, eliminar) de la pestaña "Productos" — separado del
  * formulario de alta/edición, que vive en useProductoFormulario.
  */
-export function useProductosListado({ busquedaDebounced, setLoading, mostrarToast, recargarTodo }) {
+export function useProductosListado({ busquedaDebounced, setLoading, mostrarToast, recargarTodo, setModal }) {
   const [datos,          setDatos]          = useState([]);
   const [totalProductos, setTotalProductos] = useState(0);
   const [paginaProductos, setPaginaProductos] = useState(1);
   const [verDetalle,     setVerDetalle]     = useState(null);
   const [eliminarId,     setEliminarId]     = useState(null);
   const [variantesDropdownAbierto, setVariantesDropdownAbierto] = useState(null);
+  // Vista de tarjetas (grid) además de la tabla — se alterna con un botón
+  // en la barra de acciones, sin filtros propios. Arranca en tarjetas.
+  const [vistaGrid,       setVistaGrid]       = useState(true);
 
   const cargarProductos = async (pagina = paginaProductos, q = busquedaDebounced) => {
     try {
@@ -39,6 +42,11 @@ export function useProductosListado({ busquedaDebounced, setLoading, mostrarToas
   const totalPaginasProductos = Math.ceil(totalProductos / FILAS_POR_PAGINA) || 1;
 
   const abrirDetalle = async (p) => {
+    // Si había un producto en edición abierto en el mismo panel, se cierra
+    // primero — si no, `editandoExistente` (modal + editar) seguía en true
+    // en GestProductos.jsx y el panel se quedaba mostrando el formulario de
+    // edición en vez de cambiar al detalle que se acaba de pedir ver.
+    setModal(false);
     setVerDetalle({ ...p, historialPrecios: [] });
     try {
       const { data } = await api.get(`/productos/${p.id_producto}/historial-precios`);
@@ -76,6 +84,7 @@ export function useProductosListado({ busquedaDebounced, setLoading, mostrarToas
     datos, totalProductos, paginaProductos, setPaginaProductos, totalPaginasProductos,
     verDetalle, setVerDetalle, eliminarId, setEliminarId,
     variantesDropdownAbierto, setVariantesDropdownAbierto,
+    vistaGrid, setVistaGrid,
     cargarProductos, abrirDetalle, toggleEstadoProducto, togglePublicado, confirmarEliminar,
   };
 }

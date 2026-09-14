@@ -6,7 +6,9 @@ import "./GaleriaImagenes.css";
 import { IconImage } from "./galeria-imagenes/icons";
 import ZonaSubida from "./galeria-imagenes/ZonaSubida";
 import GruposImagenes from "./galeria-imagenes/GruposImagenes";
+import GaleriaNuevoProducto from "./galeria-imagenes/GaleriaNuevoProducto";
 import { contarFotos as contarFotosHelper } from "../utils/galeriaImagenesHelpers";
+import { detectarColoresDeImagen, emparejarConCatalogo } from "../utils/colorDetection";
 
 export default function GaleriaImagenes({
   tipoReferencia,
@@ -17,6 +19,7 @@ export default function GaleriaImagenes({
   coloresAPurgar = [],
   onColoresPurgados,
   refrescarColores,
+  onColoresDetectados,
 }) {
   const [imagenes,         setImagenes]         = useState([]);
   const [coloresVariantes, setColoresVariantes] = useState([]);
@@ -29,6 +32,7 @@ export default function GaleriaImagenes({
   const [dropdownPos,      setDropdownPos]      = useState({ top: 0, left: 0 });
   const [imagenesLocales,  setImagenesLocales]  = useState([]);
   const [dropzoneAbierto,  setDropzoneAbierto]  = useState(false);
+  const [detectandoColor,  setDetectandoColor]  = useState(false);
 
   const inputRef       = useRef();
   const paletteBtnRefs = useRef({});
@@ -107,10 +111,6 @@ export default function GaleriaImagenes({
   const contarFotos = (id_color) => contarFotosHelper(id_color, imagenes, imagenesLocales);
 
   const totalImagenes = imagenes.length + imagenesLocales.length;
-  // Solo hace falta elegir color si hay más de uno — con un solo color no hay
-  // ambigüedad posible, así que no tiene sentido pedirle al usuario que lo
-  // seleccione: se asigna solo.
-  const necesitaColor = tieneColores && todosColores.length > 1 && !colorSubida;
   const mostrarDropzoneCompleto = totalImagenes === 0 || dropzoneAbierto;
 
   // ── Acciones sobre imágenes existentes (modo conectado) ───────────────────
@@ -137,13 +137,80 @@ export default function GaleriaImagenes({
     }
   };
 
+  // Igual que cambiarColor, pero para una foto todavía sin guardar (pendiente
+  // de subir) — no hay nada que pedirle a la API, solo se actualiza el estado
+  // local. Sirve para corregir a mano el color que detectó automáticamente
+  // (p. ej. en una prenda mitad y mitad, donde solo se puede adivinar uno).
+  const cambiarColorLocal = (idx, id_color) => {
+    setImagenesLocales(prev => {
+      const updated = prev.map((img, i) => i === idx ? { ...img, id_color: id_color != null ? Number(id_color) : null } : img);
+      onPendingChange?.(updated);
+      return updated;
+    });
+    setEditandoColor(null);
+  };
+
   // ── Subida de imágenes (común a ambos modos) ───────────────────────────────
   // Con un solo color, se asigna automáticamente sin pedirle nada al usuario;
   // con 2+ colores, se usa el que haya elegido en los chips (colorSubida).
   const colorParaSubir = todosColores.length === 1 ? todosColores[0].id_color : colorSubida;
 
+  // ── Detección automática de color: corre siempre que se sube una primera
+  // foto, sin importar cuántos colores tenga ya el producto — así, al editar
+  // un producto que ya tiene 2+ colores, subir la foto de un color nuevo
+  // también dispara la sugerencia en vez de exigir elegir el color a mano
+  // antes de poder subir. No bloquea la subida: corre en paralelo. ─────────
+  const detectarColorAutomatico = async (primerArchivo, colorExistente) => {
+    if (!onColoresDetectados || !primerArchivo.type?.startsWith("image/")) return;
+    setDetectandoColor(true);
+    try {
+      const [detectados, { data: catalogo }] = await Promise.all([
+        detectarColoresDeImagen(primerArchivo),
+        api.get("/colores"),
+      ]);
+      const { todos, principales } = emparejarConCatalogo(detectados, catalogo.filter(c => c.estado === "Activo"));
+      if (todos.length === 0) return;
+
+      // Si ya había un único color en el producto y esta foto detectó ese
+      // mismo color, no hay nada que hacer — colorParaSubir ya la dejó
+      // asignada ahí. Solo se avisa/reasigna cuando la foto resulta ser de
+      // un color distinto al que ya existía.
+      const mismoColorQueYaExiste = colorExistente && principales.length === 1
+        && String(principales[0].id_color) === String(colorExistente.id_color);
+      if (mismoColorQueYaExiste) return;
+
+      onColoresDetectados(todos, principales.map(c => c.id_color));
+
+      // Con un solo color principal claro, se asigna directo a la foto que se
+      // acaba de subir — no basta con sugerirlo en Variantes, la idea es que
+      // la foto quede realmente etiquetada con ese color (reemplazando el
+      // color existente con el que se había asignado "a ciegas" si resultó
+      // ser otro). Si es "mitad y mitad" (2 principales) no se puede saber
+      // cuál va con esta foto sin ambigüedad, así que se deja para que el
+      // usuario la asigne a mano con la paleta de la tarjeta.
+      if (principales.length === 1) {
+        const idColor = principales[0].id_color;
+        setImagenesLocales(prev => {
+          const updated = prev.map(img => img.file === primerArchivo ? { ...img, id_color: idColor } : img);
+          onPendingChange?.(updated);
+          return updated;
+        });
+      }
+    } catch {
+      // La detección es una ayuda opcional — si falla, el usuario simplemente
+      // elige los colores a mano como siempre.
+    } finally {
+      setDetectandoColor(false);
+    }
+  };
+
   const procesarArchivos = (files) => {
-    const nuevas = Array.from(files).map(file => ({
+    const listaArchivos = Array.from(files);
+    if (listaArchivos[0]) {
+      detectarColorAutomatico(listaArchivos[0], todosColores.length === 1 ? todosColores[0] : null);
+    }
+
+    const nuevas = listaArchivos.map(file => ({
       file,
       id_color: colorParaSubir || null,
       preview: URL.createObjectURL(file),
@@ -171,24 +238,25 @@ export default function GaleriaImagenes({
 
   const onDropzoneClick = () => {
     if (subiendo) return;
-    if (necesitaColor) { setErrorSubida("Selecciona un color antes de subir fotos."); return; }
     inputRef.current?.click();
   };
 
+  // Nunca bloquea la subida por falta de color: con 2+ colores, el chip de
+  // arriba sigue siendo útil si el usuario YA sabe el color, pero si no lo
+  // elige, la foto sube igual sin color y la detección automática (o el
+  // selector por foto en GruposImagenes) se encarga de asignarlo después.
   const onDrop = (e) => {
     e.preventDefault();
-    if (necesitaColor) { setErrorSubida("Selecciona un color antes de subir fotos."); return; }
     if (!e.dataTransfer.files.length) return;
     procesarArchivos(e.dataTransfer.files);
   };
 
+  // Igual que onDrop — se mantiene aparte solo porque la galería de "nuevo
+  // producto" usa su propio dropzone.
+  const onDropNuevo = onDrop;
+
   const onDropCollapsado = (e) => {
     e.preventDefault();
-    if (necesitaColor) {
-      setErrorSubida("Selecciona un color antes de subir fotos.");
-      setDropzoneAbierto(true);
-      return;
-    }
     if (!e.dataTransfer.files.length) { setDropzoneAbierto(true); return; }
     procesarArchivos(e.dataTransfer.files);
   };
@@ -204,13 +272,13 @@ export default function GaleriaImagenes({
   const zonaSubidaProps = {
     mostrarDropzoneCompleto, setDropzoneAbierto, onDropCollapsado,
     tieneColores, todosColores, colorSubida, seleccionarColorSubida, contarFotos,
-    errorSubida, necesitaColor, subiendo,
+    errorSubida, subiendo,
     inputRef, onInputChange, onDrop, onDropzoneClick,
   };
 
   const gruposProps = {
     imagenes, imagenesLocales, todosColores, soloLectura, tieneColores,
-    eliminarLocal, setPrincipal, eliminar, cambiarColor,
+    eliminarLocal, setPrincipal, eliminar, cambiarColor, cambiarColorLocal,
     editandoColor, setEditandoColor, dropdownPos, setDropdownPos, paletteBtnRefs,
   };
 
@@ -219,17 +287,20 @@ export default function GaleriaImagenes({
   // Permite subir imágenes y previsualizarlas antes de guardar
   // ════════════════════════════════════════════════════════════════
   if (!idReferencia) {
+    if (soloLectura) {
+      // Modo solo-lectura sin producto guardado no aplica en la práctica
+      // (no hay nada que mostrar), pero se cubre por completitud.
+      return null;
+    }
     return (
-      <div className="gi-container">
-        {!soloLectura && <ZonaSubida {...zonaSubidaProps} />}
-        {totalImagenes > 0 && <GruposImagenes {...gruposProps} />}
-        {totalImagenes === 0 && (
-          <div className="gi-empty">
-            <IconImage />
-            <span>Sube al menos una foto por color para poder publicar el producto.</span>
-          </div>
-        )}
-      </div>
+      <GaleriaNuevoProducto
+        imagenesLocales={imagenesLocales} todosColores={todosColores} tieneColores={tieneColores}
+        eliminarLocal={eliminarLocal} cambiarColorLocal={cambiarColorLocal}
+        editandoColor={editandoColor} setEditandoColor={setEditandoColor}
+        dropdownPos={dropdownPos} setDropdownPos={setDropdownPos} paletteBtnRefs={paletteBtnRefs}
+        detectandoColor={detectandoColor}
+        inputRef={inputRef} onInputChange={onInputChange} onDrop={onDropNuevo}
+      />
     );
   }
 
@@ -245,6 +316,10 @@ export default function GaleriaImagenes({
       {error && <p className="gi-error">{error}</p>}
 
       {!soloLectura && <ZonaSubida {...zonaSubidaProps} />}
+
+      {detectandoColor && (
+        <div className="gi-detectando-color"><div className="gi-spinner" /> Detectando el color de la prenda...</div>
+      )}
 
       {totalImagenes > 0 && <GruposImagenes {...gruposProps} />}
 

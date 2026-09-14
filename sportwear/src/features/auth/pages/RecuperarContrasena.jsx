@@ -139,9 +139,8 @@ export default function RecuperarContrasena() {
                 <Link to="/login">← Volver al login</Link>
               </div>
 
-              <button type="submit" className="submit-btn submit-btn--dark" disabled={loading}>
-                <span>{loading ? "Enviando..." : "Enviar Clave de Recuperación"}</span>
-                <span className="btn-arrow" aria-hidden="true">→</span>
+              <button type="submit" className="submit-btn" disabled={loading}>
+                {loading ? "Enviando..." : "Enviar Clave de Recuperación →"}
               </button>
             </form>
           </>

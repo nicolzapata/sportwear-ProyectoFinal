@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import api from "../../../shared/services/api";
 import { useConfirm } from "../../../shared/contexts/ConfirmContext";
-import { agruparPorColor } from "../utils/gestVariantesHelpers";
+import { agruparPorColor, TALLAS_ESTANDAR } from "../utils/gestVariantesHelpers";
+import { MAX_LONGITUD_NOMBRE_COLOR } from "../utils/gestProductosHelpers.jsx";
 
 /**
  * useGestVariantes
@@ -14,6 +15,7 @@ import { agruparPorColor } from "../utils/gestVariantesHelpers";
 export function useGestVariantes({
   idProducto, estadoProducto, onPendingChange, coloresAPurgar = [], onColoresPurgados,
   imagenesPendientes = [], onEliminarFotosDeColor, onVariantesChange,
+  coloresSugeridos = [], principalesSugeridos = [], sugerenciaVersion,
 }) {
   const confirmar = useConfirm();
 
@@ -38,6 +40,17 @@ export function useGestVariantes({
   // fijo y no se pueden volver a ofrecer las tallas que ese color ya tiene.
   const [colorBloqueado,    setColorBloqueado]    = useState(null);
   const [tallasBloqueadas,  setTallasBloqueadas]  = useState([]);
+
+  // ── Sugerencia de colores detectados automáticamente en una foto subida
+  // (ver GaleriaImagenes + colorDetection.js). Solo pre-marca los chips en el
+  // editor existente — el usuario puede quitar, agregar o cambiar cualquiera
+  // antes de guardar, igual que si los hubiera seleccionado a mano. Puede
+  // haber más de un color "principal" a la vez — p. ej. una prenda mitad y
+  // mitad de dos colores parejos, donde ninguno domina sobre el otro. ──────
+  const [principalesSel, setPrincipalesSel] = useState([]);
+  // true solo mientras la selección actual vino de una detección automática
+  // (para el aviso en pantalla) — se apaga al cerrar el editor o guardar.
+  const [origenDeteccion, setOrigenDeteccion] = useState(false);
 
   // ── Carga inicial ──────────────────────────────────────────────────────────
   const cargar = async () => {
@@ -99,6 +112,27 @@ export function useGestVariantes({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coloresAPurgar]);
 
+  // ── Aplica la sugerencia de colores detectados en la foto: abre el editor
+  // y pre-marca los chips correspondientes del catálogo, sin tocar tallas ni
+  // pisar una selección manual que el usuario ya esté haciendo. ──────────────
+  useEffect(() => {
+    if (!sugerenciaVersion || coloresSugeridos.length === 0) return;
+    setColoresSel(coloresSugeridos);
+    setPrincipalesSel(principalesSugeridos.length > 0 ? principalesSugeridos : [coloresSugeridos[0]?.id_color]);
+    setModoAgregar(true);
+    setColorBloqueado(null);
+    setTallasBloqueadas([]);
+    setOrigenDeteccion(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sugerenciaVersion]);
+
+  // Marcar/desmarcar un color como principal es independiente entre sí —
+  // no es una selección exclusiva, para poder dejar dos colores parejos
+  // (mitad y mitad) marcados como principales a la vez.
+  const togglePrincipal = (id_color) => {
+    setPrincipalesSel(prev => prev.includes(id_color) ? prev.filter(id => id !== id_color) : [...prev, id_color]);
+  };
+
   // ── Helpers selector "agregar" ─────────────────────────────────────────────
   const toggleColor = (color) => {
     const existe = coloresSel.some(c => c.id_color === color.id_color);
@@ -115,9 +149,50 @@ export function useGestVariantes({
     else        setTallasSel(prev => [...prev, talla]);
   };
 
+  // Atajos de la tarjeta "Escala de tallas" en el formulario de nuevo producto.
+  const seleccionarTallasEstandar = () => setTallasSel(TALLAS_ESTANDAR);
+  const limpiarTallas = () => setTallasSel([]);
+
+  // ── "+ Color personalizado": crea un color nuevo en el catálogo sin salir
+  // del formulario de producto — un formulario chico e independiente del de
+  // la pestaña Colores, para no acoplar ambas pantallas. Al guardar, se
+  // recarga el catálogo y el color nuevo queda seleccionado de una vez. ─────
+  const [formularioColorAbierto, setFormularioColorAbierto] = useState(false);
+  const [nuevoColor, setNuevoColor] = useState({ nombre: "", codigo_hex: "#000000" });
+  const [errorNuevoColor, setErrorNuevoColor] = useState("");
+  const [guardandoNuevoColor, setGuardandoNuevoColor] = useState(false);
+
+  const abrirFormularioColor = () => {
+    setNuevoColor({ nombre: "", codigo_hex: "#000000" });
+    setErrorNuevoColor("");
+    setFormularioColorAbierto(true);
+  };
+  const cerrarFormularioColor = () => setFormularioColorAbierto(false);
+
+  const guardarColorPersonalizado = async () => {
+    const nombre = nuevoColor.nombre.trim();
+    if (!nombre) { setErrorNuevoColor("El nombre del color es obligatorio."); return; }
+    if (nombre.length > MAX_LONGITUD_NOMBRE_COLOR) { setErrorNuevoColor(`No puede tener más de ${MAX_LONGITUD_NOMBRE_COLOR} caracteres.`); return; }
+    setGuardandoNuevoColor(true);
+    setErrorNuevoColor("");
+    try {
+      const { data } = await api.post('/colores', { nombre, codigo_hex: nuevoColor.codigo_hex, estado: 'Activo' });
+      await cargarColores();
+      const colorCreado = { id_color: data.id_color, nombre: data.nombre, codigo_hex: data.codigo_hex };
+      setColoresSel(prev => [...prev, colorCreado]);
+      setFormularioColorAbierto(false);
+    } catch (err) {
+      setErrorNuevoColor(err.response?.data?.message || "No se pudo crear el color.");
+    } finally {
+      setGuardandoNuevoColor(false);
+    }
+  };
+
   const cerrarOAbrirEditor = () => {
     setModoAgregar(p => !p); setError("");
     setColorBloqueado(null); setTallasBloqueadas([]); setColoresSel([]); setTallasSel([]);
+    setPrincipalesSel([]);
+    setOrigenDeteccion(false);
   };
 
   // ── Guardar nuevas variantes (modo conectado) ──────────────────────────────
@@ -153,6 +228,8 @@ export function useGestVariantes({
 
     setColoresSel([]); setTallasSel([]);
     setModoAgregar(false);
+    setPrincipalesSel([]);
+    setOrigenDeteccion(false);
     setGuardando(false);
     cargar();
   };
@@ -184,6 +261,8 @@ export function useGestVariantes({
     onPendingChange?.(updated);
     setColoresSel([]); setTallasSel([]);
     setModoAgregar(false);
+    setPrincipalesSel([]);
+    setOrigenDeteccion(false);
   };
 
   // Pregunta qué hacer con las fotos de un color cuando la variante que se
@@ -255,7 +334,11 @@ export function useGestVariantes({
     modoConectado: !!idProducto,
     variantes, colores, loading, error, guardando, modoAgregar,
     pendingVariantes, coloresSel, tallasSel, colorBloqueado, tallasBloqueadas,
+    principalesSel, togglePrincipal, origenDeteccion,
     toggleColor, toggleTalla, cerrarOAbrirEditor,
+    seleccionarTallasEstandar, limpiarTallas,
+    formularioColorAbierto, abrirFormularioColor, cerrarFormularioColor,
+    nuevoColor, setNuevoColor, errorNuevoColor, guardandoNuevoColor, guardarColorPersonalizado,
     guardarMatrizConectado, guardarMatrizLocal,
     eliminarPendiente, agregarTallaAColor, eliminarVariante,
     stockTotal, gruposConStock, gruposSinStock, gruposConStockPend, gruposSinStockPend,

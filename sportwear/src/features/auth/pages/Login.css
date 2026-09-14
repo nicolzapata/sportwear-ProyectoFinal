@@ -418,32 +418,6 @@
   cursor: not-allowed;
 }
 
-/* ── Botón oscuro (Recuperar Contraseña): texto + flecha en círculo ── */
-.submit-btn--dark {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  background: #1f1712;
-  color: #fff;
-  font-size: 14px;
-}
-.submit-btn--dark:hover:not(:disabled) {
-  background: #322419;
-  box-shadow: 0 8px 24px rgba(31,23,18,0.3);
-}
-.submit-btn--dark:disabled { background: var(--dvna-light); }
-.btn-arrow {
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.16);
-  font-size: 13px;
-}
-
 /* ── Error de campo (estilo base, compartido con Registro/RecuperarContrasena/RestablecerContrasena) ── */
 .field-error {
    font-size: 11px;

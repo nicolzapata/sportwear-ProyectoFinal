@@ -44,9 +44,6 @@
   .gestproductos-form-row { grid-template-columns: 1fr; gap: 0; }
   .gestproductos-imagen-preview img { width: 60px; height: 60px; }
   .gestproductos-toast { top: 1rem; right: 1rem; left: 1rem; }
-  .gestproductos-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.8rem; }
-  .gestproductos-card-footer { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-  .gestproductos-card-footer-left, .gestproductos-card-footer-right { justify-content: center; }
 }
 
 @media (max-width: 480px) {

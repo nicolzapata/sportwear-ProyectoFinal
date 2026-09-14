@@ -1,11 +1,15 @@
 import { TALLAS } from "../../utils/gestVariantesHelpers";
 import { IconCheck, IconInfo } from "./icons";
+import { IconStar } from "../../../../shared/components/galeria-imagenes/icons";
 
 // ── Subcomponente reutilizable: editor de nuevas variantes (matriz) ──────────
 // El stock NUNCA se pide aquí: toda combinación nueva nace con stock 0 y solo
 // aumenta al registrar una compra en el módulo Compras (tanto al crear un
 // producto como al agregarle tallas/colores nuevos después).
-export default function EditorNuevas({ colores, coloresSel, toggleColor, tallasSel, toggleTalla, onGuardar, labelGuardar, guardando, colorBloqueado, tallasBloqueadas = [] }) {
+export default function EditorNuevas({
+  colores, coloresSel, toggleColor, tallasSel, toggleTalla, onGuardar, labelGuardar, guardando,
+  colorBloqueado, tallasBloqueadas = [], principalesSel = [], onTogglePrincipal,
+}) {
   const tallaStepNum = colorBloqueado ? 1 : 2;
   const resumenStepNum = colorBloqueado ? 2 : 3;
   const tallasDisponibles = TALLAS.filter(t => !tallasBloqueadas.includes(t));
@@ -20,13 +24,29 @@ export default function EditorNuevas({ colores, coloresSel, toggleColor, tallasS
       ) : (
         <div className="gv-step">
           <p className="gv-step-label"><span className="gv-step-num">1</span> Selecciona los colores</p>
+          {onTogglePrincipal && (
+            <p className="gv-step-hint">
+              Toca <IconStar /> sobre un color elegido para marcarlo como principal — si la prenda es
+              mitad y mitad, puedes marcar dos.
+            </p>
+          )}
           <div className="gv-color-chips">
             {colores.map(c => {
               const activo = coloresSel.some(x => x.id_color === c.id_color);
+              const esPrincipal = activo && principalesSel.includes(c.id_color);
               return (
-                <button key={c.id_color} className={`gv-color-chip${activo ? " active" : ""}`} onClick={() => toggleColor(c)}>
+                <button key={c.id_color} className={`gv-color-chip${activo ? " active" : ""}${esPrincipal ? " principal" : ""}`} onClick={() => toggleColor(c)}>
                   <span className="gv-chip-dot" style={{ background: c.codigo_hex || "#ccc" }} />
                   {c.nombre}
+                  {activo && onTogglePrincipal && (
+                    <span
+                      className={`gv-chip-star${esPrincipal ? " active" : ""}`}
+                      title={esPrincipal ? "Quitar como color principal" : "Marcar como color principal"}
+                      onClick={e => { e.stopPropagation(); onTogglePrincipal(c.id_color); }}
+                    >
+                      <IconStar />
+                    </span>
+                  )}
                   {activo && <span className="gv-chip-check"><IconCheck /></span>}
                 </button>
               );

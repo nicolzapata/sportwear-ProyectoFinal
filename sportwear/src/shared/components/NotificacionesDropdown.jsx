@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { IconBell, IconBox, IconTruck, IconDollar, IconAlertTriangle } from "./Icons";
 import useNotificaciones from "../hooks/useNotificaciones";
+import { tiempoRelativo } from "../utils/tiempoRelativo";
 import "./NotificacionesDropdown.css";
 
 const ICONOS_POR_CATEGORIA = {
@@ -84,6 +85,7 @@ export default function NotificacionesDropdown() {
                   <span className="notif-item-text">
                     <span className="notif-item-title">{n.titulo}</span>
                     <span className="notif-item-detail">{n.detalle}</span>
+                    {n.fecha && <span className="notif-item-fecha">{tiempoRelativo(n.fecha)}</span>}
                   </span>
                 </Link>
               );

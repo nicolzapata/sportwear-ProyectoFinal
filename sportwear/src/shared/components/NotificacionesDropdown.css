@@ -117,6 +117,12 @@
   white-space: nowrap;
 }
 
+.notif-item-fecha {
+  font-size: 11px;
+  color: var(--dvna-mid, var(--dvna-muted));
+  margin-top: 1px;
+}
+
 @media (max-width: 480px) {
   .notif-panel { right: -60px; width: calc(100vw - 32px); }
 }

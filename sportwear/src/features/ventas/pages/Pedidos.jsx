@@ -6,8 +6,9 @@ import api from "../../../shared/services/api";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useToast } from "../../../shared/contexts/ToastContext";
 import Loader from "../../../shared/components/Loader";
-import { IconSearch, IconX, IconPrint } from "../../../shared/components/Icons";
-import { FILAS_POR_PAGINA, ESTADOS_FILTRO } from "../utils/pedidosHelpers";
+import ExportButtons from "../../../shared/components/ExportButtons";
+import { IconSearch, IconX } from "../../../shared/components/Icons";
+import { FILAS_POR_PAGINA, ESTADOS_FILTRO, getEstadoPago, getPagoTexto } from "../utils/pedidosHelpers";
 import PedidosTable from "../components/pedidos/PedidosTable";
 import PedidoListItem from "../components/pedidos/PedidoListItem";
 import PedidoDetalleModal from "../components/pedidos/PedidoDetalleModal";
@@ -341,7 +342,23 @@ export default function Pedidos() {
         </div>
         <div className="pedidos-actions-right">
           <FilterToggle opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
-          <button className="btn-print" onClick={() => window.print()} title="Imprimir tabla"><IconPrint /></button>
+          <ExportButtons
+            obtenerDatos={async () => {
+              const { data } = await api.get("/pedidos", { params: { q: busqueda || undefined, estado: filtroEstado || undefined, limit: 10000 } });
+              return data;
+            }}
+            columnas={[
+              { header: "Cliente", key: "cliente" },
+              { header: "Documento", value: (row) => row.cliente_documento || "—" },
+              { header: "Productos", value: (row) => row.items?.map((i) => i.producto).filter(Boolean).join(', ') || '-' },
+              { header: "Dirección", value: (row) => row.direccion_entrega || "—" },
+              { header: "Actualizado", value: (row) => row.fecha_actualizacion?.toString().split("T")[0] },
+              { header: "Pago", value: (row) => getPagoTexto(getEstadoPago(row)) },
+              { header: "Envío", key: "estado_pedido" },
+            ]}
+            nombreArchivo="pedidos"
+            titulo="Pedidos"
+          />
         </div>
       </div>
 

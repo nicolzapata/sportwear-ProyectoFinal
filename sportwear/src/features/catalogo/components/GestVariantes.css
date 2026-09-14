@@ -327,6 +327,16 @@
   text-transform: uppercase;
   color: var(--dvna-muted);
 }
+.gv-step-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--dvna-muted);
+  margin: -4px 0 2px;
+}
+.gv-step-hint svg { width: 11px; height: 11px; color: #f2c94c; flex-shrink: 0; }
 .gv-step-num {
   display: inline-flex;
   align-items: center;
@@ -372,6 +382,33 @@
   flex-shrink: 0;
 }
 .gv-chip-check { display: flex; align-items: center; }
+.gv-chip-star {
+  display: flex;
+  align-items: center;
+  color: rgba(255,255,255,0.5);
+  transition: color 0.15s, transform 0.15s;
+}
+.gv-chip-star svg { width: 12px; height: 12px; }
+.gv-chip-star:hover { color: var(--sw-secondary); transform: scale(1.15); }
+.gv-chip-star.active { color: #f2c94c; }
+.gv-color-chip:not(.active) .gv-chip-star { color: rgba(0,0,0,0.2); }
+
+/* Aviso de colores sugeridos por detección automática en la foto */
+.gv-sugerencia-colores {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--info-bg);
+  border: 1px solid #bcd8f2;
+  color: var(--info);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.gv-sugerencia-colores svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
+.gv-sugerencia-colores strong { font-weight: 700; }
 
 /* Chips de tallas */
 .gv-talla-chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -418,3 +455,162 @@
 }
 .gv-btn-guardar:hover:not(:disabled) { background: var(--dvna-circle); }
 .gv-btn-guardar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Modo local (crear producto): paleta + tallas + matriz siempre
+   visibles en tarjetas, en vez del panel "Agregar" bajo demanda.
+   ═══════════════════════════════════════════════════════════════ */
+.gv-resumen-chip {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--dvna-muted);
+  background: var(--dvna-pale);
+  border: 1px solid var(--dvna-border);
+  border-radius: 20px;
+  padding: 4px 12px;
+}
+
+.gv-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r-md);
+  padding: 16px;
+}
+.gv-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gv-card-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dvna-charcoal);
+}
+.gv-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.gv-link-btn {
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--brown);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: none;
+}
+.gv-link-btn:hover { text-decoration: underline; }
+.gv-link-sep { color: var(--dvna-border); }
+.gv-card-hint {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--dvna-muted);
+  font-style: italic;
+}
+.gv-card-note {
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  color: var(--dvna-muted);
+}
+
+/* Mini formulario "+ Color personalizado" */
+.gv-form-color-personalizado {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: var(--dvna-pale);
+  border: 1px dashed var(--dvna-border);
+  border-radius: var(--r);
+  padding: 10px 12px;
+}
+.gv-color-picker {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--dvna-border);
+  border-radius: 8px;
+  cursor: pointer;
+  background: none;
+}
+.gv-color-nombre-input {
+  flex: 1;
+  min-width: 140px;
+  padding: 8px 10px;
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r);
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-white);
+}
+.gv-btn-guardar-chico { padding: 8px 14px; margin-top: 0; font-size: 10px; }
+
+/* Matriz de variantes generadas (modo local) — misma lógica visual que
+   .gv-chips-lista/.gv-chip-row, pero con las tallas siempre "Sin stock". */
+.gv-matriz-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gv-matriz-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--dvna-border);
+  border-radius: var(--r-md);
+  background: var(--dvna-pale);
+}
+.gv-matriz-tallas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+.gv-matriz-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  background: var(--dvna-white);
+  border: 1px solid var(--dvna-mid);
+  border-radius: 20px;
+  padding: 4px 6px 4px 10px;
+}
+.gv-matriz-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--dvna-muted);
+  cursor: pointer;
+  padding: 0;
+}
+.gv-matriz-chip button svg { width: 8px; height: 8px; }
+.gv-matriz-chip button:hover { background: rgba(184,50,50,0.1); color: var(--danger); }

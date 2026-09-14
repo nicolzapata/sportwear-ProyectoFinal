@@ -9,6 +9,8 @@ import './PedidosVentas.cards.css';
 import Loader from "../../../shared/components/Loader";
 import Select from "../../../shared/components/Select";
 import FilterToggle from "../../../shared/components/FilterToggle";
+import ExportButtons from "../../../shared/components/ExportButtons";
+import api from "../../../shared/services/api";
 import { IconSearch, IconX, IconSettings } from "../../../shared/components/Icons";
 import OrigenFilterToggle from "../components/pedidos-ventas/OrigenFilterToggle";
 import VentasTable from "../components/pedidos-ventas/VentasTable";
@@ -19,17 +21,6 @@ import NuevaVentaModal from "../components/pedidos-ventas/NuevaVentaModal";
 import AnularVentaModal from "../components/pedidos-ventas/AnularVentaModal";
 import MetodosPagoModal from "../components/pedidos-ventas/MetodosPagoModal";
 import { usePedidosVentas } from "../hooks/usePedidosVentas";
-
-// ── NUEVO: ícono propio de "reporte" (documento con líneas + gráfica
-// pequeña) — antes se usaba IconPrint, que no se leía como un reporte. ──
-const IconReporte = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-    <polyline points="14 2 14 8 20 8"/>
-    <line x1="8" y1="13" x2="16" y2="13"/>
-    <line x1="8" y1="17" x2="12" y2="17"/>
-  </svg>
-);
 
 // ── Iconos del selector de vista (lista+detalle / tabla) — mismos que Pedidos/Proveedores ──
 const IconVistaTarjetas = () => (
@@ -103,6 +94,7 @@ export default function PedidosVentas() {
             <option value="Pendiente">Pendientes</option>
             <option value="Anulado">Anuladas</option>
           </Select>
+          <FilterToggle opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
         </div>
         <div className="pedidosventas-actions-right">
           {v.tienePerm('Ventas.crear') && (
@@ -113,8 +105,22 @@ export default function PedidosVentas() {
           {v.tienePerm('Ventas.crear') && (
             <button className="btn-print" onClick={() => v.setModalMetodos(true)} title="Métodos de pago"><IconSettings /></button>
           )}
-          <FilterToggle opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
-          <button className="btn-print" onClick={() => window.print()} title="Imprimir reporte"><IconReporte /></button>
+          <ExportButtons
+            obtenerDatos={async () => {
+              const { data } = await api.get("/ventas", { params: { q: v.busquedaDebounced || undefined, origen: v.filtroOrigen || undefined, estado_pago: v.filtroEstadoPago || undefined, limit: 10000 } });
+              return data;
+            }}
+            columnas={[
+              { header: "Cliente", key: "cliente" },
+              { header: "Producto", value: (row) => row.items?.map((i) => i.producto).filter(Boolean).join(', ') || '-' },
+              { header: "Total", key: "total" },
+              { header: "Tipo", value: (row) => row.tipo_pago === 'cuotas' ? `Cuotas (${row.num_cuotas})` : 'Contado' },
+              { header: "Fecha", value: (row) => row.fecha?.toString().split("T")[0] },
+              { header: "Estado", key: "estado" },
+            ]}
+            nombreArchivo="ventas"
+            titulo="Ventas"
+          />
         </div>
       </div>
 

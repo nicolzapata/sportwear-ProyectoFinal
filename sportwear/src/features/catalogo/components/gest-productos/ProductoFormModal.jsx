@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { MAX_MONTO, MAX_LONGITUD_NOMBRE } from "../../../../shared/utils/numerico";
 import GaleriaImagenes from "../../../../shared/components/GaleriaImagenes";
 import GestVariantes from "../GestVariantes";
@@ -5,6 +6,7 @@ import Select from "../../../../shared/components/Select";
 import DetallePanel from "../../../../shared/components/DetallePanel";
 import { getInitials, getAvatarColor } from "../../../../shared/utils/texto";
 import { IconAlertTriangle, IconX } from "../../../../shared/components/Icons";
+import { IconPalette } from "../../../../shared/components/galeria-imagenes/icons";
 
 // variante="modal" (por defecto): overlay centrado, usado al crear un producto.
 // variante="panel": se acopla al lado de la tabla, usado al editar un
@@ -22,29 +24,64 @@ export default function ProductoFormModal({
   coloresPendientes,
   guardar, guardando, variante = 'modal',
 }) {
+  // ── Sugerencia de colores detectados automáticamente en la primera foto
+  // subida (ver GaleriaImagenes + colorDetection.js). Se reenvía a
+  // GestVariantes, que pre-marca esos colores en su propio selector —
+  // ambos son hermanos dentro de este formulario y no comparten estado. ──
+  const [coloresSugeridos, setColoresSugeridos] = useState([]);
+  const [principalesSugeridos, setPrincipalesSugeridos] = useState([]);
+  const [sugerenciaVersion, setSugerenciaVersion] = useState(0);
+
+  const handleColoresDetectados = (colores, idsPrincipales) => {
+    setColoresSugeridos(colores);
+    setPrincipalesSugeridos(idsPrincipales);
+    setSugerenciaVersion(v => v + 1);
+  };
+
   const cuerpo = (
     <>
       {errores.general && <div className="gestproductos-error-banner"><IconAlertTriangle /> {errores.general}</div>}
 
       <div className="gestproductos-factura-seccion">
-            <h3 className="gestproductos-factura-titulo">Datos del producto</h3>
-
-            <div className="gestproductos-form-group">
-              <label className="gestproductos-form-label">Nombre <span className="gestproductos-required">*</span></label>
-              <input className={`gestproductos-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Camiseta Deportiva" value={form.nombre}
-                maxLength={MAX_LONGITUD_NOMBRE}
-                onChange={e => {
-                  const nombre = e.target.value;
-                  setForm({ ...form, nombre });
-                  if (errores.nombre) setErrores(p => ({ ...p, nombre: validarNombreProducto(nombre) }));
-                }}
-                onBlur={() => setErrores(p => ({ ...p, nombre: validarNombreProducto(form.nombre) }))} />
-              {errores.nombre && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.nombre}</p>}
+            <div className="gestproductos-seccion-header">
+              <h3 className="gestproductos-factura-titulo">01. Datos del producto</h3>
+              <span className="gestproductos-required-note">Campos requeridos <span className="gestproductos-required">*</span></span>
             </div>
 
-            <div className="gestproductos-form-row">
+            <div className="gestproductos-nombre-publicar-row">
               <div className="gestproductos-form-group">
-                <label className="gestproductos-form-label">Categoría <span className="gestproductos-required">*</span></label>
+                <label className="gestproductos-form-label">Nombre de la prenda <span className="gestproductos-required">*</span></label>
+                <input className={`gestproductos-form-input${errores.nombre ? " input-error" : ""}`} placeholder="Ej: Camiseta Deportiva Performance Pro" value={form.nombre}
+                  maxLength={MAX_LONGITUD_NOMBRE}
+                  onChange={e => {
+                    const nombre = e.target.value;
+                    setForm({ ...form, nombre });
+                    if (errores.nombre) setErrores(p => ({ ...p, nombre: validarNombreProducto(nombre) }));
+                  }}
+                  onBlur={() => setErrores(p => ({ ...p, nombre: validarNombreProducto(form.nombre) }))} />
+                {errores.nombre
+                  ? <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.nombre}</p>
+                  : <p className="gestproductos-form-hint">Aparecerá en el encabezado de la ficha técnica y etiquetas térmicas.</p>}
+              </div>
+
+              {tienePerm('Productos.publicar') && (
+                <div className="gestproductos-publicar-card">
+                  <span className="gestproductos-publicar-titulo">Publicar en catálogo</span>
+                  <label className={`gestproductos-switch${form.estado === "Inactivo" ? " disabled" : ""}`}>
+                    <input type="checkbox" checked={!!form.publicado} disabled={form.estado === "Inactivo"}
+                      onChange={e => setForm({ ...form, publicado: e.target.checked })} />
+                    <span className="gestproductos-switch-track"><span className="gestproductos-switch-thumb" /></span>
+                    <span className="gestproductos-switch-label">
+                      {form.estado === "Inactivo" ? "No puede publicarse si está inactivo" : (form.publicado ? "Visible al público" : "No publicado")}
+                    </span>
+                  </label>
+                </div>
+              )}
+            </div>
+
+            <div className="gestproductos-form-grid">
+              <div className="gestproductos-form-group">
+                <label className="gestproductos-form-label">Categoría principal <span className="gestproductos-required">*</span></label>
                 <Select className={`gestproductos-form-select${errores.id_categoria ? " input-error" : ""}`} value={form.id_categoria}
                   onChange={e => {
                     const id_categoria = Number(e.target.value);
@@ -77,17 +114,7 @@ export default function ProductoFormModal({
                   {errores.precio && <p className="gestproductos-field-error"><IconAlertTriangle /> {errores.precio}</p>}
                 </div>
               )}
-            </div>
 
-            {!editar && (
-              <div className="gestproductos-aviso-stock">
-                <IconAlertTriangle />
-                El stock y el precio de venta de este producto se registran al hacer la primera compra
-                (módulo Compras) — aquí solo defines sus datos generales y sus tallas/colores.
-              </div>
-            )}
-
-            <div className="gestproductos-form-row">
               {editar && (
                 <div className="gestproductos-form-group">
                   <label className="gestproductos-form-label">Estado</label>
@@ -99,48 +126,77 @@ export default function ProductoFormModal({
                 </div>
               )}
 
-              {tienePerm('Productos.publicar') && (
-                <div className="gestproductos-form-group">
-                  <label className="gestproductos-form-label">Publicar en catálogo</label>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10 }}>
-                    <input type="checkbox" id="publicado" checked={!!form.publicado} disabled={form.estado === "Inactivo"}
-                      onChange={e => setForm({ ...form, publicado: e.target.checked })}
-                      style={{ width: 18, height: 18, cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer" }} />
-                    <label htmlFor="publicado" style={{ cursor: form.estado === "Inactivo" ? "not-allowed" : "pointer", fontSize: 13, color: form.estado === "Inactivo" ? "#999" : "inherit" }}>
-                      {form.estado === "Inactivo" ? "No puede publicarse si está inactivo" : (form.publicado ? "Visible en catálogo" : "No publicado")}
-                    </label>
-                  </div>
+              <div className="gestproductos-form-group">
+                <label className="gestproductos-form-label">Destacar como <span className="gestproductos-optional">(opcional)</span></label>
+                <div className="gestproductos-segmented">
+                  {[{ v: "", t: "Ninguno" }, { v: "Nuevo", t: "Nuevo" }, { v: "Promocion", t: "Promoción" }].map(opt => (
+                    <button type="button" key={opt.v || "ninguno"}
+                      className={`gestproductos-segmented-btn${form.destacado === opt.v ? " active" : ""}`}
+                      onClick={() => setForm({ ...form, destacado: opt.v })}>
+                      {opt.t}
+                    </button>
+                  ))}
                 </div>
-              )}
+              </div>
             </div>
 
-            <div className="gestproductos-form-group">
-              <label className="gestproductos-form-label">Destacar como <span className="gestproductos-optional">(opcional)</span></label>
-              <Select className="gestproductos-form-select" value={form.destacado}
-                onChange={e => setForm({ ...form, destacado: e.target.value })}>
-                <option value="">Ninguno</option>
-                <option value="Nuevo">Nuevo</option>
-                <option value="Promocion">Promoción</option>
-              </Select>
-            </div>
+            {!editar && (
+              <div className="gestproductos-aviso-stock">
+                <IconAlertTriangle />
+                <span><strong>Sincronización de costos y existencias:</strong> el inventario inicial y los precios base se
+                consolidan automáticamente al recibir la orden de compra en el módulo de <strong>Compras</strong>. En esta
+                vista únicamente creas el catálogo maestro de referencias.</span>
+              </div>
+            )}
           </div>
 
           <div className="gestproductos-factura-seccion">
-            <h3 className="gestproductos-factura-titulo">Variantes</h3>
+            {editar && <h3 className="gestproductos-factura-titulo">02. Variantes</h3>}
             <GestVariantes
               idProducto={editar || productoId} estadoProducto={form.estado} onPendingChange={setPendingVariantes}
               coloresAPurgar={coloresAPurgar} onColoresPurgados={onColoresPurgados}
               imagenesPendientes={pendingImagenes} onEliminarFotosDeColor={eliminarFotosDeColor}
               onVariantesChange={() => setVariantesVersion(v => v + 1)}
+              coloresSugeridos={coloresSugeridos} principalesSugeridos={principalesSugeridos} sugerenciaVersion={sugerenciaVersion}
             />
           </div>
 
       <div className="gestproductos-factura-seccion">
-        <h3 className="gestproductos-factura-titulo">Imágenes</h3>
+        {editar ? (
+          <>
+            <h3 className="gestproductos-factura-titulo">03. Imágenes</h3>
+            <div className="gestproductos-aviso-stock" style={{ marginBottom: 14 }}>
+              <IconPalette />
+              Sube una foto de la prenda y el sistema detectará su color automáticamente para sugerirlo en
+              Variantes, o si prefieres, elige tú mismo los colores desde ahí — cualquiera de las dos formas
+              queda igual de editable antes de guardar.
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="gestproductos-seccion-header">
+              <h3 className="gestproductos-factura-titulo">03. Galería de imágenes &amp; color IA</h3>
+              <span className="gestproductos-required-note">Mínimo 1 fotografía por variante para publicar</span>
+            </div>
+            <div className="gestproductos-asistente-ia">
+              <span className="gestproductos-asistente-icono"><IconPalette /></span>
+              <div className="gestproductos-asistente-texto">
+                <p className="gestproductos-asistente-titulo">
+                  Asistente inteligente cromático <span className="gestproductos-badge-ia">IA activa</span>
+                </p>
+                <p>
+                  Sube la fotografía de la prenda: el motor identificará los tonos dominantes sugiriendo
+                  automáticamente la variante de color vinculada, para optimizar los tiempos de carga en catálogo.
+                </p>
+              </div>
+            </div>
+          </>
+        )}
         <GaleriaImagenes
           tipoReferencia="Producto" idReferencia={productoId} onPendingChange={setPendingImagenes} coloresPendientes={coloresPendientes}
           coloresAPurgar={coloresAPurgarFotos} onColoresPurgados={onFotosDeColorPurgadas}
           refrescarColores={variantesVersion}
+          onColoresDetectados={handleColoresDetectados}
         />
       </div>
     </>

@@ -5,7 +5,7 @@
 .pedidos-actions-left { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
 .pedidos-actions-right { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; }
 
-.pedidos-search-wrapper { position: relative; width: 320px; max-width: 100%; }
+.pedidos-search-wrapper { position: relative; width: 360px; max-width: 100%; }
 .pedidos-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--dvna-muted); }
 .pedidos-search-input {
   width: 100%; padding: 0.8rem 1rem 0.8rem 2.5rem;
@@ -241,7 +241,8 @@
   .pedidos-actions-left { display: contents; }
   .pedidos-actions-right { display: contents; }
   .pedidos-search-wrapper { order: 1; flex: 1 1 140px; min-width: 120px; width: auto; }
-  .pedidos-actions-right .btn-print { order: 2; }
+  .pedidos-actions-right .filter-toggle { order: 2; }
+  .pedidos-actions-right .export-buttons { order: 3; }
 }
 
 @media (max-width: 480px) {

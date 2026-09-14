@@ -1,5 +1,5 @@
 import { MAX_MONTO, MAX_LONGITUD_CODIGO, MAX_LONGITUD_TEXTO_LIBRE } from "../../../../shared/utils/numerico";
-import { IconX } from "../../../../shared/components/Icons";
+import { IconX, IconCheck } from "../../../../shared/components/Icons";
 import Select from "../../../../shared/components/Select";
 import CompraItemRow from "./CompraItemRow";
 import { fmt, HOY_ISO, errorFecha, errorDescuentoGeneral } from "../../utils/comprasHelpers";
@@ -49,18 +49,22 @@ export default function NuevaCompraModal({
               )}
             </div>
             <div className="compras-form-group">
-              <label className="compras-form-label">N° de orden (opcional)</label>
-              <input
-                type="text"
-                maxLength={MAX_LONGITUD_CODIGO}
-                className="compras-form-input"
-                value={form.numero_orden}
-                onChange={(e) => setForm({ ...form, numero_orden: e.target.value })}
-              />
+              <label className="compras-form-label">N° de orden <span className="compras-label-opcional">(opcional)</span></label>
+              <div className="compras-input-affix-wrap">
+                <span className="compras-input-affix">#</span>
+                <input
+                  type="text"
+                  placeholder={`OC-${new Date().getFullYear()}-0000`}
+                  maxLength={MAX_LONGITUD_CODIGO}
+                  className="compras-form-input"
+                  value={form.numero_orden}
+                  onChange={(e) => setForm({ ...form, numero_orden: e.target.value })}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="compras-form-row">
+          <div className="compras-form-row compras-form-row-single">
             <div className="compras-form-group">
               <label className="compras-form-label">Fecha</label>
               <input
@@ -76,14 +80,6 @@ export default function NuevaCompraModal({
                 onBlur={() => setErrores((prev) => ({ ...prev, fecha: errorFecha(form.fecha) }))}
               />
               {errores.fecha && <span className="compras-field-error">{errores.fecha}</span>}
-            </div>
-            <div className="compras-form-group">
-              <label className="compras-form-label">Estado</label>
-              <Select className="compras-form-select" value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
-                <option value="Pendiente">Pendiente</option>
-                <option value="En Tránsito">En Tránsito</option>
-                <option value="Recibido">Recibido</option>
-              </Select>
             </div>
           </div>
 
@@ -107,69 +103,88 @@ export default function NuevaCompraModal({
               </div>
             </div>
 
-            <div className="compras-item-titulos">
-              <span>Producto</span>
-              <span>Talla / Color</span>
-              <span>Cantidad</span>
-              <span>Precio de costo</span>
-              <span title="Precio al que se va a vender esta unidad en el catálogo">
-                Valor de venta <span className="compras-item-titulo-ayuda">ⓘ</span>
-              </span>
-              <span className="compras-item-titulos-subtotal">Subtotal</span>
-              <span></span>
-            </div>
+            <div className="compras-items-tabla-card">
+              <div className="compras-item-titulos">
+                <span>Producto</span>
+                <span>Talla / Color</span>
+                <span>Cantidad</span>
+                <span>Precio de costo</span>
+                <span title="Precio al que se va a vender esta unidad en el catálogo">
+                  Valor de venta <span className="compras-item-titulo-ayuda">ⓘ</span>
+                </span>
+                <span className="compras-item-titulos-subtotal">Subtotal</span>
+                <span></span>
+              </div>
 
-            {form.items.map((item, i) => (
-              <CompraItemRow
-                key={i}
-                item={item} index={i} productos={productos}
-                errores={errores} setErrores={setErrores}
-                actualizarItem={actualizarItem} quitarItem={quitarItem}
-                itemsLength={form.items.length}
-              />
-            ))}
-          </div>
-
-          <div className="compras-form-row">
-            <div className="compras-form-group">
-              <label className="compras-form-label">Descuento general (COP)</label>
-              <input
-                type="number"
-                min="0"
-                max={MAX_MONTO}
-                className={`compras-form-input${errores.descuento ? " input-error" : ""}`}
-                value={form.descuento}
-                onChange={(e) => {
-                  const valor = e.target.value;
-                  setForm({ ...form, descuento: valor });
-                  if (errores.descuento) setErrores((prev) => ({ ...prev, descuento: errorDescuentoGeneral(valor, subtotal) }));
-                }}
-                onBlur={() => setErrores((prev) => ({ ...prev, descuento: errorDescuentoGeneral(form.descuento, subtotal) }))}
-              />
-              {errores.descuento && <span className="compras-field-error">{errores.descuento}</span>}
+              {form.items.map((item, i) => (
+                <CompraItemRow
+                  key={i}
+                  item={item} index={i} productos={productos}
+                  errores={errores} setErrores={setErrores}
+                  actualizarItem={actualizarItem} quitarItem={quitarItem}
+                  itemsLength={form.items.length}
+                />
+              ))}
             </div>
           </div>
 
-          <div className="compras-form-group">
-            <label className="compras-form-label">Observaciones (opcional)</label>
-            <textarea
-              className="compras-form-input compras-form-textarea"
-              rows={2}
-              maxLength={MAX_LONGITUD_TEXTO_LIBRE}
-              value={form.observaciones}
-              onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
-            />
-          </div>
+          <div className="compras-form-resumen-row">
+            <div>
+              <div className="compras-form-group">
+                <label className="compras-form-label">Descuento general (COP)</label>
+                <div className="compras-input-affix-wrap">
+                  <span className="compras-input-affix">$</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max={MAX_MONTO}
+                    className={`compras-form-input${errores.descuento ? " input-error" : ""}`}
+                    value={form.descuento}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      setForm({ ...form, descuento: valor });
+                      if (errores.descuento) setErrores((prev) => ({ ...prev, descuento: errorDescuentoGeneral(valor, subtotal) }));
+                    }}
+                    onBlur={() => setErrores((prev) => ({ ...prev, descuento: errorDescuentoGeneral(form.descuento, subtotal) }))}
+                  />
+                </div>
+                {errores.descuento && <span className="compras-field-error">{errores.descuento}</span>}
+              </div>
 
-          <div className="compras-total-resumen">
-            <span>Subtotal: {fmt(subtotal)}</span>
-            <span className="compras-total-final">Total: {fmt(totalCompra)}</span>
+              <div className="compras-form-group">
+                <label className="compras-form-label">Observaciones <span className="compras-label-opcional">(opcional)</span></label>
+                <textarea
+                  className="compras-form-input compras-form-textarea"
+                  rows={2}
+                  placeholder="Detalles sobre entrega, número de factura del proveedor, condiciones de pago..."
+                  maxLength={MAX_LONGITUD_TEXTO_LIBRE}
+                  value={form.observaciones}
+                  onChange={(e) => setForm({ ...form, observaciones: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="compras-resumen-card">
+              <div className="compras-resumen-linea">
+                <span>Subtotal:</span>
+                <span>{fmt(subtotal)}</span>
+              </div>
+              <div className="compras-resumen-linea compras-resumen-linea-descuento">
+                <span>Descuento aplicado:</span>
+                <span>- {fmt(form.descuento)}</span>
+              </div>
+              <hr className="compras-resumen-divisor" />
+              <div className="compras-resumen-total">
+                <span>Total:</span>
+                <span className="compras-resumen-total-valor">{fmt(totalCompra)}</span>
+              </div>
+            </div>
           </div>
         </div>
         <div className="compras-modal-footer">
           <button className="compras-btn-secondary" onClick={() => setModal(false)} disabled={guardando}>Cancelar</button>
           <button className="compras-btn-primary" onClick={guardar} disabled={guardando}>
-            {guardando ? "Guardando..." : "Registrar compra"}
+            {guardando ? "Guardando..." : <><IconCheck /> Registrar compra</>}
           </button>
         </div>
       </div>

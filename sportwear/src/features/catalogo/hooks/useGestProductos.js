@@ -42,7 +42,7 @@ export function useGestProductos() {
   };
 
   const categoriasState = useCategoriasState({ busquedaDebounced, setModal, setLoading, mostrarToast, recargarTodo });
-  const productosListado = useProductosListado({ busquedaDebounced, setLoading, mostrarToast, recargarTodo });
+  const productosListado = useProductosListado({ busquedaDebounced, setLoading, mostrarToast, recargarTodo, setModal });
   const productoFormulario = useProductoFormulario({
     cargarCategoriasCompletas: categoriasState.cargarCategoriasCompletas, setModal, mostrarToast, recargarTodo,
   });
