@@ -19,6 +19,7 @@ import PedidosSection from "../components/mi-cuenta/PedidosSection";
 import TodosPedidosModal from "../components/mi-cuenta/TodosPedidosModal";
 import EditarPerfilModal from "../components/mi-cuenta/EditarPerfilModal";
 import { dividirNombre, errorEmailPerfil } from "../utils/miCuentaHelpers";
+import { IconCalendar } from "../components/mi-cuenta/miCuentaIcons";
 
 export default function MiCuenta() {
   // Cuando el cliente no tiene módulos de admin, /mi-cuenta se renderiza
@@ -221,8 +222,9 @@ export default function MiCuenta() {
           <h1 className="mi-cuenta-title">
             ¡Hola, {usuario?.nombre?.split(" ")[0] || "cliente"}!
           </h1>
+          <p className="mi-cuenta-subtitle">Gestiona tus datos personales y revisa el progreso de tus órdenes activas.</p>
         </div>
-        <span className="mi-cuenta-date">{today}</span>
+        <span className="mi-cuenta-date"><IconCalendar /> {today}</span>
       </div>
 
       <PerfilCard perfil={perfil} usuario={usuario} getBarrioNombre={getBarrioNombre} onEditar={() => setShowModalPerfil(true)} />

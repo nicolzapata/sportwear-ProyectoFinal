@@ -7,18 +7,17 @@ import { PEDIDOS_VISIBLES_INLINE } from "../../utils/miCuentaHelpers";
 // interminable con clientes que tienen muchos pedidos. ──
 export default function PedidosSection({ pedidos, setPagoModal, cargarDetallePedido, onVerTodos }) {
   const pedidosVisibles = pedidos.slice(0, PEDIDOS_VISIBLES_INLINE);
-  const hayMasPedidos = pedidos.length > PEDIDOS_VISIBLES_INLINE;
 
   return (
     <div className="mc-card">
       <div className="mc-card-header-row">
         <div>
           <h3 className="mc-card-title">Tus pedidos</h3>
-          <p className="mc-card-subtitle">Historial de compras</p>
+          <p className="mc-card-subtitle">Historial y seguimiento de compras</p>
         </div>
-        {hayMasPedidos && (
-          <button className="mc-btn-secondary mc-btn-ver-todos" onClick={onVerTodos}>
-            Ver todos mis pedidos ({pedidos.length})
+        {pedidos.length > 0 && (
+          <button type="button" className="mc-link-ver-todos" onClick={onVerTodos}>
+            Ver todas las órdenes <span aria-hidden="true">—</span>
           </button>
         )}
       </div>

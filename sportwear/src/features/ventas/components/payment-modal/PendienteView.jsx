@@ -1,9 +1,14 @@
 import { fmt, CUENTA_BANCARIA, WHATSAPP_CONFIRMACION } from "../../utils/paymentModalHelpers";
-import { IconX, IconCheckCircle, IconWhatsAppSm } from "./paymentModalIcons";
+import { IconX, IconCheckLg, IconWhatsAppSm, IconMail, IconArrowRight } from "./paymentModalIcons";
 
 /* ══════════════════════════════════════════════
    VISTA: PEDIDO PENDIENTE (Efectivo / Transferencia — sin pedir tarjeta)
 ══════════════════════════════════════════════ */
+// ── El $ que devuelve toLocaleString("es-CO", {style:"currency"}) trae un
+// espacio (nbsp) antes del número — acá se quiere pegado ("$319.900"), solo
+// en esta vista, sin tocar el fmt() compartido que ya se usa en todo el resto. ──
+const fmtTight = (n) => fmt(n).replace(/^(\D+)\s+/, "$1");
+
 export default function PendienteView({ pedido, onClose, onPagoConfirmado }) {
   const esEfectivo = pedido.metodo_pago === "Efectivo";
 
@@ -16,23 +21,25 @@ export default function PendienteView({ pedido, onClose, onPagoConfirmado }) {
 
   return (
     <>
-      <div className="pm-accent pm-accent--partial" />
       <div className="pm-header">
         <div>
-          <h2 className="pm-title">Pedido registrado</h2>
-          <p className="pm-subtitle">Pedido #{pedido.id_venta}</p>
+          <div className="pm-title-row">
+            <h2 className="pm-title">Pedido registrado</h2>
+            <span className="pm-badge-recibido"><span className="pm-badge-recibido-dot" />Recibido</span>
+          </div>
+          <p className="pm-subtitle">ORDEN #{pedido.id_venta} · Hoy, SportWear Boutique</p>
         </div>
         <button className="pm-close" onClick={onClose}><IconX /></button>
       </div>
 
       <div className="pm-pendiente-body">
-        <div className="pm-pendiente-icono"><IconCheckCircle /></div>
+        <div className="pm-pendiente-icono"><IconCheckLg /></div>
         <p className="pm-pendiente-titulo">
           {esEfectivo ? "Pagarás en efectivo al recibir tu pedido" : "Falta confirmar tu transferencia"}
         </p>
         <p className="pm-pendiente-texto">
           {esEfectivo
-            ? "Tu pedido quedó registrado. Nuestro equipo se pondrá en contacto para coordinar la entrega y el pago."
+            ? "Tu compra quedó registrada exitosamente. Nuestro equipo se contactará vía WhatsApp o llamada para coordinar la entrega y el cobro en tu domicilio."
             : "Tu pedido quedó registrado como pendiente. Realiza la transferencia a la siguiente cuenta y envíanos el comprobante por WhatsApp para confirmarlo más rápido."}
         </p>
 
@@ -54,21 +61,46 @@ export default function PendienteView({ pedido, onClose, onPagoConfirmado }) {
         )}
 
         <div className="pm-pendiente-monto">
-          <span>Total a pagar</span>
-          <strong>{fmt(pedido.total)}</strong>
+          <div>
+            <span className="pm-pendiente-monto-label">Total a pagar</span>
+            <span className="pm-pendiente-monto-sub">
+              {esEfectivo ? "Efectivo contra entrega · Envío prioritario" : "Transferencia bancaria · Envío prioritario"}
+            </span>
+          </div>
+          <div className="pm-pendiente-monto-precio">
+            {fmtTight(pedido.total)} <span className="pm-pendiente-monto-moneda">COP</span>
+          </div>
+        </div>
+
+        <div className="pm-pendiente-info-row">
+          <div className="pm-pendiente-info-box">
+            <span className="pm-pendiente-info-icon"><IconMail /></span>
+            <span>Comprobante enviado al correo</span>
+          </div>
+          <div className="pm-pendiente-info-box pm-pendiente-info-box--whatsapp">
+            <span className="pm-pendiente-info-icon pm-pendiente-info-icon--whatsapp"><IconWhatsAppSm /></span>
+            <span>Seguimiento por WhatsApp activo</span>
+          </div>
         </div>
       </div>
 
-      <div className="pm-footer">
+      <div className="pm-footer pm-footer--pendiente">
+        <a
+          href={linkWhatsApp}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="pm-footer-link"
+        >
+          ¿Necesitas cambiar la dirección? Escríbenos
+        </a>
         <button
           className="pm-btn-primary"
-          style={{ flex: 1 }}
           onClick={() => {
             if (onPagoConfirmado) onPagoConfirmado();
             onClose();
           }}
         >
-          Entendido
+          Entendido <IconArrowRight />
         </button>
       </div>
     </>

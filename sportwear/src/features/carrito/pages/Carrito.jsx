@@ -8,8 +8,15 @@ import api from "../../../shared/services/api";
 import { opcionesCuotasDisponibles, calcularFechasVencimiento } from "../../../shared/utils/cuotas";
 import CuotasCalendario from "../../checkout/components/checkout/CuotasCalendario";
 import Select from "../../../shared/components/Select";
+import { IconTrash, IconShield, IconRefresh, IconPin, IconArrowRight, IconReceipt, IconCheckSm } from "../carritoIcons";
 import "../../checkout/pages/Checkout.cuotas.css";
 import "./Carrito.css";
+
+const BENEFICIOS = [
+  { icono: <IconShield />,  titulo: "Garantía por costuras",  texto: "30 días de garantía sin preguntas." },
+  { icono: <IconRefresh />, titulo: "Primer cambio gratis",   texto: "Si la talla no te queda perfecta, la cambiamos." },
+  { icono: <IconPin />,     titulo: "Envíos en Medellín",     texto: "Entrega rápida a domicilio en Medellín y el Valle de Aburrá." },
+];
 
 const fmt = (n) =>
   Number(n || 0).toLocaleString("es-CO", {
@@ -93,17 +100,26 @@ export default function Carrito() {
   };
 
   // ── Vista principal ───────────────────────────────────────────────────
+  const referencias = items.length;
+
   return (
     <div className="carrito-page">
+      <nav className="carrito-breadcrumb">
+        <span onClick={() => navigate("/catalogo")}>Inicio</span>
+        <span className="carrito-breadcrumb-sep">/</span>
+        <span className="carrito-breadcrumb-actual">Bolsa de compra</span>
+      </nav>
+
       <div className="carrito-header">
         <div className="carrito-header-left">
+          <h1 className="carrito-titulo">Carrito de compras</h1>
           <span className="carrito-contador">
             {totalItems} {totalItems === 1 ? "producto" : "productos"}
           </span>
         </div>
         {usuario && (
-          <button className="btn btn-outline" onClick={() => navigate("/dashboard")}>
-            Mis pedidos
+          <button className="btn btn-outline carrito-btn-mis-pedidos" onClick={() => navigate("/dashboard")}>
+            <IconReceipt /> Mis pedidos
           </button>
         )}
       </div>
@@ -111,66 +127,100 @@ export default function Carrito() {
       <div className="carrito-layout">
         {/* Lista de productos */}
         <div className="carrito-lista">
-          {items.map((item) => (
-            <div key={item.id_variante ?? item.id} className="carrito-item">
-              <div className="carrito-item-img">
-                {item.imagen ? (
-                  <img src={item.imagen} alt={item.nombre} />
-                ) : (
-                  <div className="carrito-item-img-placeholder">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <rect x="3" y="3" width="18" height="18" rx="2"/>
-                      <path d="m9 9 6 6m0-6-6 6"/>
-                    </svg>
+          {items.map((item) => {
+            const agotado = (item.stock ?? 0) <= 0;
+            return (
+              <div key={item.id_variante ?? item.id} className="carrito-item">
+                <div className="carrito-item-img">
+                  {item.imagen ? (
+                    <img src={item.imagen} alt={item.nombre} />
+                  ) : (
+                    <div className="carrito-item-img-placeholder">
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <path d="m9 9 6 6m0-6-6 6"/>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                <div className="carrito-item-info">
+                  <div className="carrito-item-meta">
+                    {item.categoria && <span className="carrito-item-cat">{item.categoria}</span>}
+                    <span className={`carrito-item-stock${agotado ? " agotado" : ""}`}>
+                      <span className="carrito-item-stock-dot" />
+                      {agotado ? "Sin stock" : "En inventario"}
+                    </span>
                   </div>
-                )}
+                  <div className="carrito-item-nombre">{item.nombre}</div>
+                  <div className="carrito-item-detalles">
+                    {item.talla && <span>Talla: <strong>{item.talla}</strong></span>}
+                    {item.color && <span>Color: <strong>{item.color}</strong></span>}
+                  </div>
+                </div>
+
+                <div className="carrito-item-derecha">
+                  <button
+                    className="carrito-item-eliminar"
+                    onClick={() => eliminarItem(item.id_variante ?? item.id)}
+                    title="Eliminar producto"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+
+                  <div className="carrito-item-cantidad">
+                    <button
+                      className="carrito-qty-btn"
+                      onClick={() => actualizarCantidad(item.id_variante ?? item.id, item.cantidad - 1)}
+                    >−</button>
+                    <span className="carrito-qty-num">{item.cantidad}</span>
+                    <button
+                      className="carrito-qty-btn"
+                      onClick={() => actualizarCantidad(item.id_variante ?? item.id, item.cantidad + 1)}
+                      disabled={item.cantidad >= (item.stock ?? 0)}
+                    >+</button>
+                  </div>
+
+                  <div className="carrito-item-precio-wrap">
+                    <span className="carrito-item-precio">{fmt(item.precio * item.cantidad)}</span>
+                    <span className="carrito-item-precio-unit">({fmt(item.precio)} c/u)</span>
+                  </div>
+                </div>
               </div>
+            );
+          })}
 
-              <div className="carrito-item-info">
-                <div className="carrito-item-cat">{item.categoria}</div>
-                <div className="carrito-item-nombre">{item.nombre}</div>
-                {item.talla && <div className="carrito-item-detalle">Talla: {item.talla}</div>}
-                {item.color && <div className="carrito-item-detalle">Color: {item.color}</div>}
+          <div className="carrito-lista-footer">
+            <button className="carrito-vaciar" onClick={vaciarCarrito}>
+              <IconTrash /> Vaciar carrito por completo
+            </button>
+            <span className="carrito-nota-precios">Precios en pesos colombianos (COP), IVA incluido</span>
+          </div>
+
+          <div className="carrito-beneficios">
+            {BENEFICIOS.map((b) => (
+              <div key={b.titulo} className="carrito-beneficio">
+                <span className="carrito-beneficio-icono">{b.icono}</span>
+                <div>
+                  <div className="carrito-beneficio-titulo">{b.titulo}</div>
+                  <div className="carrito-beneficio-texto">{b.texto}</div>
+                </div>
               </div>
-
-              <div className="carrito-item-cantidad">
-                <button
-                  className="carrito-qty-btn"
-                  onClick={() => actualizarCantidad(item.id_variante ?? item.id, item.cantidad - 1)}
-                >−</button>
-                <span className="carrito-qty-num">{item.cantidad}</span>
-                <button
-                  className="carrito-qty-btn"
-                  onClick={() => actualizarCantidad(item.id_variante ?? item.id, item.cantidad + 1)}
-                  disabled={item.cantidad >= (item.stock ?? 0)}
-                >+</button>
-              </div>
-
-              <div className="carrito-item-precio">
-                {fmt(item.precio * item.cantidad)}
-              </div>
-
-              <button
-                className="carrito-item-eliminar"
-                onClick={() => eliminarItem(item.id_variante ?? item.id)}
-                title="Eliminar producto"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"/>
-                  <line x1="6" y1="6" x2="18" y2="18"/>
-                </svg>
-              </button>
-            </div>
-          ))}
-
-          <button className="btn" style={{ background: 'transparent', border: 'none', color: 'var(--muted)', textDecoration: 'underline' }} onClick={vaciarCarrito}>
-            Vaciar carrito
-          </button>
+            ))}
+          </div>
         </div>
 
         {/* Resumen */}
         <div className="carrito-resumen">
-          <h2 className="carrito-resumen-titulo">Resumen del pedido</h2>
+          <div className="carrito-resumen-header">
+            <h2 className="carrito-resumen-titulo">Resumen del pedido</h2>
+            <span className="carrito-resumen-badge">
+              {referencias} {referencias === 1 ? "Referencia" : "Referencias"}
+            </span>
+          </div>
 
           <div className="carrito-resumen-lineas">
             {items.map((item) => (
@@ -183,28 +233,64 @@ export default function Carrito() {
 
           <div className="carrito-resumen-divider" />
 
-          <div className="carrito-resumen-total">
-            <span>Total</span>
+          <div className="carrito-resumen-linea">
+            <span>Subtotal general</span>
             <span>{fmt(total)}</span>
+          </div>
+          <div className="carrito-resumen-linea">
+            <span>Envío a domicilio</span>
+            <span className="carrito-envio-gratis">GRATIS</span>
+          </div>
+
+          <div className="carrito-resumen-divider" />
+
+          <div className="carrito-resumen-total">
+            <div>
+              <span className="carrito-resumen-total-label">Total a pagar</span>
+              <span className="carrito-resumen-total-nota">Impuestos incluidos</span>
+            </div>
+            <div className="carrito-resumen-total-precio">
+              {fmt(total)} <span className="carrito-resumen-total-moneda">COP</span>
+            </div>
           </div>
 
           {usuario && permisoCuotas && (
-            <div className="carrito-opcion-pago" style={{ marginBottom: '15px' }}>
-              <label style={{ fontWeight: 500, marginBottom: '8px', display: 'block' }}>Opción de pago:</label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input type="radio" name="tipoPago" value="completo" checked={tipoPago === "completo"} onChange={() => setTipoPago("completo")} />
-                Pago completo
-              </label>
+            <div className="carrito-opcion-pago">
+              <label className="carrito-opcion-pago-label">Opción de pago preferida</label>
+
+              <button
+                type="button"
+                className={`carrito-opcion-card${tipoPago === "completo" ? " selected" : ""}`}
+                onClick={() => setTipoPago("completo")}
+              >
+                {tipoPago === "completo" && <span className="carrito-opcion-check"><IconCheckSm /></span>}
+                <span className="carrito-opcion-radio" />
+                <span className="carrito-opcion-info">
+                  <span className="carrito-opcion-titulo">Pago completo</span>
+                </span>
+                <span className="carrito-opcion-badge">Inmediato</span>
+              </button>
+
               {opcionesCuotas.length > 0 && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', marginTop: '5px' }}>
-                  <input type="radio" name="tipoPago" value="cuotas" checked={tipoPago === "cuotas"} onChange={() => setTipoPago("cuotas")} />
-                  Pagar en cuotas
-                </label>
+                <button
+                  type="button"
+                  className={`carrito-opcion-card${tipoPago === "cuotas" ? " selected" : ""}`}
+                  onClick={() => setTipoPago("cuotas")}
+                >
+                  {tipoPago === "cuotas" && <span className="carrito-opcion-check"><IconCheckSm /></span>}
+                  <span className="carrito-opcion-radio" />
+                  <span className="carrito-opcion-info">
+                    <span className="carrito-opcion-titulo">Pagar en cuotas</span>
+                    <span className="carrito-opcion-desc">Sin tarjeta, con fechas de pago fijas</span>
+                  </span>
+                  <span className="carrito-opcion-badge">0% interés*</span>
+                </button>
               )}
+
               {tipoPagoActivo === "cuotas" && (
-                <div style={{ marginTop: '10px', paddingLeft: '24px' }}>
-                  <label style={{ fontSize: '14px' }}>Número de cuotas:</label>
-                  <Select value={numCuotasActivo} onChange={(e) => setNumCuotas(Number(e.target.value))} style={{ marginLeft: '10px', padding: '4px' }}>
+                <div className="carrito-cuotas-detalle">
+                  <label className="carrito-cuotas-label">Número de cuotas:</label>
+                  <Select value={numCuotasActivo} onChange={(e) => setNumCuotas(Number(e.target.value))}>
                     {opcionesCuotas.map((n) => (
                       <option key={n} value={n}>{n} cuotas de {fmt(Math.ceil(total / n))}</option>
                     ))}
@@ -220,19 +306,11 @@ export default function Carrito() {
             </div>
           )}
 
-          <button
-            className="btn btn-primary"
-            style={{ width: '100%', marginBottom: '10px' }}
-            onClick={irACheckout}
-          >
-            Finalizar compra →
+          <button className="btn btn-primary carrito-btn-full" onClick={irACheckout}>
+            Finalizar compra <IconArrowRight />
           </button>
 
-          <button
-            className="btn btn-outline"
-            style={{ width: '100%' }}
-            onClick={() => navigate("/catalogo")}
-          >
+          <button className="btn btn-outline carrito-btn-full" onClick={() => navigate("/catalogo")}>
             Seguir comprando
           </button>
         </div>

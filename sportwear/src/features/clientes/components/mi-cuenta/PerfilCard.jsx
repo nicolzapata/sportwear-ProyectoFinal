@@ -1,14 +1,15 @@
 import { getInitials } from "../../utils/miCuentaHelpers";
+import { IconEdit } from "../../../../shared/components/Icons";
 
 const CAMPOS_PERFIL = [
-  { label: "Nombre",    key: "nombre"    },
-  { label: "Tipo doc.", key: "tipo_doc"  },
-  { label: "Documento", key: "documento" },
-  { label: "Teléfono",  key: "telefono"  },
-  { label: "Email",     key: "email"     },
-  { label: "Ciudad",    key: "ciudad"    },
-  { label: "Barrio",    key: "id_barrio" },
-  { label: "Dirección", key: "direccion" },
+  { label: "Nombre completo",    key: "nombre"    },
+  { label: "Tipo de documento",  key: "tipo_doc"  },
+  { label: "N° documento",       key: "documento" },
+  { label: "Teléfono móvil",     key: "telefono"  },
+  { label: "Correo electrónico", key: "email"     },
+  { label: "Ciudad",             key: "ciudad"    },
+  { label: "Barrio",             key: "id_barrio" },
+  { label: "Dirección de entrega", key: "direccion" },
 ];
 
 export default function PerfilCard({ perfil, usuario, getBarrioNombre, onEditar }) {
@@ -21,12 +22,17 @@ export default function PerfilCard({ perfil, usuario, getBarrioNombre, onEditar 
               <span className="profile-initials">{getInitials(perfil.nombre || usuario?.nombre)}</span>
             </div>
             <div className="profile-right">
-              <p className="profile-name">{perfil.nombre || usuario?.nombre}</p>
-              {perfil.documento && <p className="profile-doc">CC {perfil.documento}</p>}
-              <button className="btn profile-edit-btn" onClick={onEditar}>
-                Editar perfil
-              </button>
+              <div className="profile-name-row">
+                <p className="profile-name">{perfil.nombre || usuario?.nombre}</p>
+                <span className={`badge ${perfil.estado === "Inactivo" ? "error" : "exito"}`}>
+                  Cliente {perfil.estado === "Inactivo" ? "inactivo" : "activo"}
+                </span>
+              </div>
+              {perfil.documento && <p className="profile-doc">Documento: {perfil.tipo_doc} {perfil.documento}</p>}
             </div>
+            <button className="mc-btn-secondary profile-edit-btn" onClick={onEditar}>
+              <IconEdit /> Editar perfil
+            </button>
           </div>
           <div className="profile-fields-grid">
             {CAMPOS_PERFIL.map(({ label, key }) => (

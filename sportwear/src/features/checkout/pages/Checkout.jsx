@@ -260,7 +260,20 @@ export default function Checkout() {
   return (
     <div className="checkout-page">
       <div className="checkout-header">
-        <h1 className="checkout-titulo">Confirmar pedido</h1>
+        <nav className="checkout-breadcrumb">
+          <span onClick={() => navigate("/carrito")}>Carrito</span>
+          <span className="checkout-breadcrumb-sep">/</span>
+          <span className="checkout-breadcrumb-actual">Datos de entrega y pago</span>
+        </nav>
+        <div className="checkout-header-row">
+          <h1 className="checkout-titulo">Confirmar pedido</h1>
+          <div className="checkout-paso-badge">
+            <span className="checkout-paso-num">2</span>
+            <span className="checkout-paso-texto">Paso 2 de 2: Checkout</span>
+            <span className="checkout-paso-sep">•</span>
+            <span className="checkout-paso-seguro">Compra 100% segura</span>
+          </div>
+        </div>
       </div>
 
       <div className="checkout-layout">

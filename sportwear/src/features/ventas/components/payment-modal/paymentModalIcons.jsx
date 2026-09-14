@@ -40,6 +40,14 @@ export const IconCheckCircle = () => (
     <polyline points="22 4 12 14.01 9 11.01" />
   </svg>
 );
+// ── NUEVO: check simple (sin el trazo de círculo) para el ícono dentro del
+// círculo relleno de "pedido registrado" — evita el doble contorno que se
+// veía al combinar IconCheckCircle con el fondo circular propio. ──
+export const IconCheckLg = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="5 13 10 18 19 7" />
+  </svg>
+);
 // ── NUEVO: ícono de WhatsApp para el enlace directo de confirmación de transferencia ──
 export const IconWhatsAppSm = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -55,5 +63,17 @@ export const IconLock = () => (
 export const IconCheckSm = () => (
   <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
     <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+export const IconMail = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <rect x="2" y="4" width="20" height="16" rx="2" />
+    <path d="m2 6 10 7 10-7" />
+  </svg>
+);
+export const IconArrowRight = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
   </svg>
 );

@@ -18,11 +18,12 @@ export default function PaymentModal({ pedido, cliente, onClose, onPagoConfirmad
   // ── NUEVO: solo se pide tarjeta si el cliente eligió pagar con tarjeta.
   // Efectivo/Transferencia no tienen por qué pasar por un formulario de tarjeta. ──
   const requiereTarjeta = pedido.metodo_pago === "Tarjeta";
+  const esPendiente = !pagoRealizado && !requiereTarjeta;
 
   return createPortal(
     <div className="pm-overlay">
       <div
-        className={`pm-modal ${pagoRealizado ? "pm-modal--receipt" : ""}`}
+        className={`pm-modal ${pagoRealizado ? "pm-modal--receipt" : ""}${esPendiente ? " pm-modal--pendiente" : ""}`}
         onClick={(e) => e.stopPropagation()}
       >
         {pagoRealizado ? (

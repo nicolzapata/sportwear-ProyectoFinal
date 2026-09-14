@@ -31,6 +31,7 @@ export default function PedidoCard({ pedido, setPagoModal, cargarDetallePedido }
         </div>
       </div>
 
+      <p className="mc-pedido-card-prendas-label">Prendas en esta orden ({(pedido.items || []).length})</p>
       <div className="mc-pedido-card-items">
         {(pedido.items || []).map((item, i) => (
           <div key={i} className="mc-pedido-item-thumb" title={`${item.producto}${item.talla ? " · " + item.talla : ""}`}>
@@ -39,7 +40,7 @@ export default function PedidoCard({ pedido, setPagoModal, cargarDetallePedido }
             ) : (
               <IconImagenVacia />
             )}
-            {item.cantidad > 1 && <span className="mc-pedido-item-cant">×{item.cantidad}</span>}
+            <span className="mc-pedido-item-cant">×{item.cantidad}</span>
           </div>
         ))}
       </div>
@@ -47,20 +48,20 @@ export default function PedidoCard({ pedido, setPagoModal, cargarDetallePedido }
       <div className="mc-pedido-card-footer">
         <div className="mc-pedido-card-totales">
           <span className="mc-pedido-card-tipo">{textoTipo}</span>
-          <span className="mc-pedido-card-total">{fmt(pedido.total)}</span>
+          <span className="mc-pedido-card-total">{fmt(pedido.total)} <span className="mc-pedido-card-moneda">COP</span></span>
           {Number(pedido.total_pagado || 0) > 0 && Number(pedido.total_pagado) < Number(pedido.total) && (
             <span className="mc-pedido-card-pagado">Pagado: {fmt(pedido.total_pagado)}</span>
           )}
         </div>
         <div className="mc-pedido-card-acciones">
+          <button className="tbl-action-btn tbl-action-btn--view" onClick={() => cargarDetallePedido(pedido)}>
+            Ver detalle
+          </button>
           {puedePagar && (
             <button className="tbl-action-btn tbl-action-btn--pay" onClick={() => setPagoModal(pedido)}>
               <IconCreditCard /> Pagar
             </button>
           )}
-          <button className="tbl-action-btn tbl-action-btn--view" onClick={() => cargarDetallePedido(pedido)}>
-            Ver detalle
-          </button>
         </div>
       </div>
     </div>

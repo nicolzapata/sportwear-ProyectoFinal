@@ -127,14 +127,46 @@
   }
 }
 /* ── NUEVO: vista de "pedido registrado" para Efectivo/Transferencia (sin formulario de tarjeta) ── */
+.pm-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pm-badge-recibido {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--dvna-circle, #b96422);
+  background: rgba(185, 100, 34, 0.12);
+  border: 0.5px solid rgba(185, 100, 34, 0.3);
+  border-radius: 20px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+.pm-badge-recibido-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
 .pm-pendiente-body {
   padding: 8px 20px 20px;
   text-align: center;
 }
 .pm-pendiente-icono {
-  color: var(--dvna-circle, #b96422);
-  margin: 4px auto 10px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sw-primary, #C8A46A), var(--sw-primary-strong, #B08A4E));
+  color: #fff;
+  margin: 4px auto 14px;
   display: flex;
+  align-items: center;
   justify-content: center;
 }
 .pm-pendiente-titulo {
@@ -155,16 +187,39 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 10px;
+  text-align: left;
   background: var(--dvna-pale);
   border-radius: 8px;
-  padding: 10px 14px;
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: 13px;
-  color: var(--dvna-muted);
+  padding: 14px 16px;
 }
-.pm-pendiente-monto strong {
-  font-size: 16px;
+.pm-pendiente-monto-label {
+  display: block;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--dvna-charcoal);
+}
+.pm-pendiente-monto-sub {
+  display: block;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 11px;
+  color: var(--dvna-muted);
+  margin-top: 2px;
+}
+.pm-pendiente-monto-precio {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--dvna-charcoal);
+  white-space: nowrap;
+}
+.pm-pendiente-monto-moneda {
+  font-size: 10px;
+  font-weight: 400;
+  color: #8B6F4E;
 }
 
 /* ── NUEVO: caja de datos bancarios (placeholder, editar con los datos reales) ── */
@@ -211,4 +266,96 @@
 .pm-whatsapp-btn:hover {
   background: #1ebe5a;
   transform: translateY(-1px);
+}
+
+/* ── NUEVO: cajas informativas (comprobante por correo / seguimiento WhatsApp) ── */
+.pm-pendiente-info-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.pm-pendiente-info-box {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: var(--dvna-pale);
+  border-radius: 8px;
+  padding: 10px 10px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--dvna-charcoal);
+  text-align: left;
+  white-space: nowrap;
+}
+.pm-pendiente-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(176, 138, 78, 0.14);
+  color: var(--sw-primary-strong, #B08A4E);
+  flex-shrink: 0;
+}
+.pm-pendiente-info-icon--whatsapp {
+  background: rgba(37, 211, 102, 0.14);
+  color: #25D366;
+}
+
+@media (max-width: 500px) {
+  .pm-pendiente-info-row { flex-direction: column; }
+}
+
+/* ── NUEVO: pie de la vista "pedido registrado" — enlace de contacto + botón con flecha ── */
+.pm-footer--pendiente {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.pm-footer-link {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--dvna-muted);
+  text-decoration: none;
+}
+.pm-footer-link:hover { text-decoration: underline; color: var(--dvna-charcoal); }
+.pm-footer--pendiente .pm-btn-primary { flex: none; }
+
+/* ── NUEVO: ajustes propios de "pedido registrado" — el color del botón y
+   del ícono se dejan en el dorado por defecto de .pm-btn-primary (--brown),
+   sin overrides acá. ── */
+.pm-modal--pendiente .pm-header {
+  padding: 22px 22px 14px;
+}
+.pm-modal--pendiente .pm-title {
+  font-size: 19px;
+  font-weight: 700;
+}
+.pm-modal--pendiente .pm-pendiente-body {
+  padding: 12px 22px 22px;
+}
+.pm-modal--pendiente .pm-pendiente-titulo {
+  font-size: 16px;
+  font-weight: 700;
+}
+.pm-modal--pendiente .pm-pendiente-monto-precio {
+  font-size: 23px;
+}
+.pm-modal--pendiente .pm-footer {
+  padding: 14px 22px 20px;
+}
+
+@media (max-width: 500px) {
+  .pm-footer--pendiente {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .pm-footer--pendiente .pm-btn-primary { width: 100%; }
+  .pm-footer-link { text-align: center; }
 }

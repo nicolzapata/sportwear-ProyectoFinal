@@ -37,6 +37,10 @@
   max-width: 440px;
 }
 
+.pm-modal--pendiente {
+  max-width: 500px;
+}
+
 @keyframes pm-slide-up {
   from { transform: translateY(24px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }

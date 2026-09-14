@@ -1,5 +1,6 @@
 import Select from "../../../../shared/components/Select";
 import { fmt } from "../../utils/checkoutHelpers";
+import { IconCheckSm } from "../../checkoutIcons";
 
 export default function OpcionesPago({
   permisoCuotas, tipoPago, setTipoPago, opcionesCuotas,
@@ -10,18 +11,33 @@ export default function OpcionesPago({
   return (
     <div className="checkout-campo" style={{ marginTop: 15 }}>
       <label className="checkout-label">Opción de pago</label>
-      <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 5 }}>
-        <input type="radio" name="tipoPago2" value="completo" checked={tipoPago === "completo"} onChange={() => setTipoPago("completo")} />
-        Pago completo
-      </label>
+
+      <button
+        type="button"
+        className={`checkout-opcion-card${tipoPago === "completo" ? " selected" : ""}`}
+        onClick={() => setTipoPago("completo")}
+      >
+        {tipoPago === "completo" && <span className="checkout-opcion-check"><IconCheckSm /></span>}
+        <span className="checkout-opcion-radio" />
+        <span className="checkout-opcion-titulo">Pago completo</span>
+        <span className="checkout-opcion-badge">Recomendado</span>
+      </button>
+
       {opcionesCuotas.length > 0 && (
-        <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", marginTop: 5 }}>
-          <input type="radio" name="tipoPago2" value="cuotas" checked={tipoPago === "cuotas"} onChange={() => setTipoPago("cuotas")} />
-          Pagar en cuotas
-        </label>
+        <button
+          type="button"
+          className={`checkout-opcion-card${tipoPago === "cuotas" ? " selected" : ""}`}
+          onClick={() => setTipoPago("cuotas")}
+        >
+          {tipoPago === "cuotas" && <span className="checkout-opcion-check"><IconCheckSm /></span>}
+          <span className="checkout-opcion-radio" />
+          <span className="checkout-opcion-titulo">Pagar en cuotas</span>
+          <span className="checkout-opcion-badge">Sin tarjeta</span>
+        </button>
       )}
+
       {tipoPagoActivo === "cuotas" && (
-        <div style={{ marginTop: 10, paddingLeft: 24 }}>
+        <div className="checkout-cuotas-select">
           <label className="checkout-label">Número de cuotas</label>
           <Select value={numCuotasActivo} onChange={(e) => setNumCuotas(Number(e.target.value))} className="form-control" style={{ marginTop: 4 }}>
             {opcionesCuotas.map((n) => (

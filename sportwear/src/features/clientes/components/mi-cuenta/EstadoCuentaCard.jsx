@@ -4,7 +4,10 @@ import { fmt } from "../../utils/miCuentaHelpers";
 export default function EstadoCuentaCard({ pedidos, totalCompras, totalPagado, totalPendiente }) {
   return (
     <div className="mc-card mc-estado-cuenta" style={{ marginBottom: 16 }}>
-      <h3 className="mc-card-title">Estado de cuenta</h3>
+      <div className="mc-card-header-row">
+        <h3 className="mc-card-title" style={{ marginBottom: 0 }}>Estado de cuenta</h3>
+        <span className="mc-card-meta">Actualizado en tiempo real</span>
+      </div>
       <div className="mc-estado-grid mc-estado-grid-4">
         <div className="mc-estado-item">
           <span className="mc-estado-icon"><IconBox /></span>
@@ -27,7 +30,7 @@ export default function EstadoCuentaCard({ pedidos, totalCompras, totalPagado, t
             <span className="mc-estado-value mc-estado-pagado">{fmt(totalPagado)}</span>
           </div>
         </div>
-        <div className="mc-estado-item">
+        <div className={`mc-estado-item${totalPendiente > 0 ? " mc-estado-item-alerta" : ""}`}>
           <span className={`mc-estado-icon${totalPendiente > 0 ? " mc-estado-icon-pendiente" : " mc-estado-icon-pagado"}`}><IconTruck /></span>
           <div>
             <span className="mc-estado-label">Saldo pendiente</span>
