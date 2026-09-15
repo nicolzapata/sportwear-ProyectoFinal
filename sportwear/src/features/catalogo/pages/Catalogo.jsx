@@ -18,9 +18,25 @@ import CategoriasDestacadas from "../components/catalogo/CategoriasDestacadas";
 import CatalogoToolbar from "../components/catalogo/CatalogoToolbar";
 import CatalogoFooter from "../components/catalogo/CatalogoFooter";
 
-// Después de cuántos productos se intercala el video del inicio (si el
-// Admin subió uno desde Catálogo admin → Contenido del inicio).
-const POSICION_VIDEO = 6;
+// Cuántas columnas tiene .catalog-grid en cada breakpoint — tiene que
+// coincidir con los media queries reales (Catalogo.layout.css /
+// Catalogo.hero.css) para poder calcular dónde termina la 2ª fila exacta.
+const columnasPorAncho = (ancho) => (ancho <= 560 ? 1 : ancho <= 900 ? 2 : 4);
+
+// Cuántas columnas tiene la grilla ahora mismo, actualizado en resize — así
+// el video del inicio se intercala siempre al final de la 2ª fila completa,
+// nunca a mitad de una fila (eso dejaba huecos raros en el layout).
+function useColumnasGrid() {
+  const [columnas, setColumnas] = useState(() =>
+    columnasPorAncho(typeof window !== "undefined" ? window.innerWidth : 1200)
+  );
+  useEffect(() => {
+    const onResize = () => setColumnas(columnasPorAncho(window.innerWidth));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return columnas;
+}
 
 // ── Página principal ──────────────────────────────────────────
 export default function Catalogo() {
@@ -34,6 +50,8 @@ export default function Catalogo() {
   const esAdmin     = usuario?.rol === "Administrador" || usuario?.rol === "Admin";
   const { busqueda, setBusqueda, filtroCategoria, setFiltroCategoria, categorias, setCategorias } = useOutletContext();
   const showToast = useToast();
+  const columnasGrid = useColumnasGrid();
+  const posicionVideo = columnasGrid * 2; // se intercala al final de la 2ª fila
 
   const [datos,   setDatos]   = useState([]);
   const [loading, setLoading] = useState(true);
@@ -198,9 +216,11 @@ export default function Catalogo() {
                   onTogglePublicado={handleTogglePublicado}
                 />
                 {/* Video del inicio (Catálogo admin → Contenido del inicio),
-                    intercalado tras el 6º producto — solo en la vista sin
+                    intercalado justo al terminar la 2ª fila completa de
+                    productos (columnasGrid * 2, ver useColumnasGrid) para
+                    no dejar una fila a medias — solo en la vista sin
                     filtros ni búsqueda, y solo si el Admin ya subió uno. */}
-                {i === POSICION_VIDEO - 1 && videoInicio && !hayFiltroActivo && vista === "grid" && (
+                {i === posicionVideo - 1 && videoInicio && !hayFiltroActivo && vista === "grid" && (
                   <div className="catalog-video-block">
                     <video src={videoInicio} controls playsInline preload="metadata" />
                   </div>
