@@ -1,5 +1,5 @@
 // src/components/PublicNavbar.jsx
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
@@ -12,11 +12,10 @@ import "./Navbar.base.css";
 import "./Navbar.responsive.css";
 import "./Navbar.buscador.css";
 import { MIN_CARACTERES, MAX_SUGERENCIAS } from "../utils/publicNavbarHelpers";
-import CategoriasMenu from "./public-navbar/CategoriasMenu";
 import BuscadorNavbar from "./public-navbar/BuscadorNavbar";
 import AccionesNavbar from "./public-navbar/AccionesNavbar";
 
-export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, setFiltroCategoria, categorias }) {
+export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, setFiltroCategoria }) {
   const { usuario, logout } = useAuth();
   const { totalItems, oculto } = useCart();
   const navigate = useNavigate();
@@ -29,13 +28,6 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
   const [indiceActivo, setIndiceActivo] = useState(-1);
   const buscadorRef = useRef(null);
   const inputRef = useRef(null);
-
-  // ── NUEVO: menú de categorías tipo "mega menú" — antes cada categoría era
-  // un botón suelto en la barra, que se desbordaba al agregar más. Ahora
-  // vive en un desplegable único, con una imagen de referencia por
-  // categoría (tomada del primer producto que se encuentre de cada una). ──
-  const [menuCategoriasAbierto, setMenuCategoriasAbierto] = useState(false);
-  const categoriasRef = useRef(null);
 
   // Menú móvil: en pantallas angostas, los links + categorías + buscador
   // viven en este panel colapsable en vez de desaparecer con display:none.
@@ -60,44 +52,15 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
       if (buscadorRef.current && !buscadorRef.current.contains(e.target)) {
         setSugerenciasAbiertas(false);
       }
-      if (categoriasRef.current && !categoriasRef.current.contains(e.target)) {
-        setMenuCategoriasAbierto(false);
-      }
     };
     document.addEventListener("mousedown", cerrar);
     return () => document.removeEventListener("mousedown", cerrar);
   }, []);
 
-  // ── NUEVO: una imagen de referencia por categoría, tomada del primer
-  // producto publicado que se encuentre de esa categoría con foto. ──
-  const imagenPorCategoria = useMemo(() => {
-    const map = {};
-    productos.forEach((p) => {
-      if (p.categoria && !map[p.categoria] && p.imagen_principal) {
-        map[p.categoria] = p.imagen_principal;
-      }
-    });
-    return map;
-  }, [productos]);
-
-  const listaCategorias = (categorias || []).filter((cat) => cat !== "Todos");
-
   // El botón de modo oscuro aparece en Checkout, Carrito, Mi cuenta, Sobre
   // nosotros y el catálogo público (inicio, listado y detalle de producto).
   const mostrarThemeToggle = ["/checkout", "/carrito", "/mi-cuenta", "/", "/catalogo", "/sobre-nosotros"].includes(location.pathname)
     || location.pathname.startsWith("/catalogo/");
-
-  const irACategoria = (cat) => {
-    setFiltroCategoria(cat);
-    setMenuCategoriasAbierto(false);
-    cerrarMenuMovil();
-    // Los filtros de categoría solo tienen efecto en /catalogo — si el
-    // usuario los pulsa desde otra página (p. ej. Sobre nosotros) hay
-    // que navegar ahí, si no parece que el link no hace nada.
-    if (location.pathname !== "/catalogo" && location.pathname !== "/") {
-      navigate("/catalogo");
-    }
-  };
 
   const termino = busqueda.trim().toLowerCase();
   const sugerencias = termino.length >= MIN_CARACTERES
@@ -181,16 +144,6 @@ export default function PublicNavbar({ busqueda, setBusqueda, filtroCategoria, s
           >
             Inicio
           </Link>
-
-          <CategoriasMenu
-            listaCategorias={listaCategorias}
-            categoriasRef={categoriasRef}
-            filtroCategoria={filtroCategoria}
-            menuCategoriasAbierto={menuCategoriasAbierto}
-            setMenuCategoriasAbierto={setMenuCategoriasAbierto}
-            imagenPorCategoria={imagenPorCategoria}
-            irACategoria={irACategoria}
-          />
 
           <NavLink
             to="/sobre-nosotros"
