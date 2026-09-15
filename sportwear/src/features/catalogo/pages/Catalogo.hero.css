@@ -108,6 +108,9 @@
   flex-direction: column;
   justify-content: center;
   padding: 0 6vw;
+  /* Reserva el alto real de la franja de stats (posición absoluta, abajo)
+     para que el texto centrado (título/subtítulo) nunca la toque. */
+  padding-bottom: 120px;
   overflow: hidden;
   background: var(--sn-black);
   box-sizing: border-box;
@@ -130,7 +133,11 @@
   position: absolute;
   inset: 0;
   background-size: cover;
-  background-position: center;
+  /* "center 25%" en vez de "center center": la mayoría de las fotos
+     verticales (retrato) tienen la cara/torso en el tercio superior — con
+     el hero mucho más ancho que alto, centrar verticalmente terminaba
+     mostrando solo cuello/pecho y cortaba la cara. */
+  background-position: center 25%;
   opacity: 0;
   transition: opacity 1s ease;
 }
@@ -327,6 +334,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center 20%;
   transition: transform 0.3s ease;
 }
 .cat-tile:hover img {
@@ -363,22 +371,41 @@
    Sin aspect-ratio fijo ni object-fit:cover: el bloque toma la altura que
    el video necesite según su propia proporción (nunca se recorta), con un
    tope máximo para que un video muy vertical no ocupe la pantalla entera. ── */
-/* Sin ancho forzado al 100% del bloque: el <video> se muestra a su propio
-   tamaño (hasta el tope de max-width/max-height), así el borde de la caja
-   queda pegado al video mismo — nada de barras negras a los costados. */
+/* El <video> se muestra a su propio tamaño (con tope de max-width/
+   max-height) para no forzarlo a una caja panorámica que lo recorte o le
+   deje barras negras — pero eso mismo lo hacía ver "flotando solo" en
+   medio del grid (mucho blanco vacío alrededor, sobre todo con un video
+   grabado en vertical). Se lo enmarca en una franja con fondo de marca
+   (mismo --cream de las cards) para que se lea como una sección propia,
+   no como un elemento suelto. */
 .catalog-video-block {
   grid-column: 1 / -1;
   margin: 8px 0;
+  padding: 32px 24px;
+  border-radius: var(--r-md);
+  background: var(--cream);
+  border: 1px solid var(--border);
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.catalog-video-caption {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--charcoal);
+  text-align: center;
+  margin: 0;
 }
 .catalog-video-block video {
   max-width: 100%;
-  max-height: 70vh;
+  max-height: 60vh;
   width: auto;
   height: auto;
-  border-radius: var(--r-md);
+  border-radius: var(--r);
   display: block;
+  box-shadow: 0 12px 32px rgba(60,40,20,0.14);
 }
 
 /* ── Responsive ── */
@@ -395,7 +422,7 @@
   .catalog-footer-brand { flex-direction: column; text-align: center; }
   .catalog-footer-divider { display: none; }
   .catalog-footer-links { justify-content: center; }
-  .nov-hero { padding: 0 24px; }
+  .nov-hero { padding: 0 24px; padding-bottom: 150px; }
   .nov-hero { height: min(64vh, 520px); }
   .nov-hero-strip { gap: 16px; flex-wrap: wrap; padding: 20px 24px; }
   .nov-hero-title { font-size: 36px; }

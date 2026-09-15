@@ -222,6 +222,7 @@ export default function Catalogo() {
                     filtros ni búsqueda, y solo si el Admin ya subió uno. */}
                 {i === posicionVideo - 1 && videoInicio && !hayFiltroActivo && vista === "grid" && (
                   <div className="catalog-video-block">
+                    <p className="catalog-video-caption">Míranos en movimiento</p>
                     <video src={videoInicio} controls playsInline preload="metadata" />
                   </div>
                 )}
