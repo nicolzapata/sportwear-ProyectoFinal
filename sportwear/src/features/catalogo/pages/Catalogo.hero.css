@@ -103,7 +103,7 @@
   /* Antes 100vh: con fotos verticales (subidas desde Catálogo admin) eso
      forzaba un recorte muy agresivo (background-size:cover estirado sobre
      toda la pantalla). Un alto más moderado deja ver mejor la foto. */
-  height: min(70vh, 620px);
+  height: min(130vh, 650px);
   display: flex;
   flex-direction: column;
   justify-content: center;
