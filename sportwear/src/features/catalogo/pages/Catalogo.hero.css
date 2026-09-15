@@ -100,7 +100,10 @@
 .nov-hero {
   position: relative;
   width: 100%;
-  height: 100vh;
+  /* Antes 100vh: con fotos verticales (subidas desde Catálogo admin) eso
+     forzaba un recorte muy agresivo (background-size:cover estirado sobre
+     toda la pantalla). Un alto más moderado deja ver mejor la foto. */
+  height: min(70vh, 620px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -360,19 +363,21 @@
    Sin aspect-ratio fijo ni object-fit:cover: el bloque toma la altura que
    el video necesite según su propia proporción (nunca se recorta), con un
    tope máximo para que un video muy vertical no ocupe la pantalla entera. ── */
+/* Sin ancho forzado al 100% del bloque: el <video> se muestra a su propio
+   tamaño (hasta el tope de max-width/max-height), así el borde de la caja
+   queda pegado al video mismo — nada de barras negras a los costados. */
 .catalog-video-block {
   grid-column: 1 / -1;
   margin: 8px 0;
-  border-radius: var(--r-md);
-  overflow: hidden;
-  background: var(--sw-secondary);
   display: flex;
   justify-content: center;
 }
 .catalog-video-block video {
-  width: 100%;
+  max-width: 100%;
   max-height: 70vh;
-  object-fit: contain;
+  width: auto;
+  height: auto;
+  border-radius: var(--r-md);
   display: block;
 }
 
@@ -391,11 +396,7 @@
   .catalog-footer-divider { display: none; }
   .catalog-footer-links { justify-content: center; }
   .nov-hero { padding: 0 24px; }
-  /* El hero mide 100vh pero el navbar fijo (56px en móvil) lo empuja hacia
-     abajo con padding-top, así que "sobra" al fondo y la franja de stats
-     queda cortada bajo el borde de la pantalla. Se descuenta esa altura
-     para que quede completa sin tocar el tamaño en escritorio. */
-  .nov-hero { height: calc(100vh - 64px); }
+  .nov-hero { height: min(64vh, 520px); }
   .nov-hero-strip { gap: 16px; flex-wrap: wrap; padding: 20px 24px; }
   .nov-hero-title { font-size: 36px; }
   .nov-strip-sep { display: none; }
