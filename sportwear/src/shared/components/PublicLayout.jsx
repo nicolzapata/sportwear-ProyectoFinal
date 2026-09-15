@@ -7,7 +7,6 @@ import "../../features/catalogo/pages/Catalogo.layout.css";
 import "../../features/catalogo/pages/Catalogo.card.css";
 import "../../features/catalogo/pages/Catalogo.variantes.css";
 import "../../features/catalogo/pages/Catalogo.hero.css";
-import "../styles/publicTheme.css";
 
 export default function PublicLayout() {
   const [busqueda, setBusqueda] = useState("");
