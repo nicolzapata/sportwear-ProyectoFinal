@@ -285,13 +285,13 @@
     font-size: 11px;
   }
   .catalog-card-body {
-    padding: 14px 16px 16px;
+    padding: 10px 2px 4px;
   }
   .catalog-card-name {
-    font-size: 17px;
+    font-size: 14px;
   }
   .catalog-card-price {
-    font-size: 18px;
+    font-size: 16px;
   }
 }
 
