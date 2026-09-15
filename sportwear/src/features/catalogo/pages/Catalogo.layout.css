@@ -187,9 +187,14 @@ html, body {
 }
 
 /* ── Product grid ── */
+/* Columnas fijas (no auto-fill) a propósito: así Catalogo.jsx puede saber
+   exactamente cuántas columnas hay por breakpoint y calcular dónde cae el
+   final de la 2ª fila para intercalar el video sin dejar una fila a medias
+   (ver POSICION_VIDEO / useColumnasGrid en Catalogo.jsx). Los breakpoints de
+   abajo (900px / 560px) tienen que coincidir con los de ese hook. */
 .catalog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px 24px;
   max-width: 1400px;
   margin: 0 auto;

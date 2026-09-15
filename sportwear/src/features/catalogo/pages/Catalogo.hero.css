@@ -110,19 +110,78 @@
   box-sizing: border-box;
 }
 
-/* Cuando hay foto subida desde Catálogo admin → Contenido del inicio, se usa
-   como fondo (background-image inline) con un degradado oscuro encima para
-   que el texto blanco siga siendo legible sobre cualquier foto. */
-.nov-hero.nov-hero-con-foto {
-  background-size: cover;
-  background-position: center;
-}
+/* Cuando hay una o más fotos subidas desde Catálogo admin → Contenido del
+   inicio, cada una es un "slide" absoluto que se cruza en opacidad con el
+   siguiente (carrusel), con un degradado oscuro encima para que el texto
+   blanco siga siendo legible sobre cualquier foto. */
 .nov-hero.nov-hero-con-foto::before {
   content: "";
   position: absolute;
   inset: 0;
+  z-index: 1;
   background: linear-gradient(180deg, rgba(10,11,13,.35) 0%, rgba(10,11,13,.82) 100%);
   pointer-events: none;
+}
+
+.nov-hero-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+.nov-hero-slide.activa {
+  opacity: 1;
+}
+
+.nov-hero-flecha {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(10,11,13,.4);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.nov-hero-flecha:hover { background: rgba(10,11,13,.65); }
+.nov-hero-flecha.izq { left: 20px; }
+.nov-hero-flecha.der { right: 20px; }
+
+.nov-hero-dots {
+  position: absolute;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+}
+.nov-hero-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: rgba(255,255,255,.4);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nov-hero-dot.activo {
+  background: #fff;
+  width: 20px;
+  border-radius: 4px;
+}
+@media (max-width: 768px) {
+  .nov-hero-dots { bottom: 132px; }
 }
 
 .nov-hero-bg {
@@ -297,23 +356,24 @@
 }
 
 /* ── Video del catálogo (se sube desde Catálogo admin → Contenido del
-   inicio) — se intercala en el grid de productos ocupando todo el ancho. ── */
+   inicio) — se intercala en el grid de productos ocupando todo el ancho.
+   Sin aspect-ratio fijo ni object-fit:cover: el bloque toma la altura que
+   el video necesite según su propia proporción (nunca se recorta), con un
+   tope máximo para que un video muy vertical no ocupe la pantalla entera. ── */
 .catalog-video-block {
   grid-column: 1 / -1;
   margin: 8px 0;
-  aspect-ratio: 16/7;
   border-radius: var(--r-md);
   overflow: hidden;
   background: var(--sw-secondary);
+  display: flex;
+  justify-content: center;
 }
 .catalog-video-block video {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  max-height: 70vh;
+  object-fit: contain;
   display: block;
-}
-@media (max-width: 700px) {
-  .catalog-video-block { aspect-ratio: 4/5; }
 }
 
 /* ── Responsive ── */
