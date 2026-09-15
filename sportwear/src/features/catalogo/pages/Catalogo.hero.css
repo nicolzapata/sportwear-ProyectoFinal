@@ -110,6 +110,21 @@
   box-sizing: border-box;
 }
 
+/* Cuando hay foto subida desde Catálogo admin → Contenido del inicio, se usa
+   como fondo (background-image inline) con un degradado oscuro encima para
+   que el texto blanco siga siendo legible sobre cualquier foto. */
+.nov-hero.nov-hero-con-foto {
+  background-size: cover;
+  background-position: center;
+}
+.nov-hero.nov-hero-con-foto::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10,11,13,.35) 0%, rgba(10,11,13,.82) 100%);
+  pointer-events: none;
+}
+
 .nov-hero-bg {
   position: absolute;
   inset: 0;
@@ -218,6 +233,87 @@
   width: 1px;
   height: 40px;
   background: #ffffff12;
+}
+
+/* ── Explora por categoría ── */
+.cat-destacadas {
+  margin: 40px 0 8px;
+}
+.cat-destacadas-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--charcoal);
+  margin: 0 0 16px;
+}
+.cat-destacadas-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.cat-tile {
+  position: relative;
+  aspect-ratio: 3/4;
+  border-radius: var(--r);
+  overflow: hidden;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: var(--cream);
+}
+.cat-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.cat-tile:hover img {
+  transform: scale(1.05);
+}
+.cat-tile-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 18px;
+  background: linear-gradient(180deg, transparent 55%, rgba(44,34,24,0.78) 100%);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.cat-tile:hover .cat-tile-overlay {
+  opacity: 1;
+}
+.cat-tile-name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+}
+@media (max-width: 900px) {
+  .cat-destacadas-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Video del catálogo (se sube desde Catálogo admin → Contenido del
+   inicio) — se intercala en el grid de productos ocupando todo el ancho. ── */
+.catalog-video-block {
+  grid-column: 1 / -1;
+  margin: 8px 0;
+  aspect-ratio: 16/7;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--sw-secondary);
+}
+.catalog-video-block video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+@media (max-width: 700px) {
+  .catalog-video-block { aspect-ratio: 4/5; }
 }
 
 /* ── Responsive ── */

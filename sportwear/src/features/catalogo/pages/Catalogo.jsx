@@ -1,5 +1,5 @@
 // src/pages/catalogo/Catalogo.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { useOutletContext } from "react-router-dom";
 import { useAuth } from "../../../shared/contexts/AuthContext";
 import { useToast } from "../../../shared/contexts/ToastContext";
@@ -14,8 +14,13 @@ import "./Catalogo.hero.css";
 import { IconSearch } from "../../../shared/components/Icons";
 import ProductCard from "../components/catalogo/ProductCard";
 import CatalogoHero from "../components/catalogo/CatalogoHero";
+import CategoriasDestacadas from "../components/catalogo/CategoriasDestacadas";
 import CatalogoToolbar from "../components/catalogo/CatalogoToolbar";
 import CatalogoFooter from "../components/catalogo/CatalogoFooter";
+
+// Después de cuántos productos se intercala el video del inicio (si el
+// Admin subió uno desde Catálogo admin → Contenido del inicio).
+const POSICION_VIDEO = 6;
 
 // ── Página principal ──────────────────────────────────────────
 export default function Catalogo() {
@@ -27,7 +32,7 @@ export default function Catalogo() {
   useThemeScope("sw-scope-catalogo");
   const { usuario } = useAuth();
   const esAdmin     = usuario?.rol === "Administrador" || usuario?.rol === "Admin";
-  const { busqueda, setBusqueda, filtroCategoria, setFiltroCategoria, setCategorias } = useOutletContext();
+  const { busqueda, setBusqueda, filtroCategoria, setFiltroCategoria, categorias, setCategorias } = useOutletContext();
   const showToast = useToast();
 
   const [datos,   setDatos]   = useState([]);
@@ -39,6 +44,7 @@ export default function Catalogo() {
   const [precioMax,     setPrecioMax]     = useState("");
   const [filtroTalla,   setFiltroTalla]   = useState("");
   const [filtroColor,   setFiltroColor]   = useState("");
+  const [videoInicio,   setVideoInicio]   = useState(null);
 
   const cargar = async () => {
     try {
@@ -78,6 +84,11 @@ export default function Catalogo() {
 
   useEffect(() => { cargar(); }, [esAdmin]);
   useEffect(() => { cargarCategorias(); }, []);
+  useEffect(() => {
+    api.get("/imagenes?tipo=HomeVideo&id=1")
+      .then(({ data }) => setVideoInicio(data?.[0]?.url || null))
+      .catch(() => {});
+  }, []);
 
   const tallasDisponibles = [...new Set(
     datos.flatMap(p => (p.variantes || []).map(v => v.talla)).filter(Boolean)
@@ -151,6 +162,14 @@ export default function Catalogo() {
 
       {/* ── Catálogo ── */}
       <div className="Catalogo-enter">
+        {!hayFiltroActivo && (
+          <CategoriasDestacadas
+            categorias={categorias}
+            datos={datos}
+            onClickCategoria={setFiltroCategoria}
+          />
+        )}
+
         <CatalogoToolbar
           precioMin={precioMin} setPrecioMin={setPrecioMin}
           precioMax={precioMax} setPrecioMax={setPrecioMax}
@@ -171,13 +190,22 @@ export default function Catalogo() {
 
         {filtrados.length > 0 && (
           <div className={`catalog-grid${vista === "list" ? " list-view" : ""}`}>
-            {filtrados.map((p) => (
-              <ProductCard
-                key={p.id_producto}
-                p={p}
-                esAdmin={esAdmin}
-                onTogglePublicado={handleTogglePublicado}
-              />
+            {filtrados.map((p, i) => (
+              <Fragment key={p.id_producto}>
+                <ProductCard
+                  p={p}
+                  esAdmin={esAdmin}
+                  onTogglePublicado={handleTogglePublicado}
+                />
+                {/* Video del inicio (Catálogo admin → Contenido del inicio),
+                    intercalado tras el 6º producto — solo en la vista sin
+                    filtros ni búsqueda, y solo si el Admin ya subió uno. */}
+                {i === POSICION_VIDEO - 1 && videoInicio && !hayFiltroActivo && vista === "grid" && (
+                  <div className="catalog-video-block">
+                    <video src={videoInicio} controls playsInline preload="metadata" />
+                  </div>
+                )}
+              </Fragment>
             ))}
           </div>
         )}

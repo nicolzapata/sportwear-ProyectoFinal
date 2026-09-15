@@ -13,6 +13,7 @@ import "./GestProductos.modals.css";
 import "./GestProductos.layout.css";
 import { PRODUCTOS_POR_PAGINA } from "../utils/catalogoAdminHelpers";
 import KpiGrid from "../components/catalogo-admin/KpiGrid";
+import InicioContenido from "../components/catalogo-admin/InicioContenido";
 import ChipsCategoria from "../components/catalogo-admin/ChipsCategoria";
 import FiltrosBar from "../components/catalogo-admin/FiltrosBar";
 import ProductoCard from "../components/catalogo-admin/ProductoCard";
@@ -156,6 +157,8 @@ export default function CatalogoAdmin() {
 
   return (
     <div className="catadmin-container">
+      <InicioContenido />
+
       <KpiGrid kpis={kpis} />
 
       <ChipsCategoria

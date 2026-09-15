@@ -24,6 +24,19 @@ const upload = multer({
   },
 });
 
+// ── Multer para el video del inicio (Catálogo admin) — mismo patrón que
+// `upload`, con sus propios mimetypes y un límite más alto acorde a un video. ──
+const uploadVideo = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 30 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['video/mp4', 'video/webm', 'video/quicktime'];
+    allowed.includes(file.mimetype)
+      ? cb(null, true)
+      : cb(new Error('Solo MP4, WEBM o MOV'), false);
+  },
+});
+
 // ── Helper: subir buffer a Cloudinary ────────────────────────
 const subirACloudinary = (buffer) =>
   new Promise((resolve, reject) => {
@@ -33,6 +46,20 @@ const subirACloudinary = (buffer) =>
         public_id:     `img_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
         resource_type: 'image',
         transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+      },
+      (error, result) => (error ? reject(error) : resolve(result))
+    );
+    stream.end(buffer);
+  });
+
+// ── Helper: subir buffer de video a Cloudinary ─────────────────
+const subirVideoACloudinary = (buffer) =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder:        'home',
+        public_id:     `video_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
+        resource_type: 'video',
       },
       (error, result) => (error ? reject(error) : resolve(result))
     );
@@ -187,14 +214,52 @@ router.patch('/:id/orden', verificarToken, soloAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// ── POST /api/imagenes/video  (admin) ──────────────────────────
+// Sube el video del inicio (Catálogo admin → Contenido del inicio). Es un
+// singleton por tipo_referencia/id_referencia: antes de insertar el nuevo,
+// borra el anterior (fila + recurso en Cloudinary) para que solo quede uno.
+router.post('/video', verificarToken, soloAdmin, uploadVideo.single('video'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No se recibió ningún video' });
+
+    const { tipo_referencia = 'HomeVideo', id_referencia = 1 } = req.body;
+    const idReferencia = parseInt(id_referencia);
+
+    const anteriores = await pool.query(
+      `SELECT * FROM "Imagenes" WHERE tipo_referencia = $1 AND id_referencia = $2`,
+      [tipo_referencia, idReferencia]
+    );
+    for (const anterior of anteriores.rows) {
+      await cloudinary.uploader.destroy(anterior.nombre_archivo, { resource_type: 'video' }).catch(() => {});
+    }
+    await pool.query(
+      `DELETE FROM "Imagenes" WHERE tipo_referencia = $1 AND id_referencia = $2`,
+      [tipo_referencia, idReferencia]
+    );
+
+    const resultado = await subirVideoACloudinary(req.file.buffer);
+    const ins = await pool.query(
+      `INSERT INTO "Imagenes"
+         (tipo_referencia, id_referencia, url, nombre_archivo,
+          tipo_mime, tamanio_bytes, orden, es_principal)
+       VALUES ($1,$2,$3,$4,$5,$6,1,true) RETURNING *`,
+      [tipo_referencia, idReferencia, resultado.secure_url, resultado.public_id, req.file.mimetype, req.file.size]
+    );
+    res.status(201).json(ins.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ── DELETE /api/imagenes/:id  (admin) ─────────────────────────
 router.delete('/:id', verificarToken, soloAdmin, async (req, res) => {
   try {
     const img = await pool.query(`SELECT * FROM "Imagenes" WHERE id_imagen = $1`, [req.params.id]);
     if (!img.rows.length) return res.status(404).json({ message: 'Imagen no encontrada' });
-    const { nombre_archivo, es_principal, tipo_referencia, id_referencia } = img.rows[0];
+    const { nombre_archivo, es_principal, tipo_referencia, id_referencia, tipo_mime } = img.rows[0];
 
-    await cloudinary.uploader.destroy(nombre_archivo);
+    const esVideo = (tipo_mime || '').startsWith('video/');
+    await cloudinary.uploader.destroy(nombre_archivo, esVideo ? { resource_type: 'video' } : undefined);
     await pool.query(`DELETE FROM "Imagenes" WHERE id_imagen = $1`, [req.params.id]);
 
     if (es_principal) {
