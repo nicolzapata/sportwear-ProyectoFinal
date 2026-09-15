@@ -1,5 +1,6 @@
 // src/pages/compras/Compras.jsx
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import api from "../../../shared/services/api";
 // Compras.css se dividió por sección para facilitar el mantenimiento; el
 // orden de los imports preserva la cascada del archivo original.
@@ -37,7 +38,8 @@ const OPCIONES_VISTA = [
 
 export default function Compras() {
   const c = useCompras();
-  const [vista, setVista] = useState(() => localStorage.getItem("sz_compras_vista") || "tarjetas");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [vista, setVista] = useState(() => searchParams.get('ver') ? "tabla" : (localStorage.getItem("sz_compras_vista") || "tarjetas"));
 
   // Al cambiar de vista se cierra cualquier panel de ver detalle/editar
   // abierto — evita pasar a la tabla con el panel acoplado todavía montado.
@@ -47,6 +49,22 @@ export default function Compras() {
     c.cerrarDetalle();
     c.setFilaAbierta(null);
   };
+
+  // ── Soporte de deep-link "?ver=ID" — lo usan las notificaciones (compra
+  // pendiente) para llevar directo al detalle de esa compra, no solo al
+  // módulo. abrirDetalle() no trae los datos por su cuenta (a diferencia de
+  // Pedidos/Ventas): necesita la fila completa, así que se busca primero.
+  // La vista ya se forzó a "tabla" al inicializar el estado (arriba) para
+  // que el efecto de "seleccionar la primera compra visible" de la vista
+  // "tarjetas" (más abajo) no la pise apenas cargue el listado. ──
+  useEffect(() => {
+    const verId = searchParams.get('ver');
+    if (verId) {
+      api.get(`/compras/${verId}`).then(({ data }) => c.abrirDetalle(data)).catch(() => {});
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Vista "lista + detalle": mantiene seleccionada la primera compra
   // visible de la página actual, igual que en Roles/Proveedores/Pedidos/Ventas.
@@ -117,7 +135,7 @@ export default function Compras() {
       </div>
 
       {vista === "tabla" ? (
-      <div className={c.verDetalle ? "compras-contenido-split" : "compras-contenido"}>
+      <div className="compras-contenido">
         <ComprasTable
           compras={c.compras} tienePerm={c.tienePerm}
           filaAbierta={c.filaAbierta} setFilaAbierta={c.setFilaAbierta}

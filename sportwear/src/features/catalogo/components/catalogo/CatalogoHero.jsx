@@ -57,7 +57,7 @@ export default function CatalogoHero() {
           <div
             key={f.id_imagen}
             className={`nov-hero-slide${i === idx ? " activa" : ""}`}
-            style={{ backgroundImage: `url(${f.url})` }}
+            style={{ backgroundImage: `url(${f.url})`, backgroundPosition: f.posicion_foco || "50% 25%" }}
             aria-hidden={i !== idx}
           />
         ))}

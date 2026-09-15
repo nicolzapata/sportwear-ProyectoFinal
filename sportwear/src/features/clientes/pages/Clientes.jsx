@@ -39,7 +39,7 @@ export default function Clientes() {
                 { header: "Cliente", key: "nombre" },
                 { header: "Documento", value: (row) => `${row.tipo_doc} ${row.documento}` },
                 { header: "Teléfono", value: (row) => row.telefono || "—" },
-                { header: "Barrio", value: (row) => (row.barrio_nombre ? `${row.barrio_nombre} (${row.zona})` : "—") },
+                { header: "Barrio", value: (row) => row.barrio_nombre || "—" },
                 { header: "Compras", value: (row) => row.total_compras || 0 },
                 { header: "Total gastado", value: (row) => `$${Number(row.total_gastado || 0).toLocaleString("es-CO")}` },
                 ...(c.tienePerm('Clientes.estado') ? [{ header: "Estado", key: "estado" }] : []),
@@ -73,7 +73,7 @@ export default function Clientes() {
           labelGuardar={c.editar ? "Actualizar" : "Registrar"}
         >
           <PasoDatosCliente form={c.form} setForm={c.setForm} errores={c.errores} setErrores={c.setErrores} editar={c.editar} verificarDocumentoDuplicado={c.verificarDocumentoDuplicado} verificarEmailDuplicado={c.verificarEmailDuplicado} />
-          <PasoUbicacionCliente form={c.form} setForm={c.setForm} zonas={c.zonas} barFiltrados={c.barFiltrados} handleZona={c.handleZona} />
+          <PasoUbicacionCliente form={c.form} setForm={c.setForm} barFiltrados={c.barFiltrados} />
           <PasoClasificacionCliente form={c.form} setForm={c.setForm} errores={c.errores} setErrores={c.setErrores} editar={c.editar} />
         </ModalSteps>
       )}

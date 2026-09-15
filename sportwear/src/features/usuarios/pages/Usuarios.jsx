@@ -152,7 +152,7 @@ export default function Usuarios() {
       </div>
 
       {vista === 'tabla' ? (
-        <div className={panelAbierto ? "usuarios-contenido-split" : "usuarios-contenido"}>
+        <div className="usuarios-contenido">
           <div className="tbl-frame">
             <div className="tbl-container">
               <table className="tbl">

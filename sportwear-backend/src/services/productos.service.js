@@ -6,7 +6,7 @@ const getProductos = async (opciones = {}) => {
   const filtros = typeof opciones === 'string' || opciones === undefined
     ? { publicado: opciones }
     : opciones;
-  const { publicado, id_categoria, id, q, precio_min, precio_max, talla, color, page, limit } = filtros;
+  const { publicado, id_categoria, id, q, precio_min, precio_max, talla, color, bajo_stock, page, limit } = filtros;
 
   const condiciones = [`p.estado != 'Eliminado'`];
   const params = [];
@@ -25,7 +25,7 @@ const getProductos = async (opciones = {}) => {
   }
   if (q) {
     params.push(`%${q}%`);
-    condiciones.push(`(p.nombre ILIKE $${params.length} OR p.codigo ILIKE $${params.length})`);
+    condiciones.push(`(p.nombre ILIKE $${params.length} OR p.codigo ILIKE $${params.length} OR c.nombre ILIKE $${params.length})`);
   }
   if (precio_min) {
     params.push(Number(precio_min));
@@ -42,6 +42,9 @@ const getProductos = async (opciones = {}) => {
   if (color) {
     params.push(color);
     condiciones.push(`EXISTS (SELECT 1 FROM "ProductoVariantes" v JOIN "Colores" col ON v.id_color=col.id_color WHERE v.id_producto=p.id_producto AND col.nombre=$${params.length})`);
+  }
+  if (bajo_stock === '1' || bajo_stock === 'true') {
+    condiciones.push(`COALESCE((SELECT SUM(v.stock) FROM "ProductoVariantes" v WHERE v.id_producto = p.id_producto AND v.estado = 'Activo'), 0) < 5`);
   }
 
   const whereClause = `WHERE ${condiciones.join(' AND ')}`;

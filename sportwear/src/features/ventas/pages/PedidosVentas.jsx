@@ -2,6 +2,7 @@
 // PedidosVentas.css se dividió por sección para facilitar el mantenimiento;
 // el orden de los imports preserva la cascada del archivo original.
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import './PedidosVentas.layout.css';
 import './PedidosVentas.modals.css';
 import './PedidosVentas.form.css';
@@ -41,7 +42,40 @@ const OPCIONES_VISTA = [
 
 export default function PedidosVentas() {
   const v = usePedidosVentas();
-  const [vista, setVista] = useState(() => localStorage.getItem("sz_ventas_vista") || "tarjetas");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [vista, setVista] = useState(() => searchParams.get('ver') ? "tabla" : (localStorage.getItem("sz_ventas_vista") || "tarjetas"));
+
+  // ── Soporte de deep-link "?ver=ID" — lo usan las notificaciones (venta
+  // pendiente de pago) para llevar directo al detalle de esa venta, no solo
+  // al módulo. Se fuerza la vista a "tabla" (arriba) para que el efecto de
+  // "seleccionar la primera venta visible" de la vista "tarjetas" (más abajo)
+  // no la pise apenas cargue el listado. abrirDetalle() preserva el
+  // total_pagado/estado que se le pasen (no los recalcula, asume que ya
+  // vienen del listado) — como acá no venimos del listado, se calculan
+  // primero con el mismo criterio que useVentasListado.cargar: suma de
+  // abonos Confirmado vs. el total. ──
+  useEffect(() => {
+    const verId = searchParams.get('ver');
+    if (!verId) return;
+    const idVenta = Number(verId);
+    (async () => {
+      try {
+        const [{ data: venta }, { data: pagos }] = await Promise.all([
+          api.get(`/ventas/${idVenta}`),
+          api.get(`/ventas/${idVenta}/pagos`).catch(() => ({ data: [] })),
+        ]);
+        const totalPagado = (pagos || []).reduce(
+          (suma, p) => suma + (p.estado === 'Confirmado' ? Number(p.monto || 0) : 0), 0
+        );
+        const estado = venta.estado === 'Anulado' ? 'Anulado' : (totalPagado >= venta.total ? 'Pagado' : 'Pendiente');
+        v.abrirDetalle({ id_venta: idVenta, total_pagado: totalPagado, estado });
+      } catch {
+        // si falla, el usuario simplemente se queda en el listado del módulo
+      }
+    })();
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Al cambiar de vista se cierra cualquier panel de ver detalle abierto —
   // evita pasar a la tabla con el panel acoplado de tarjetas todavía montado.
@@ -129,7 +163,7 @@ export default function PedidosVentas() {
       </div>
 
       {vista === "tabla" ? (
-        <div className={v.verDetalle ? "pedidosventas-contenido-split" : "pedidosventas-contenido"}>
+        <div className="pedidosventas-contenido">
           <VentasTable
             datos={v.datos} cargando={v.cargando} tienePerm={v.tienePerm}
             filaAbierta={v.filaAbierta} setFilaAbierta={v.setFilaAbierta}

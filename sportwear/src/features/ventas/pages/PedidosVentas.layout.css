@@ -35,6 +35,7 @@
 /* Actions Bar */
 .pedidosventas-actions-bar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
@@ -43,15 +44,16 @@
 
 .pedidosventas-actions-left {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
   min-width: 0;
 }
 .pedidosventas-actions-right {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
-  flex-shrink: 0;
 }
 
 .print-button-container { display: none; }
@@ -59,6 +61,7 @@
 .pedidosventas-search-wrapper {
   position: relative;
   width: 320px;
+  max-width: 100%;
   flex-shrink: 0;
 }
 

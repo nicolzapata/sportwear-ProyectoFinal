@@ -201,6 +201,23 @@ router.patch('/:id/principal', verificarToken, soloAdmin, async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
+// ── PATCH /api/imagenes/:id/posicion  (admin) ─────────────────
+// Ajusta qué parte de la foto se ve cuando se recorta como fondo (hero del
+// inicio) — background-position en formato "X% Y%".
+router.patch('/:id/posicion', verificarToken, soloAdmin, async (req, res) => {
+  try {
+    const { posicion_foco } = req.body;
+    if (!/^\d{1,3}% \d{1,3}%$/.test(posicion_foco || ''))
+      return res.status(400).json({ message: 'posicion_foco debe tener el formato "X% Y%"' });
+    const result = await pool.query(
+      `UPDATE "Imagenes" SET posicion_foco = $1 WHERE id_imagen = $2 RETURNING *`,
+      [posicion_foco, req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ message: 'Imagen no encontrada' });
+    res.json(result.rows[0]);
+  } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 // ── PATCH /api/imagenes/:id/orden  (admin) ────────────────────
 router.patch('/:id/orden', verificarToken, soloAdmin, async (req, res) => {
   try {
@@ -212,6 +229,43 @@ router.patch('/:id/orden', verificarToken, soloAdmin, async (req, res) => {
     if (!result.rows.length) return res.status(404).json({ message: 'Imagen no encontrada' });
     res.json(result.rows[0]);
   } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// ── POST /api/imagenes/video-foto  (admin) ────────────────────
+// Sube la foto que se muestra al lado del video del inicio (para que el
+// video no quede solo/flotando cuando es vertical). Es un singleton, mismo
+// criterio que /video: borra la anterior (fila + Cloudinary) antes de subir.
+router.post('/video-foto', verificarToken, soloAdmin, upload.single('imagen'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No se recibió ninguna imagen' });
+
+    const idReferencia = parseInt(req.body.id_referencia) || 1;
+    const tipoReferencia = 'HomeVideoFoto';
+
+    const anteriores = await pool.query(
+      `SELECT * FROM "Imagenes" WHERE tipo_referencia = $1 AND id_referencia = $2`,
+      [tipoReferencia, idReferencia]
+    );
+    for (const anterior of anteriores.rows) {
+      await cloudinary.uploader.destroy(anterior.nombre_archivo).catch(() => {});
+    }
+    await pool.query(
+      `DELETE FROM "Imagenes" WHERE tipo_referencia = $1 AND id_referencia = $2`,
+      [tipoReferencia, idReferencia]
+    );
+
+    const resultado = await subirACloudinary(req.file.buffer);
+    const ins = await pool.query(
+      `INSERT INTO "Imagenes"
+         (tipo_referencia, id_referencia, url, nombre_archivo,
+          tipo_mime, tamanio_bytes, orden, es_principal)
+       VALUES ($1,$2,$3,$4,$5,$6,1,true) RETURNING *`,
+      [tipoReferencia, idReferencia, resultado.secure_url, resultado.public_id, req.file.mimetype, req.file.size]
+    );
+    res.status(201).json(ins.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 // ── POST /api/imagenes/video  (admin) ──────────────────────────

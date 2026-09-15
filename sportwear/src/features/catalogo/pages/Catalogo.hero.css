@@ -408,6 +408,31 @@
   box-shadow: 0 12px 32px rgba(60,40,20,0.14);
 }
 
+/* ── Foto opcional al lado del video (Catálogo admin → Contenido del
+   inicio → "Agregar foto al lado") — llena el espacio vacío que deja un
+   video vertical solo, sin cambiar cómo se ve cuando no hay foto. ── */
+.catalog-video-media.con-foto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.catalog-video-media.con-foto video {
+  max-height: 55vh;
+}
+.catalog-video-foto {
+  max-width: 100%;
+  max-height: 55vh;
+  width: auto;
+  height: auto;
+  border-radius: var(--r);
+  display: block;
+  object-fit: cover;
+  box-shadow: 0 12px 32px rgba(60,40,20,0.14);
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .catalog-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }

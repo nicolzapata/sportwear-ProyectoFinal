@@ -1,6 +1,12 @@
 import { IconEdit, IconEye, IconTrash } from "../../../../shared/components/Icons";
 import { precioMostrado, agruparVariantesPorColor } from "../../utils/gestProductosHelpers.jsx";
 
+// Antes se cortaba en 2 puntos de color con un "+N" aunque la tarjeta tuviera
+// espacio de sobra — se sube el tope para que se aprovechen los ~220px de
+// ancho de la tarjeta (ver .gestproductos-grid en GestProductos.grid.css)
+// antes de recurrir al "+N".
+const MAX_COLORES_VISIBLES = 6;
+
 // ── Tarjeta de producto de la vista de tarjetas de "Productos" ────────────
 // Componente independiente del ProductoCard de CatalogoAdmin (esa vitrina es
 // de cara al público/otro flujo) — esta tarjeta es específica de la gestión
@@ -44,10 +50,10 @@ export default function ProductoCardGestion({ producto: p, tienePerm, abrirDetal
 
         <div className="gestproductos-card-variantes-row">
           <div className="gestproductos-card-colores">
-            {grupos.slice(0, 2).map(c => (
+            {grupos.slice(0, MAX_COLORES_VISIBLES).map(c => (
               <span key={c.id_color} className="gestproductos-card-color-dot" style={{ background: c.codigo_hex || "#ccc" }} title={c.nombre} />
             ))}
-            {grupos.length > 2 && <span className="gestproductos-card-color-mas">+{grupos.length - 2}</span>}
+            {grupos.length > MAX_COLORES_VISIBLES && <span className="gestproductos-card-color-mas">+{grupos.length - MAX_COLORES_VISIBLES}</span>}
             {grupos.length === 0 && <span className="gestproductos-card-sin-variantes">Sin colores</span>}
           </div>
           {tallasUnicas.length > 0 && (

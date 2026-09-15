@@ -12,6 +12,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 const INTERVALO_REFRESCO_MS = 2 * 60 * 1000;
 const CLAVE_VISTAS = (idUsuario) => `sz_notif_vistas_${idUsuario}`;
+const CLAVE_FECHAS_STOCK = (idUsuario) => `sz_notif_fechas_stock_${idUsuario}`;
 
 function leerVistas(idUsuario) {
   try {
@@ -30,6 +31,28 @@ function guardarVistas(idUsuario, set) {
   }
 }
 
+// El stock bajo no es un evento con fecha propia (es un estado actual), pero
+// tampoco debe mostrar siempre "justo ahora": se persiste en localStorage la
+// fecha en que se detectó por primera vez cada alerta, y se reutiliza en las
+// cargas siguientes — solo se reinicia si el producto se repone y vuelve a
+// bajar de stock más adelante (ver cargarNotificacionesInventario).
+function leerFechasStock(idUsuario) {
+  try {
+    const guardado = localStorage.getItem(CLAVE_FECHAS_STOCK(idUsuario));
+    return guardado ? JSON.parse(guardado) : {};
+  } catch {
+    return {};
+  }
+}
+
+function guardarFechasStock(idUsuario, mapa) {
+  try {
+    localStorage.setItem(CLAVE_FECHAS_STOCK(idUsuario), JSON.stringify(mapa));
+  } catch {
+    // localStorage no disponible — no es crítico, solo se pierde la persistencia de fechas
+  }
+}
+
 const normalizar = (valor) =>
   valor?.toString?.().normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
 
@@ -43,15 +66,14 @@ function tieneModulo(usuario, nombreModulo) {
 const formatoMoneda = (valor) =>
   Number(valor || 0).toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 });
 
-async function cargarNotificacionesInventario(usuario) {
+async function cargarNotificacionesInventario(usuario, idUsuario) {
   if (!tieneModulo(usuario, "Productos")) return [];
   const { data } = await api.get("/dashboard");
   const resultado = [];
 
-  // El stock bajo es un estado actual (no un evento con fecha propia), así
-  // que la "fecha" que se muestra es la del momento en que se detectó —
-  // igual a como un dashboard reporta "actualizado justo ahora".
-  const ahora = new Date().toISOString();
+  const fechasGuardadas = leerFechasStock(idUsuario);
+  const fechasActualizadas = {};
+
   const porProducto = new Map();
   (data?.productosBajoStock || []).forEach((variante) => {
     if (!porProducto.has(variante.id_producto)) {
@@ -61,22 +83,34 @@ async function cargarNotificacionesInventario(usuario) {
   });
 
   porProducto.forEach((producto, idProducto) => {
+    const id = `stock-${idProducto}`;
+    // Se conserva la fecha en que se detectó por primera vez el stock bajo
+    // de este producto — si ya estaba guardada de una carga anterior, se
+    // reutiliza; solo se pone "ahora" la primera vez que aparece.
+    const fecha = fechasGuardadas[id] || new Date().toISOString();
+    fechasActualizadas[id] = fecha;
+
     const peor = producto.variantes.reduce(
       (min, v) => (Number(v.stock) < Number(min.stock) ? v : min),
       producto.variantes[0]
     );
     resultado.push({
-      id: `stock-${idProducto}`,
+      id,
       categoria: "inventario",
       titulo: `Stock bajo · ${producto.nombre}`,
       detalle: producto.variantes.length > 1
         ? `${producto.variantes.length} variantes con poco stock (mínimo ${peor.stock} en talla ${peor.talla || "-"})`
         : `Talla ${peor.talla || "-"} · ${peor.color || "-"} · quedan ${peor.stock}`,
-      enlace: "/productos",
+      enlace: `/productos?ver=${idProducto}`,
       urgente: Number(peor.stock) <= 2,
-      fecha: ahora,
+      fecha,
     });
   });
+
+  // Se reemplaza el mapa completo (no se mezcla con el guardado): así, si un
+  // producto se repone y desaparece de la lista, la próxima vez que vuelva a
+  // bajar de stock se cuenta como una alerta nueva, no la de hace semanas.
+  guardarFechasStock(idUsuario, fechasActualizadas);
 
   return resultado;
 }
@@ -90,7 +124,7 @@ async function cargarNotificacionesVentasPendientes(usuario) {
     categoria: "ventas",
     titulo: `Venta #${venta.id_venta} pendiente de pago`,
     detalle: `${venta.cliente || "Cliente"} · ${formatoMoneda(venta.total)}`,
-    enlace: "/ventas",
+    enlace: `/ventas?ver=${venta.id_venta}`,
     urgente: false,
     fecha: venta.fecha || null,
   }));
@@ -104,7 +138,7 @@ async function cargarNotificacionesPedidos() {
     categoria: "pedidos",
     titulo: `Pedido #${pedido.id_pedido} por preparar`,
     detalle: `${pedido.cliente || "Cliente"} · ${formatoMoneda(pedido.total)}`,
-    enlace: "/pedidos",
+    enlace: `/pedidos?ver=${pedido.id_pedido}`,
     urgente: true,
     fecha: pedido.fecha_actualizacion || null,
   }));
@@ -121,7 +155,7 @@ async function cargarNotificacionesCompras() {
       categoria: "compras",
       titulo: `Compra #${compra.id_compra} pendiente`,
       detalle: `${compra.proveedor || compra.nombre_comercial || "Proveedor"} · ${formatoMoneda(compra.total)}`,
-      enlace: "/compras",
+      enlace: `/compras?ver=${compra.id_compra}`,
       urgente: false,
       fecha: compra.fecha || null,
     }));
@@ -145,7 +179,7 @@ export default function useNotificaciones() {
     const tareas = [];
 
     if (tieneModulo(usuario, "Dashboard")) {
-      tareas.push(cargarNotificacionesInventario(usuario).catch(() => []));
+      tareas.push(cargarNotificacionesInventario(usuario, idUsuario).catch(() => []));
     }
     if (tieneModulo(usuario, "Ventas")) {
       tareas.push(cargarNotificacionesVentasPendientes(usuario).catch(() => []));
@@ -160,7 +194,7 @@ export default function useNotificaciones() {
     const resultados = await Promise.all(tareas);
     setItems(resultados.flat());
     setLoading(false);
-  }, [usuario]);
+  }, [usuario, idUsuario]);
 
   // Al cambiar de usuario (login/logout), recupera las notificaciones que
   // esa cuenta ya había marcado como vistas en una sesión anterior.

@@ -312,7 +312,7 @@ export default function Proveedores() {
       </div>
 
       {vista === "tabla" ? (
-        <div className={panelAbierto ? "proveedores-contenido-split" : "proveedores-contenido"}>
+        <div className="proveedores-contenido">
           <ProveedoresTable
             datos={filtrados} tienePerm={tienePerm} toggleEstado={toggleEstado}
             setVerDetalle={setVerDetalle} abrirEditar={abrirEditar}

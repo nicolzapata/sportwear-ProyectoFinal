@@ -364,13 +364,15 @@
   color: var(--dvna-muted);
   margin: 0 0 1rem;
 }
+/* ── Apiladas, no una junto a la otra: la tarjeta de fotos (varias
+   miniaturas + vista previa ancha) y la del video (una sola caja 16:7)
+   tienen formas muy distintas — en columnas lado a lado quedaban
+   desbalanceadas (una mucho más alta que la otra). Cada una ocupa su ancho
+   completo, una debajo de la otra. ── */
 .catadmin-inicio-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1.4rem;
-}
-@media (max-width: 760px) {
-  .catadmin-inicio-grid { grid-template-columns: 1fr; }
 }
 .catadmin-inicio-card h3 {
   font-size: 0.85rem;
@@ -399,7 +401,10 @@
   border: 2px solid transparent;
 }
 .catadmin-inicio-foto.es-principal { border-color: var(--brown); }
+.catadmin-inicio-foto.seleccionada { border-color: var(--dvna-circle); box-shadow: 0 0 0 2px rgba(180,151,128,0.35); }
 .catadmin-inicio-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.catadmin-inicio-foto { cursor: pointer; }
+
 .catadmin-inicio-foto-acciones {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -417,6 +422,34 @@
 .catadmin-inicio-foto-acciones button:not(:disabled):hover { color: var(--danger); }
 .catadmin-inicio-foto.es-principal .catadmin-inicio-foto-acciones button:first-child { color: var(--brown); }
 
+/* ── Vista previa en vivo del hero — mismas proporciones que el hero real
+   (Catalogo.hero.css .nov-hero), para que el encuadre que se ve acá sea
+   igual de verdad al del catálogo público, sin tener que ir a comprobarlo. ── */
+.catadmin-inicio-preview-wrap { margin-top: 14px; }
+.catadmin-inicio-preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/6;
+  border-radius: 12px;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border: 1px solid var(--dvna-border);
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+.catadmin-inicio-preview:active { cursor: grabbing; }
+.catadmin-inicio-preview-punto {
+  position: absolute;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--brown);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.3);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
 .catadmin-inicio-agregar {
   aspect-ratio: 3/4;
   border-radius: 10px;
@@ -432,11 +465,32 @@
 .catadmin-inicio-agregar:hover { border-color: var(--brown); color: var(--brown); }
 .catadmin-inicio-agregar-video { aspect-ratio: 16/7; width: 100%; }
 
-.catadmin-inicio-video video {
+/* ── Video + foto lado a lado: así un video vertical no queda solo en medio
+   de una franja vacía (ver .catalog-video-foto-block en el catálogo
+   público). Cada columna usa 3/4 (retrato) en vez del 16/7 de cuando el
+   video iba solo a todo el ancho. ── */
+.catadmin-inicio-video-foto-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.catadmin-inicio-video-foto-col {
+  flex: 1 1 200px;
+  min-width: 160px;
+}
+.catadmin-inicio-video-foto-col .catadmin-inicio-video video,
+.catadmin-inicio-video-foto-col .catadmin-inicio-video img,
+.catadmin-inicio-video-foto-col .catadmin-inicio-agregar-video {
+  aspect-ratio: 3/4;
+}
+
+.catadmin-inicio-video video,
+.catadmin-inicio-video img {
   width: 100%;
   aspect-ratio: 16/7;
   border-radius: 10px;
   background: var(--sw-secondary);
+  object-fit: cover;
   display: block;
 }
 .catadmin-inicio-video-acciones {

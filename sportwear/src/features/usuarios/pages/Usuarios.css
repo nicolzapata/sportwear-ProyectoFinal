@@ -16,37 +16,27 @@
   gap: 1rem;
 }
 
-/* ── Contenido: tabla sola, o tabla + panel de ver/editar acoplado al lado
-   (igual que Roles) — el panel nunca flota encima, empuja la tabla. ── */
+/* ── Contenido: tabla siempre a ancho completo; el panel de ver/editar se
+   muestra como ventana sobrepuesta (overlay), no al lado de la tabla. ── */
 .usuarios-contenido { width: 100%; }
-.usuarios-contenido-split {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
-  gap: 20px;
-  align-items: start;
-}
-/* mismo margin-top que .tbl-frame (index.css) para que el panel quede
-   alineado con el borde superior de la tabla, no más arriba. */
-.usuarios-panel-columna { min-width: 0; margin-top: 18px; }
 
-/* ── CORREGIDO: con el panel abierto la tabla queda angosta y SÍ necesita
-   scroll horizontal para las columnas que no caben — pero .tbl-container
-   (index.css) usa "margin: 0 -22px; padding: 0 22px" para que su marco
-   redondeado quede a ras del borde en la vista de tabla sola. Ese truco
-   infla el ancho propio de .tbl-container 44px más de lo que en verdad se
-   ve (el sobrante lo recorta .tbl-frame con overflow:hidden) — el navegador
-   compara el ancho del contenido contra ese ancho inflado, no contra el
-   visible, así que a veces concluye "no hace falta scroll" aunque haya
-   columnas tapadas. Con el panel abierto ya no hace falta ese bleed (no
-   hay nada más a los lados con lo que alinear el marco), así que se anula
-   acá y la comparación vuelve a ser exacta. ── */
-.usuarios-contenido-split .tbl-container {
-  margin: 0;
-  padding: 0;
+/* Overlay de pantalla completa que centra el panel de ver/editar por
+   encima de la tabla, en vez de empujarla hacia un lado. */
+.usuarios-panel-columna {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
 }
-
-@media (max-width: 900px) {
-  .usuarios-contenido-split { grid-template-columns: 1fr; }
+.usuarios-panel-columna > * {
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .usuarios-actions-left {

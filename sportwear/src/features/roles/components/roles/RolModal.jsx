@@ -5,6 +5,33 @@ import { MODULOS_FALLBACK, validarNombreRol, labelAccion } from "../../utils/rol
 
 export default function RolModal({ titulo, form, setForm, errores, setErrores, modulosDisponibles, permisosCatalogo, onClose, onGuardar, labelGuardar }) {
 
+  const modulosParaMostrar = modulosDisponibles.length > 0 ? modulosDisponibles : MODULOS_FALLBACK;
+
+  const idsDeModulo = (modulo) => (permisosCatalogo[modulo] || []).map(a => a.id_permiso);
+  const idsDeTodosLosModulos = modulosParaMostrar.flatMap(idsDeModulo);
+
+  // "Seleccionar todo" (global) y "Todo" por módulo son toggles: si ya están
+  // todos activos, el mismo botón los quita — no hace falta un botón aparte
+  // para deseleccionar.
+  const marcarPermisos = (ids, activar) => {
+    setForm(prev => ({
+      ...prev,
+      permisos: activar
+        ? [...new Set([...prev.permisos, ...ids])]
+        : prev.permisos.filter(p => !ids.includes(p)),
+    }));
+    if (errores.permisos) setErrores(prev => ({ ...prev, permisos: '' }));
+  };
+
+  const todosActivos = idsDeTodosLosModulos.length > 0 && idsDeTodosLosModulos.every(id => form.permisos.includes(id));
+  const toggleSeleccionarTodo = () => marcarPermisos(idsDeTodosLosModulos, !todosActivos);
+
+  const moduloEstaCompleto = (modulo) => {
+    const ids = idsDeModulo(modulo);
+    return ids.length > 0 && ids.every(id => form.permisos.includes(id));
+  };
+  const toggleSeleccionarModulo = (modulo) => marcarPermisos(idsDeModulo(modulo), !moduloEstaCompleto(modulo));
+
   const togglePermiso = (id_permiso, modulo, accion) => {
     const ya = form.permisos.includes(id_permiso);
     const accionesDelModulo = permisosCatalogo[modulo] || [];
@@ -58,7 +85,12 @@ export default function RolModal({ titulo, form, setForm, errores, setErrores, m
           </div>
 
           <div className="ms-form-group">
-            <label className="ms-form-label">Permisos del rol <span className="ms-req">*</span></label>
+            <div className="roles-permisos-label-row">
+              <label className="ms-form-label">Permisos del rol <span className="ms-req">*</span></label>
+              <button type="button" className="roles-btn-seleccionar-todo" onClick={toggleSeleccionarTodo}>
+                {todosActivos ? 'Quitar todo' : 'Seleccionar todo'}
+              </button>
+            </div>
             <p className="ms-form-hint">Selecciona los módulos y acciones. Al elegir cualquier acción, "ver" se activa automáticamente.</p>
             <div className={`roles-permisos-table-wrap${errores.permisos ? ' error' : ''}`}>
               <table className="roles-permisos-table">
@@ -66,13 +98,23 @@ export default function RolModal({ titulo, form, setForm, errores, setErrores, m
                   <tr><th>Módulo</th><th>Acciones</th></tr>
                 </thead>
                 <tbody>
-                  {(modulosDisponibles.length > 0 ? modulosDisponibles : MODULOS_FALLBACK).map((modulo, idx) => {
+                  {modulosParaMostrar.map((modulo, idx) => {
                     const accionesDelModulo = permisosCatalogo[modulo] || [];
+                    const completo = moduloEstaCompleto(modulo);
                     return (
                       <tr key={modulo} className={idx % 2 === 0 ? '' : 'roles-tr-alt'}>
                         <td className="roles-td-modulo">{modulo}</td>
                         <td className="roles-td-acciones">
                           <div className="roles-chips-wrap">
+                            {accionesDelModulo.length > 0 && (
+                              <button type="button"
+                                className={`roles-permiso-chip roles-permiso-chip-todo${completo ? ' selected' : ''}`}
+                                onClick={() => toggleSeleccionarModulo(modulo)}
+                                title={completo ? 'Quitar todas las acciones de este módulo' : 'Seleccionar todas las acciones de este módulo'}
+                              >
+                                Todo
+                              </button>
+                            )}
                             {accionesDelModulo.map(accion => {
                               const otrasActivas = accion.accion === 'ver' && accionesDelModulo.some(
                                 a => a.accion !== 'ver' && form.permisos.includes(a.id_permiso)

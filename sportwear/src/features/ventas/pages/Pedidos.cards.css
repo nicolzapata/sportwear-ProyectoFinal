@@ -32,29 +32,25 @@
 .ped-filter-btn:hover { border-color: var(--dvna-circle); color: var(--dvna-charcoal); }
 .ped-filter-btn.active { background: var(--dvna-circle); border-color: var(--dvna-circle); color: var(--sw-secondary); }
 
-/* ── Tabla + panel acoplado (vista "tabla") ── */
+/* ── Tabla siempre a ancho completo (vista "tabla"); ver/editar se muestra
+   como ventana sobrepuesta (overlay), no al lado de la tabla. ── */
 .pedidos-contenido { width: 100%; }
-.pedidos-contenido-split {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
-  gap: 20px;
-  align-items: start;
+
+.pedidos-panel-columna {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
 }
-.pedidos-panel-columna { min-width: 0; margin-top: 18px; }
-.pedidos-contenido-split .tbl-container { margin: 0; padding: 0; }
-/* ── CORREGIDO: esta tabla usa table-layout:fixed + width:100% a propósito
-   (ver el comentario en Pedidos.css) para que en la vista completa nunca
-   necesite scroll — las columnas se ajustan y el texto se trunca con
-   ellipsis. Pero eso significa que la tabla NUNCA puede desbordar, así que
-   con el panel abierto (mucho menos ancho disponible) las columnas no
-   truncan con gracia: se aplastan todas a la vez y se ve amontonado. Acá,
-   solo mientras el panel está abierto, se vuelve a auto-layout con un
-   ancho mínimo — así la tabla mantiene un tamaño legible y lo que no cabe
-   se resuelve con scroll horizontal, no aplastando columnas. ── */
-.pedidos-contenido-split .pedidos-tbl-container table.tbl {
-  table-layout: auto;
-  width: max-content;
-  min-width: 100%;
+.pedidos-panel-columna > * {
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 /* ════════════════════════════════
@@ -277,5 +273,4 @@
 
 @media (max-width: 900px) {
   .ped-lista-detalle { grid-template-columns: 1fr; }
-  .pedidos-contenido-split { grid-template-columns: 1fr; }
 }

@@ -1,5 +1,6 @@
 // src/pages/pedidos/Pedidos.jsx
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import './Pedidos.css';
 import './Pedidos.cards.css';
 import api from "../../../shared/services/api";
@@ -54,7 +55,8 @@ export default function Pedidos() {
   // ── NUEVO: filtro por estado de envío — "" = Todos ──
   const [filtroEstado, setFiltroEstado] = useState("");
   const [pagina,     setPagina]     = useState(1);
-  const [vista,      setVista]      = useState(() => localStorage.getItem("sz_pedidos_vista") || "tarjetas");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [vista,      setVista]      = useState(() => searchParams.get('ver') ? "tabla" : (localStorage.getItem("sz_pedidos_vista") || "tarjetas"));
   const [verDetalle, setVerDetalle] = useState(null);
   const [pedidoSeleccionadoId, setPedidoSeleccionadoId] = useState(null);
   const [cargandoDetalle, setCargandoDetalle] = useState(false);
@@ -182,6 +184,20 @@ export default function Pedidos() {
     setVerDetalle(null);
     setPedidoSeleccionadoId(null);
   };
+
+  // ── Soporte de deep-link "?ver=ID" — lo usan las notificaciones (pedido
+  // por preparar) para llevar directo al detalle de ese pedido, no solo al
+  // módulo. La vista ya se forzó a "tabla" al inicializar el estado (arriba)
+  // para que el efecto de "seleccionar el primer pedido visible" de la
+  // vista "tarjetas" (más abajo) no la pise apenas cargue el listado. ──
+  useEffect(() => {
+    const verId = searchParams.get('ver');
+    if (verId) {
+      abrirDetalle({ id_pedido: Number(verId) });
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Vista "lista + detalle": mantiene seleccionado el primer pedido visible
   // de la página actual, igual que en Roles/Proveedores.
@@ -379,7 +395,7 @@ export default function Pedidos() {
       </div>
 
       {vista === "tabla" ? (
-        <div className={(verDetalle || modalEditar) ? "pedidos-contenido-split" : "pedidos-contenido"}>
+        <div className="pedidos-contenido">
           <PedidosTable
             datos={datos}
             cargando={cargando}

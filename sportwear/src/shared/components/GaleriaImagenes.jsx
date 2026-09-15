@@ -101,10 +101,19 @@ export default function GaleriaImagenes({
   }, [coloresAPurgar]);
 
   // ── Helpers de color ───────────────────────────────────────────────────────
-  // Fuente de colores según el modo (conectado vs local)
-  const todosColores = coloresVariantes.length > 0
-    ? coloresVariantes
-    : coloresPendientes;
+  // Colores disponibles para asignar a una foto: los que ya tiene el producto
+  // guardado (coloresVariantes) MÁS los que se acaban de agregar en esta misma
+  // edición y todavía no se guardaron (coloresPendientes). Antes, si el
+  // producto ya tenía algún color guardado, se ignoraban por completo los
+  // pendientes — así, al editar un producto existente y agregarle un color
+  // nuevo, ese color nunca aparecía en el selector de la foto (solo pasaba en
+  // "nuevo producto", donde coloresVariantes siempre está vacío).
+  const todosColores = [
+    ...coloresVariantes,
+    ...coloresPendientes.filter(
+      cp => !coloresVariantes.some(cv => String(cv.id_color) === String(cp.id_color))
+    ),
+  ];
 
   const tieneColores = todosColores.length > 0;
 
@@ -151,16 +160,18 @@ export default function GaleriaImagenes({
   };
 
   // ── Subida de imágenes (común a ambos modos) ───────────────────────────────
-  // Con un solo color, se asigna automáticamente sin pedirle nada al usuario;
-  // con 2+ colores, se usa el que haya elegido en los chips (colorSubida).
-  const colorParaSubir = todosColores.length === 1 ? todosColores[0].id_color : colorSubida;
+  // El chip de color se muestra siempre (aun con un solo color) y es
+  // opcional: si el usuario elige uno, se usa ese; si no elige ninguno, la
+  // foto sube sin color forzado y la detección automática (más abajo) se
+  // encarga de asignarlo.
+  const colorParaSubir = colorSubida;
 
   // ── Detección automática de color: corre siempre que se sube una primera
   // foto, sin importar cuántos colores tenga ya el producto — así, al editar
   // un producto que ya tiene 2+ colores, subir la foto de un color nuevo
   // también dispara la sugerencia en vez de exigir elegir el color a mano
   // antes de poder subir. No bloquea la subida: corre en paralelo. ─────────
-  const detectarColorAutomatico = async (primerArchivo, colorExistente) => {
+  const detectarColorAutomatico = async (primerArchivo, colorExistente, elegidoManualmente = false) => {
     if (!onColoresDetectados || !primerArchivo.type?.startsWith("image/")) return;
     setDetectandoColor(true);
     try {
@@ -180,6 +191,15 @@ export default function GaleriaImagenes({
       if (mismoColorQueYaExiste) return;
 
       onColoresDetectados(todos, principales.map(c => c.id_color));
+
+      // ── CORREGIDO: si el usuario ya eligió el color a mano con los chips
+      // de "Color de las fotos a subir" antes de subir, esa elección queda
+      // firme — la IA solo la sugiere en Variantes, nunca la pisa. Antes se
+      // reasignaba igual con lo que detectara la IA (aun siendo distinto al
+      // que el usuario acababa de elegir a propósito), así que la foto podía
+      // quedar con un color que el usuario nunca escogió, obligándolo a
+      // corregirla a mano después de subida. ──
+      if (elegidoManualmente) return;
 
       // Con un solo color principal claro, se asigna directo a la foto que se
       // acaba de subir — no basta con sugerirlo en Variantes, la idea es que
@@ -207,7 +227,9 @@ export default function GaleriaImagenes({
   const procesarArchivos = (files) => {
     const listaArchivos = Array.from(files);
     if (listaArchivos[0]) {
-      detectarColorAutomatico(listaArchivos[0], todosColores.length === 1 ? todosColores[0] : null);
+      const colorElegidoManualmente = !!colorSubida;
+      const colorExistente = colorSubida ? { id_color: colorSubida } : null;
+      detectarColorAutomatico(listaArchivos[0], colorExistente, colorElegidoManualmente);
     }
 
     const nuevas = listaArchivos.map(file => ({

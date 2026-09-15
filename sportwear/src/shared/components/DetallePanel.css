@@ -1,7 +1,6 @@
-/* ── DetallePanel — panel acoplado (no flotante) que se muestra al lado de
-   una tabla, igual que el panel de detalle de Roles. Quien lo usa es
-   responsable de envolverlo en un contenedor de dos columnas (ver
-   .usuarios-contenido-split). ── */
+/* ── DetallePanel — se muestra dentro de una ventana sobrepuesta (overlay)
+   por encima de la tabla. Quien lo usa es responsable de envolverlo en un
+   contenedor overlay (ver .usuarios-panel-columna). ── */
 
 .detalle-panel {
   position: sticky;

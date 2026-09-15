@@ -48,15 +48,23 @@ export function useGestProductos() {
   });
   const coloresState = useColoresState({ busquedaDebounced, setModal, setLoading, mostrarToast, recargarTodo });
 
-  // ── Soporte de deep-link "?edit=ID" ── La tabla de productos se carga por
-  // el efecto de paginación de más abajo; las categorías completas para el
-  // <select> las pide abrirEditar/abrirRegistrar recién al abrir el modal,
-  // no hace falta pedirlas de entrada solo por visitar la pestaña.
+  // ── Soporte de deep-link "?edit=ID" / "?ver=ID" ── La tabla de productos
+  // se carga por el efecto de paginación de más abajo; las categorías
+  // completas para el <select> las pide abrirEditar/abrirRegistrar recién al
+  // abrir el modal, no hace falta pedirlas de entrada solo por visitar la
+  // pestaña. "?ver=" lo usan las notificaciones (p. ej. stock bajo) para
+  // llevar directo al detalle del producto en cuestión, no solo al módulo.
   useEffect(() => {
     const editId = searchParams.get('edit');
+    const verId = searchParams.get('ver');
     if (editId) {
       api.get('/productos', { params: { id: editId } }).then(({ data }) => {
         if (data && data[0]) productoFormulario.abrirEditar(data[0]);
+      }).finally(() => setSearchParams({}, { replace: true }));
+    } else if (verId) {
+      setTab('productos');
+      api.get('/productos', { params: { id: verId } }).then(({ data }) => {
+        if (data && data[0]) productosListado.abrirDetalle(data[0]);
       }).finally(() => setSearchParams({}, { replace: true }));
     }
     // eslint-disable-next-line
@@ -75,8 +83,19 @@ export function useGestProductos() {
     coloresState.setPaginaColores(1);
   }, [busquedaDebounced]);
 
+  // Al cambiar los filtros de categoría/bajo stock vuelve a la página 1 de "Productos".
+  useEffect(() => {
+    productosListado.setPaginaProductos(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productosListado.filtroCategoria, productosListado.filtroBajoStock]);
+
+  // Las categorías completas alimentan tanto el <select> del formulario como
+  // los chips de filtro de la vitrina de productos.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { if (tab === 'productos') productosListado.cargarProductos(productosListado.paginaProductos, busquedaDebounced); }, [tab, productosListado.paginaProductos, busquedaDebounced]);
+  useEffect(() => { categoriasState.cargarCategoriasCompletas(); }, []);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (tab === 'productos') productosListado.cargarProductos(productosListado.paginaProductos, busquedaDebounced); }, [tab, productosListado.paginaProductos, busquedaDebounced, productosListado.filtroCategoria, productosListado.filtroBajoStock]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (tab === 'categorias') categoriasState.cargarCategoriasPagina(categoriasState.paginaCategorias, busquedaDebounced); }, [tab, categoriasState.paginaCategorias, busquedaDebounced, categoriasState.ordenCategorias]);
   // La vitrina de "Colores" no pagina en servidor (ver useColoresState): se

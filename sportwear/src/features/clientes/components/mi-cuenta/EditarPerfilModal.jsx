@@ -8,7 +8,7 @@ import Select from "../../../../shared/components/Select";
 // NUEVO: también va por portal, mismo motivo que TodosPedidosModal. ──
 export default function EditarPerfilModal({
   form, setForm, errores, setErrores, guardando, onClose, onGuardar,
-  zonas, barFiltrados, handleZona, verificarEmailDuplicado,
+  barFiltrados, verificarEmailDuplicado,
 }) {
   return createPortal(
     <div className="mc-modal-overlay" onClick={() => !guardando && onClose()}>
@@ -122,21 +122,12 @@ export default function EditarPerfilModal({
             <label className="ms-form-label">Ciudad</label>
             <input className="ms-form-input" value="Medellín" disabled style={{ opacity: 0.55 }} />
           </div>
-          <div className="ms-form-row">
-            <div className="ms-form-group">
-              <label className="ms-form-label">Zona / Área</label>
-              <Select className="ms-form-select" onChange={(e) => handleZona(e.target.value)}>
-                <option value="">— Todas las zonas —</option>
-                {zonas.map((z) => <option key={z} value={z}>{z}</option>)}
-              </Select>
-            </div>
-            <div className="ms-form-group">
-              <label className="ms-form-label">Barrio</label>
-              <Select className="ms-form-select" value={form.id_barrio || ""} onChange={(e) => setForm({ ...form, id_barrio: Number(e.target.value) })}>
-                <option value="">— Seleccionar —</option>
-                {barFiltrados.map((b) => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
-              </Select>
-            </div>
+          <div className="ms-form-group">
+            <label className="ms-form-label">Barrio</label>
+            <Select className="ms-form-select" value={form.id_barrio || ""} onChange={(e) => setForm({ ...form, id_barrio: Number(e.target.value) })}>
+              <option value="">— Seleccionar —</option>
+              {barFiltrados.map((b) => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}
+            </Select>
           </div>
           <div className="ms-form-group">
             <label className="ms-form-label">Dirección completa</label>

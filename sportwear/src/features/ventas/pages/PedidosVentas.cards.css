@@ -4,24 +4,25 @@
    usando VentasTable + PedidosVentas.*.css, pero comparte el panel de
    detalle acoplado con esta vista. ── */
 
-/* ── Tabla + panel acoplado (vista "tabla") ── */
+/* ── Tabla siempre a ancho completo (vista "tabla"); el detalle se muestra
+   como ventana sobrepuesta (overlay), no al lado de la tabla. ── */
 .pedidosventas-contenido { width: 100%; }
-.pedidosventas-contenido-split {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
-  gap: 20px;
-  align-items: start;
+
+.pedidosventas-panel-columna {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
 }
-.pedidosventas-panel-columna { min-width: 0; margin-top: 18px; }
-.pedidosventas-contenido-split .tbl-container { margin: 0; padding: 0; }
-/* Misma corrección que Pedidos: table-layout:fixed nunca desborda, así que
-   con el panel abierto (mucho menos ancho) las columnas se aplastan en vez
-   de truncar con gracia. Con el panel abierto se vuelve a auto-layout con
-   un mínimo, así lo que no cabe se resuelve con scroll, no aplastando. */
-.pedidosventas-contenido-split .pedidosventas-tbl-container table.tbl {
-  table-layout: auto;
-  width: max-content;
-  min-width: 100%;
+.pedidosventas-panel-columna > * {
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 /* ════════════════════════════════
@@ -178,5 +179,4 @@
 
 @media (max-width: 900px) {
   .vta-lista-detalle { grid-template-columns: 1fr; }
-  .pedidosventas-contenido-split { grid-template-columns: 1fr; }
 }

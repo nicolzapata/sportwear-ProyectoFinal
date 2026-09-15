@@ -20,7 +20,7 @@ export default function ZonaSubida({
         </div>
       ) : (
         <>
-          {tieneColores && todosColores.length > 1 && (
+          {tieneColores && (
             <div className="gi-upload-color-row">
               <span className="gi-upload-color-label">
                 <IconPalette /> Color de las fotos a subir <span className="gi-upload-color-opcional">(opcional — si no lo eliges, se detecta o lo asignas después)</span>

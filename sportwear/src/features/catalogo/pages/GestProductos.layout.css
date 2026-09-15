@@ -8,18 +8,63 @@
   font-family: var(--font-body);
 }
 
-/* ── Ver detalle de producto: panel acoplado a la tabla (mismo criterio que
-   Usuarios/Proveedores/Colores), no modal centrado. ── */
-.gestproductos-contenido-split {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
-  gap: 20px;
-  align-items: start;
+/* ── Filtros de la pestaña "Productos": categoría (chips) + bajo stock,
+   mismo criterio visual que CatalogoAdmin. ── */
+.gestproductos-filtros-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-bottom: 1rem;
 }
-.gestproductos-panel-columna { min-width: 0; margin-top: 18px; }
+.gestproductos-chips-row {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.gestproductos-chips-row::-webkit-scrollbar { height: 4px; }
+.gestproductos-chips-row::-webkit-scrollbar-thumb { background: var(--dvna-border); border-radius: 4px; }
+.gestproductos-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--dvna-border); background: var(--dvna-white); border-radius: 40px;
+  padding: 0.5rem 1rem; font-size: 0.8rem; font-weight: 500; color: var(--dvna-muted);
+  cursor: pointer; white-space: nowrap; transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+.gestproductos-chip:hover { border-color: var(--brown); color: var(--dvna-charcoal); }
+.gestproductos-chip.active { background: var(--brown); border-color: var(--brown); color: var(--sw-secondary); }
 
-@media (max-width: 900px) {
-  .gestproductos-contenido-split { grid-template-columns: 1fr; }
+.gestproductos-estado-tabs {
+  display: flex; gap: 2px; background: var(--dvna-pale); border-radius: 40px; padding: 3px; flex-shrink: 0;
+}
+.gestproductos-estado-tab {
+  border: none; background: none; padding: 0.5rem 0.9rem; border-radius: 40px;
+  font-size: 0.78rem; font-weight: 500; color: var(--dvna-muted); cursor: pointer; transition: all 0.15s ease;
+}
+.gestproductos-estado-tab.active { background: var(--brown); color: var(--sw-secondary); }
+.gestproductos-estado-tab:not(.active):hover { color: var(--dvna-charcoal); }
+
+/* ── Ver detalle de producto: la tabla ocupa todo el ancho; el panel se
+   muestra como ventana sobrepuesta (overlay), no al lado de la tabla. ── */
+.gestproductos-contenido { width: 100%; }
+
+.gestproductos-panel-columna {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 1000;
+}
+.gestproductos-panel-columna > * {
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 /* Red de seguridad: si la suma de columnas no cabe en el ancho disponible,
@@ -69,6 +114,7 @@
 /* Actions Bar */
 .gestproductos-actions-bar {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
@@ -77,6 +123,7 @@
 
 .gestproductos-actions-left {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
 }
@@ -84,6 +131,7 @@
 .gestproductos-search-wrapper {
   position: relative;
   width: 380px;
+  max-width: 100%;
 }
 
 .gestproductos-search-icon {
@@ -135,6 +183,7 @@
 
 .gestproductos-actions-right {
   display: flex;
+   flex-wrap: wrap;
    align-items: center;
    gap: 0.5rem;
  }

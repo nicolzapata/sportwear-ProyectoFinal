@@ -3,15 +3,11 @@ import { MAX_MONTO, MAX_LONGITUD_NOMBRE } from "../../../../shared/utils/numeric
 import GaleriaImagenes from "../../../../shared/components/GaleriaImagenes";
 import GestVariantes from "../GestVariantes";
 import Select from "../../../../shared/components/Select";
-import DetallePanel from "../../../../shared/components/DetallePanel";
-import { getInitials, getAvatarColor } from "../../../../shared/utils/texto";
 import { IconAlertTriangle, IconX } from "../../../../shared/components/Icons";
 import { IconPalette } from "../../../../shared/components/galeria-imagenes/icons";
 
-// variante="modal" (por defecto): overlay centrado, usado al crear un producto.
-// variante="panel": se acopla al lado de la tabla, usado al editar un
-// producto existente — mismos campos y validaciones, solo cambia el
-// cascarón visual (igual que ProveedorFormModal/UsuarioFormModal).
+// Un único cascarón (modal centrado) tanto para crear como para editar un
+// producto — así "Editar" se ve exactamente igual que "Nuevo producto".
 export default function ProductoFormModal({
   editar, productoId, cerrarModal,
   errores, setErrores, form, setForm, validarNombreProducto,
@@ -22,7 +18,7 @@ export default function ProductoFormModal({
   coloresAPurgarFotos, onFotosDeColorPurgadas,
   eliminarFotosDeColor, variantesVersion, setVariantesVersion,
   coloresPendientes,
-  guardar, guardando, variante = 'modal',
+  guardar, guardando,
 }) {
   // ── Sugerencia de colores detectados automáticamente en la primera foto
   // subida (ver GaleriaImagenes + colorDetection.js). Se reenvía a
@@ -151,7 +147,7 @@ export default function ProductoFormModal({
           </div>
 
           <div className="gestproductos-factura-seccion">
-            {editar && <h3 className="gestproductos-factura-titulo">02. Variantes</h3>}
+            <h3 className="gestproductos-factura-titulo">02. Variantes</h3>
             <GestVariantes
               idProducto={editar || productoId} estadoProducto={form.estado} onPendingChange={setPendingVariantes}
               coloresAPurgar={coloresAPurgar} onColoresPurgados={onColoresPurgados}
@@ -162,36 +158,22 @@ export default function ProductoFormModal({
           </div>
 
       <div className="gestproductos-factura-seccion">
-        {editar ? (
-          <>
-            <h3 className="gestproductos-factura-titulo">03. Imágenes</h3>
-            <div className="gestproductos-aviso-stock" style={{ marginBottom: 14 }}>
-              <IconPalette />
-              Sube una foto de la prenda y el sistema detectará su color automáticamente para sugerirlo en
-              Variantes, o si prefieres, elige tú mismo los colores desde ahí — cualquiera de las dos formas
-              queda igual de editable antes de guardar.
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="gestproductos-seccion-header">
-              <h3 className="gestproductos-factura-titulo">03. Galería de imágenes &amp; color IA</h3>
-              <span className="gestproductos-required-note">Mínimo 1 fotografía por variante para publicar</span>
-            </div>
-            <div className="gestproductos-asistente-ia">
-              <span className="gestproductos-asistente-icono"><IconPalette /></span>
-              <div className="gestproductos-asistente-texto">
-                <p className="gestproductos-asistente-titulo">
-                  Asistente inteligente cromático <span className="gestproductos-badge-ia">IA activa</span>
-                </p>
-                <p>
-                  Sube la fotografía de la prenda: el motor identificará los tonos dominantes sugiriendo
-                  automáticamente la variante de color vinculada, para optimizar los tiempos de carga en catálogo.
-                </p>
-              </div>
-            </div>
-          </>
-        )}
+        <div className="gestproductos-seccion-header">
+          <h3 className="gestproductos-factura-titulo">03. Galería de imágenes &amp; color IA</h3>
+          <span className="gestproductos-required-note">Mínimo 1 fotografía por variante para publicar</span>
+        </div>
+        <div className="gestproductos-asistente-ia">
+          <span className="gestproductos-asistente-icono"><IconPalette /></span>
+          <div className="gestproductos-asistente-texto">
+            <p className="gestproductos-asistente-titulo">
+              Asistente inteligente cromático <span className="gestproductos-badge-ia">IA activa</span>
+            </p>
+            <p>
+              Sube la fotografía de la prenda: el motor identificará los tonos dominantes sugiriendo
+              automáticamente la variante de color vinculada, para optimizar los tiempos de carga en catálogo.
+            </p>
+          </div>
+        </div>
         <GaleriaImagenes
           tipoReferencia="Producto" idReferencia={productoId} onPendingChange={setPendingImagenes} coloresPendientes={coloresPendientes}
           coloresAPurgar={coloresAPurgarFotos} onColoresPurgados={onFotosDeColorPurgadas}
@@ -201,28 +183,6 @@ export default function ProductoFormModal({
       </div>
     </>
   );
-
-  if (variante === 'panel') {
-    return (
-      <DetallePanel
-        iniciales={getInitials(form.nombre) || '?'}
-        avatarColor={getAvatarColor(editar)}
-        nombre={editar ? "Editar producto" : "Nuevo producto"}
-        subtitulo={form.nombre || undefined}
-        onClose={() => !guardando && cerrarModal()}
-        footer={
-          <>
-            <button className="detalle-panel-btn-secundario" onClick={cerrarModal} disabled={guardando}>Cancelar</button>
-            <button className="detalle-panel-btn-primario" onClick={guardar} disabled={guardando}>
-              {guardando ? "Guardando..." : (editar ? "Actualizar" : "Registrar")}
-            </button>
-          </>
-        }
-      >
-        {cuerpo}
-      </DetallePanel>
-    );
-  }
 
   return (
     <div className="gestproductos-modal-overlay" onClick={cerrarModal}>

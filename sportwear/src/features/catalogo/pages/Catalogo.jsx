@@ -63,6 +63,7 @@ export default function Catalogo() {
   const [filtroTalla,   setFiltroTalla]   = useState("");
   const [filtroColor,   setFiltroColor]   = useState("");
   const [videoInicio,   setVideoInicio]   = useState(null);
+  const [fotoVideoInicio, setFotoVideoInicio] = useState(null);
 
   const cargar = async () => {
     try {
@@ -105,6 +106,12 @@ export default function Catalogo() {
   useEffect(() => {
     api.get("/imagenes?tipo=HomeVideo&id=1")
       .then(({ data }) => setVideoInicio(data?.[0]?.url || null))
+      .catch(() => {});
+    // Foto que acompaña al video (Catálogo admin → Contenido del inicio) —
+    // opcional, para que un video vertical no quede solo en medio de una
+    // franja vacía.
+    api.get("/imagenes?tipo=HomeVideoFoto&id=1")
+      .then(({ data }) => setFotoVideoInicio(data?.[0]?.url || null))
       .catch(() => {});
   }, []);
 
@@ -223,7 +230,10 @@ export default function Catalogo() {
                 {i === posicionVideo - 1 && videoInicio && !hayFiltroActivo && vista === "grid" && (
                   <div className="catalog-video-block">
                     <p className="catalog-video-caption">Míranos en movimiento</p>
-                    <video src={videoInicio} controls playsInline preload="metadata" />
+                    <div className={`catalog-video-media${fotoVideoInicio ? " con-foto" : ""}`}>
+                      <video src={videoInicio} controls playsInline preload="metadata" />
+                      {fotoVideoInicio && <img src={fotoVideoInicio} alt="" className="catalog-video-foto" />}
+                    </div>
                   </div>
                 )}
               </Fragment>

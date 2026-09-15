@@ -2,6 +2,7 @@
 import ConfirmModal from "../../../shared/components/ConfirmModal";
 import Loader from "../../../shared/components/Loader";
 import GestProductosToolbar from "../components/gest-productos/GestProductosToolbar";
+import ProductosFiltros from "../components/gest-productos/ProductosFiltros";
 import ProductosTable from "../components/gest-productos/ProductosTable";
 import ProductosGrid from "../components/gest-productos/ProductosGrid";
 import CategoriasTable from "../components/gest-productos/CategoriasTable";
@@ -32,18 +33,24 @@ export default function GestProductos() {
 
   if (g.loading) return <Loader text="Cargando productos..." />;
 
-  // Editar un producto existente se resuelve en el panel acoplado a la tabla
-  // (no en el modal centrado, igual que Usuarios/Proveedores); crear uno
-  // nuevo sigue usando el modal.
-  const editandoExistente = g.modal && g.tab === 'productos' && !!g.editar;
-  const panelAbierto = g.tab === 'productos' && (g.verDetalle || editandoExistente);
+  // "Ver detalle" se muestra como ventana sobrepuesta sobre la tabla; crear
+  // y editar un producto comparten el mismo modal centrado (ver más abajo).
+  const panelAbierto = g.tab === 'productos' && !!g.verDetalle;
 
   return (
     <div className="gestproductos-container">
       <GestProductosToolbar g={g} />
 
+      {g.tab === 'productos' && (
+        <ProductosFiltros
+          categorias={g.categorias}
+          filtroCategoria={g.filtroCategoria} setFiltroCategoria={g.setFiltroCategoria}
+          filtroBajoStock={g.filtroBajoStock} setFiltroBajoStock={g.setFiltroBajoStock}
+        />
+      )}
+
       {g.tab === 'productos' ? (
-        <div className={panelAbierto ? "gestproductos-contenido-split" : "gestproductos-contenido"}>
+        <div className="gestproductos-contenido">
           {g.vistaGrid ? (
             <ProductosGrid
               datos={g.datos} tienePerm={g.tienePerm}
@@ -61,23 +68,7 @@ export default function GestProductos() {
           )}
           {panelAbierto && (
             <div className="gestproductos-panel-columna">
-              {editandoExistente ? (
-                <ProductoFormModal
-                  variante="panel"
-                  editar={g.editar} productoId={g.productoId} cerrarModal={g.cerrarModal}
-                  errores={g.errores} setErrores={g.setErrores} form={g.form} setForm={g.setForm} validarNombreProducto={g.validarNombreProducto}
-                  categorias={g.categorias} tienePerm={g.tienePerm}
-                  setPendingVariantes={g.setPendingVariantes}
-                  pendingImagenes={g.pendingImagenes} setPendingImagenes={g.setPendingImagenes}
-                  coloresAPurgar={g.coloresAPurgar} onColoresPurgados={g.onColoresPurgados}
-                  coloresAPurgarFotos={g.coloresAPurgarFotos} onFotosDeColorPurgadas={g.onFotosDeColorPurgadas}
-                  eliminarFotosDeColor={g.eliminarFotosDeColor} variantesVersion={g.variantesVersion} setVariantesVersion={g.setVariantesVersion}
-                  coloresPendientes={g.coloresPendientes}
-                  guardar={g.guardar} guardando={g.guardando}
-                />
-              ) : (
-                <ProductoDetalleModal verDetalle={g.verDetalle} setVerDetalle={g.setVerDetalle} tienePerm={g.tienePerm} abrirEditar={g.abrirEditar} />
-              )}
+              <ProductoDetalleModal verDetalle={g.verDetalle} setVerDetalle={g.setVerDetalle} tienePerm={g.tienePerm} abrirEditar={g.abrirEditar} />
             </div>
           )}
         </div>
@@ -95,9 +86,9 @@ export default function GestProductos() {
         />
       )}
 
-      {/* ── Modal centrado: solo para crear un producto nuevo — editar uno
-          existente siempre se resuelve en el panel acoplado (ver arriba). ── */}
-      {g.modal && g.tab === 'productos' && !g.editar && (
+      {/* ── Modal centrado — mismo cascarón tanto para crear como para editar
+          un producto, así "Editar" se ve igual que "Nuevo producto". ── */}
+      {g.modal && g.tab === 'productos' && (
         <ProductoFormModal
           editar={g.editar} productoId={g.productoId} cerrarModal={g.cerrarModal}
           errores={g.errores} setErrores={g.setErrores} form={g.form} setForm={g.setForm} validarNombreProducto={g.validarNombreProducto}

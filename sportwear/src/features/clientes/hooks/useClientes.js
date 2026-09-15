@@ -15,7 +15,6 @@ export function useClientes() {
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState(null);
   const [barrios,      setBarrios]      = useState([]);
-  const [zonas,        setZonas]        = useState([]);
   const [barFiltrados, setBarFiltrados] = useState([]);
   const [busqueda,     setBusqueda]     = useState("");
   const [busquedaDebounced, setBusquedaDebounced] = useState("");
@@ -76,13 +75,9 @@ export function useClientes() {
   };
 
   useEffect(() => {
-    Promise.all([
-      api.get("/barrios"),
-      api.get("/barrios/zonas")
-    ]).then(([barriosRes, zonasRes]) => {
+    api.get("/barrios").then((barriosRes) => {
       setBarrios(barriosRes.data);
       setBarFiltrados(barriosRes.data);
-      setZonas(zonasRes.data);
     }).catch((err) => {
       setError(err.response?.data?.message || "Error al cargar clientes");
     });
@@ -98,11 +93,6 @@ export function useClientes() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { cargarClientes(pagina, busquedaDebounced); }, [pagina, busquedaDebounced]);
-
-  const handleZona = (zona) => {
-    setBarFiltrados(zona ? barrios.filter(b => b.zona === zona) : barrios);
-    setForm(f => ({ ...f, id_barrio: "" }));
-  };
 
   const totalPaginas = Math.ceil(totalClientes / FILAS_POR_PAGINA) || 1;
 
@@ -188,12 +178,12 @@ export function useClientes() {
   };
 
   return {
-    tienePerm, datos, totalClientes, loading, error, barrios, zonas, barFiltrados,
+    tienePerm, datos, totalClientes, loading, error, barrios, barFiltrados,
     busqueda, setBusqueda, busquedaDebounced, pagina, setPagina,
     modal, setModal, pasoModal, setPasoModal, verDetalle, setVerDetalle,
     editar, form, setForm, errores, setErrores, toast,
     verificarDocumentoDuplicado, verificarEmailDuplicado,
-    handleZona, totalPaginas, abrirRegistrar, abrirEditar, guardar,
+    totalPaginas, abrirRegistrar, abrirEditar, guardar,
     validarPasoDatos, validarPasoUbicacion, validarPasoClasificacion, toggleEstado,
   };
 }

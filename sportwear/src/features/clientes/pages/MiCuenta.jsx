@@ -41,7 +41,6 @@ export default function MiCuenta() {
   const [guardando, setGuardando]           = useState(false);
   const [cargando, setCargando]             = useState(true);
   const [barrios, setBarrios]               = useState([]);
-  const [zonas, setZonas]                   = useState([]);
   const [barFiltrados, setBarFiltrados]     = useState([]);
   const [detallesPedidos, setDetallesPedidos] = useState({});
   const [pagoModal, setPagoModal]           = useState(null);
@@ -54,13 +53,12 @@ export default function MiCuenta() {
       api.get("/ventas/mis-pedidos").catch(() => ({ data: [] })),
       api.get("/clientes/mi-perfil").catch(() => ({ data: null })),
       api.get("/barrios").catch(() => ({ data: [] })),
-      api.get("/barrios/zonas").catch(() => ({ data: [] })),
       // ── NUEVO: se trae la lista de productos solo para armar el mapa de
       // fotos (id_producto -> imagen_principal) — este endpoint ya se sabe
       // que funciona bien en el resto del sitio, así que no hace falta tocar
       // el backend ni adivinar de dónde sale la imagen. ──
       api.get("/productos").catch(() => ({ data: [] })),
-    ]).then(([pedidosRes, perfilRes, barriosRes, zonasRes, productosRes]) => {
+    ]).then(([pedidosRes, perfilRes, barriosRes, productosRes]) => {
       const imagenPorProducto = {};
       (productosRes.data || []).forEach((p) => {
         if (p.imagen_principal) imagenPorProducto[p.id_producto] = p.imagen_principal;
@@ -106,15 +104,9 @@ export default function MiCuenta() {
       }
       setBarrios(barriosRes.data);
       setBarFiltrados(barriosRes.data);
-      setZonas(zonasRes.data);
       setCargando(false);
     });
   }, [usuario, navigate]);
-
-  const handleZona = (zona) => {
-    setBarFiltrados(zona ? barrios.filter((b) => b.zona === zona) : barrios);
-    setForm((f) => ({ ...f, id_barrio: "" }));
-  };
 
   // Para descartar la respuesta de /check-email si el usuario ya cambió
   // el campo mientras la verificación estaba en vuelo.
@@ -247,7 +239,7 @@ export default function MiCuenta() {
         <EditarPerfilModal
           form={form} setForm={setForm} errores={errores} setErrores={setErrores}
           guardando={guardando} onClose={() => setShowModalPerfil(false)} onGuardar={guardarCambios}
-          zonas={zonas} barFiltrados={barFiltrados} handleZona={handleZona}
+          barFiltrados={barFiltrados}
           verificarEmailDuplicado={verificarEmailDuplicado}
         />
       )}

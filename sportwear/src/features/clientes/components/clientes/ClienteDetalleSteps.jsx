@@ -17,7 +17,7 @@ export function DetalleUbicacionCliente({ c }) {
   return (
     <DetalleSeccion><DetalleGrid>
       <DetalleItem label="Ciudad"    value={c.ciudad} />
-      <DetalleItem label="Barrio"    value={c.barrio_nombre ? `${c.barrio_nombre} (${c.zona})` : null} />
+      <DetalleItem label="Barrio"    value={c.barrio_nombre || null} />
       <DetalleItem label="Dirección" value={c.direccion} full />
     </DetalleGrid></DetalleSeccion>
   );

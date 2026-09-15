@@ -35,7 +35,7 @@ export function PasoDatosCliente({ form, setForm, errores, setErrores, editar, v
   );
 }
 
-export function PasoUbicacionCliente({ form, setForm, zonas, barFiltrados, handleZona }) {
+export function PasoUbicacionCliente({ form, setForm, barFiltrados }) {
   return (
     <div>
       <div className="ms-form-row">
@@ -44,10 +44,9 @@ export function PasoUbicacionCliente({ form, setForm, zonas, barFiltrados, handl
           <input className="ms-form-input" value="Medellín" disabled title="Por ahora solo se hacen envíos a Medellín" />
           <span className="ms-form-hint">Por ahora solo se hacen envíos dentro de Medellín.</span>
         </div>
-        <div className="ms-form-group"><label className="ms-form-label">Zona / Área</label><Select className="ms-form-select" onChange={e => handleZona(e.target.value)}><option value="">— Todas las zonas —</option>{zonas.map(z => <option key={z} value={z}>{z}</option>)}</Select></div>
+        <div className="ms-form-group"><label className="ms-form-label">Barrio</label><Select className="ms-form-select" value={form.id_barrio} onChange={e => setForm({ ...form, id_barrio: Number(e.target.value) })}><option value="">— Seleccionar —</option>{barFiltrados.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre}</option>)}</Select></div>
       </div>
       <div className="ms-form-row">
-        <div className="ms-form-group"><label className="ms-form-label">Barrio</label><Select className="ms-form-select" value={form.id_barrio} onChange={e => setForm({ ...form, id_barrio: Number(e.target.value) })}><option value="">— Seleccionar —</option>{barFiltrados.map(b => <option key={b.id_barrio} value={b.id_barrio}>{b.nombre} ({b.zona})</option>)}</Select></div>
         <div className="ms-form-group"><label className="ms-form-label">Dirección completa</label><input className="ms-form-input" placeholder="Cra 70 # 48-15 Apto 201" value={form.direccion} onChange={e => setForm({ ...form, direccion: e.target.value })} /></div>
       </div>
     </div>

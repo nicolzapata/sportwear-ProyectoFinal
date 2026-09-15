@@ -20,10 +20,20 @@ export function useProductosListado({ busquedaDebounced, setLoading, mostrarToas
   // Vista de tarjetas (grid) además de la tabla — se alterna con un botón
   // en la barra de acciones, sin filtros propios. Arranca en tarjetas.
   const [vistaGrid,       setVistaGrid]       = useState(true);
+  // Filtros de la vitrina de productos: por categoría y por bajo stock,
+  // mismo criterio que el catálogo admin (CatalogoAdmin.jsx).
+  const [filtroCategoria, setFiltroCategoria] = useState(""); // "" = todas
+  const [filtroBajoStock, setFiltroBajoStock] = useState(false);
 
   const cargarProductos = async (pagina = paginaProductos, q = busquedaDebounced) => {
     try {
-      const { data } = await api.get("/productos", { params: { page: pagina, limit: FILAS_POR_PAGINA, q: q || undefined } });
+      const { data } = await api.get("/productos", {
+        params: {
+          page: pagina, limit: FILAS_POR_PAGINA, q: q || undefined,
+          id_categoria: filtroCategoria || undefined,
+          bajo_stock: filtroBajoStock ? '1' : undefined,
+        },
+      });
       const productosConImagen = await Promise.all(
         data.data.map(async (prod) => {
           try {
@@ -85,6 +95,7 @@ export function useProductosListado({ busquedaDebounced, setLoading, mostrarToas
     verDetalle, setVerDetalle, eliminarId, setEliminarId,
     variantesDropdownAbierto, setVariantesDropdownAbierto,
     vistaGrid, setVistaGrid,
+    filtroCategoria, setFiltroCategoria, filtroBajoStock, setFiltroBajoStock,
     cargarProductos, abrirDetalle, toggleEstadoProducto, togglePublicado, confirmarEliminar,
   };
 }
