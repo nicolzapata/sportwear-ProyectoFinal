@@ -29,3 +29,12 @@ class Categoria {
   final String? icono;
   final int totalProductos;
 }
+
+/// Una categoría junto con la imagen que le corresponde para la franja
+/// "Explora por categoría" (ver CatalogoProvider.categoriasDestacadas).
+class CategoriaConImagen {
+  CategoriaConImagen({required this.categoria, required this.imagenUrl});
+
+  final Categoria categoria;
+  final String imagenUrl;
+}

@@ -36,6 +36,16 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // AGP 9's lint (incluida la tarea "lintVital*" que corre igual en release
+    // aunque checkReleaseBuilds esté en false) choca con la integración de
+    // Kotlin de esta versión — ver también el bloque en el build.gradle.kts
+    // raíz, que desactiva "lintVital*" para los módulos de los plugins
+    // (flutter_secure_storage, jni), donde realmente fallaba.
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
+    }
 }
 
 kotlin {

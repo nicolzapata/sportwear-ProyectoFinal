@@ -21,7 +21,7 @@ class AuthErrorBanner extends StatelessWidget {
       ),
       child: Text(
         message,
-        style: const TextStyle(color: AppColors.error),
+        style: TextStyle(color: AppColors.error),
       ),
     );
   }

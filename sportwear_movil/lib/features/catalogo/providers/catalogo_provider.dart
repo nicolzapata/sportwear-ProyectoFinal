@@ -32,6 +32,32 @@ class CatalogoProvider extends ChangeNotifier {
       .where((c) => c.estado == 'Activo' && c.totalProductos > 0)
       .toList();
 
+  /// Igual que `hayFiltroActivo` en Catalogo.jsx: mientras no haya categoría
+  /// ni búsqueda activa, se muestran el carrusel y las categorías con imagen
+  /// (CatalogoHero / CategoriasDestacadas en la web); apenas hay un filtro,
+  /// ambos se ocultan.
+  bool get hayFiltroActivo =>
+      _categoriaSeleccionada != null || _terminoBusqueda.trim().isNotEmpty;
+
+  /// Misma lógica que CategoriasDestacadas.jsx: la foto de cada categoría es
+  /// la `imagen_principal` del PRIMER producto (en el orden en que ya llegó
+  /// de /productos) que pertenezca a esa categoría y sí tenga imagen — no es
+  /// un campo nuevo del backend ni una imagen fija por nombre.
+  List<CategoriaConImagen> get categoriasDestacadas {
+    final imagenPorCategoria = <int, String>{};
+    for (final p in _productos) {
+      final idCat = p.idCategoria;
+      final imagen = p.imagenPrincipal;
+      if (idCat != null && imagen != null && !imagenPorCategoria.containsKey(idCat)) {
+        imagenPorCategoria[idCat] = imagen;
+      }
+    }
+    return categorias
+        .where((c) => imagenPorCategoria.containsKey(c.idCategoria))
+        .map((c) => CategoriaConImagen(categoria: c, imagenUrl: imagenPorCategoria[c.idCategoria]!))
+        .toList();
+  }
+
   List<Producto> get productosFiltrados {
     final termino = _terminoBusqueda.trim().toLowerCase();
     return _productos.where((p) {

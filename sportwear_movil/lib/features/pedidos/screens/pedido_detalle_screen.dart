@@ -45,11 +45,11 @@ class PedidoDetalleScreen extends StatelessWidget {
                                           if (item.colorNombre != null) item.colorNombre,
                                           if (item.talla != null) 'Talla ${item.talla}',
                                         ].join(' · '),
-                                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                                       ),
                                     Text(
                                       '${item.cantidad} x ${formatoPrecioCop(item.precioUnitario)}',
-                                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                                     ),
                                   ],
                                 ),
@@ -64,14 +64,14 @@ class PedidoDetalleScreen extends StatelessWidget {
                     .toList(),
               ),
             ),
-            const Divider(color: AppColors.border, height: 32),
+            Divider(color: AppColors.border, height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Total', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                 Text(
                   formatoPrecioCop(pedido.total),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryDark),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryDark),
                 ),
               ],
             ),
@@ -113,7 +113,7 @@ class _Seccion extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(titulo, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+        Text(titulo, style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
         const SizedBox(height: 8),
         child,
       ],
@@ -149,7 +149,7 @@ class _FilaCuota extends StatelessWidget {
               padding: const EdgeInsets.only(right: 12),
               child: Text(
                 'Vence ${formatoFecha(abono.fechaVencimiento!)}',
-                style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
               ),
             ),
           Text(formatoPrecioCop(abono.monto), style: const TextStyle(fontWeight: FontWeight.w600)),

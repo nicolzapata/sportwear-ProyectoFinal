@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import 'api_exception.dart';
 import 'token_storage.dart';
@@ -52,6 +53,16 @@ class ApiClient {
   ApiException _toApiException(DioException error) {
     final statusCode = error.response?.statusCode;
     final data = error.response?.data;
+
+    // Diagnóstico permanente: "No se pudo conectar con el servidor." es un
+    // mensaje genérico que puede tapar la excepción real (timeout, TLS, DNS,
+    // certificado, etc.) — queda el detalle real en el log para poder
+    // diagnosticar sin adivinar, sin exponerlo en la UI.
+    debugPrint(
+      'ApiClient error: uri=${error.requestOptions.uri} type=${error.type} '
+      'message=${error.message} error=${error.error} statusCode=$statusCode',
+    );
+
     if (data is Map && data['message'] is String) {
       return ApiException(data['message'] as String, statusCode: statusCode);
     }

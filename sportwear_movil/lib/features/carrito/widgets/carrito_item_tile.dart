@@ -25,7 +25,7 @@ class CarritoItemTile extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: AppColors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.all(10),
@@ -38,15 +38,15 @@ class CarritoItemTile extends StatelessWidget {
                 width: 72,
                 height: 72,
                 child: item.imagenUrl == null
-                    ? const ColoredBox(
+                    ? ColoredBox(
                         color: AppColors.background,
                         child: Icon(Icons.image_not_supported_outlined, color: AppColors.textSecondary),
                       )
                     : CachedNetworkImage(
                         imageUrl: item.imagenUrl!,
                         fit: BoxFit.cover,
-                        placeholder: (context, url) => const ColoredBox(color: AppColors.background),
-                        errorWidget: (context, url, error) => const ColoredBox(
+                        placeholder: (context, url) => ColoredBox(color: AppColors.background),
+                        errorWidget: (context, url, error) => ColoredBox(
                           color: AppColors.background,
                           child: Icon(Icons.broken_image_outlined, color: AppColors.textSecondary),
                         ),
@@ -67,7 +67,7 @@ class CarritoItemTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${item.colorNombre} · Talla ${item.talla}',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -89,7 +89,7 @@ class CarritoItemTile extends StatelessWidget {
                       const Spacer(),
                       Text(
                         formatoPrecioCop(item.subtotal),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: AppColors.primaryDark,
                         ),
@@ -100,7 +100,7 @@ class CarritoItemTile extends StatelessWidget {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: AppColors.textSecondary),
+              icon: Icon(Icons.delete_outline, color: AppColors.textSecondary),
               tooltip: 'Quitar',
               onPressed: onQuitar,
             ),

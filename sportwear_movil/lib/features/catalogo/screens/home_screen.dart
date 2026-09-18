@@ -3,11 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../shared/widgets/theme_toggle_button.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../carrito/providers/carrito_provider.dart';
 import '../providers/catalogo_provider.dart';
 import '../widgets/busqueda_bar.dart';
-import '../widgets/categoria_chip.dart';
+import '../widgets/catalogo_hero.dart';
+import '../widgets/categorias_destacadas.dart';
 import 'lista_productos_screen.dart';
 
 /// Pantalla principal: categorías + búsqueda + grilla de productos.
@@ -65,6 +67,10 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('SportWear'),
         actions: [
+          // Mismo lugar conceptual que en la web: ThemeToggle es lo primero
+          // en "navbar-right" (Navbar.jsx / PublicNavbar.jsx), antes de
+          // carrito/cuenta/logout.
+          const ThemeToggleButton(),
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -123,40 +129,39 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: BusquedaBar(onChanged: catalogo.buscar),
-            ),
-            if (catalogo.categorias.isNotEmpty)
-              SizedBox(
-                height: 44,
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: catalogo.categorias.length + 1,
-                  separatorBuilder: (context, index) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return CategoriaChip(
-                        label: 'Todos',
-                        selected: catalogo.categoriaSeleccionada == null,
-                        onTap: () => catalogo.seleccionarCategoria(null),
-                      );
-                    }
-                    final categoria = catalogo.categorias[index - 1];
-                    return CategoriaChip(
-                      label: categoria.nombre,
-                      selected: catalogo.categoriaSeleccionada == categoria.idCategoria,
-                      onTap: () => catalogo.seleccionarCategoria(categoria.idCategoria),
-                    );
-                  },
+        child: RefreshIndicator(
+          onRefresh: () => context.read<CatalogoProvider>().cargar(),
+          child: CustomScrollView(
+            slivers: [
+              // Hero (carrusel) y "Explora por categoría" solo cuando no hay
+              // ningún filtro activo — mismo criterio que Catalogo.jsx
+              // (!hayFiltroActivo) para CatalogoHero/CategoriasDestacadas.
+              // Todo vive en el MISMO scroll que la grilla de productos (un
+              // solo CustomScrollView, no un Column con Expanded aparte):
+              // con el hero + categorías arriba, esa altura fija ya no cabe
+              // siempre sobre una pantalla de teléfono sin desbordar.
+              if (!catalogo.hayFiltroActivo) const SliverToBoxAdapter(child: CatalogoHero()),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: BusquedaBar(onChanged: catalogo.buscar),
                 ),
               ),
-            const SizedBox(height: 8),
-            const Expanded(child: ListaProductosScreen()),
-          ],
+              if (!catalogo.hayFiltroActivo)
+                SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      CategoriasDestacadas(
+                        items: catalogo.categoriasDestacadas,
+                        onTap: catalogo.seleccionarCategoria,
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              const ListaProductosScreen(),
+            ],
+          ),
         ),
       ),
     );

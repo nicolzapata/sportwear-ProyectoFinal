@@ -3,6 +3,8 @@ const pool = require('../config/db');
 const { validarCamposNumericos } = require('../utils/validarNumerico');
 const { enviarCorreo, plantillaBienvenida } = require('./mailer.service');
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const getClientes = async () => {
   const result = await pool.query(`
     SELECT cl.*, b.nombre AS barrio_nombre, b.zona
@@ -46,9 +48,13 @@ const getClientesConVentas = async ({ page, limit, q } = {}) => {
     ${limitOffsetSql}
   `, params);
 
-  if (!paginar) return result.rows;
+  // COUNT/SUM llegan como string desde pg (bigint/numeric) — se castean antes
+  // de que el frontend los use en comparaciones/aritmética (ordenamiento, badges, etc.).
+  const castear = (r) => ({ ...r, total_compras: Number(r.total_compras), total_gastado: Number(r.total_gastado) });
+
+  if (!paginar) return result.rows.map(castear);
   const total = result.rows[0] ? Number(result.rows[0].total_count) : 0;
-  const data = result.rows.map(({ total_count, ...r }) => r);
+  const data = result.rows.map(({ total_count, ...r }) => castear(r));
   return { data, total };
 };
 
@@ -74,8 +80,9 @@ const getClienteById = async (id) => {
 const crearCliente = async (datos) => {
   const { nombre, tipo_doc, documento, telefono, ciudad, id_barrio, direccion, permiso_cuotas, estado, contrasena } = datos;
   const email = (datos.email || '').trim().toLowerCase();
-  if (!nombre || !documento) throw { status: 400, message: 'Nombre y documento son requeridos' };
+  if (!nombre?.trim() || !documento) throw { status: 400, message: 'Nombre y documento son requeridos' };
   if (!email || !contrasena) throw { status: 400, message: 'Correo y contraseña son requeridos' };
+  if (!EMAIL_REGEX.test(email)) throw { status: 400, message: 'El correo electrónico no tiene un formato válido.' };
   validarCamposNumericos({ documento, teléfono: telefono });
 
   const client = await pool.connect();
@@ -139,6 +146,11 @@ const actualizarCliente = async (id, datos) => {
   // La identificación (tipo_doc/documento) y el email no se pueden modificar una vez creados.
   const { nombre, telefono, id_barrio, direccion, permiso_cuotas, estado, contrasena } = datos;
   validarCamposNumericos({ teléfono: telefono });
+  // ── NUEVO: antes un nombre='' se guardaba tal cual (el UPDATE no distingue
+  // "no enviado" de "enviado vacío"), dejando el cliente sin nombre. ──
+  if (nombre !== undefined && !nombre?.trim()) {
+    throw { status: 400, message: 'El nombre no puede quedar vacío.' };
+  }
   const campos = [];
   const valores = [];
   let idx = 1;
@@ -200,6 +212,9 @@ const togglePermisoCuotas = async (id) => {
 const actualizarMiPerfil = async (id, datos) => {
   const { nombre, telefono, id_barrio, direccion, ciudad } = datos;
   validarCamposNumericos({ teléfono: telefono });
+  if (nombre !== undefined && !nombre?.trim()) {
+    throw { status: 400, message: 'El nombre no puede quedar vacío.' };
+  }
   const result = await pool.query(`
     UPDATE "Clientes" SET
       nombre    = COALESCE($1, nombre),

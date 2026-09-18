@@ -1,4 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Necesario en TODOS los build types, incluido release: la plantilla de
+         Flutter solo la declaraba en src/debug y src/profile (con el
+         comentario de que era "para desarrollo"), pero sin esta línea aquí
+         (el único manifest que sí se combina en el build de release) la app
+         empaquetada en release no puede abrir ningún socket — todas las
+         llamadas HTTP fallan de inmediato con un error de conexión genérico,
+         aunque el dispositivo y el backend estén perfectamente bien. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="sportwear_movil"
         android:name="${applicationName}"

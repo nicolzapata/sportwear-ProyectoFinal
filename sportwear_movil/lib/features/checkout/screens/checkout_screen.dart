@@ -111,7 +111,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: AppColors.textSecondary),
+                    Icon(Icons.error_outline, size: 48, color: AppColors.textSecondary),
                     const SizedBox(height: 12),
                     const Text('No se pudieron cargar las opciones de compra.'),
                   ],
@@ -148,14 +148,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             ],
                           ),
                         )),
-                    const Divider(color: AppColors.border, height: 24),
+                    Divider(color: AppColors.border, height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('Total', style: TextStyle(fontWeight: FontWeight.w600)),
                         Text(
                           formatoPrecioCop(carrito.total),
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryDark),
                         ),
                       ],
                     ),
@@ -204,7 +204,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     if (_errorMessage != null)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: Text(_errorMessage!, style: const TextStyle(color: AppColors.error)),
+                        child: Text(_errorMessage!, style: TextStyle(color: AppColors.error)),
                       ),
                     ElevatedButton(
                       onPressed: _enviando
@@ -244,7 +244,7 @@ class _ConfirmacionPedido extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_circle_outline, size: 64, color: AppColors.primary),
+              Icon(Icons.check_circle_outline, size: 64, color: AppColors.primary),
               const SizedBox(height: 16),
               const Text(
                 '¡Pedido confirmado!',

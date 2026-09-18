@@ -64,7 +64,7 @@ class _ProductoDetalleScreenState extends State<ProductoDetalleScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.error_outline, size: 48, color: AppColors.textSecondary),
+                    Icon(Icons.error_outline, size: 48, color: AppColors.textSecondary),
                     const SizedBox(height: 12),
                     const Text('No se pudo cargar el producto.'),
                     const SizedBox(height: 12),
@@ -212,7 +212,7 @@ class _InfoDetalle extends StatelessWidget {
         if (producto.categoria != null)
           Text(
             producto.categoria!.toUpperCase(),
-            style: const TextStyle(
+            style: TextStyle(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
               fontSize: 12,
@@ -224,7 +224,7 @@ class _InfoDetalle extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           formatoPrecioCop(precioMostrado),
-          style: const TextStyle(
+          style: TextStyle(
             color: AppColors.primaryDark,
             fontWeight: FontWeight.bold,
             fontSize: 22,
@@ -301,11 +301,11 @@ class _InfoDetalle extends StatelessWidget {
         ),
         if (producto.descripcion != null && producto.descripcion!.isNotEmpty) ...[
           const SizedBox(height: 20),
-          const Divider(color: AppColors.border),
+          Divider(color: AppColors.border),
           const SizedBox(height: 12),
           const Text('Descripción', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
-          Text(producto.descripcion!, style: const TextStyle(color: AppColors.textSecondary)),
+          Text(producto.descripcion!, style: TextStyle(color: AppColors.textSecondary)),
         ],
       ],
     );
@@ -343,7 +343,7 @@ class _GaleriaState extends State<_Galeria> {
   @override
   Widget build(BuildContext context) {
     if (widget.urls.isEmpty) {
-      return const ColoredBox(
+      return ColoredBox(
         color: AppColors.background,
         child: Center(
           child: Icon(Icons.image_not_supported_outlined, size: 48, color: AppColors.textSecondary),
@@ -364,7 +364,7 @@ class _GaleriaState extends State<_Galeria> {
               fit: BoxFit.cover,
               placeholder: (context, url) =>
                   const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-              errorWidget: (context, url, error) => const Center(
+              errorWidget: (context, url, error) => Center(
                 child: Icon(Icons.broken_image_outlined, color: AppColors.textSecondary),
               ),
             ),

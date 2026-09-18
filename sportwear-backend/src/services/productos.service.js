@@ -137,6 +137,11 @@ const getProductos = async (opciones = {}) => {
 const crearProducto = async (datos) => {
   const { nombre, descripcion, id_categoria, precio, publicado, estado, destacado } = datos;
   if (!nombre) throw { status: 400, message: 'Nombre requerido' };
+  // ── NUEVO: "precio || 0" dejaba pasar un precio negativo tal cual (p. ej.
+  // -500 es un valor truthy) — se valida explícitamente antes de insertar. ──
+  if (precio !== undefined && precio !== null && (!Number.isFinite(Number(precio)) || Number(precio) < 0)) {
+    throw { status: 400, message: 'El precio no puede ser negativo.' };
+  }
 
   const client = await pool.connect();
   try {
@@ -164,6 +169,9 @@ const crearProducto = async (datos) => {
 const actualizarProducto = async (id, datos, id_usuario) => {
   const { nombre, descripcion, id_categoria, precio, publicado, estado, destacado } = datos;
   // el código nunca se modifica (regla 03.2.3.2) — no se incluye en el UPDATE
+  if (precio !== undefined && precio !== null && (!Number.isFinite(Number(precio)) || Number(precio) < 0)) {
+    throw { status: 400, message: 'El precio no puede ser negativo.' };
+  }
 
   const client = await pool.connect();
   try {

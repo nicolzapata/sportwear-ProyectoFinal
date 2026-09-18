@@ -1,5 +1,6 @@
 import '../../../core/api/api_client.dart';
 import '../../../shared/models/categoria.dart';
+import '../../../shared/models/imagen_hero.dart';
 import '../../../shared/models/imagen_producto.dart';
 import '../../../shared/models/producto.dart';
 
@@ -40,6 +41,17 @@ class CatalogoService {
       final rows = response.data as List;
       if (rows.isEmpty) return null;
       return Producto.fromJson(rows.first as Map<String, dynamic>);
+    });
+  }
+
+  /// GET /api/imagenes?tipo=Home&id=1 — fotos del carrusel del inicio
+  /// (CatalogoHero.jsx). Sin `id_color`, el backend no filtra por estado.
+  Future<List<ImagenHero>> getImagenesHero() {
+    return _apiClient.call((dio) async {
+      final response = await dio.get('/imagenes', queryParameters: {'tipo': 'Home', 'id': 1});
+      return (response.data as List)
+          .map((i) => ImagenHero.fromJson(i as Map<String, dynamic>))
+          .toList();
     });
   }
 

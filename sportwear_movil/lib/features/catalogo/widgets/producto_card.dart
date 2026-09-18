@@ -20,7 +20,7 @@ class ProductoCard extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: AppColors.border),
       ),
       child: InkWell(
         onTap: onTap,
@@ -44,7 +44,7 @@ class ProductoCard extends StatelessWidget {
                     producto.tieneRangoPrecio
                         ? 'Desde ${formatoPrecioCop(producto.precioDesde)}'
                         : formatoPrecioCop(producto.precioDesde),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.primaryDark,
                       fontWeight: FontWeight.bold,
                     ),
@@ -68,7 +68,7 @@ class _Imagen extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = producto.imagenPrincipal;
     if (url == null || url.isEmpty) {
-      return const ColoredBox(
+      return ColoredBox(
         color: AppColors.background,
         child: Center(
           child: Icon(Icons.image_not_supported_outlined, color: AppColors.textSecondary),
@@ -81,11 +81,11 @@ class _Imagen extends StatelessWidget {
         CachedNetworkImage(
           imageUrl: url,
           fit: BoxFit.cover,
-          placeholder: (context, url) => const ColoredBox(
+          placeholder: (context, url) => ColoredBox(
             color: AppColors.background,
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
           ),
-          errorWidget: (context, url, error) => const ColoredBox(
+          errorWidget: (context, url, error) => ColoredBox(
             color: AppColors.background,
             child: Center(
               child: Icon(Icons.broken_image_outlined, color: AppColors.textSecondary),

@@ -16,3 +16,22 @@ export const ETIQUETAS_METODO = {
   Efectivo: "Efectivo (contra entrega)",
   Transferencia: "Transferencia bancaria",
 };
+
+// ── NUEVO: edad mínima para comprar — la validación que de verdad bloquea la
+// compra vive en el backend (crearMiPedido); esta copia en frontend solo
+// evita el viaje al servidor cuando el dato es obviamente inválido. ──
+export const EDAD_MINIMA_COMPRA = 18;
+
+export const calcularEdad = (fechaNacimiento) => {
+  if (!fechaNacimiento) return null;
+  const nacimiento = new Date(fechaNacimiento);
+  if (Number.isNaN(nacimiento.getTime())) return null;
+
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - nacimiento.getFullYear();
+  const mesDiff = hoy.getMonth() - nacimiento.getMonth();
+  if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < nacimiento.getDate())) {
+    edad--;
+  }
+  return edad;
+};

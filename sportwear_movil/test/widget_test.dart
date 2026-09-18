@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sportwear_movil/core/api/api_client.dart';
 import 'package:sportwear_movil/core/api/token_storage.dart';
 import 'package:sportwear_movil/features/admin/services/admin_service.dart';
+import 'package:sportwear_movil/features/admin/services/notificaciones_service.dart';
+import 'package:sportwear_movil/core/theme/app_theme_controller.dart';
 import 'package:sportwear_movil/features/auth/providers/auth_provider.dart';
 import 'package:sportwear_movil/features/auth/services/auth_service.dart';
 import 'package:sportwear_movil/features/catalogo/services/catalogo_service.dart';
@@ -12,6 +14,7 @@ import 'package:sportwear_movil/features/pedidos/services/pedidos_service.dart';
 import 'package:sportwear_movil/features/perfil/services/perfil_service.dart';
 import 'package:sportwear_movil/main.dart';
 import 'package:sportwear_movil/shared/models/categoria.dart';
+import 'package:sportwear_movil/shared/models/imagen_hero.dart';
 import 'package:sportwear_movil/shared/models/producto.dart';
 import 'package:sportwear_movil/shared/models/usuario.dart';
 
@@ -37,6 +40,9 @@ class _FakeCatalogoService extends CatalogoService {
 
   @override
   Future<List<Producto>> getProductos() async => [];
+
+  @override
+  Future<List<ImagenHero>> getImagenesHero() async => [];
 }
 
 /// Simula un login exitoso sin red real, devolviendo el `rol` que pida cada
@@ -95,7 +101,9 @@ void main() {
         checkoutService: checkoutService,
         pedidosService: pedidosService,
         adminService: adminService,
+        notificacionesService: NotificacionesService(adminService),
         perfilService: perfilService,
+        themeController: AppThemeController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -123,7 +131,9 @@ void main() {
         checkoutService: CheckoutService(apiClient),
         pedidosService: PedidosService(apiClient),
         adminService: AdminService(apiClient),
+        notificacionesService: NotificacionesService(AdminService(apiClient)),
         perfilService: PerfilService(apiClient),
+        themeController: AppThemeController(),
       ),
     );
     await tester.pumpAndSettle();
@@ -146,7 +156,9 @@ void main() {
         checkoutService: CheckoutService(apiClient),
         pedidosService: PedidosService(apiClient),
         adminService: AdminService(apiClient),
+        notificacionesService: NotificacionesService(AdminService(apiClient)),
         perfilService: PerfilService(apiClient),
+        themeController: AppThemeController(),
       ),
     );
     await tester.pumpAndSettle();

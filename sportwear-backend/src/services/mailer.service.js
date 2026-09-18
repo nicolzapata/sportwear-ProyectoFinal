@@ -24,7 +24,7 @@ const enviarCorreo = async ({ to, subject, html, attachments }) => {
       ...(attachments ? { attachments } : {}),
     });
   } catch (err) {
-    console.error('Error enviando correo:', err.message);
+    console.error(`Error enviando correo a "${to}" (asunto: "${subject}"):`, err.message, err.stack);
   }
 };
 

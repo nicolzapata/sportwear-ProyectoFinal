@@ -82,14 +82,14 @@ class _PedidoAdminDetalleScreenState extends State<PedidoAdminDetalleScreen> {
                     .toList(),
               ),
             ),
-            const Divider(color: AppColors.border, height: 32),
+            Divider(color: AppColors.border, height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Total', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                 Text(
                   formatoPrecioCop(pedido.total),
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryDark),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryDark),
                 ),
               ],
             ),
@@ -100,7 +100,7 @@ class _PedidoAdminDetalleScreenState extends State<PedidoAdminDetalleScreen> {
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(_error!, style: const TextStyle(color: AppColors.error)),
+                  child: Text(_error!, style: TextStyle(color: AppColors.error)),
                 ),
               Wrap(
                 spacing: 8,
@@ -116,7 +116,7 @@ class _PedidoAdminDetalleScreenState extends State<PedidoAdminDetalleScreen> {
                     .toList(),
               ),
             ] else
-              const Text(
+              Text(
                 'Este pedido no tiene más transiciones de estado disponibles.',
                 style: TextStyle(color: AppColors.textSecondary),
               ),
@@ -138,7 +138,7 @@ class _Seccion extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(titulo, style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+        Text(titulo, style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
         const SizedBox(height: 8),
         child,
       ],

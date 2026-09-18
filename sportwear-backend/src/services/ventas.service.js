@@ -12,6 +12,11 @@ const {
   MONTO_MINIMO_ABONO, ajustarNumCuotas, calcularFechasVencimiento,
   getSaldoPendiente, mensajeMontoMinimo,
 } = require('./pagoLogica.service');
+const { calcularEdad, EDAD_MINIMA_COMPRA } = require('../utils/edad');
+
+// Estados válidos de "Ventas.estado" que puede fijar cambiarEstado (Abandonado
+// se asigna internamente al crear un carrito abandonado, nunca por esta vía).
+const ESTADOS_VENTA_VALIDOS = ['Pendiente', 'Confirmado', 'Pagado', 'Anulado'];
 
 const getVentas = async ({ page, limit, q, origen, estado_pago } = {}) => {
   const params = [];
@@ -77,7 +82,9 @@ const getVentas = async ({ page, limit, q, origen, estado_pago } = {}) => {
   `, params);
 
   const total = cab.rows[0] ? Number(cab.rows[0].total_count) : 0;
-  const filas = cab.rows.map(({ total_count, ...r }) => r);
+  // COALESCE(SUM(...)) llega como string desde pg (numeric) — se castea antes
+  // de que el frontend lo use en comparaciones/aritmética.
+  const filas = cab.rows.map(({ total_count, total_pagado, ...r }) => ({ ...r, total_pagado: Number(total_pagado) }));
 
   const ids = filas.map(v => v.id_venta);
   let detalles = [];
@@ -161,7 +168,9 @@ const notificarComprobantePago = async (id_venta) => {
       ],
     });
   } catch (err) {
-    console.error('Error enviando comprobante por correo:', err.message);
+    // No debe romper el flujo de la venta (ya está COMMIT-eada cuando esto se
+    // llama) — solo queda registrado para que el equipo pueda reenviarlo manualmente.
+    console.error(`Error enviando comprobante por correo (venta #${id_venta}):`, err.message, err.stack);
   }
 };
 
@@ -229,9 +238,36 @@ const crearVenta = async (datos) => {
   // pero la regla real vive aquí. ──
   if (!direccion_entrega?.trim()) throw { status: 400, message: 'La dirección de entrega es obligatoria' };
 
+  // ── NUEVO: cantidades y precios de línea deben ser válidos — sin esto, una
+  // cantidad cero/negativa o un precio negativo pasaban directo y corrompían
+  // el subtotal (y de ahí el total y el stock descontado). ──
+  if (items) {
+    for (const item of items) {
+      if (!Number.isFinite(item.cantidad) || item.cantidad <= 0) {
+        throw { status: 400, message: 'La cantidad de cada producto debe ser mayor a cero.' };
+      }
+      if (!Number.isFinite(item.precio_unitario) || item.precio_unitario < 0) {
+        throw { status: 400, message: 'El precio unitario de cada producto no puede ser negativo.' };
+      }
+      if (item.descuento_linea != null && (!Number.isFinite(item.descuento_linea) || item.descuento_linea < 0)) {
+        throw { status: 400, message: 'El descuento por producto no puede ser negativo.' };
+      }
+    }
+  }
+
   const subtotal = items
     ? items.reduce((a, i) => a + i.cantidad * i.precio_unitario - (i.descuento_linea || 0), 0)
     : (datos.total || 0);
+
+  // ── NUEVO: el descuento general no puede ser negativo ni superar el
+  // subtotal — de lo contrario el total terminaba en negativo. ──
+  if (descuento != null && (!Number.isFinite(descuento) || descuento < 0)) {
+    throw { status: 400, message: 'El descuento no puede ser negativo.' };
+  }
+  if (descuento && descuento > subtotal) {
+    throw { status: 400, message: 'El descuento no puede ser mayor que el subtotal de la venta.' };
+  }
+
   const total = subtotal - (descuento || 0) + (impuesto || 0);
 
   // ── NUEVO: si hay descuento general, el motivo es obligatorio ──
@@ -362,6 +398,9 @@ const crearVenta = async (datos) => {
 
 const cambiarEstado = async (id, estado, motivo_anulacion) => {
   if (!estado) throw { status: 400, message: 'Estado requerido' };
+  if (!ESTADOS_VENTA_VALIDOS.includes(estado)) {
+    throw { status: 400, message: `Estado inválido. Debe ser uno de: ${ESTADOS_VENTA_VALIDOS.join(', ')}.` };
+  }
   // ── NUEVO: anular una venta ahora exige el motivo — se guarda como
   // registro de por qué se anuló, no solo que se anuló. ──
   if (estado === 'Anulado' && !motivo_anulacion?.trim()) {
@@ -503,14 +542,64 @@ const notificarPedidoRecibido = async (id_venta, metodo_pago) => {
       `,
     });
   } catch (err) {
-    console.error('Error notificando pedido recibido:', err.message);
+    // El pedido ya quedó registrado — un correo que no salga nunca debe
+    // deshacer la venta, solo queda registrado para revisión manual.
+    console.error(`Error notificando pedido recibido (venta #${id_venta}):`, err.message, err.stack);
   }
 };
 
-const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entrega, id_barrio, metodo_pago, tipo_pago, num_cuotas: numCuotasPedido, fecha_primera_cuota, items }) => {
+const crearMiPedido = async ({ id_cliente, estado, fecha, direccion_entrega, id_barrio, metodo_pago, tipo_pago, num_cuotas: numCuotasPedido, fecha_primera_cuota, items, fecha_nacimiento }) => {
   if (!items || !items.length) throw { status: 400, message: 'Debe incluir al menos un producto' };
   if (!id_cliente) throw { status: 400, message: 'Cliente no identificado' };
   if (!direccion_entrega?.trim()) throw { status: 400, message: 'La dirección de entrega es obligatoria' };
+
+  // ── NUEVO (Hallazgo "compra por parte de menores de edad"): la fecha de
+  // nacimiento se pide en el propio checkout (no se guarda en el perfil, no
+  // se toca el módulo de registro/usuarios). La validación real —la que de
+  // verdad bloquea la compra— vive acá, no en el frontend, que solo evita el
+  // viaje al servidor cuando el dato es obviamente inválido. ──
+  if (!fecha_nacimiento) {
+    throw { status: 400, message: 'Debes indicar tu fecha de nacimiento para completar la compra.' };
+  }
+  const edadComprador = calcularEdad(fecha_nacimiento);
+  if (edadComprador === null) {
+    throw { status: 400, message: 'La fecha de nacimiento ingresada no es válida.' };
+  }
+  if (edadComprador < EDAD_MINIMA_COMPRA) {
+    throw { status: 403, message: `Debes ser mayor de edad (${EDAD_MINIMA_COMPRA} años) para completar una compra.` };
+  }
+
+  // ── NUEVO (Hallazgo "validaciones faltantes"): cantidades inválidas
+  // (cero, negativas o no numéricas) y variantes sin asignar se rechazan acá,
+  // antes de tocar la base de datos. ──
+  for (const item of items) {
+    if (!item.id_variante) {
+      throw { status: 400, message: `El producto ID ${item.id_producto} no tiene variante asignada` };
+    }
+    if (!Number.isFinite(item.cantidad) || item.cantidad <= 0) {
+      throw { status: 400, message: 'La cantidad de cada producto debe ser mayor a cero.' };
+    }
+  }
+
+  // ── NUEVO (Hallazgo "validaciones faltantes"): el total nunca se toma del
+  // cliente — se recalcula acá a partir del precio real de cada variante en
+  // BD. Antes "total" e "item.precio" venían tal cual del body, así que un
+  // cliente podía mandar un total (o precios de línea) manipulados y la
+  // venta se registraba con esa cifra, sin relación con el catálogo real. ──
+  const idsVariantes = items.map(i => i.id_variante);
+  const preciosRes = await pool.query(`
+    SELECT pv.id_variante, COALESCE(pv.precio, p.precio) AS precio
+    FROM "ProductoVariantes" pv
+    JOIN "Productos" p ON pv.id_producto = p.id_producto
+    WHERE pv.id_variante = ANY($1::int[])
+  `, [idsVariantes]);
+  const precioPorVariante = new Map(preciosRes.rows.map(r => [r.id_variante, Number(r.precio)]));
+  for (const item of items) {
+    if (!precioPorVariante.has(item.id_variante)) {
+      throw { status: 400, message: `El producto ID ${item.id_producto} ya no está disponible.` };
+    }
+  }
+  const total = items.reduce((acc, item) => acc + item.cantidad * precioPorVariante.get(item.id_variante), 0);
 
   // ── NUEVO: validar cupo de crédito solo cuando el pedido es a cuotas. El
   // número de cuotas se autoajusta al máximo real que permite el total,
@@ -558,10 +647,6 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
     const id_venta = ventaRow.id_venta;
 
     for (const item of items) {
-      if (!item.id_variante) {
-        throw { status: 400, message: `El producto ID ${item.id_producto} no tiene variante asignada` };
-      }
-
       const stockRes = await client.query(
         `SELECT stock FROM "ProductoVariantes" WHERE id_variante=$1`,
         [item.id_variante]
@@ -598,14 +683,17 @@ const crearMiPedido = async ({ id_cliente, total, estado, fecha, direccion_entre
         };
       }
 
-      const subtotalLinea = item.cantidad * item.precio;
+      // Precio real del catálogo (nunca el que mandó el cliente) — ver el
+      // recálculo de "total" al inicio de la función.
+      const precioReal = precioPorVariante.get(item.id_variante);
+      const subtotalLinea = item.cantidad * precioReal;
 
       await client.query(`
         INSERT INTO "DetalleVenta"
           (id_venta, id_producto, id_variante, cantidad, precio_unitario, descuento_linea, subtotal)
         VALUES ($1,$2,$3,$4,$5,$6,$7)
       `, [id_venta, item.id_producto, item.id_variante,
-          item.cantidad, item.precio, 0, subtotalLinea]);
+          item.cantidad, precioReal, 0, subtotalLinea]);
 
       // ── NUEVO (Inventario): solo se descuenta ahora si es contraentrega.
       // Si es transferencia/tarjeta, el stock se queda igual hasta que el
@@ -808,7 +896,9 @@ const notificarAbonoParcial = async (id_venta, monto) => {
       `,
     });
   } catch (err) {
-    console.error('Error notificando abono:', err.message);
+    // El abono ya quedó confirmado — un correo que no salga nunca debe
+    // deshacer el pago, solo queda registrado para revisión manual.
+    console.error(`Error notificando abono (venta #${id_venta}):`, err.message, err.stack);
   }
 };
 

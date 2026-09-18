@@ -87,7 +87,7 @@ class _PedidoTile extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: AppColors.border),
+        side: BorderSide(color: AppColors.border),
       ),
       child: ListTile(
         onTap: () => context.push('/mis-pedidos/detalle', extra: pedido),
@@ -99,7 +99,7 @@ class _PedidoTile extends StatelessWidget {
           children: [
             Text(
               formatoPrecioCop(pedido.total),
-              style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryDark),
             ),
             const SizedBox(height: 4),
             _BadgeEstado(estado: pedido.estadoMostrado),
@@ -125,7 +125,7 @@ class _BadgeEstado extends StatelessWidget {
       ),
       child: Text(
         estado,
-        style: const TextStyle(color: AppColors.primaryDark, fontSize: 11, fontWeight: FontWeight.w600),
+        style: TextStyle(color: AppColors.primaryDark, fontSize: 11, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -148,7 +148,7 @@ class _EstadoVacio extends StatelessWidget {
           children: [
             Icon(icono, size: 48, color: AppColors.textSecondary),
             const SizedBox(height: 12),
-            Text(mensaje, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary)),
+            Text(mensaje, textAlign: TextAlign.center, style: TextStyle(color: AppColors.textSecondary)),
             if (accion != null) ...[const SizedBox(height: 8), accion!],
           ],
         ),

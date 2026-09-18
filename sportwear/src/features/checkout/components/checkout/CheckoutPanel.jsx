@@ -9,6 +9,7 @@ import { IconPin, IconArrowRight, IconLock } from "../../checkoutIcons";
 export default function CheckoutPanel({
   usuario, items,
   direccion, setDireccion, erroresPaso, setErroresPaso,
+  fechaNacimiento, setFechaNacimiento,
   cargandoBarrios, barrios, idBarrio, setIdBarrio,
   cargandoMetodos, metodosPago, metodo, setMetodo,
   permisoCuotas, tipoPago, setTipoPago, opcionesCuotas,
@@ -50,6 +51,23 @@ export default function CheckoutPanel({
           />
         </div>
         {erroresPaso.direccion && <div className="checkout-error-message">{erroresPaso.direccion}</div>}
+      </div>
+
+      {/* ── NUEVO: verificación de mayoría de edad — obligatoria para completar la compra. ── */}
+      <div className="checkout-campo">
+        <label className="checkout-label">Fecha de nacimiento</label>
+        <div className={`checkout-input-icon${erroresPaso.fechaNacimiento ? " input-error" : ""}`}>
+          <input
+            type="date"
+            value={fechaNacimiento}
+            max={new Date().toISOString().split("T")[0]}
+            onChange={(e) => {
+              setFechaNacimiento(e.target.value);
+              if (erroresPaso.fechaNacimiento) setErroresPaso((prev) => ({ ...prev, fechaNacimiento: "" }));
+            }}
+          />
+        </div>
+        {erroresPaso.fechaNacimiento && <div className="checkout-error-message">{erroresPaso.fechaNacimiento}</div>}
       </div>
 
       {/* ── NUEVO: Ciudad fija + Barrio (antes vivían en el registro) ── */}

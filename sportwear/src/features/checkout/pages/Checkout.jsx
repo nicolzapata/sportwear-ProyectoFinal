@@ -12,7 +12,7 @@ import "./Checkout.layout.css";
 import "./Checkout.cuotas.css";
 import ProductosList from "../components/checkout/ProductosList";
 import CheckoutPanel from "../components/checkout/CheckoutPanel";
-import { opcionesCuotasDisponibles, calcularFechasVencimiento } from "../utils/checkoutHelpers";
+import { opcionesCuotasDisponibles, calcularFechasVencimiento, calcularEdad, EDAD_MINIMA_COMPRA } from "../utils/checkoutHelpers";
 
 export default function Checkout() {
   useThemeScope("sw-scope-checkout");
@@ -24,6 +24,10 @@ export default function Checkout() {
     const s = sessionStorage.getItem("direccion");
     return s ?? "";
   });
+  // ── NUEVO: verificación de mayoría de edad — se pide acá (no en el
+  // registro) para no tocar el módulo de usuarios. La validación real que
+  // bloquea la compra vive en el backend (crearMiPedido), nunca solo acá. ──
+  const [fechaNacimiento, setFechaNacimiento] = useState("");
   // ── NUEVO (Carrito/Finalizar compra): Ciudad y Barrio ya no se piden en el
   // registro — se preguntan aquí. Ciudad es fija (solo hacemos domicilios en
   // Medellín, se avisa en el formulario); Barrio sí se elige de una lista real. ──
@@ -137,6 +141,15 @@ export default function Checkout() {
     if (!idBarrio)         e.barrio    = "Selecciona el barrio para continuar.";
     if (!metodo.trim())    e.metodo    = "Selecciona un método de pago antes de continuar.";
     if (!aceptaTerminos)   e.terminos  = "Debes aceptar los términos y condiciones para continuar.";
+    // ── NUEVO: verificación de mayoría de edad — filtro rápido en frontend;
+    // el backend vuelve a calcular la edad y es quien realmente bloquea la compra. ──
+    if (!fechaNacimiento) {
+      e.fechaNacimiento = "Indica tu fecha de nacimiento para continuar.";
+    } else {
+      const edad = calcularEdad(fechaNacimiento);
+      if (edad === null) e.fechaNacimiento = "Fecha de nacimiento inválida.";
+      else if (edad < EDAD_MINIMA_COMPRA) e.fechaNacimiento = `Debes ser mayor de edad (${EDAD_MINIMA_COMPRA} años) para comprar.`;
+    }
     setErroresPaso(e);
     return Object.keys(e).length === 0;
   };
@@ -191,6 +204,7 @@ export default function Checkout() {
         direccion_entrega: direccion,
         id_barrio:         idBarrio ? Number(idBarrio) : null,
         metodo_pago:       metodo,
+        fecha_nacimiento:  fechaNacimiento,
         tipo_pago:         tipoPagoFinal,
         num_cuotas:        tipoPagoFinal === "cuotas" ? numCuotasActivo : null,
         items: items.map((i) => ({
@@ -282,6 +296,7 @@ export default function Checkout() {
         <CheckoutPanel
           usuario={usuario} items={items}
           direccion={direccion} setDireccion={setDireccion} erroresPaso={erroresPaso} setErroresPaso={setErroresPaso}
+          fechaNacimiento={fechaNacimiento} setFechaNacimiento={setFechaNacimiento}
           cargandoBarrios={cargandoBarrios} barrios={barrios} idBarrio={idBarrio} setIdBarrio={setIdBarrio}
           cargandoMetodos={cargandoMetodos} metodosPago={metodosPago} metodo={metodo} setMetodo={setMetodo}
           permisoCuotas={permisoCuotas} tipoPago={tipoPago} setTipoPago={setTipoPago} opcionesCuotas={opcionesCuotas}

@@ -57,11 +57,11 @@ class _CarritoVacio extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.shopping_cart_outlined, size: 56, color: AppColors.textSecondary),
+            Icon(Icons.shopping_cart_outlined, size: 56, color: AppColors.textSecondary),
             const SizedBox(height: 16),
             const Text('Tu carrito está vacío', style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Agrega productos desde el catálogo para verlos aquí.',
               textAlign: TextAlign.center,
               style: TextStyle(color: AppColors.textSecondary),
@@ -89,7 +89,7 @@ class _ResumenYPagar extends StatelessWidget {
       top: false,
       child: Container(
         padding: const EdgeInsets.all(16),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           border: Border(top: BorderSide(color: AppColors.border)),
         ),
@@ -102,7 +102,7 @@ class _ResumenYPagar extends StatelessWidget {
                 const Text('Total', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                 Text(
                   formatoPrecioCop(total),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                     color: AppColors.primaryDark,
