@@ -92,9 +92,22 @@
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 480px) {
   .navbar { padding: 0 10px; }
   .navbar-page-label { font-size: 12px; }
+  /* Admin: en móviles angostos la suma de los íconos fijos de la derecha
+     (tema, tienda, notificaciones, divisor, logout) más el menú+título de
+     la izquierda supera el ancho disponible y desborda el navbar. Se ocultan
+     el acceso directo a la tienda (ya está en el sidebar) y el divisor, y se
+     recorta el margen del toggle de tema para recuperar el espacio. */
+  .navbar:not(.navbar--public-fixed) .navbar-btn-tienda,
+  .navbar:not(.navbar--public-fixed) .navbar-divider,
+  .navbar:not(.navbar--public-fixed) .navbar-page-icon {
+    display: none;
+  }
+  .navbar:not(.navbar--public-fixed) .theme-toggle-btn {
+    margin: 0 4px;
+  }
 }
 
 /* ── Modal logout ── */

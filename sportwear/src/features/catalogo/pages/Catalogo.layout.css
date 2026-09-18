@@ -270,3 +270,26 @@ html, body {
   background: var(--charcoal);
   color: #fff;
 }
+
+/* ── CORREGIDO: la barra de filtros no tenía ninguna regla responsive —
+   en celular (~375px) los grupos de filtro (precio, talla, color) más el
+   contador y el toggle de vista quedaban apretados o se veían cortados al
+   envolver. Se apilan en columna y los campos pasan a ancho completo. ── */
+@media (max-width: 480px) {
+  .catalog-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .catalog-toolbar-group {
+    width: 100%;
+  }
+  .catalog-toolbar-group select,
+  .catalog-toolbar-group input[type="number"] {
+    flex: 1;
+    width: auto;
+  }
+  .catalog-view-toggle {
+    margin-left: 0;
+    align-self: flex-end;
+  }
+}

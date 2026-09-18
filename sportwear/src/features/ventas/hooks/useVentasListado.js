@@ -97,6 +97,7 @@ export function useVentasListado() {
 
       setDatos(ventas);
       setTotal(data.total);
+      return ventas;
     } catch (err) {
       console.error("Error cargando datos:", err);
       setErrorMsg("Error al cargar los datos");
@@ -136,7 +137,18 @@ export function useVentasListado() {
     setCambiandoEstado(true);
     try {
       await api.patch(`/ventas/${id}/estado`, { estado });
-      await cargar(true);
+      const ventasActualizadas = await cargar(true);
+      // ── CORREGIDO: mismo bug que en Pedidos.jsx — el panel de "ver
+      // detalle" es un estado aparte de "datos", así que si la venta que se
+      // acaba de cambiar es la que está abierta, se quedaba mostrando el
+      // estado VIEJO hasta cerrarla y volver a abrirla, aunque la tabla de
+      // al lado ya mostrara el estado correcto. Se reutiliza la fila ya
+      // recalculada por "cargar" (mismo criterio Pagado/Pendiente/Anulado),
+      // sin volver a pedirla aparte. ──
+      if (verDetalle?.id_venta === id) {
+        const actualizada = ventasActualizadas?.find((v) => v.id_venta === id);
+        if (actualizada) setVerDetalle((prev) => (prev?.id_venta === id ? { ...prev, ...actualizada } : prev));
+      }
       showToast("exito", `Venta marcada como "${estado}".`);
     } catch (err) {
       showToast("error", err.response?.data?.message || "Error al cambiar estado");

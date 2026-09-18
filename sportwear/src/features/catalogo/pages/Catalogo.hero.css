@@ -314,11 +314,20 @@
   font-weight: 400;
   color: var(--charcoal);
   margin: 0 0 16px;
+  justify-content: center;
 }
+/* ── CORREGIDO: "repeat(4, 1fr)" siempre reservaba 4 columnas a todo el
+   ancho del contenedor, así que con menos de 4 categorías con foto (varias
+   se vaciaron/inactivaron) los tiles quedaban pegados a la izquierda con un
+   hueco vacío a la derecha — "justify-content:center" no hacía nada porque
+   las columnas "1fr" ya llenaban el ancho completo. Con "auto-fit" +
+   minmax, el grid solo crea tantas columnas como items haya (hasta el
+   máximo de ancho), así el conjunto real de tiles queda centrado. ── */
 .cat-destacadas-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 200px));
   gap: 14px;
+  justify-content: center;
 }
 .cat-tile {
   position: relative;
@@ -363,7 +372,7 @@
   color: #fff;
 }
 @media (max-width: 900px) {
-  .cat-destacadas-grid { grid-template-columns: repeat(2, 1fr); }
+  .cat-destacadas-grid { grid-template-columns: repeat(auto-fit, minmax(130px, 160px)); }
 }
 
 /* ── Video del catálogo (se sube desde Catálogo admin → Contenido del
@@ -398,9 +407,13 @@
   text-align: center;
   margin: 0;
 }
+/* Mismo orden de magnitud que la vista previa de Catálogo admin →
+   Contenido del inicio (.catadmin-inicio-video-foto-col: ~200-320px de
+   ancho, aspect-ratio 3/4) — antes esto se mostraba muchísimo más grande
+   (hasta 78vh de alto) que como se ve/edita en el admin. */
 .catalog-video-block video {
-  max-width: 100%;
-  max-height: 60vh;
+  max-width: min(100%, 320px);
+  max-height: 420px;
   width: auto;
   height: auto;
   border-radius: var(--r);
@@ -420,11 +433,12 @@
   width: 100%;
 }
 .catalog-video-media.con-foto video {
-  max-height: 55vh;
+  max-height: 420px;
+  max-width: min(100%, 320px);
 }
 .catalog-video-foto {
-  max-width: 100%;
-  max-height: 55vh;
+  max-width: min(100%, 320px);
+  max-height: 420px;
   width: auto;
   height: auto;
   border-radius: var(--r);
@@ -436,6 +450,13 @@
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .catalog-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  /* El límite de 48% (para que video+foto queden lado a lado en pantallas
+     anchas) apachurra demasiado cada uno en pantallas angostas, donde de
+     todos modos ya se apilan uno debajo del otro por flex-wrap. */
+  .catalog-video-media.con-foto video,
+  .catalog-video-foto {
+    max-width: 100%;
+  }
 }
 @media (max-width: 560px) {
   .catalog-grid { grid-template-columns: 1fr; }

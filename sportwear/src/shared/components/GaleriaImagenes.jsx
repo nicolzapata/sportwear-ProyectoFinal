@@ -190,16 +190,16 @@ export default function GaleriaImagenes({
         && String(principales[0].id_color) === String(colorExistente.id_color);
       if (mismoColorQueYaExiste) return;
 
-      onColoresDetectados(todos, principales.map(c => c.id_color));
-
       // ── CORREGIDO: si el usuario ya eligió el color a mano con los chips
       // de "Color de las fotos a subir" antes de subir, esa elección queda
-      // firme — la IA solo la sugiere en Variantes, nunca la pisa. Antes se
-      // reasignaba igual con lo que detectara la IA (aun siendo distinto al
-      // que el usuario acababa de elegir a propósito), así que la foto podía
-      // quedar con un color que el usuario nunca escogió, obligándolo a
-      // corregirla a mano después de subida. ──
+      // firme y tampoco tiene sentido "sugerirla" — ya está asignada, la
+      // sugerencia es solo para cuando la foto todavía no tiene color. Antes
+      // esto se chequeaba DESPUÉS de avisar la sugerencia (onColoresDetectados
+      // ya se había disparado), así que el banner de "colores sugeridos"
+      // aparecía en Variantes aunque el color ya estuviera puesto a mano. ──
       if (elegidoManualmente) return;
+
+      onColoresDetectados(todos, principales.map(c => c.id_color));
 
       // Con un solo color principal claro, se asigna directo a la foto que se
       // acaba de subir — no basta con sugerirlo en Variantes, la idea es que

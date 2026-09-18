@@ -265,6 +265,17 @@
   .auth-info-panel { text-align: center; }
   .auth-stats-row { justify-content: center; }
   .auth-note { margin-left: auto; margin-right: auto; }
+  /* ── CORREGIDO: el panel de la tarjeta (Login/Recuperar/Registro) tenía
+     un ancho fijo (flex-basis 460px, o 700px en Registro) que nunca se
+     ajustaba acá abajo — en pantallas angostas la tarjeta se desbordaba
+     del viewport en vez de encogerse, rompiendo el formulario de registro
+     en móvil. ── */
+  .auth-card-panel,
+  .registro-page-variant .auth-card-panel {
+    flex-basis: auto;
+    width: 100%;
+    max-width: 460px;
+  }
 }
 
 @media (max-width: 480px) {

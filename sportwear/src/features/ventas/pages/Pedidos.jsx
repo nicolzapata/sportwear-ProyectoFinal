@@ -217,7 +217,11 @@ export default function Pedidos() {
       setDatos((prev) => prev.map((p) => p.id_pedido === id_pedido ? { ...p, estado_pedido: estado } : p));
       if (verDetalle?.id_pedido === id_pedido) {
         const { data } = await api.get(`/pedidos/${id_pedido}`);
-        setVerDetalle(data);
+        // ── CORREGIDO: si mientras esta petición estaba en vuelo el admin ya
+        // seleccionó OTRO pedido (verDetalle cambió), no hay que pisarlo con
+        // la respuesta de este — quedaría viendo un pedido con los datos de
+        // otro. Se vuelve a comprobar el id justo antes de aplicar. ──
+        setVerDetalle((prev) => (prev?.id_pedido === id_pedido ? data : prev));
       }
       cargarConteos();
       showToast("exito", `Pedido marcado como "${estado}".`);
@@ -305,7 +309,7 @@ export default function Pedidos() {
     if (!validarEdicion()) return;
     setGuardandoEditar(true);
     try {
-      await api.patch(`/pedidos/${modalEditar.id_pedido}`, {
+      const { data } = await api.patch(`/pedidos/${modalEditar.id_pedido}`, {
         direccion_entrega: formEditar.direccion_entrega.trim(),
         observaciones: formEditar.observaciones?.trim() || null,
         metodo_pago: formEditar.metodo_pago || null,
@@ -316,6 +320,12 @@ export default function Pedidos() {
           precio_unitario: Number(l.precio_unitario),
         })),
       });
+      // ── CORREGIDO: el backend ya devuelve el pedido actualizado (incluida
+      // la talla/color de los productos recién agregados) pero antes se
+      // descartaba esa respuesta — el panel de "Ver detalle" (verDetalle)
+      // nunca se refrescaba y seguía mostrando los datos de ANTES de
+      // guardar (sin el color elegido) hasta que se volvía a abrir a mano. ──
+      if (verDetalle?.id_pedido === modalEditar.id_pedido) setVerDetalle(data);
       await cargar(pagina, busquedaDebounced);
       setModalEditar(null);
       showToast("exito", "Pedido actualizado correctamente.");
