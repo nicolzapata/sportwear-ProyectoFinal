@@ -87,7 +87,7 @@ export default function Navbar({ onMenuClick }) {
 
         <ThemeToggle />
 
-        <Link to="/catalogo" className="navbar-btn" title="Ver tienda">
+        <Link to="/catalogo" className="navbar-btn navbar-btn-tienda" title="Ver tienda">
           <IconStore />
         </Link>
 

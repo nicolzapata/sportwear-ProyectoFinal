@@ -199,4 +199,23 @@
   }
 
   .pedidosventas-action-cell { flex-wrap: wrap; }
+
+  /* CORREGIDO: el resumen de abonos (Total/Pagado/Saldo) no tenía ninguna
+     regla responsive — en celular las 3 columnas quedaban demasiado
+     angostas para los montos, forzando el texto a cortarse o desbordar. */
+  .pedidosventas-abonos-summary {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+  .pedidosventas-abonos-summary-item {
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+    padding: 0.4rem 0;
+    border-left: none;
+    border-top: 1px solid var(--dvna-border);
+  }
+  .pedidosventas-abonos-summary-item:first-child {
+    border-top: none;
+  }
 }

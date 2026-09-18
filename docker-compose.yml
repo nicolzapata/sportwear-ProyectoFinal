@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-SportWear}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-SportWear}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - sportwear
+
+  backend:
+    build:
+      context: ./sportwear-backend
+    image: sportwear-backend:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-SportWear}
+      PORT: 4000
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-.env}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASS: ${EMAIL_PASS:-}
+    ports:
+      - "4000:4000"
+    networks:
+      - sportwear
+
+  frontend:
+    build:
+      context: ./sportwear
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+    image: sportwear-frontend:latest
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+    networks:
+      - sportwear
+
+networks:
+  sportwear:
+    driver: bridge
+
+volumes:
+  db_data:
