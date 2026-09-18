@@ -1,6 +1,6 @@
 import { validarNumeroDocumento, validarTelefono, validarNombre, validarEmail } from "../../../shared/utils/numerico";
 
-export const TIPOS_DOC = ["CC", "CE", "TI", "NIT", "PP"];
+export const TIPOS_DOC = ["CC", "CE", "NIT", "PP"];
 export const CAMPOS_NUMERICOS = ["documento", "telefono"];
 
 // Calcula TODOS los errores del formulario a partir de un estado dado, sin tocar el state.
